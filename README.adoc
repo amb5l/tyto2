@@ -12,6 +12,10 @@ A simpler directory structure is used:
 
 * `doc` contains documentation.
 
+* `submodules` contains git submodules.
+
+NOTE: Most designs have submodule dependencies. Please remember to initialise submodules when cloning this repo!
+
 == Designs
 
 === T65_functest

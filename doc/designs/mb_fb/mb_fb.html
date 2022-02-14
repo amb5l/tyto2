@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.8.dev">
-<title>The Tyto Project (Version 2)</title>
+<title>mb_fb</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -438,93 +438,176 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
-<h1>The Tyto Project (Version 2)</h1>
+<h1>mb_fb</h1>
 </div>
 <div id="content">
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems.</p>
+<p>This design combines a MicroBlaze CPU with a graphics frame buffer, and supports a variety of display resolutions from 640x480 to 1920x1080. The display colour depth is 24 bits (RGB).</p>
 </div>
 <div class="paragraph">
-<p>This repository is incomplete. Work to port all the designs and IP from the <a href="https://github.com/amb5l/tyto_project">previous version</a> is ongoing.</p>
+<p>Supported boards: <strong>Digilent Nexys Video</strong> and <strong>QMTECH Wukong</strong>.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./mb_fb_640x480.png" alt="mb fb 640x480">
+</div>
+<div class="title">Figure 1. Example display.</div>
 </div>
 <div class="paragraph">
-<p>A simpler directory structure is used:</p>
+<p>The frame buffer is held in DDR3 SDRAM and the design uses a simple arbiter to share access to the DDR3 IP core&#8217;s user interface between the CPU and the display controller, with priority going to the display.</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>src</code> contains source code for designs as well as common IP.</p>
-</li>
-<li>
-<p><code>build</code> contains makefiles for designs on supported targets. The subdirectory name consists of the design name followed by the target name. For simulation only cases, the target name indicates the simulator: <code>xsim</code> for Xilinx Vivado, <code>ghdl</code> for <a href="http://ghdl.free.fr/">GHDL</a> and <code>sim</code> for Questa, ModelSim etc.</p>
-</li>
-<li>
-<p><code>doc</code> contains documentation.</p>
-</li>
-<li>
-<p><code>submodules</code> contains git submodules.</p>
-</li>
-</ul>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-Most designs have submodule dependencies. Please remember to initialise submodules when cloning this repo!
-</td>
-</tr>
-</table>
+<div class="paragraph">
+<p>A simple MicroBlaze demo application is included, based on <a href="https://github.com/tuupola/hagl">Mike Tuupola&#8217;s <strong>hagl</strong> graphics library</a>.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="truedesigns"><a class="anchor" href="#truedesigns"></a>Designs</h2>
+<h2 id="truedesign-description"><a class="anchor" href="#truedesign-description"></a>Design Description</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>The diagram below shows the main design blocks:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./mb_fb.svg" alt="mb fb">
+</div>
+<div class="title">Figure 2. Overview of the mb_fb design.</div>
+</div>
+<div class="paragraph">
+<p>The modules shown are described below:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">top</dt>
+<dd>
+<p>A board specific wrapper around the main design and the DDR3 controller IP core.</p>
+</dd>
+<dt class="hdlist1">mig</dt>
+<dd>
+<p>Board specific DDR3 controller IP core, produced by Xilinx Memory Interface Generator (MIG).</p>
+</dd>
+<dt class="hdlist1">mb_fb</dt>
+<dd>
+<p>Top level of main design.</p>
+</dd>
+<dt class="hdlist1">microblaze</dt>
+<dd>
+<p>A Xilinx Block Diagram - see the <strong>MicroBlaze CPU Subsystem</strong> section below for further details.</p>
+</dd>
+<dt class="hdlist1">mig_bridge_axi</dt>
+<dd>
+<p>Bridges from CPU&#8217;s AXI bus master to the the MIG user interface.</p>
+</dd>
+<dt class="hdlist1">crtc</dt>
+<dd>
+<p>Video clocking and timing control. The name is a throwback to the Cathode Ray Tube Controllers used in 80s and 90s era home computers.</p>
+</dd>
+<dt class="hdlist1">mig_bridge_crtc</dt>
+<dd>
+<p>Drives MIG user interface to fetch pixels from memory as required by CRTC.</p>
+</dd>
+<dt class="hdlist1">mig_hub</dt>
+<dd>
+<p>A priority arbiter to share access to the DDR3 controller&#8217;s user interface between multiple masters.</p>
+</dd>
+<dt class="hdlist1">dvi_tx</dt>
+<dd>
+<p>Contains TMDS encoders and serialisers to drive a DVI display monitor.</p>
+</dd>
+</dl>
+</div>
 <div class="sect2">
-<h3 id="truet65_functest"><a class="anchor" href="#truet65_functest"></a>T65_functest</h3>
+<h3 id="truemicroblaze-cpu-subsystem"><a class="anchor" href="#truemicroblaze-cpu-subsystem"></a>MicroBlaze CPU Subsystem</h3>
 <div class="paragraph">
-<p>Simulates a T65 CPU core running Klaus Dormann&#8217;s 6502 functional test. <a href="doc/designs/T65_functest/T65_functest.html">More&#8230;&#8203;</a></p>
+<p>The MicroBlaze CPU is instantiated within a Xilinx Block Diagram file:</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./microblaze.svg" alt="microblaze">
+</div>
+<div class="title">Figure 3. MicroBlaze CPU subsystem.</div>
+</div>
+<div class="paragraph">
+<p>The blocks are described below:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">cpu</dt>
+<dd>
+<p>MicroBlaze CPU, 32 bit, microcontroller preset, no caches.</p>
+</dd>
+<dt class="hdlist1">ram</dt>
+<dd>
+<p>64kBytes for CPU instructions and data.</p>
+</dd>
+<dt class="hdlist1">interconnect</dt>
+<dd>
+<p>AXI interconnect to allow the CPU AXI master to connect to 3 AXI slaves.</p>
+</dd>
+<dt class="hdlist1">gpio</dt>
+<dd>
+<p>AXI GPIO IP core, configured for 2 channels: 8 outputs on the first channel, 8 inputs on the second.</p>
+</dd>
+<dt class="hdlist1">uart</dt>
+<dd>
+<p>"Lite" UART IP core, fixed at 115200N81, to provide console I/O (not used in this design).</p>
+</dd>
+<dt class="hdlist1">rstctrl</dt>
+<dd>
+<p>Reset controller IP core.</p>
+</dd>
+<dt class="hdlist1">debug</dt>
+<dd>
+<p>CPU debug controller IP core.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>If you alter the block diagram in Vivado, you will need to export a TCL script to recreate by entering the following command in the TCL Console:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>write_bd_tcl -force -include_layout ../../../src/fpga/dsn/mb_fb/microblaze.tcl</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To update the documentation, export an SVG image by entering the following command in the TCL Console:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>write_bd_layout ‑force ‑format svg ../../../doc/mb_fb/microblaze.svg</pre>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="truebuild-and-simulation-tools"><a class="anchor" href="#truebuild-and-simulation-tools"></a>Build and Simulation Tools</h2>
+<h2 id="truemicroblaze-software"><a class="anchor" href="#truemicroblaze-software"></a>MicroBlaze Software</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p><a href="https://www.gnu.org/software/make/">make</a> is required, and <a href="https://en.wikipedia.org/wiki/Git">git</a> is recommended. <a href="doc/msys2.html">MSYS2</a> is a quick and easy way to get these tools (as well as GHDL) running on Windows.</p>
-</div>
-<div class="paragraph">
-<p>For Xilinx FPGAs, <strong>Vivado 2021.2</strong> is required. Designs including a <a href="https://en.wikipedia.org/wiki/MicroBlaze">Microblaze soft CPU</a> also require <strong>Vitis 2021.2</strong>. These tools may be obtained from <a href="https://www.xilinx.com/support/download.html">here</a>.</p>
-</div>
-<div class="paragraph">
-<p>For Intel FPGAs, <strong>Quartus Prime Lite 21.1</strong> is required. This may be obtained from <a href="https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html">here</a>.</p>
+<p>The application initialises the frame buffer and hagl library, draws 100 random graphical objects (lines, triangles, rectangles or ellipses), overlays this with a simple grid, and prints a message.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="truelicense"><a class="anchor" href="#truelicense"></a>License</h2>
+<h2 id="truesimulation"><a class="anchor" href="#truesimulation"></a>Simulation</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>This file is part of The Tyto Project. The Tyto Project is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.</p>
+<p>A simulation testbench is provided as part of the Vivado project. This captures the video output to a BMP file. Note that simulation run times are substantial. Alternative testbenches are provided to simulate simplified versions of the design that exclude the MIG; these run much faster.</p>
 </div>
-<div class="paragraph">
-<p>The Tyto Project is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.</p>
-</div>
-<div class="paragraph">
-<p>You should have received a copy of the GNU Lesser General Public License along with The Tyto Project. If not, see <a href="https://www.gnu.org/licenses/" class="bare">https://www.gnu.org/licenses/</a>.</p>
-</div>
+<style>
+  .imageblock > .title {
+    text-align: inherit;
+  }
+</style>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-02-14 13:55:22 UTC
+Last updated 2022-02-14 13:50:38 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

@@ -10,3 +10,6 @@
 [submodule "submodules/6502_65C02_functional_tests"]
 	path = submodules/6502_65C02_functional_tests
 	url = https://github.com/amb5l/6502_65C02_functional_tests.git
+[submodule "submodules/hagl"]
+	path = submodules/hagl
+	url = https://github.com/amb5l/hagl.git
