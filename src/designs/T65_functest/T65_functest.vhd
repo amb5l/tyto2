@@ -23,6 +23,7 @@ use ieee.std_logic_textio.all;
 
 library std;
 use std.textio.all;
+use std.env.finish;
 
 library work;
 use work.T65_Pack.all;
@@ -139,7 +140,8 @@ begin
                         & "  A = " & to_hstring(to_bitvector(trace_a))
                         & "  X = " & to_hstring(to_bitvector(trace_x))
                         & "  Y = " & to_hstring(to_bitvector(trace_y));
-                    assert FALSE Report "INFINITE LOOP" severity FAILURE;
+                    report "INFINITE LOOP";
+                    finish;
                 end if;
                 if started then
                     readline(f, l);
@@ -156,13 +158,15 @@ begin
                             & "  A = " & to_hstring(to_bitvector(trace_a)) & "/" & to_hstring(to_bitvector(ref_a))
                             & "  X = " & to_hstring(to_bitvector(trace_x)) & "/" & to_hstring(to_bitvector(ref_x))
                             & "  Y = " & to_hstring(to_bitvector(trace_y)) & "/" & to_hstring(to_bitvector(ref_y));
-                        assert false report "MISMATCH: after " & integer'image(count_i) & " instructions" severity failure;
+                        report "MISMATCH: after " & integer'image(count_i) & " instructions";
+                        finish;
                     end if;
                 end if;
             end if;
         end loop;
         report "instruction count: " & integer'image(count_i) & "  cycle count: " & integer'image(count_c);
-        assert false report "*** END OF FILE ***" severity failure;
+        report "*** END OF FILE ***";
+        finish;
     end process do_test;
 
     UUT: component T65
