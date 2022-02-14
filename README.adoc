@@ -18,6 +18,10 @@ NOTE: Most designs have submodule dependencies. Please remember to initialise su
 
 == Designs
 
+=== mb_fb
+
+A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on link:https://github.com/tuupola/hagl[Mike Tuupola's hagl graphics library]. <<./doc/designs/mb_fb/mb_fb.adoc#,More...>>
+
 === T65_functest
 
 Simulates a T65 CPU core running Klaus Dormann's 6502 functional test. <<doc/designs/T65_functest/T65_functest.adoc#,More...>>
