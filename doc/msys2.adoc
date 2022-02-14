@@ -1,0 +1,38 @@
+= MSYS2
+
+https://www.msys2.org/[MSYS2] is an easy way for Windows users to access to GNU development tools such as `make`, and is highly recommended for the http://ghdl.free.fr/[GHDL] simulator. It's easy to install and configure:
+
+. Download and install the latest build of MSYS2 from here: https://repo.msys2.org/distrib/x86_64/[MSYS2 distributions for Win64] 
+
+. Open an MSYS2 shell.
+
+. Perform a system update, then install basic development tools, by entering the following commands:
++
+  pacman -Syu
+  pacman -Su
+  pacman -S --needed base-devel mingw-w64-x86_64-toolchain
+  pacman -S git
+
+. (Optionally) install GHDL by entering the following command:
+
+  pacman -S mingw-w64-x86_64-ghdl-llvm
++
+You may now use GHDL from an MSYS MinGW x64 shell. For example, to check the GHDL version:
++
+----
+user@MACHINE MINGW64 ~
+$ ghdl --version
+GHDL 2.0.0-dev (1.0.0.r964.g70f3c162b) [Dunoon edition]
+ Compiled with GNAT Version: 11.2.0
+ llvm code generator
+Written by Tristan Gingold.
+
+Copyright (C) 2003 - 2021 Tristan Gingold.
+GHDL is free software, covered by the GNU General Public License.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+user@MACHINE MINGW64 ~
+$
+----
+
+. (Recommended) add the usr\bin subdirectory of the MSYS install to your Windows path to allow use use of `make` etc from the Windows Command Prompt.

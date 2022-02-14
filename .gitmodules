@@ -1,0 +1,12 @@
+[submodule "submodules/xilinx-mk"]
+	path = submodules/xilinx-mk
+	url = https://github.com/amb5l/xilinx-mk.git
+[submodule "submodules/T65"]
+	path = submodules/T65
+	url = https://github.com/amb5l/T65.git
+[submodule "submodules/mos6502-trace"]
+	path = submodules/mos6502-trace
+	url = https://github.com/amb5l/mos6502-trace.git
+[submodule "submodules/6502_65C02_functional_tests"]
+	path = submodules/6502_65C02_functional_tests
+	url = https://github.com/amb5l/6502_65C02_functional_tests.git

@@ -1,0 +1,35 @@
+= The Tyto Project (Version 2)
+
+The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems.
+
+This repository is incomplete. Work to port all the designs and IP from the https://github.com/amb5l/tyto_project[previous version] is ongoing.
+
+A simpler directory structure is used:
+
+* `src` contains source code for designs as well as common IP.
+
+* `build` contains makefiles for designs on supported targets. The subdirectory name consists of the design name followed by the target name. For simulation only cases, the target name indicates the simulator: `xsim` for Xilinx Vivado, `ghdl` for http://ghdl.free.fr/[GHDL] and `sim` for Questa, ModelSim etc.
+
+* `doc` contains documentation.
+
+== Designs
+
+=== T65_functest
+
+Simulates a T65 CPU core running Klaus Dormann's 6502 functional test. <<doc/designs/T65_functest/T65_functest.adoc#,More...>>
+
+== Build and Simulation Tools
+
+https://www.gnu.org/software/make/[make] is required, and https://en.wikipedia.org/wiki/Git[git] is recommended. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get these tools (as well as GHDL) running on Windows.
+
+For Xilinx FPGAs, *Vivado 2021.2* is required. Designs including a https://en.wikipedia.org/wiki/MicroBlaze[Microblaze soft CPU] also require *Vitis 2021.2*. These tools may be obtained from https://www.xilinx.com/support/download.html[here].
+
+For Intel FPGAs, *Quartus Prime Lite 21.1* is required. This may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
+
+== License
+
+This file is part of The Tyto Project. The Tyto Project is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+The Tyto Project is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with The Tyto Project. If not, see https://www.gnu.org/licenses/.
