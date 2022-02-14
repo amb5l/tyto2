@@ -5,6 +5,7 @@ XILINX_MK=$(SUBMODULES)/xilinx-mk
 
 all: sim
 
+ref: $(SUBMODULES)/mos6502-trace/6502_functional_test.txt
 $(SUBMODULES)/mos6502-trace/6502_functional_test.txt: $(SUBMODULES)/6502_65C02_functional_tests/bin_files/6502_functional_test.bin
 	$(SUBMODULES)/mos6502-trace/trace.exe $< 0400 FD 34 > $@
 
