@@ -24,9 +24,6 @@ use work.global_pkg.all;
 package mb_fb_pkg is
 
     component mb_fb  is
-        generic (
-            fref        : real
-        );
         port (
 
             xclk        : in    std_logic;                  -- external (reference) clock
@@ -76,9 +73,6 @@ use work.mig_bridge_axi_pkg.all;
 use work.mig_bridge_crtc_pkg.all;
 
 entity mb_fb  is
-    generic (
-        fref            : real
-    );
     port (
 
         xclk        : in    std_logic;                  -- external (reference) clock
@@ -266,9 +260,6 @@ begin
         );
 
     U_CRTC: component crtc
-        generic map (
-            fref        => 100.0
-        )
         port map (
             xclk        => xclk,
             xrst        => xrst,

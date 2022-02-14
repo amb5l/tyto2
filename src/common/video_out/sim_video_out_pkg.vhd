@@ -22,9 +22,6 @@ use ieee.numeric_std.all;
 library std;
 use std.textio.all;
 
-library xil_defaultlib;
-use xil_defaultlib.types_pkg.all;
-
 package sim_video_out_pkg is
 
  	subtype uint8_t is integer range 0 to 255;

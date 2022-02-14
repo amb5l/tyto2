@@ -82,8 +82,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library xil_defaultlib;
-use xil_defaultlib.video_mode_pkg.all;
+library work;
+use work.video_mode_pkg.all;
 
 entity video_mode is
     port (

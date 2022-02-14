@@ -244,9 +244,6 @@ begin
     -- main design
 
     MAIN: component mb_fb
-        generic map (
-            fref            => 100.0 -- 100MHz
-        )
         port map (
 
             xclk            => clki_100m,

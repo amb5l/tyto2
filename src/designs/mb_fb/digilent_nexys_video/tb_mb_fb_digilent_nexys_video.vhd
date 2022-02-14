@@ -19,7 +19,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 library work;
-use work.mb_fb_params_pkg.all;
+use work.global_pkg.all;
 
 entity tb_mb_fb_digilent_nexys_video is
 end entity tb_mb_fb_digilent_nexys_video;

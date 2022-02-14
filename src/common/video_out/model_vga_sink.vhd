@@ -19,9 +19,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library xil_defaultlib;
-use xil_defaultlib.types_pkg.all;
-use xil_defaultlib.sim_video_out_pkg.all;
+library work;
+use work.sim_video_out_pkg.all;
 
 entity model_vga_sink is
     generic (

@@ -21,9 +21,6 @@ use ieee.std_logic_1164.all;
 package crtc_pkg is
 
     component crtc is
-        generic (
-            fref        : real                                  -- reference clock frequency (MHz)
-        );
         port (
 
             xclk        : in    std_logic;                      -- reference clock
@@ -63,9 +60,6 @@ use work.dvi_tx_encoder_pkg.all;
 use work.serialiser_10to1_selectio_pkg.all;
 
 entity crtc is
-    generic (
-        fref        : real                                  -- reference clock frequency (MHz)
-    );
     port (
 
         xclk        : in    std_logic;                      -- reference clock
