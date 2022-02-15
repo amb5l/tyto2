@@ -48,7 +48,7 @@ VIVADO_DSN_VHDL_2008=\
 
 # design sources: TCL scripts to create IP cores (TCL filename should match IP core name)
 VIVADO_DSN_IP_TCL=\
-	$(SRC)/common/ip/ddr3_digilent_nexys_video/ddr3.tcl
+	$(SRC)/common/ddr3/digilent_nexys_video/ddr3.tcl
 
 # design sources: TCL scripts to create block diagrams (TCL filename should match BD name)
 VIVADO_DSN_BD_TCL=\
@@ -82,7 +82,7 @@ VIVADO_SIM_VHDL_2008=\
 	$(SRC)/designs/mb_fb/digilent_nexys_video/tb_mb_fb_digilent_nexys_video.vhd \
 	$(SRC)/designs/mb_fb/tb_mb_fb.vhd \
 	$(SRC)/designs/mb_fb/tb_crtc_etc.vhd \
-	$(SRC)/common/ip/xilinx/model_mig.vhd \
+	$(SRC)/common/ddr3/xilinx/model_mig.vhd \
 	$(SRC)/common/basic/model_fifoctrl_s.vhd \
 	$(SRC)/common/video_out/model_dvi_decoder.vhd \
 	$(SRC)/common/video_out/model_tmds_cdr_des.vhd \
