@@ -3,11 +3,20 @@ SRC=$(REPO_ROOT)/src
 SUBMODULES=$(REPO_ROOT)/submodules
 XILINX_MK=$(SUBMODULES)/xilinx-mk
 
+FUNCTEST=6502_functional_test
+FUNCTEST_BIN=$(SUBMODULES)/6502_65C02_functional_tests/bin_files/$(FUNCTEST).bin
+REF_DIR=ref
+REF_FILE=$(abspath $(REF_DIR)/$(FUNCTEST).txt)
+MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace.exe
+
 all: sim
 
-ref: $(SUBMODULES)/mos6502-trace/6502_functional_test.txt
-$(SUBMODULES)/mos6502-trace/6502_functional_test.txt: $(SUBMODULES)/6502_65C02_functional_tests/bin_files/6502_functional_test.bin
-	$(SUBMODULES)/mos6502-trace/trace.exe $< 0400 FD 34 > $@
+ref: $(REF_FILE)
+$(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
+	$(MOS6502_TRACE) $< 0400 FD 34 > $@
+
+$(REF_DIR):
+	mkdir $(REF_DIR)
 
 VIVADO_PROJ=fpga
 VIVADO_LANG=VHDL
@@ -21,11 +30,14 @@ VIVADO_SIM_VHDL=\
 	$(SUBMODULES)/T65/T65_MCode.vhd \
 	$(SUBMODULES)/T65/T65_Pack.vhd
 VIVADO_SIM_GENERICS=\
-	bin_file=$(SUBMODULES)/6502_65C02_functional_tests/bin_files/6502_functional_test.bin \
-	ref_file=$(SUBMODULES)/mos6502-trace/6502_functional_test.txt \
+	bin_file=$(FUNCTEST_BIN) \
+	ref_file=$(REF_FILE) \
 	start_address=1024
 VIVADO_SIM_IN=\
-	$(SUBMODULES)/6502_65C02_functional_tests/bin_files/6502_functional_test.bin \
-	$(SUBMODULES)/mos6502-trace/6502_functional_test.txt
+	$(FUNCTEST_BIN) \
+	$(REF_FILE)
 
 include $(XILINX_MK)/xilinx.mk
+
+clean::
+	rm -rf ref
