@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- clock_mmcm.vhd                                                             --
+-- mmcm.vhd                                                                   --
 -- Wrapper for Xilinx 7 series MMCM.                                          --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
@@ -21,9 +21,9 @@ use ieee.std_logic_1164.all;
 library work;
 use work.tyto_types_pkg.all;
 
-package clock_mmcm_pkg is
+package mmcm_pkg is
 
-    component clock_mmcm is
+    component mmcm is
         generic (
             mul         : real;
             div         : integer;
@@ -36,9 +36,9 @@ package clock_mmcm_pkg is
             rst         : out   std_logic;                  -- reset based on MMCM lock
             clk         : out   std_logic_vector(0 to 6)    -- clock outputs
         );
-    end component clock_mmcm;
+    end component mmcm;
 
-end package clock_mmcm_pkg;
+end package mmcm_pkg;
 
 --------------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ use work.tyto_types_pkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity clock_mmcm is
+entity mmcm is
     generic (
         mul         : real;
         div         : integer;
@@ -64,9 +64,9 @@ entity clock_mmcm is
         rst         : out   std_logic;                  -- reset based on MMCM lock
         clk         : out   std_logic_vector(0 to 6)    -- clock outputs
     );
-end entity clock_mmcm;
+end entity mmcm;
 
-architecture struct of clock_mmcm is
+architecture struct of mmcm is
 
     signal locked       : std_logic;                -- MMCM locked output
     signal clko_fb      : std_logic;                -- unbuffered feedback clock
