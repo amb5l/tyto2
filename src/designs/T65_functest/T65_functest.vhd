@@ -140,7 +140,8 @@ begin
                         & "  A = " & to_hstring(to_bitvector(trace_a))
                         & "  X = " & to_hstring(to_bitvector(trace_x))
                         & "  Y = " & to_hstring(to_bitvector(trace_y));
-                    report "INFINITE LOOP";
+                    report "*** INFINITE LOOP ***";
+                    report "instruction count: " & integer'image(count_i) & "  cycle count: " & integer'image(count_c);
                     finish;
                 end if;
                 if started then
@@ -158,14 +159,15 @@ begin
                             & "  A = " & to_hstring(to_bitvector(trace_a)) & "/" & to_hstring(to_bitvector(ref_a))
                             & "  X = " & to_hstring(to_bitvector(trace_x)) & "/" & to_hstring(to_bitvector(ref_x))
                             & "  Y = " & to_hstring(to_bitvector(trace_y)) & "/" & to_hstring(to_bitvector(ref_y));
-                        report "MISMATCH: after " & integer'image(count_i) & " instructions";
+                        report "*** MISMATCH ***";
+                        report "instruction count: " & integer'image(count_i) & "  cycle count: " & integer'image(count_c);
                         finish;
                     end if;
                 end if;
             end if;
         end loop;
-        report "instruction count: " & integer'image(count_i) & "  cycle count: " & integer'image(count_c);
         report "*** END OF FILE ***";
+        report "instruction count: " & integer'image(count_i) & "  cycle count: " & integer'image(count_c);
         finish;
     end process do_test;
 
