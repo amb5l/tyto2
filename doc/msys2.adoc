@@ -35,4 +35,4 @@ user@MACHINE MINGW64 ~
 $
 ----
 
-. (Recommended) add the usr\bin subdirectory of the MSYS install to your Windows path to allow use use of `make` etc from the Windows Command Prompt.
+. *Recommended:* add the usr\bin and mingw64\bin subdirectory of the MSYS install to your Windows path to allow use use of `make`, `ghdl` etc from the Windows Command Prompt.
