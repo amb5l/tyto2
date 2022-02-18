@@ -29,10 +29,10 @@ t65_functest: T65_Pack.o T65_MCode.o T65_ALU.o T65.o T65_functest.o
 
 bin: $(FUNCTEST_BIN)
 $(FUNCTEST_BIN): $(BUILD_6502_DIR)/$(FUNCTEST).o $(FUNCTEST_CFG)
-	$(LD65) $< -o $@ -m $*.map -C $(FUNCTEST_CFG)
+	$(LD65) $< -o $@ -m $(BUILD_6502_DIR)/$(FUNCTEST).map -C $(FUNCTEST_CFG)
 
 $(BUILD_6502_DIR)/$(FUNCTEST).o: $(FUNCTEST_SRC) | $(BUILD_6502_DIR)
-	$(CA65) $< -o $@ -l $*.lst
+	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(FUNCTEST).lst
 
 $(BUILD_6502_DIR):
 	mkdir $(BUILD_6502_DIR)
@@ -50,5 +50,6 @@ T65_functest.o: $(SRC)/designs/T65_functest/T65_functest.vhd
 	$(GHDL) -a $(GHDLFLAGS) $<
 
 clean:
-	rm -rf ref
 	rm -f *.exe *.o *.cf
+	rm -rf $(BUILD_6502_DIR)
+	rm -rf $(REF_DIR)    

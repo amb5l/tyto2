@@ -23,10 +23,10 @@ all: $(REF_FILE) $(FUNCTEST_BIN)
 
 bin: $(FUNCTEST_BIN)
 $(FUNCTEST_BIN): $(BUILD_6502_DIR)/$(FUNCTEST).o $(FUNCTEST_CFG)
-	$(LD65) $< -o $@ -m $*.map -C $(FUNCTEST_CFG)
+	$(LD65) $< -o $@ -m $(BUILD_6502_DIR)/$(FUNCTEST).map -C $(FUNCTEST_CFG)
 
 $(BUILD_6502_DIR)/$(FUNCTEST).o: $(FUNCTEST_SRC) | $(BUILD_6502_DIR)
-	$(CA65) $< -o $@ -l $*.lst
+	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(FUNCTEST).lst
 
 $(BUILD_6502_DIR):
 	mkdir $(BUILD_6502_DIR)
@@ -40,6 +40,7 @@ $(REF_DIR):
 
 clean:
 	rm -rf work
-	rm -rf ref
 	rm -f modelsim.ini
 	rm -f transcript
+	rm -rd $(BUILD_6502_DIR)
+	rm -rf $(REF_DIR)
