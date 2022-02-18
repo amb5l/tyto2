@@ -62,7 +62,7 @@ VIVADO_DSN_XDC_SYNTH=
 
 # design constraints (implementation only)
 VIVADO_DSN_XDC_IMPL=\
-	$(SRC)/designs/mb_fb/digilent_nexys_video/mb_fb_digilent_nexys_video.xdc
+	$(SRC)/boards/digilent_nexys_video/digilent_nexys_video.tcl
 
 # processor instance name
 VIVADO_DSN_PROC_INST=cpu

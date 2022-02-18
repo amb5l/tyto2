@@ -62,7 +62,7 @@ VIVADO_DSN_XDC_SYNTH=
 
 # design constraints (implementation only)
 VIVADO_DSN_XDC_IMPL=\
-	$(SRC)/designs/mb_fb/qmtech_wukong/mb_fb_qmtech_wukong.xdc
+	$(SRC)/boards/qmtech_wukong/qmtech_wukong.tcl
 
 # processor instance name
 VIVADO_DSN_PROC_INST=cpu
