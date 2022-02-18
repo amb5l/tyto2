@@ -13,3 +13,6 @@
 [submodule "submodules/hagl"]
 	path = submodules/hagl
 	url = https://github.com/amb5l/hagl.git
+[submodule "submodules/quartus-mk"]
+	path = submodules/quartus-mk
+	url = https://github.com/amb5l/quartus-mk.git
