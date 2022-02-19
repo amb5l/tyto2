@@ -16,7 +16,6 @@
 ################################################################################
 
 create_clock -add -name clki_100m -period 10.00 -waveform {0 5} [get_ports clki_100m]
-set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets clki_100m_IBUF]
 
 if {[llength [get_ports { clki_100m         }]]}    {set_property -dict { PACKAGE_PIN R4    IOSTANDARD LVCMOS33                 } [get_ports { clki_100m         }]}
 if {[llength [get_ports { gtp_clk_n         }]]}    {set_property -dict { PACKAGE_PIN E6                                        } [get_ports { gtp_clk_n         }]}
