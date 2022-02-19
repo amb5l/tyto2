@@ -22,7 +22,7 @@ VIVADO_PROJ=fpga
 VIVADO_LANG=VHDL
 
 # FPGA part number
-FPGA_PART=xc7a200tsbg484-1
+VIVADO_PART=xc7a200tsbg484-1
 
 # top entity names
 VIVADO_DSN_TOP=mb_fb_digilent_nexys_video
