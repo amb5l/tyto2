@@ -27,14 +27,15 @@ package mmcm_pkg is
         generic (
             mul         : real;
             div         : integer;
+            num_outputs : integer; -- 1..7
             odiv0       : real;
             odiv        : int_array(1 to 6) := (0,0,0,0,0,0)
         );
         port (
-            rst_ref     : in    std_logic;                  -- external reset in
-            clk_ref     : in    std_logic;                  -- reference clock in
-            rst         : out   std_logic;                  -- reset based on MMCM lock
-            clk         : out   std_logic_vector(0 to 6)    -- clock outputs
+            rst_ref     : in    std_logic;                           -- external reset in
+            clk_ref     : in    std_logic;                           -- reference clock in
+            rst         : out   std_logic;                           -- reset based on MMCM lock
+            clk         : out   std_logic_vector(0 TO num_outputs-1) -- clock outputs
         );
     end component mmcm;
 
@@ -55,14 +56,15 @@ entity mmcm is
     generic (
         mul         : real;
         div         : integer;
+        num_outputs : integer; -- 1..7
         odiv0       : real;
         odiv        : int_array(1 to 6) := (0,0,0,0,0,0)
     );
     port (
-        rst_ref     : in    std_logic;                  -- external reset in
-        clk_ref     : in    std_logic;                  -- reference clock in
-        rst         : out   std_logic;                  -- reset based on MMCM lock
-        clk         : out   std_logic_vector(0 to 6)    -- clock outputs
+        rst_ref     : in    std_logic;                           -- external reset in
+        clk_ref     : in    std_logic;                           -- reference clock in
+        rst         : out   std_logic;                           -- reset based on MMCM lock
+        clk         : out   std_logic_vector(0 TO num_outputs-1) -- clock outputs
     );
 end entity mmcm;
 
@@ -188,22 +190,12 @@ begin
             O   => clki_fb
         );
 
-    BUFG_0: BUFG
-        port map (
-            I   => clku(0),
-            O   => clk(0)
-        );
-
-    GEN1: for i in 1 to 6 generate
-        GEN2: if oe(i) generate
-            BUFG_X: BUFG
-        port map (
-            I   => clku(i),
-            O   => clk(i)
-        );
-        else generate
-            clk(i) <= '0';
-        end generate GEN2;
-    end generate GEN1;
+    GEN: for i in 0 to num_outputs-1 generate
+        BUFG_OUT: BUFG
+            port map (
+                I   => clku(i),
+                O   => clk(i)
+            );
+    end generate GEN;
 
 end architecture struct;
