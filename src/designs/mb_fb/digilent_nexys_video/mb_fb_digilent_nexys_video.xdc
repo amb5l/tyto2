@@ -1,0 +1,1 @@
+set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets clki_100m_IBUF]
