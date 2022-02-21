@@ -16,19 +16,29 @@ A simpler directory structure is used:
 
 NOTE: Most designs have submodule dependencies. Please remember to initialise submodules when cloning this repo!
 
+'''
+
 == Designs
 
 === mb_fb
 
 A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on link:https://github.com/tuupola/hagl[Mike Tuupola's hagl graphics library]. <<./doc/designs/mb_fb/mb_fb.adoc#,More...>>
 
+=== np6532s_poc
+
+A proof-of-concept demonstration of the <<doc/common/retro/np65/np65.adoc#,np65>> 6502 compatible CPU core. Runs https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test] in a loop. <<doc/designs/np6532s_poc/np6532s_poc.adoc#,More...>>
+
+=== np6532s_functest
+
+Simulates an <<doc/common/retro/np65/np65.adoc#,np65>> CPU core unning https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test]. <<doc/designs/np6532s_functest/np6532s_functest.adoc#,More...>>
+
 === T65_functest
 
-Simulates a T65 CPU core running Klaus Dormann's 6502 functional test. <<doc/designs/T65_functest/T65_functest.adoc#,More...>>
+Simulates a T65 CPU core running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test]. <<doc/designs/T65_functest/T65_functest.adoc#,More...>>
 
 == Build and Simulation Tools
 
-https://www.gnu.org/software/make/[make] is required, and https://en.wikipedia.org/wiki/Git[git] is recommended. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get these tools (as well as GHDL) running on Windows.
+https://www.gnu.org/software/make/[make] is required, along with https://en.wikipedia.org/wiki/Git[git] and assorted utilities that are usually present on Linux systems. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get these tools (as well as http://ghdl.free.fr/[GHDL]) running on Windows.
 
 For Xilinx FPGAs, *Vivado 2021.2* is required. Designs including a https://en.wikipedia.org/wiki/MicroBlaze[Microblaze soft CPU] also require *Vitis 2021.2*. These tools may be obtained from https://www.xilinx.com/support/download.html[here].
 

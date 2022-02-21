@@ -1,0 +1,124 @@
+= np65
+
+A fast 6502 compatible CPU core with tightly coupled RAM. np65 designs have been implemented with CPU clock speeds of >48MHz on Xilinx 7 series devices and >32MHz on Intel Cyclone V devices.
+
+np65 variants are typically named for their RAM structure. For example, the np6532s has 32 bit CPU RAM ports and a 64 bit single data rate DMA RAM port.
+
+'''
+== Throughput
+
+The np65 achieves one instruction per cycle for almost all opcodes (138 out of 151). Exceptions are as follows; these execute in 2 cycles:
+
+- read-modify-writes accessing 16 bit addresses (INC, DEC, ASL, LSR, ROL, ROR - 12 opcodes in total);
+- JMP relative;
+- self modifying code where the modified instruction is fetched immediately after modification.
+
+This is much faster than the original NMOS 6502, which achieves an IPC of less than 1/3 for the classic NMOS 6502 (measured on https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test]).
+
+An np65 clocked at 32MHz should therefore deliver around ~100x the performance of a classic NMOS 6502 clocked at 1MHz. In some cases, the performance benefit can be much higher: for a read-modify-write using the zero page indexed addressing mode, the cycle count is down from 6 to 1; for conditional branches the cycle count is down from 5 to 1; for an interrupt, the total overhead is down from 11 cycles to 2.
+
+== Compatibility
+
+The np65 includes a decoder (microcode) ROM that is built from a data table contained in a CSV file. An XLS file is provided to facilitate the creation and editing of the CSV. A Python script is included to generate VHDL from the CSV file.
+
+The decoder currently supports all documented instructions of the NMOS 6502. Support for undocumented instructions, as well as other 6502 variants, is planned.
+
+Note that the data caches (described below) require software initialisation. The np65 must therefore executes a small amount of "pre-reset" code. This is typically located in the same part of the memory map as hardware registers to avoid consuming any more important platform memory (np65 instruction fetches are always directed to RAM).
+
+== Memory
+
+The np65 core includes RAM which is tightly coupled to the CPU to maximise performance. RAM sizes of 64kbytes, 128kbytes and 256kbytes are supported
+
+The mechanism for translating logical 16 bit CPU addresses into physical RAM addresses to access more than 64k is user defined. The <<../../../designs/np6532s_poc/np6532s_poc.adoc#,np6532s_poc>> design, for example, implements 16k bank switching similar to https://en.wikipedia.org/wiki/BBC_Micro[Acorn's BBC micro]. User logic may also implement write protected (ROM), external memory/registers and empty regions of the memory map as required.
+
+RAM is physically partitioned into 4 byte interleaved banks. The address for each bank is calculated separately so that up to 4 consecutive bytes may be read or written in a single cycle, regardless of alignment. This used to fetch the opcode and all operands of an instruction together. Data accesses of more than a single byte are much less common (e.g. RTI = read 3 bytes from stack) but the same flexibility is implemented. This may be useful if the instruction set is extended with 16- or 32-bit data operations.
+
+The CPU may be paused during slow external I/O and/or to allow DMA access to RAM.
+
+RAM is dual ported. During CPU accesses, the ports are used to implement concurrent instruction fetches and data loads/stores. During DMA accesses, the ports are bonded and are used to access 8 bytes per cycle.
+
+The RAM must be initialised with firmware/software e.g. ROM contents. A Python script is included to generate a VHDL package with initialisation constants from one or more binary files.
+
+== Data Caches
+
+Small (256 byte) data caches are provided for zero page and the stack. The zero page cache removes the overhead of data reads for read-modify-writes, and of pointer fetches for indexed indirect and indirect indexed address modes. The stack cache removes the overhead of stack pulls for RTS and RTI instructions.
+
+These caches are kept coherent with main RAM for both CPU and DMA writes.
+
+Simple registers are used to cache the contents of the IRQ and NMI vectors, removing the overhead of vector fetch to accelerate interrupt handling.
+
+== Pipeline
+
+The np65 pipelines its instruction execution, with 3 stages for most instructions. Note that the effective pipeline depth is 1 - there is no branch penalty.
+
+* Stage 0 : instruction fetch
+** instruction fetch address presented to RAM
+* Stage 1 : decode and execute
+** instruction fetch data (opcode and operands) returned from RAM
+** instruction (opcode) decode
+** data or pointer read from zero page cache
+** pull data read from stack cache (RTS and RTI)
+** load/store address presented to RAM
+** store data presented to RAM
+* Stage 2 : complete
+** registers, status flags and memory contents updated
+
+The pipeline stages for read-modify-write instructions accessing 16 bit addresses are as follows:
+
+* Stage 0 : instruction fetch
+** instruction fetch address presented to RAM
+* Stage 1 : decode and execute
+** instruction fetch data (opcode and operands) returned from RAM
+** instruction (opcode) decode
+** data address presented to RAM for read
+* Stage 1b: modify
+** read data returned from RAM
+** modified write data presented to RAM
+* Stage 2 : complete
+** status flags and memory contents updated
+
+The pipeline stages for JMP indirect are as follows:
+
+* Stage 0 : instruction fetch
+** instruction fetch address presented to RAM
+* Stage 1 : decode and execute
+** instruction fetch data (opcode and operands) returned from RAM
+** instruction (opcode) decode
+** address of jump vector presented to RAM for read
+* Stage 1b: jump
+** contents of jump vector value returned from RAM
+** new instruction fetch address presented to RAM
+* Stage 2 : complete
+** no operation
+
+== Reset, NMI and Interrupt Request
+
+To be continued...
+
+== Debug
+
+To be continued...
+
+== External I/O
+
+To be continued...
+
+== Edge Cases
+
+* self modifying code
+* hardware mapped to locations in zero page or the stack
+* DMA writes to zero page or the stack (timing)
+
+To be continued...
+
+== Initialisation
+
+To be continued...
+
+++++
+<style>
+  .imageblock > .title {
+    text-align: inherit;
+  }
+</style>
+++++

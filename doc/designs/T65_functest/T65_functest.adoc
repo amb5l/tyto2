@@ -2,7 +2,7 @@
 
 A simulation of a https://github.com/mist-devel/T65[T65 6502 compatible core] running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test]. The execution of the CPU is compared with an execution trace from the https://github.com/amb5l/mos6502-trace[mos6502-trace] utility which is based on https://github.com/gianlucag/mos6502[Gianluca Ghettini's mos6502 emulator].
 
-The CPU executes 30646177 instructions, taking 96241365 clocks cycles - giving an https://en.wikipedia.org/wiki/Instructions_per_cycle[IPC] of just under 0.32.
+The CPU executes 30648050 instructions, taking 96247426 clocks cycles - giving an https://en.wikipedia.org/wiki/Instructions_per_cycle[IPC] of just under 0.32.
 
 Simulation run times on a Windows 11 PC with a 3.5GHz AMD Ryzen 2950X CPU and 32GB RAM are as follows:
 
