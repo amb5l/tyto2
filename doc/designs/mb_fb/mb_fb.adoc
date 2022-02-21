@@ -10,6 +10,12 @@ The frame buffer is held in DDR3 SDRAM and the design uses a simple arbiter to s
 
 A simple MicroBlaze demo application is included, based on link:https://github.com/tuupola/hagl[Mike Tuupola's *hagl* graphics library].
 
+'''
+
+== Building and Programming
+
+Build the Vivado or Quartus project by running `make` in the relevant `build` directory, and program your board from the command line by running `make prog`. Once the project is built, you may use the IDE.
+
 == Design Description
 
 The diagram below shows the main design blocks:
