@@ -1,0 +1,264 @@
+--------------------------------------------------------------------------------
+-- tb_saa5050.vhd                                                             --
+-- Simulation testbench for saa5050.vhd.                                      --
+--------------------------------------------------------------------------------
+-- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
+-- This file is part of The Tyto Project. The Tyto Project is free software:  --
+-- you can redistribute it and/or modify it under the terms of the GNU Lesser --
+-- General Public License as published by the Free Software Foundation,       --
+-- either version 3 of the License, or (at your option) any later version.    --
+-- The Tyto Project is distributed in the hope that it will be useful, but    --
+-- WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY --
+-- or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public     --
+-- License for more details. You should have received a copy of the GNU       --
+-- Lesser General Public License along with The Tyto Project. If not, see     --
+-- https://www.gnu.org/licenses/.                                             --
+--------------------------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+library std;
+use std.env.finish;
+
+library work;
+use work.sim_video_out_pkg.all;
+use work.saa5050_pkg.all;
+use work.hd6845_pkg.all;
+
+entity tb_saa5050 is
+end entity tb_saa5050;
+
+architecture sim of tb_saa5050 is
+
+    signal clk        : std_logic;                     -- 12MHz
+    signal clk_count  : integer range 0 to 11 := 0;    -- clock divide counter    
+    signal clken_1m   : std_logic;                     -- 1MHz
+    signal hrst       : std_logic;                     -- hard reset
+    signal srst       : std_logic;                     -- soft reset
+
+    signal crtc_we    : std_logic;                     -- CRTC register write enable
+    signal crtc_rs    : std_logic;                     -- CRTC register select
+    signal crtc_wdata : std_logic_vector(7 downto 0);  -- CRTC register write data
+    signal crtc_ma    : std_logic_vector(13 downto 0); -- CRTC memory address
+    signal crtc_ra    : std_logic_vector(4 downto 0);  -- CRTC raster (scan line) address within character
+    signal crtc_vs    : std_logic;                     -- CRTC vertical sync
+    signal crtc_hs    : std_logic;                     -- CRTC horizontal sync
+    signal crtc_de    : std_logic;                     -- CRTC display enable
+
+    signal ttx_d      : std_logic_vector(6 downto 0);  -- character code (0..127)
+    signal ttx_p      : std_logic_vector(2 downto 0);  -- pixel (3 bit BGR) (12 pixels per character)
+    signal ttx_pe     : std_logic;                     -- pixel enable
+
+    signal crtc_hs_1  : std_logic;                     -- CRTC horizontal sync, delayed by 1 clock
+    signal bmp        : bmp_t(0 to 479,0 to 499);      -- bitmap data
+    signal x          : integer;                       -- bitmap X position
+    signal y          : integer;                       -- bitmap Y position
+    signal act        : boolean;                       -- video active region
+
+    -- teletext engineering page data (1000 bytes)
+    type ttx_data_t is array(0 to 999) of std_logic_vector(7 downto 0);
+    constant ttx_data : ttx_data_t := (
+        X"41", X"42", X"43", X"00", X"00", X"00", X"00", X"00", X"43", X"45", X"45", X"46", X"41", X"58", X"20", X"31", X"35", X"32", X"20", X"20", X"46", X"72", X"69", X"20", X"32", X"35", X"20", X"41", X"75", X"67", X"20", X"83", X"32", X"33", X"3A", X"32", X"32", X"2F", X"32", X"34",
+        X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"30", X"31",        
+        X"97", X"9E", X"0F", X"73", X"93", X"9A", X"96", X"1B", X"9F", X"10", X"84", X"8D", X"9D", X"83", X"45", X"4E", X"47", X"49", X"4E", X"45", X"45", X"52", X"49", X"4E", X"47", X"20", X"92", X"9C", X"8C", X"9E", X"73", X"95", X"1B", X"91", X"00", X"94", X"00", X"87", X"30", X"32",
+        X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"84", X"8D", X"9D", X"83", X"45", X"4E", X"47", X"49", X"4E", X"45", X"45", X"52", X"49", X"4E", X"47", X"20", X"92", X"9C", X"8C", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"30", X"33",        
+        X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"30", X"34",
+        X"94", X"9A", X"9E", X"73", X"91", X"99", X"95", X"00", X"81", X"00", X"81", X"95", X"8D", X"9D", X"82", X"54", X"65", X"73", X"74", X"20", X"50", X"61", X"67", X"65", X"20", X"20", X"9C", X"8C", X"9E", X"92", X"73", X"96", X"98", X"93", X"00", X"97", X"98", X"81", X"30", X"35",        
+        X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"95", X"8D", X"9D", X"82", X"54", X"65", X"73", X"74", X"20", X"50", X"61", X"67", X"65", X"20", X"20", X"9C", X"8C", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"30", X"36",
+        X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"9E", X"97", X"2C", X"93", X"2C", X"96", X"2C", X"92", X"2C", X"2C", X"95", X"2C", X"91", X"2C", X"94", X"2C", X"81", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"30", X"37",        
+        X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"30", X"38",
+        X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"30", X"39",        
+        X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"31", X"30",
+        X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"31", X"31",        
+        X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"31", X"32",
+        X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"31", X"33",        
+        X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"31", X"34",
+        X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"31", X"35",        
+        X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"7E", X"7F", X"31", X"36",
+        X"57", X"68", X"69", X"74", X"65", X"83", X"59", X"65", X"6C", X"6C", X"6F", X"77", X"86", X"43", X"79", X"61", X"6E", X"82", X"47", X"72", X"65", X"65", X"6E", X"85", X"4D", X"61", X"67", X"65", X"6E", X"74", X"61", X"81", X"52", X"65", X"64", X"84", X"42", X"6C", X"75", X"65",        
+        X"97", X"9A", X"21", X"22", X"23", X"93", X"24", X"25", X"26", X"27", X"96", X"28", X"29", X"2A", X"2B", X"92", X"2C", X"2D", X"2E", X"2F", X"99", X"30", X"31", X"32", X"33", X"95", X"34", X"35", X"36", X"37", X"91", X"38", X"39", X"3A", X"3B", X"94", X"3C", X"3D", X"3E", X"3F",
+        X"20", X"20", X"21", X"22", X"23", X"20", X"24", X"25", X"26", X"27", X"20", X"28", X"29", X"2A", X"2B", X"20", X"2C", X"2D", X"2E", X"2F", X"20", X"30", X"31", X"32", X"33", X"20", X"34", X"35", X"36", X"37", X"20", X"38", X"39", X"3A", X"3B", X"20", X"3C", X"3D", X"3E", X"3F",        
+        X"20", X"40", X"41", X"42", X"43", X"20", X"44", X"45", X"46", X"47", X"20", X"48", X"49", X"4A", X"4B", X"20", X"4C", X"4D", X"4E", X"4F", X"20", X"50", X"51", X"52", X"53", X"20", X"54", X"55", X"56", X"57", X"20", X"58", X"59", X"5A", X"5B", X"20", X"5C", X"5D", X"5E", X"5F",
+        X"20", X"60", X"61", X"62", X"63", X"20", X"64", X"65", X"66", X"67", X"20", X"68", X"69", X"6A", X"6B", X"20", X"6C", X"6D", X"6E", X"6F", X"20", X"70", X"71", X"72", X"73", X"20", X"74", X"75", X"76", X"77", X"20", X"78", X"79", X"7A", X"7B", X"20", X"7C", X"7D", X"7E", X"7F",        
+        X"94", X"60", X"61", X"62", X"63", X"91", X"64", X"65", X"66", X"67", X"95", X"68", X"69", X"6A", X"6B", X"92", X"6C", X"6D", X"6E", X"6F", X"9A", X"70", X"71", X"72", X"73", X"96", X"74", X"75", X"76", X"77", X"93", X"78", X"79", X"7A", X"7B", X"97", X"7C", X"7D", X"7E", X"7F",
+        X"83", X"98", X"43", X"6F", X"6E", X"63", X"65", X"61", X"6C", X"88", X"46", X"6C", X"61", X"73", X"68", X"83", X"2A", X"8B", X"8B", X"42", X"6F", X"78", X"89", X"53", X"74", X"65", X"61", X"64", X"79", X"98", X"47", X"6F", X"6E", X"65", X"8A", X"8A", X"3F", X"86", X"5E", X"7F",        
+        X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20", X"20"
+    );
+
+begin
+
+    -- pixel clock (~12MHz)
+    clk <=
+        '1' after 41666ps when clk = '0' else
+        '0' after 41666ps when clk = '1' else
+        '0';
+
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            clk_count <= (clk_count+1) mod 12;
+            clken_1m <= '0';
+            if clk_count = 11 then
+                clken_1m <= '1';
+            end if;
+        end if;
+    end process;
+    
+    -- main test process
+    process
+        procedure crtc_poke_reg(
+            constant    a       : in    std_logic_vector(7 downto 0);
+            constant    d       : in    std_logic_vector(7 downto 0);
+            signal      clk     : in    std_logic;
+            signal      we      : out   std_logic;
+            signal      rs      : out   std_logic;
+            signal      wdata   : out   std_logic_vector(7 downto 0)
+        ) is
+        begin
+            if clk = '1' then
+                wait until falling_edge(clk);
+            end if;
+            we <= '1';
+            rs <= '0';
+            wdata <= a;
+            wait until rising_edge(clk);
+            wait until falling_edge(clk);
+            rs <= '1';
+            wdata <= d;
+            wait until rising_edge(clk);
+            wait until falling_edge(clk);
+            we <= '0';
+            rs <= '0';
+            wdata <= x"00";
+        end procedure crtc_poke_reg;
+    begin
+        hrst <= '1';
+        srst <= '1';
+        crtc_we <= '0';
+        crtc_rs <= '0';
+        crtc_wdata <= (others => '0');
+        wait for 100ns;
+        loop
+            wait until rising_edge(clk);
+            if clken_1m = '1' then
+                exit;
+            end if;
+        end loop;
+        wait until rising_edge(clk);
+        hrst <= '0';
+        -- set up 6845 for teletext display timing
+        crtc_poke_reg( x"00", x"3F", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"01", x"28", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"02", x"33", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"03", x"24", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"04", x"1E", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"05", x"02", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"06", x"19", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"07", x"1B", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"08", x"93", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"09", x"12", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"0A", x"72", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"0B", x"13", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"0C", x"20", clk, crtc_we, crtc_rs, crtc_wdata);
+        crtc_poke_reg( x"0D", x"00", clk, crtc_we, crtc_rs, crtc_wdata);
+        srst <= '0';
+        wait;
+    end process;
+
+    -- teletext test data
+    process(crtc_de,crtc_ma)
+    begin
+        ttx_d <= (others => 'U');
+        if crtc_de = '1' and to_integer(unsigned(crtc_ma(9 downto 0))) < 1000 then
+            ttx_d <= ttx_data(to_integer(unsigned(crtc_ma(9 downto 0))))(6 downto 0);
+        end if;
+    end process;
+
+    -- bitmap capture
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if hrst = '1' then
+                crtc_hs_1 <= '0';
+                x <= 0;
+                y <= 0;
+            else
+                if clken_1m = '1' then
+                    if crtc_vs = '1' then
+                        if crtc_ra(0) = '0' then
+                            y <= 1;
+                        else
+                            y <= 0;
+                        end if;
+                    end if;
+                    if crtc_hs = '1' and crtc_hs_1 = '0' then -- leading edge of h sync
+                       x <= 0;
+                        if act then
+                            y <= y+2;
+                        end if;
+                        act <= false;
+                    end if;
+                    crtc_hs_1 <= crtc_hs;
+                    if crtc_de = '1' then
+                        act <= true;
+                    end if;
+                end if;
+                if ttx_pe = '1' then
+                    for j in 0 to 2 loop
+                        if ttx_p(j) = '1' then
+                            bmp(x,y)(j) <= 255;
+                        else
+                            bmp(x,y)(j) <= 0;
+                        end if;
+                    end loop;
+                    if x = 479 and y = 499 then
+                        write_bmp("tb_saa5050", bmp, 0, 480, 500, false);
+                        report "*** DONE ***";
+                        finish;
+                    end if;
+                    x <= x+1;
+                end if;
+            end if;
+        end if;
+    end process;
+
+    UUT: component saa5050
+        port map (
+            rst_c   => hrst,
+            clk_c   => clk,
+            clken_c => clken_1m,
+            f       => crtc_ra(0),
+            vs      => crtc_vs,
+            hs      => crtc_hs,
+            de      => crtc_de,
+            d       => ttx_d,
+            rst_p   => hrst,
+            clk_p   => clk,
+            clken_p => '1',
+            p       => ttx_p,
+            pe      => ttx_pe
+        );
+
+    CRTC: component hd6845
+        port map (
+            clk     => clk,
+            clken   => clken_1m,
+            hrst    => hrst,
+            srst    => srst,
+            cs      => '1',
+            we      => crtc_we,
+            rs      => crtc_rs,
+            wdata   => crtc_wdata,
+            rdata   => open,
+            ma      => crtc_ma,
+            ra      => crtc_ra,
+            vs      => crtc_vs,
+            hs      => crtc_hs,
+            de      => crtc_de,
+            cursor  => open,
+            lpstb   => '0'
+        );
+
+end architecture sim;

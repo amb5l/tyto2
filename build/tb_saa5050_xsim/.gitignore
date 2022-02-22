@@ -1,0 +1,4 @@
+*
+!.gitignore
+!makefile
+!*.sha1
