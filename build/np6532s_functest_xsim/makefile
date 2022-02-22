@@ -39,7 +39,7 @@ VIVADO_PROJ=fpga
 VIVADO_LANG=VHDL
 
 VIVADO_SIM_TOP=$(DESIGN)
-VIVADO_SIM_FILE=simulate.log
+VIVADO_SIM_OUT=simulate.log
 VIVADO_SIM_VHDL=\
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
 	$(SRC)/common/basic/tyto_types_pkg.vhd \

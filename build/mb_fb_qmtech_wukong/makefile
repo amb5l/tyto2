@@ -74,7 +74,7 @@ VIVADO_DSN_PROC_REF=microblaze
 VIVADO_DSN_ELF_CFG=Release
 
 # simulation output file
-VIVADO_SIM_FILE=simulate.log
+VIVADO_SIM_OUT=simulate.log
 
 # simulation sources: VHDL testbenches, models etc
 VIVADO_SIM_VHDL=

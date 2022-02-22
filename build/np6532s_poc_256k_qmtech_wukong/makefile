@@ -62,7 +62,7 @@ VIVADO_DSN_XDC_IMPL=\
 VIVADO_DSN_GENERICS=\
 	success_addr=$(SUCCESS_ADDR)
 
-VIVADO_SIM_FILE=simulate.log
+VIVADO_SIM_OUT=simulate.log
 
 VIVADO_SIM_VHDL_2008=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/tb_$(VIVADO_DSN_TOP).vhd \
