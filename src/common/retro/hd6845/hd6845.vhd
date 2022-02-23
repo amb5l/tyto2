@@ -132,6 +132,15 @@ architecture synth of hd6845 is
         );
     signal crt_vphase : crt_vphase_t;                               -- vertical phase
 
+    function regpad(n : integer; u : unsigned)
+    return std_logic_vector is
+        variable r: std_logic_vector(n-1 downto 0);
+    begin
+        r := (others => '0');
+        r(u'length-1 downto 0) := std_logic_vector(u);
+        return r;        
+    end function regpad;
+
 begin
 
     crt_vs <= crt_vs_i;
@@ -351,16 +360,11 @@ begin
     end process;
 
     -- register reads
-    process(reg_cs,a)
-    begin
-        reg_dr <= (others => '0');
-        case to_integer(a) is
-            when 14 => reg_dr(r14'range) <= std_logic_vector(r14);
-            when 15 => reg_dr(r15'range) <= std_logic_vector(r15);
-            when 16 => reg_dr(r16'range) <= std_logic_vector(r16);
-            when 17 => reg_dr(r17'range) <= std_logic_vector(r17);
-            when others => null;
-        end case;
-    end process;
+    with to_integer(a) select reg_dr <=
+        regpad(reg_dr'length,r14) when 14,
+        regpad(reg_dr'length,r15) when 15,
+        regpad(reg_dr'length,r16) when 16,
+        regpad(reg_dr'length,r17) when 17,
+        (others => '0') when others;
 
 end architecture synth;
