@@ -72,7 +72,7 @@ architecture synth of saa5050 is
     signal chr_di       : integer range 0 to 127;       -- integer version of input data
     signal chr_d1       : std_logic_vector(6 downto 0); -- character code, registered
     signal chr_di1      : integer range 0 to 127;       -- integer version of above
-    signal chr_de1      : std_logic;                    -- chr_display enable, registered
+    signal chr_de1      : std_logic;                    -- chr_de, registered
 
     signal attr_fgcol   : std_logic_vector(2 downto 0); -- current foreground colour, BGR
     signal attr_bgcol   : std_logic_vector(2 downto 0); -- current background colour, BGR
@@ -107,12 +107,12 @@ begin
     chr_di1 <= to_integer(unsigned(chr_d1));
 
     -- character clock domain
-    CHAR: process(chr_clk)
+    process(chr_clk)
     begin
         if rising_edge(chr_clk) and chr_clken = '1' then
             if chr_rst = '1' then
-                chr_d1          <= (others => '0');
-                chr_de1         <= '0';
+                chr_d1      <= (others => '0');
+                chr_de1     <= '0';
                 row_sd      <= (others => '0');
                 attr_fgcol  <= (others => '1');
                 attr_bgcol  <= (others => '0');
