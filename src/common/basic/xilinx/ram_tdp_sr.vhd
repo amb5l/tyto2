@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- ram_tdp_sr_sr.vhd                                                          --
+-- ram_tdp_sr.vhd                                                             --
 -- True dual port RAM, single clock, synchronous reset.                       --
 -- Infers block RAM correctly in Vivado.                                      --
 --------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ package ram_tdp_sr_pkg is
 end package ram_tdp_sr_pkg;
 
 --------------------------------------------------------------------------------
-  
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -83,11 +83,11 @@ end entity ram_tdp_sr;
 
 architecture inferred of ram_tdp_sr is
 
-	shared variable ram : slv_7_0(0 to (2**depth_log2)-1) := init;
+    shared variable ram : slv_7_0(0 to (2**depth_log2)-1) := init;
 
 begin
 
-	process(rst_a,clk)
+    process(clk)
     begin
         if rising_edge(clk) and ce_a = '1' then
             if(we_a = '1') then
@@ -99,9 +99,9 @@ begin
                 dout_a <= ram(to_integer(unsigned(addr_a)));
             end if;
         end if;
-	end process;
+    end process;
 
-	process(rst_b,clk)
+    process(clk)
     begin
         if rising_edge(clk) and ce_b = '1' then
             if(we_b = '1') then
@@ -113,6 +113,6 @@ begin
                 dout_b <= ram(to_integer(unsigned(addr_b)));
             end if;
         end if;
-	end process;
+    end process;
 
 end architecture inferred;

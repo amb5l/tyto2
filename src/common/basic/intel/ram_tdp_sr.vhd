@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- ram_tdp_sr_sr.vhd                                                          --
+-- ram_tdp_sr.vhd                                                             --
 -- True dual port RAM, single clock, synchronous reset.                       --
 -- Infers block RAM correctly in Quartus.                                     --
 --------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ package ram_tdp_sr_pkg is
 end package ram_tdp_sr_pkg;
 
 --------------------------------------------------------------------------------
-  
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -60,9 +60,9 @@ use work.tyto_types_pkg.all;
 
 entity ram_tdp_sr is
     generic (
-        width : integer;
+        width      : integer;
         depth_log2 : integer;
-        init      : slv_7_0
+        init       : slv_7_0
     );
     port (
         clk     : in    std_logic;
@@ -88,30 +88,30 @@ architecture inferred of ram_tdp_sr is
     signal clr_b    : std_logic;
     signal dout_a_i : std_logic_vector(7 downto 0);
     signal dout_b_i : std_logic_vector(7 downto 0);
-	
+
 begin
 
-	process(clk)
-        begin
+    process(clk)
+    begin
         if rising_edge(clk) and ce_a = '1' then
             if(we_a = '1') then
                 ram(to_integer(unsigned(addr_a))) := din_a;
             end if;
             dout_a_i <= ram(to_integer(unsigned(addr_a)));
         end if;
-	end process;
+    end process;
 
-	process(clk)
-        begin
+    process(clk)
+    begin
         if rising_edge(clk) and ce_b = '1' then
             if(we_b = '1') then
                 ram(to_integer(unsigned(addr_b))) := din_b;
             end if;
             dout_b_i <= ram(to_integer(unsigned(addr_b)));
         end if;
-	end process;
+    end process;
 
-	process(clk)
+    process(clk)
     begin
         if rising_edge(clk) then
             clr_a <= rst_a;
@@ -119,7 +119,7 @@ begin
         end if;
     end process;
 
-	dout_a <= dout_a_i when clr_a = '0' else (others => '0');
-	dout_b <= dout_b_i when clr_b = '0' else (others => '0');
-	
+    dout_a <= dout_a_i when clr_a = '0' else (others => '0');
+    dout_b <= dout_b_i when clr_b = '0' else (others => '0');
+
 end architecture inferred;
