@@ -76,9 +76,9 @@ end entity np6532s_cache;
 architecture synth of np6532s_cache is
 
     signal dma_dw_v   : slv_7_0(7 downto 0);          -- DMA write data as array of bytes
-    signal ls_dw_v   : slv_7_0(3 downto 0);           -- CPU write data as array of bytes
+    signal ls_dw_v    : slv_7_0(3 downto 0);          -- CPU write data as array of bytes
     signal cache_dr_v : slv_7_0(3 downto 0);          -- cache read data as array of bytes
-    signal ls_bwe    : std_logic_vector(7 downto 0);  -- CPU byte write enables (across 8 byte banks here)
+    signal ls_bwe     : std_logic_vector(7 downto 0); -- CPU byte write enables (across 8 byte banks here)
     signal ce         : std_logic;                    -- chip select
     signal we         : std_logic_vector(7 downto 0); -- RAM byte bank write enable
     signal wa         : slv_7_3(7 downto 0);          -- RAM byte bank write address

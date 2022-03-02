@@ -40,7 +40,7 @@ package np6532s_ram_pkg is
             ls_dw       : in  std_logic_vector(31 downto 0);                -- store data (writes)
             ls_dr       : out std_logic_vector(31 downto 0);                -- load data (reads)
 
-            dma_en      : in  std_logic;                                    -- enable DMA access on this clk_x2 edge
+            dma_en      : in  std_logic;                                    -- DMA enable
             dma_a       : in  std_logic_vector(size_log2-1 downto 3);       -- DMA address (Qword aligned)
             dma_bwe     : in  std_logic_vector(7 downto 0);                 -- DMA byte write enables
             dma_dw      : in  std_logic_vector(63 downto 0);                -- DMA write data
@@ -81,7 +81,7 @@ entity np6532s_ram is
         ls_dw       : in  std_logic_vector(31 downto 0);                -- store data (writes)
         ls_dr       : out std_logic_vector(31 downto 0);                -- load data (reads)
 
-        dma_en      : in  std_logic;                                    -- enable DMA access on this clk_x2 edge
+        dma_en      : in  std_logic;                                    -- DMA enable
         dma_a       : in  std_logic_vector(size_log2-1 downto 3);       -- DMA address (Qword aligned)
         dma_bwe     : in  std_logic_vector(7 downto 0);                 -- DMA byte write enables
         dma_dw      : in  std_logic_vector(63 downto 0);                -- DMA write data

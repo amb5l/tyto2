@@ -37,34 +37,34 @@ end entity np6532s_functest;
 
 architecture sim of np6532s_functest is
 
-    signal clk      : std_logic;
-    signal hold     : std_logic;
-    signal rst      : std_logic;
-    signal nmi      : std_logic;
-    signal irq      : std_logic;
-    signal if_al    : std_logic_vector(15 downto 0);
-    signal if_ap    : std_logic_vector(15 downto 0);
-    signal if_z     : std_logic;
-    signal ls_al    : std_logic_vector(15 downto 0);
-    signal ls_ap    : std_logic_vector(15 downto 0);
-    signal ls_en    : std_logic;
-    signal ls_re    : std_logic;
-    signal ls_we    : std_logic;
-    signal ls_wp    : std_logic;
-    signal ls_ext   : std_logic;
-    signal ls_drx   : std_logic_vector(7 downto 0);
-    signal ls_dwx   : std_logic_vector(7 downto 0);
-    signal trace_en : std_logic;
-    signal trace_pc : std_logic_vector(15 downto 0);
-    signal trace_s  : std_logic_vector(7 downto 0);
-    signal trace_p  : std_logic_vector(7 downto 0);
-    signal trace_a  : std_logic_vector(7 downto 0);
-    signal trace_x  : std_logic_vector(7 downto 0);
-    signal trace_y  : std_logic_vector(7 downto 0);
-    signal dma_a    : std_logic_vector(15 downto 3);
-    signal dma_bwe  : std_logic_vector(7 downto 0);
-    signal dma_dw   : std_logic_vector(63 downto 0);
-    signal dma_dr   : std_logic_vector(63 downto 0);
+    signal clk       : std_logic;
+    signal hold      : std_logic;
+    signal rst       : std_logic;
+    signal nmi       : std_logic;
+    signal irq       : std_logic;
+    signal if_al     : std_logic_vector(15 downto 0);
+    signal if_ap     : std_logic_vector(15 downto 0);
+    signal if_z      : std_logic;
+    signal ls_al     : std_logic_vector(15 downto 0);
+    signal ls_ap     : std_logic_vector(15 downto 0);
+    signal ls_en     : std_logic;
+    signal ls_re     : std_logic;
+    signal ls_we     : std_logic;
+    signal ls_wp     : std_logic;
+    signal ls_ext    : std_logic;
+    signal ls_drx    : std_logic_vector(7 downto 0);
+    signal ls_dwx    : std_logic_vector(7 downto 0);
+    signal trace_stb : std_logic;
+    signal trace_pc  : std_logic_vector(15 downto 0);
+    signal trace_s   : std_logic_vector(7 downto 0);
+    signal trace_p   : std_logic_vector(7 downto 0);
+    signal trace_a   : std_logic_vector(7 downto 0);
+    signal trace_x   : std_logic_vector(7 downto 0);
+    signal trace_y   : std_logic_vector(7 downto 0);
+    signal dma_a     : std_logic_vector(15 downto 3);
+    signal dma_bwe   : std_logic_vector(7 downto 0);
+    signal dma_dw    : std_logic_vector(63 downto 0);
+    signal dma_dr    : std_logic_vector(63 downto 0);
 
     signal trace_pc_prev : std_logic_vector(15 downto 0);
     signal started       : boolean;
@@ -102,7 +102,7 @@ begin
             if started then
                 count_c <= count_c + 1;
             end if;
-            if trace_en = '1' then
+            if trace_stb = '1' then
                 if count_i > 0 and count_i mod 100000 = 0 then
                     report "instruction count: " & integer'image(count_i) & "  cycle count: " & integer'image(count_c);
                 end if;
@@ -152,7 +152,7 @@ begin
             count_i <= 0;
             trace_pc_prev <= (others => 'U');
         elsif falling_edge(clk) then
-            if trace_en = '1' then
+            if trace_stb = '1' then
                 if to_integer(unsigned(trace_pc)) = start_address then
                     count_i <= 1;
                     started <= true;
@@ -161,7 +161,7 @@ begin
                 end if;
             end if;
         elsif rising_edge(clk) then
-            if trace_en = '1' then
+            if trace_stb = '1' then
                 trace_pc_prev <= trace_pc;
             end if;
         end if;
@@ -173,34 +173,36 @@ begin
             vector_init => std_logic_vector(to_unsigned(vector_init,16))
         )
         port map (
-            clk      => clk,
-            hold     => hold,
-            rst      => rst,
-            nmi      => nmi,
-            irq      => irq,
-            if_al    => if_al,
-            if_ap    => if_ap,
-            if_z     => if_z,
-            ls_al    => ls_al,
-            ls_ap    => ls_ap,
-            ls_en    => ls_en,
-            ls_re    => ls_re,
-            ls_we    => ls_we,
-            ls_wp    => ls_wp,
-            ls_ext   => ls_ext,
-            ls_drx   => ls_drx,
-            ls_dwx   => ls_dwx,
-            trace_en => trace_en,
-            trace_pc => trace_pc,
-            trace_s  => trace_s,
-            trace_p  => trace_p,
-            trace_a  => trace_a,
-            trace_x  => trace_x,
-            trace_y  => trace_y,
-            dma_a    => dma_a,
-            dma_bwe  => dma_bwe,
-            dma_dw   => dma_dw,
-            dma_dr   => dma_dr
+            clk       => clk,
+            hold      => hold,
+            rst       => rst,
+            nmi       => nmi,
+            irq       => irq,
+            if_al     => if_al,
+            if_ap     => if_ap,
+            if_z      => if_z,
+            ls_al     => ls_al,
+            ls_ap     => ls_ap,
+            ls_en     => ls_en,
+            ls_re     => ls_re,
+            ls_we     => ls_we,
+            ls_wp     => ls_wp,
+            ls_ext    => ls_ext,
+            ls_drx    => ls_drx,
+            ls_dwx    => ls_dwx,
+            trace_run => open,
+            trace_stb => trace_stb,
+            trace_op  => open,
+            trace_pc  => trace_pc,
+            trace_s   => trace_s,
+            trace_p   => trace_p,
+            trace_a   => trace_a,
+            trace_x   => trace_x,
+            trace_y   => trace_y,
+            dma_a     => dma_a,
+            dma_bwe   => dma_bwe,
+            dma_dw    => dma_dw,
+            dma_dr    => dma_dr
         );
 
 end architecture sim;
