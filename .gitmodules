@@ -16,3 +16,6 @@
 [submodule "submodules/quartus-mk"]
 	path = submodules/quartus-mk
 	url = https://github.com/amb5l/quartus-mk.git
+[submodule "submodules/vhdl_prng"]
+	path = submodules/vhdl_prng
+	url = https://github.com/amb5l/vhdl_prng.git
