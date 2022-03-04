@@ -447,7 +447,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>A fast 6502 compatible CPU core with tightly coupled RAM. np65 designs have been implemented with CPU clock speeds of &gt;48MHz on Xilinx 7 series devices and &gt;32MHz on Intel Cyclone V devices.</p>
 </div>
 <div class="paragraph">
-<p>np65 variants are typically named for their RAM structure. For example, the np6532s has 32 bit CPU RAM ports and a 64 bit single data rate DMA RAM port.</p>
+<p>np65 variants are typically named for their RAM structure. For example, the np6532 has 32 bit CPU RAM ports and a 64 bit DMA RAM port which can be clocked at integer multiples of the CPU clock rate.</p>
 </div>
 <hr>
 </div>
@@ -500,7 +500,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>The np65 core includes RAM which is tightly coupled to the CPU to maximise performance. RAM sizes of 64kbytes, 128kbytes and 256kbytes are supported</p>
 </div>
 <div class="paragraph">
-<p>The mechanism for translating logical 16 bit CPU addresses into physical RAM addresses to access more than 64k is user defined. The <a href="../../../designs/np6532s_poc/np6532s_poc.html">np6532s_poc</a> design, for example, implements 16k bank switching similar to <a href="https://en.wikipedia.org/wiki/BBC_Micro">Acorn&#8217;s BBC micro</a>. User logic may also implement write protected (ROM), external memory/registers and empty regions of the memory map as required.</p>
+<p>The mechanism for translating logical 16 bit CPU addresses into physical RAM addresses to access more than 64k is user defined. The <a href="../../../designs/np6532_poc/np6532_poc.html">np6532_poc</a> design, for example, implements 16k bank switching similar to <a href="https://en.wikipedia.org/wiki/BBC_Micro">Acorn&#8217;s BBC micro</a>. User logic may also implement write protected (ROM), external memory/registers and empty regions of the memory map as required.</p>
 </div>
 <div class="paragraph">
 <p>RAM is physically partitioned into 4 byte interleaved banks. The address for each bank is calculated separately so that up to 4 consecutive bytes may be read or written in a single cycle, regardless of alignment. This used to fetch the opcode and all operands of an instruction together. Data accesses of more than a single byte are much less common (e.g. RTI = read 3 bytes from stack) but the same flexibility is implemented. This may be useful if the instruction set is extended with 16- or 32-bit data operations.</p>
@@ -760,7 +760,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-02-21 15:05:26 UTC
+Last updated 2022-03-04 16:31:26 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

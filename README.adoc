@@ -24,13 +24,13 @@ NOTE: Most designs have submodule dependencies. Please remember to initialise su
 
 A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on link:https://github.com/tuupola/hagl[Mike Tuupola's hagl graphics library]. <<./doc/designs/mb_fb/mb_fb.adoc#,More...>>
 
-=== np6532s_poc
+=== np6532_poc
 
-A proof-of-concept demonstration of the <<doc/common/retro/np65/np65.adoc#,np65>> 6502 compatible CPU core. Runs https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test] in a loop. <<doc/designs/np6532s_poc/np6532s_poc.adoc#,More...>>
+A proof-of-concept demonstration of the <<doc/common/retro/np65/np65.adoc#,np65>> 6502 compatible CPU core. Runs https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test] in a loop. <<doc/designs/np6532_poc/np6532_poc.adoc#,More...>>
 
-=== np6532s_functest
+=== np6532_functest
 
-Simulates an <<doc/common/retro/np65/np65.adoc#,np65>> CPU core unning https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test]. <<doc/designs/np6532s_functest/np6532s_functest.adoc#,More...>>
+Simulates an <<doc/common/retro/np65/np65.adoc#,np65>> CPU core unning https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test]. <<doc/designs/np6532_functest/np6532_functest.adoc#,More...>>
 
 === T65_functest
 
