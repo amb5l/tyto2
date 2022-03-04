@@ -69,6 +69,7 @@ end entity saa5050;
 
 architecture synth of saa5050 is
 
+    signal chr_vs1      : std_logic;                    -- chr_vs, registered
     signal chr_di       : integer range 0 to 127;       -- integer version of input data
     signal chr_d1       : std_logic_vector(6 downto 0); -- character code, registered
     signal chr_di1      : integer range 0 to 127;       -- integer version of above
@@ -83,7 +84,10 @@ architecture synth of saa5050 is
     signal attr_gfx     : std_logic;                    -- graphics (not text)
     signal attr_sep     : std_logic;                    -- separate (not contiguous) graphics
     signal attr_hold    : std_logic;                    -- graphics hold
-    signal attr_hide    : std_logic;                    -- conceal chr_display
+    signal attr_hide    : std_logic;                    -- conceal characters
+
+    signal count_flash  : unsigned(5 downto 0);         -- counter for flashing characters
+    signal flash_state  : std_logic;                    -- current flash state
 
     signal row_sd       : unsigned(3 downto 0);         -- row within std def character (0..9)
     signal row_hd       : unsigned(4 downto 0);         -- row within high def (smoothed) character (0..19)
@@ -111,6 +115,7 @@ begin
     begin
         if rising_edge(chr_clk) and chr_clken = '1' then
             if chr_rst = '1' then
+                chr_vs1     <= '0';
                 chr_d1      <= (others => '0');
                 chr_de1     <= '0';
                 row_sd      <= (others => '0');
@@ -126,13 +131,21 @@ begin
                 attr_hide   <= '0';
                 held_c      <= (others => '0');
                 held_s      <= '0';
+                count_flash <= (others => '0');
+                flash_state <= '1';
             else
+                chr_vs1 <= chr_vs;
                 chr_d1 <= chr_d;
+                chr_hb1 <= chr_hb;
                 chr_de1 <= chr_de;
                 if chr_vs = '1' then
                     row_sd      <= (others => '0');
                     attr_dbltop <= '0';
                     attr_dblbot <= '0';
+                    if chr_vs1 = '0' then
+                        count_flash <= count_flash+1;
+                        flash_state <= count_flash(5) or count_flash(4);
+                    end if;
                 end if;
                 if chr_hs = '1' then
                     attr_fgcol <= (others => '1');
@@ -154,7 +167,7 @@ begin
                             attr_hold <= '0';
                             held_c <= (others => '0');
                             held_s <= '0';
-                        when 24 => -- attr_hide
+                        when 24 => -- conceal
                             attr_hide <= '1';
                         when 25 => -- contiguous graphics
                             attr_sep <= '0';
@@ -264,7 +277,10 @@ begin
                     if col_hd = 0 then -- first pixel of 12
                         pix_sr_cur <= (others => '0');
                         pix_sr_adj <= (others => '0');
-                        if attr_dblbot = '1' and attr_dbl = '0' then -- bottom double height row
+                        if (attr_hide = '1')                        -- conceal
+                        or (attr_flash = '1' and flash_state = '0') -- flashing (off state)
+                        or (attr_dblbot = '1' and attr_dbl = '0')   -- bottom of double height row, without double height attribute
+                        then
                             null;
                         elsif (attr_gfx = '1' and ((chr_di1 >= 32 and chr_di1 <= 63) or (chr_di1 >= 96 and chr_di1 <= 127)))
                             or (attr_hold = '1' and (chr_di1 >= 0 and chr_di1 <= 31))

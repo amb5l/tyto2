@@ -32,6 +32,10 @@ A proof-of-concept demonstration of the <<doc/common/retro/np65/np65.adoc#,np65>
 
 Simulates an <<doc/common/retro/np65/np65.adoc#,np65>> CPU core unning https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test]. <<doc/designs/np6532_functest/np6532_functest.adoc#,More...>>
 
+=== tb_saa5050
+
+Simulates an https://en.wikipedia.org/wiki/Mullard_SAA5050[SAA5050] teletext character generator. <<doc/designs/tb_saa5050/tb_saa5050.adoc#,More...>>
+
 === T65_functest
 
 Simulates a T65 CPU core running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test]. <<doc/designs/T65_functest/T65_functest.adoc#,More...>>
