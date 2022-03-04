@@ -494,7 +494,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Open the <strong>Settings</strong> dialog by choosing <strong>Settings</strong> from the <strong>Assigments</strong> menu.</p>
 </li>
 <li>
-<p>Select the <strong>Simulation</strong> category.</p>
+<p>Select the <strong>Simulation</strong> category under <strong>EDA Tool Settings</strong>.</p>
 </li>
 <li>
 <p>Set the <strong>Tool name</strong> to <strong>Questa Intel FPGA</strong>.</p>
@@ -506,7 +506,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Set <strong>Maintain hierarchy</strong> to <strong>On</strong> and click <strong>OK</strong>.</p>
 </li>
 <li>
-<p>Open the <strong>Test Benches</strong> dialog by clicking the <strong>Test Benches&#8230;&#8203;</strong> button under <strong>NativeLink settings</strong>.</p>
+<p>Click the <strong>Compile test bench:</strong> radio button under <strong>NativeLink settings</strong>.</p>
+</li>
+<li>
+<p>Open the <strong>Test Benches</strong> dialog by clicking the <strong>Test Benches&#8230;&#8203;</strong> button.</p>
 </li>
 <li>
 <p>Open the <strong>New Test Bench Settings</strong> dialog by clicking <strong>New&#8230;&#8203;</strong>.</p>
@@ -515,16 +518,16 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Open the <strong>Select File</strong> dialog clicking the <strong>&#8230;&#8203;</strong> under <strong>Test bench and simulation files</strong>.</p>
 </li>
 <li>
-<p>Navigate to the <code>src/designs/np6532_poc/altera_c5e_devkit</code> directory of this repo, then select the file <code>tb_np6532_poc_256k_altera_c5e_dev.vhd</code></p>
+<p>Navigate to the <code>src/designs/np6532_poc/altera_c5e_devkit</code> directory of this repo, then select the file <code>tb_np6532_poc_Xk_altera_c5e_dev.vhd</code> (<strong>X</strong> is the RAM size: 64, 128 or 256).</p>
 </li>
 <li>
 <p>Close the <strong>Select File</strong> dialog by clicking <strong>Open</strong>.</p>
 </li>
 <li>
-<p>Click Add to add the selected file to the list.</p>
+<p>Click <strong>Add</strong> to add the selected file to the list.</p>
 </li>
 <li>
-<p>Type <code>tb_np6532_poc_256k_altera_c5e_dev</code> In the <strong>Test bench name:</strong> box. The <strong>Top level module in test bench</strong> box will automatically populate with the same name.</p>
+<p>Type <code>tb_np6532_poc_Xk_altera_c5e_dev</code> in the <strong>Test bench name:</strong> box (<strong>X</strong> is the RAM size: 64, 128 or 256). The <strong>Top level module in test bench</strong> box will automatically populate with the same name.</p>
 </li>
 <li>
 <p>Click <strong>OK</strong> to close the <strong>New Test Bench Settings</strong> dialog.</p>
@@ -538,7 +541,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ol>
 </div>
 <div class="paragraph">
-<p>You may now run Questa by choosing Run <strong>Simulation Tool &gt; RTL Simulation</strong> from the <strong>Tools</strong> menu.</p>
+<p>You may now run Questa by choosing <strong>Run Simulation Tool &gt; RTL Simulation</strong> from the <strong>Tools</strong> menu.</p>
 </div>
 <div class="paragraph">
 <p><strong>Note:</strong> Questa will initially fail because the <code>success_addr</code> generic has not been set:</p>
@@ -603,7 +606,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-04 16:29:34 UTC
+Last updated 2022-03-04 17:05:28 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">
