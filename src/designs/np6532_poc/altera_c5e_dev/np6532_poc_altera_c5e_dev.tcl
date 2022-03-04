@@ -1,0 +1,6 @@
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[1]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[2]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[3]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[4]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[5]

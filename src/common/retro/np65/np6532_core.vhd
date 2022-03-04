@@ -26,39 +26,41 @@ package np6532_core_pkg is
         );
         port (
 
-            clk      : in  std_logic;                     -- clock
+            clk       : in  std_logic;                     -- clock
 
-            rst      : in  std_logic;                     -- reset
-            hold     : in  std_logic;                     -- pause execution on this cycle
-            nmi      : in  std_logic;                     -- NMI
-            irq      : in  std_logic;                     -- IRQ
+            rst       : in  std_logic;                     -- reset
+            hold      : in  std_logic;                     -- pause execution on this cycle (and enable DMA)
+            nmi       : in  std_logic;                     -- NMI
+            irq       : in  std_logic;                     -- IRQ
 
-            if_a     : out std_logic_vector(15 downto 0); -- instruction fetch address (byte aligned!)
-            if_en    : out std_logic;                     -- instruction fetch enable
-            if_brk   : out std_logic;                     -- instruction fetch force BRK
-            if_d     : in  std_logic_vector(31 downto 0); -- instruction fetch data
+            if_a      : out std_logic_vector(15 downto 0); -- instruction fetch address (byte aligned!)
+            if_en     : out std_logic;                     -- instruction fetch enable
+            if_brk    : out std_logic;                     -- instruction fetch force BRK
+            if_d      : in  std_logic_vector(31 downto 0); -- instruction fetch data
 
-            ls_a     : out std_logic_vector(15 downto 0); -- load/store address (byte aligned!)
-            ls_en    : out std_logic;                     -- load/store enable
-            ls_re    : out std_logic;                     -- load/store read enable
-            ls_we    : out std_logic;                     -- load/store write enable
-            ls_sz    : out std_logic_vector(1 downto 0);  -- load/store transfer size (bytes) = 1+ls_sz
-            ls_dw    : out std_logic_vector(31 downto 0); -- load/store write data
-            ls_dr    : in  std_logic_vector(31 downto 0); -- load/store read data
+            ls_a      : out std_logic_vector(15 downto 0); -- load/store address (byte aligned!)
+            ls_en     : out std_logic;                     -- load/store enable
+            ls_re     : out std_logic;                     -- load/store read enable
+            ls_we     : out std_logic;                     -- load/store write enable
+            ls_sz     : out std_logic_vector(1 downto 0);  -- load/store transfer size (bytes) = 1+ls_sz
+            ls_dw     : out std_logic_vector(31 downto 0); -- load/store write data
+            ls_dr     : in  std_logic_vector(31 downto 0); -- load/store read data
 
-            cz_a     : out std_logic_vector(7 downto 0);  -- zero page cache read address
-            cz_d     : in  std_logic_vector(31 downto 0); -- zero page cache read data
+            cz_a      : out std_logic_vector(7 downto 0);  -- zero page cache read address
+            cz_d      : in  std_logic_vector(31 downto 0); -- zero page cache read data
 
-            cs_a     : out std_logic_vector(7 downto 0);  -- stack cache read address
-            cs_d     : in  std_logic_vector(31 downto 0); -- stack cache read data
+            cs_a      : out std_logic_vector(7 downto 0);  -- stack cache read address
+            cs_d      : in  std_logic_vector(31 downto 0); -- stack cache read data
 
-            trace_en : out std_logic;                     -- trace enable
-            trace_pc : out std_logic_vector(15 downto 0); -- trace register PC
-            trace_s  : out std_logic_vector(7 downto 0);  -- trace register S
-            trace_p  : out std_logic_vector(7 downto 0);  -- trace register P
-            trace_a  : out std_logic_vector(7 downto 0);  -- trace register A
-            trace_x  : out std_logic_vector(7 downto 0);  -- trace register X
-            trace_y  : out std_logic_vector(7 downto 0)   -- trace register Y
+            trace_run : out std_logic;                     -- trace: CPU running
+            trace_stb : out std_logic;                     -- trace: instruction strobe (complete)
+            trace_op  : out std_logic_vector(23 downto 0); -- trace opcode and operand
+            trace_pc  : out std_logic_vector(15 downto 0); -- trace register PC
+            trace_s   : out std_logic_vector(7 downto 0);  -- trace register S
+            trace_p   : out std_logic_vector(7 downto 0);  -- trace register P
+            trace_a   : out std_logic_vector(7 downto 0);  -- trace register A
+            trace_x   : out std_logic_vector(7 downto 0);  -- trace register X
+            trace_y   : out std_logic_vector(7 downto 0)   -- trace register Y
 
         );
     end component np6532_core;
@@ -80,39 +82,41 @@ entity np6532_core is
     );
     port (
 
-        clk      : in  std_logic;                     -- clock
+        clk       : in  std_logic;                     -- clock
 
-        rst      : in  std_logic;                     -- reset
-        hold     : in  std_logic;                     -- pause execution on this cycle
-        nmi      : in  std_logic;                     -- NMI
-        irq      : in  std_logic;                     -- IRQ
+        rst       : in  std_logic;                     -- reset
+        hold      : in  std_logic;                     -- pause execution on this cycle
+        nmi       : in  std_logic;                     -- NMI
+        irq       : in  std_logic;                     -- IRQ
 
-        if_a     : out std_logic_vector(15 downto 0); -- instruction fetch address (byte aligned!)
-        if_en    : out std_logic;                     -- instruction fetch enable
-        if_brk   : out std_logic;                     -- instruction fetch force BRK
-        if_d     : in  std_logic_vector(31 downto 0); -- instruction fetch data
+        if_a      : out std_logic_vector(15 downto 0); -- instruction fetch address (byte aligned!)
+        if_en     : out std_logic;                     -- instruction fetch enable
+        if_brk    : out std_logic;                     -- instruction fetch force BRK
+        if_d      : in  std_logic_vector(31 downto 0); -- instruction fetch data
 
-        ls_a     : out std_logic_vector(15 downto 0); -- load/store address (byte aligned!)
-        ls_en    : out std_logic;                     -- load/store enable
-        ls_re    : out std_logic;                     -- load/store read enable
-        ls_we    : out std_logic;                     -- load/store write enable
-        ls_sz    : out std_logic_vector(1 downto 0);  -- load/store transfer size (bytes) = 1+ls_sz
-        ls_dw    : out std_logic_vector(31 downto 0); -- load/store write data
-        ls_dr    : in  std_logic_vector(31 downto 0); -- load/store read data
+        ls_a      : out std_logic_vector(15 downto 0); -- load/store address (byte aligned!)
+        ls_en     : out std_logic;                     -- load/store enable
+        ls_re     : out std_logic;                     -- load/store read enable
+        ls_we     : out std_logic;                     -- load/store write enable
+        ls_sz     : out std_logic_vector(1 downto 0);  -- load/store transfer size (bytes) = 1+ls_sz
+        ls_dw     : out std_logic_vector(31 downto 0); -- load/store write data
+        ls_dr     : in  std_logic_vector(31 downto 0); -- load/store read data
 
-        cz_a     : out std_logic_vector(7 downto 0);  -- zero page cache read address
-        cz_d     : in  std_logic_vector(31 downto 0); -- zero page cache read data
+        cz_a      : out std_logic_vector(7 downto 0);  -- zero page cache read address
+        cz_d      : in  std_logic_vector(31 downto 0); -- zero page cache read data
 
-        cs_a     : out std_logic_vector(7 downto 0);  -- stack cache read address
-        cs_d     : in  std_logic_vector(31 downto 0); -- stack cache read data
+        cs_a      : out std_logic_vector(7 downto 0);  -- stack cache read address
+        cs_d      : in  std_logic_vector(31 downto 0); -- stack cache read data
 
-        trace_en : out std_logic;                     -- trace enable
-        trace_pc : out std_logic_vector(15 downto 0); -- trace register PC
-        trace_s  : out std_logic_vector(7 downto 0);  -- trace register S
-        trace_p  : out std_logic_vector(7 downto 0);  -- trace register P
-        trace_a  : out std_logic_vector(7 downto 0);  -- trace register A
-        trace_x  : out std_logic_vector(7 downto 0);  -- trace register X
-        trace_y  : out std_logic_vector(7 downto 0)   -- trace register Y
+        trace_run : out std_logic;                     -- trace: CPU running
+        trace_stb : out std_logic;                     -- trace: instruction strobe (complete)
+        trace_op  : out std_logic_vector(23 downto 0); -- trace opcode and operand
+        trace_pc  : out std_logic_vector(15 downto 0); -- trace register PC
+        trace_s   : out std_logic_vector(7 downto 0);  -- trace register S
+        trace_p   : out std_logic_vector(7 downto 0);  -- trace register P
+        trace_a   : out std_logic_vector(7 downto 0);  -- trace register A
+        trace_x   : out std_logic_vector(7 downto 0);  -- trace register X
+        trace_y   : out std_logic_vector(7 downto 0)   -- trace register Y
 
     );
 end entity np6532_core;
@@ -342,6 +346,9 @@ architecture synth of np6532_core is
     --------------------------------------------------------------------------------
     -- signals for simulation visibility only
 
+    signal sim_opcode       : std_logic_vector(7 downto 0);
+    signal sim_operand_8    : std_logic_vector(7 downto 0);
+    signal sim_operand_16   : std_logic_vector(15 downto 0);
     signal sim_flag_c       : std_logic;
     signal sim_flag_z       : std_logic;
     signal sim_flag_i       : std_logic;
@@ -376,6 +383,9 @@ begin
 
     -- simulation only
 
+    sim_opcode <= s1_opcode;
+    sim_operand_8 <= s1_operand_8;
+    sim_operand_16 <= s1_operand_16;
     sim_flag_c <= s2_reg_p(0);
     sim_flag_z <= s2_reg_p(1);
     sim_flag_i <= s2_reg_p(2);
@@ -385,7 +395,7 @@ begin
     sim_flag_v <= s2_reg_p(6);
     sim_flag_n <= s2_reg_p(7);
 
-    -- signals as aliases    
+    -- signals as aliases
 
     s1_opcode <= if_d(7 downto 0);
     s1_operand_16 <= if_d(23 downto 8);
@@ -403,6 +413,18 @@ begin
     ls_dw  <= s1_ls_dw;
     cz_a   <= std_logic_vector(unsigned(s1_operand_8) + unsigned(s2_reg_x)) when s1_id_zpx = '1' else s1_operand_8;
     cs_a   <= s2_reg_s1;
+
+    -- trace: conditions at start of instruction
+
+    trace_run <= not (rst_1 and rst_2);
+    trace_stb <= advex or (rst_2 and not rst_1);
+    trace_op <= s1_operand_16 & s1_opcode;
+    trace_pc  <= s1_reg_pc;
+    trace_s   <= s2_reg_s;
+    trace_p   <= s2_reg_p;
+    trace_a   <= s2_reg_a;
+    trace_x   <= s2_reg_x;
+    trace_y   <= s2_reg_y;
 
     -- instruction decoder
 
@@ -509,14 +531,6 @@ begin
                 s2_shift_a      <= (others => '0');
                 s2_shift_m_c    <= '0';
 
-                trace_en        <= '0';
-                trace_pc        <= (others => '0');
-                trace_s         <= (others => '0');
-                trace_p         <= (others => '0');
-                trace_a         <= (others => '0');
-                trace_x         <= (others => '0');
-                trace_y         <= (others => '0');
-
             else
 
                 cycle <= ((not hold and not s1_id_fast) or cycle) and not advex;
@@ -545,8 +559,6 @@ begin
                 s2_reg_pc1      <= std_logic_vector(unsigned(s1_reg_pc)+1);
                 s2_reg_pc2      <= s1_reg_pc2;
                 s2_ls_a         <= s1_ls_a;
-
-                trace_en        <= '0';
 
                 if advex = '1' or (rst_2 = '1' and rst_1 = '0') then
 
@@ -671,18 +683,6 @@ begin
                         when ID_SHIFT_ROR => s2_shift_m_c <= s1_rmw_r(0);
                         when others => null;
                     end case;
-
-                    -- trace
-
-                    if rst_2 = '0' then
-                        trace_en <= '1';
-                        trace_pc  <= s1_reg_pc;   -- all registers as at start of instruction
-                        trace_s   <= s2_reg_s;    --
-                        trace_p   <= s2_reg_p;    --
-                        trace_a   <= s2_reg_a;    --
-                        trace_x   <= s2_reg_x;    --
-                        trace_y   <= s2_reg_y;    --
-                    end if;
 
                 end if; -- advex
             end if; -- rst = '1'

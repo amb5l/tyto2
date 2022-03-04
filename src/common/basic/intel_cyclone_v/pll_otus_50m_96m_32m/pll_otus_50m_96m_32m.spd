@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simPackage>
+ <file path="pll_otus_50m_96m_32m_sim/pll_otus_50m_96m_32m.vho" type="VHDL" />
+ <topLevel name="pll_otus_50m_96m_32m" />
+ <deviceFamily name="cyclonev" />
+</simPackage>
