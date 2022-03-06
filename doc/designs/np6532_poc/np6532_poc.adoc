@@ -6,17 +6,20 @@ The core is connected to a minimal set of registers and memory is initialised wi
 
 The proof-of-concent design wrapped around the CPU detects infinite loops and resets the CPU when these occur, as well as toggling LED 0. LED 1 is driven on if the program counter matches the "success" address in the test code - otherwise it is driven off.
 
-Supported boards (CPU speed):
+Supported boards:
 
-* Digilent Nexys Video (48MHz)
-* QMTECH Wukong (48MHz)
-* Altera Cyclone V E Development Kit (32MHz)
+* Digilent Nexys Video
+* QMTECH Wukong
+* Altera Cyclone V E Development Kit
+* Terasic DE10-Nano
+
+For all these, the memory clock is 96MHz and the CPU clock is 32MHz. The Xilinx targets can run at 48MHz.
 
 '''
 
 == Building and Programming
 
-Build the Vivado or Quartus project by running `make` in the relevant `build` directory, and program your board from the command line by running `make prog`. Once the project is built, you may use the IDE.
+Build the Vivado or Quartus project by running `make` in the relevant `build` directory, and program your board from the command line by running `make prog`. Once the project is built, you may open it in the relevant IDE (Vivado or Quartus).
 
 == Simulation
 

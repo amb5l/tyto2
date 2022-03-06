@@ -453,20 +453,26 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>The proof-of-concent design wrapped around the CPU detects infinite loops and resets the CPU when these occur, as well as toggling LED 0. LED 1 is driven on if the program counter matches the "success" address in the test code - otherwise it is driven off.</p>
 </div>
 <div class="paragraph">
-<p>Supported boards (CPU speed):</p>
+<p>Supported boards:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Digilent Nexys Video (48MHz)</p>
+<p>Digilent Nexys Video</p>
 </li>
 <li>
-<p>QMTECH Wukong (48MHz)</p>
+<p>QMTECH Wukong</p>
 </li>
 <li>
-<p>Altera Cyclone V E Development Kit (32MHz)</p>
+<p>Altera Cyclone V E Development Kit</p>
+</li>
+<li>
+<p>Terasic DE10-Nano</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>For all these, the memory clock is 96MHz and the CPU clock is 32MHz. The Xilinx targets can run at 48MHz.</p>
 </div>
 <hr>
 </div>
@@ -475,7 +481,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="truebuilding-and-programming"><a class="anchor" href="#truebuilding-and-programming"></a>Building and Programming</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Build the Vivado or Quartus project by running <code>make</code> in the relevant <code>build</code> directory, and program your board from the command line by running <code>make prog</code>. Once the project is built, you may use the IDE.</p>
+<p>Build the Vivado or Quartus project by running <code>make</code> in the relevant <code>build</code> directory, and program your board from the command line by running <code>make prog</code>. Once the project is built, you may open it in the relevant IDE (Vivado or Quartus).</p>
 </div>
 </div>
 </div>
@@ -606,7 +612,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-04 17:05:28 UTC
+Last updated 2022-03-06 10:07:59 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

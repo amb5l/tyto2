@@ -444,7 +444,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems.</p>
+<p>The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems, with an emphasis on portable VHDL-93 and support for both AMD/Xilinx and Intel/Altera targets.</p>
 </div>
 <div class="paragraph">
 <p>This repository is incomplete. Work to port all the designs and IP from the <a href="https://github.com/amb5l/tyto_project">previous version</a> is ongoing.</p>
@@ -475,7 +475,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-Most designs have submodule dependencies. Please remember to initialise submodules when cloning this repo!
+ALL designs have submodule dependencies. Please remember to initialise submodules when cloning this repo!
 </td>
 </tr>
 </table>
@@ -525,10 +525,17 @@ Most designs have submodule dependencies. Please remember to initialise submodul
 <p><a href="https://www.gnu.org/software/make/">make</a> is required, along with <a href="https://en.wikipedia.org/wiki/Git">git</a> and assorted utilities that are usually present on Linux systems. <a href="doc/msys2.html">MSYS2</a> is a quick and easy way to get these tools (as well as <a href="http://ghdl.free.fr/">GHDL</a>) running on Windows.</p>
 </div>
 <div class="paragraph">
-<p>For Xilinx FPGAs, <strong>Vivado 2021.2</strong> is required. Designs including a <a href="https://en.wikipedia.org/wiki/MicroBlaze">Microblaze soft CPU</a> also require <strong>Vitis 2021.2</strong>. These tools may be obtained from <a href="https://www.xilinx.com/support/download.html">here</a>.</p>
+<p>The makefile driven build process produces projects that can then be opened and worked on in the relevant IDE:</p>
 </div>
-<div class="paragraph">
+<div class="ulist">
+<ul>
+<li>
+<p>For Xilinx FPGAs, <strong>Vivado 2021.2</strong> is required. Designs including a <a href="https://en.wikipedia.org/wiki/MicroBlaze">Microblaze soft CPU</a> also require <strong>Vitis 2021.2</strong>. These tools may be obtained from <a href="https://www.xilinx.com/support/download.html">here</a>.</p>
+</li>
+<li>
 <p>For Intel FPGAs, <strong>Quartus Prime Lite 21.1</strong> is required. This may be obtained from <a href="https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html">here</a>.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -549,7 +556,7 @@ Most designs have submodule dependencies. Please remember to initialise submodul
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-04 16:40:48 UTC
+Last updated 2022-03-06 10:04:15 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

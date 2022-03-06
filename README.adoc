@@ -1,6 +1,6 @@
 = The Tyto Project (Version 2)
 
-The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems.
+The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems, with an emphasis on portable VHDL-93 and support for both AMD/Xilinx and Intel/Altera targets.
 
 This repository is incomplete. Work to port all the designs and IP from the https://github.com/amb5l/tyto_project[previous version] is ongoing.
 
@@ -14,7 +14,7 @@ A simpler directory structure is used:
 
 * `submodules` contains git submodules.
 
-NOTE: Most designs have submodule dependencies. Please remember to initialise submodules when cloning this repo!
+NOTE: ALL designs have submodule dependencies. Please remember to initialise submodules when cloning this repo!
 
 '''
 
@@ -44,9 +44,11 @@ Simulates a T65 CPU core running https://github.com/Klaus2m5/6502_65C02_function
 
 https://www.gnu.org/software/make/[make] is required, along with https://en.wikipedia.org/wiki/Git[git] and assorted utilities that are usually present on Linux systems. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get these tools (as well as http://ghdl.free.fr/[GHDL]) running on Windows.
 
-For Xilinx FPGAs, *Vivado 2021.2* is required. Designs including a https://en.wikipedia.org/wiki/MicroBlaze[Microblaze soft CPU] also require *Vitis 2021.2*. These tools may be obtained from https://www.xilinx.com/support/download.html[here].
+The makefile driven build process produces projects that can then be opened and worked on in the relevant IDE:
 
-For Intel FPGAs, *Quartus Prime Lite 21.1* is required. This may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
+* For Xilinx FPGAs, *Vivado 2021.2* is required. Designs including a https://en.wikipedia.org/wiki/MicroBlaze[Microblaze soft CPU] also require *Vitis 2021.2*. These tools may be obtained from https://www.xilinx.com/support/download.html[here].
+
+* For Intel FPGAs, *Quartus Prime Lite 21.1* is required. This may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
 
 == License
 
