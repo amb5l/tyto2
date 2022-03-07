@@ -1,6 +1,6 @@
 = The Tyto Project (Version 2)
 
-The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems, with an emphasis on portable VHDL-93 and support for both AMD/Xilinx and Intel/Altera targets.
+The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems, with an emphasis on VHDL and support for both AMD/Xilinx and Intel/Altera targets.
 
 This repository is incomplete. Work to port all the designs and IP from the https://github.com/amb5l/tyto_project[previous version] is ongoing.
 
@@ -20,25 +20,37 @@ NOTE: ALL designs have submodule dependencies. Please remember to initialise sub
 
 == Designs
 
-=== mb_fb
+Click on the design *Name* link to see further details.
 
-A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on link:https://github.com/tuupola/hagl[Mike Tuupola's hagl graphics library]. <<./doc/designs/mb_fb/mb_fb.adoc#,More...>>
+[cols="10,20,70"]
+|===
+|Name|Supported Boards|Description
 
-=== np6532_poc
+|<<./doc/designs/ddr3_test/ddr3_test.adoc#,ddr3_test >> 
+|Digilent Nexys Video, QMTech Wukong
+|A simple DDR3 SDRAM tester based on https://github.com/jorisvr/vhdl_prng[Joris van Rantwijk's Pseudo Random Number Generator]. Hacks the generated HDL to generate the 200MHz IODELAYCTRL reference clock in the DDR3 IP core MMCM.
 
-A proof-of-concept demonstration of the <<doc/common/retro/np65/np65.adoc#,np65>> 6502 compatible CPU core. Runs https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test] in a loop. <<doc/designs/np6532_poc/np6532_poc.adoc#,More...>>
+|<<./doc/designs/mb_fb/mb_fb.adoc#,mb_fb>>
+|Digilent Nexys Video, QMTech Wukong
+|A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on link:https://github.com/tuupola/hagl[Mike Tuupola's hagl graphics library]. 
 
-=== np6532_functest
+|<<doc/designs/np6532_poc/np6532_poc.adoc#,np6532_poc>>
+|Digilent Nexys Video, QMTech Wukong, Altera Cyclone V Dev Kit, Terasic DE10-Nano
+|A proof-of-concept demonstration of the <<doc/common/retro/np65/np65.adoc#,np65>> 6502 compatible CPU core clocked at 32MHz. Runs https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test] in a loop.
 
-Simulates an <<doc/common/retro/np65/np65.adoc#,np65>> CPU core unning https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test]. <<doc/designs/np6532_functest/np6532_functest.adoc#,More...>>
+|<<doc/designs/np6532_functest/np6532_functest.adoc#,np6532_functest>>
+|(simulation only)
+|Simulates an <<doc/common/retro/np65/np65.adoc#,np65>> CPU core unning https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test].
 
-=== tb_saa5050
+|<<doc/designs/tb_saa5050/tb_saa5050.adoc#,tb_saa5050>>
+|(simulation only)
+|Simulates an https://en.wikipedia.org/wiki/Mullard_SAA5050[SAA5050] teletext character generator. 
 
-Simulates an https://en.wikipedia.org/wiki/Mullard_SAA5050[SAA5050] teletext character generator. <<doc/designs/tb_saa5050/tb_saa5050.adoc#,More...>>
+|<<doc/designs/T65_functest/T65_functest.adoc#,T65_functest>>
+|(simulation only)
+|Simulates a T65 CPU core running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test].
 
-=== T65_functest
-
-Simulates a T65 CPU core running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test]. <<doc/designs/T65_functest/T65_functest.adoc#,More...>>
+|=== 
 
 == Build and Simulation Tools
 

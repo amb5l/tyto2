@@ -444,7 +444,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems, with an emphasis on portable VHDL-93 and support for both AMD/Xilinx and Intel/Altera targets.</p>
+<p>The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems, with an emphasis on VHDL and support for both AMD/Xilinx and Intel/Altera targets.</p>
 </div>
 <div class="paragraph">
 <p>This repository is incomplete. Work to port all the designs and IP from the <a href="https://github.com/amb5l/tyto_project">previous version</a> is ongoing.</p>
@@ -486,36 +486,55 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 <div class="sect1">
 <h2 id="truedesigns"><a class="anchor" href="#truedesigns"></a>Designs</h2>
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="truemb_fb"><a class="anchor" href="#truemb_fb"></a>mb_fb</h3>
 <div class="paragraph">
-<p>A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on <a href="https://github.com/tuupola/hagl">Mike Tuupola&#8217;s hagl graphics library</a>. <a href="./doc/designs/mb_fb/mb_fb.html">More&#8230;&#8203;</a></p>
+<p>Click on the design <strong>Name</strong> link to see further details.</p>
 </div>
-</div>
-<div class="sect2">
-<h3 id="truenp6532_poc"><a class="anchor" href="#truenp6532_poc"></a>np6532_poc</h3>
-<div class="paragraph">
-<p>A proof-of-concept demonstration of the <a href="doc/common/retro/np65/np65.html">np65</a> 6502 compatible CPU core. Runs <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a> in a loop. <a href="doc/designs/np6532_poc/np6532_poc.html">More&#8230;&#8203;</a></p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="truenp6532_functest"><a class="anchor" href="#truenp6532_functest"></a>np6532_functest</h3>
-<div class="paragraph">
-<p>Simulates an <a href="doc/common/retro/np65/np65.html">np65</a> CPU core unning <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>. <a href="doc/designs/np6532_functest/np6532_functest.html">More&#8230;&#8203;</a></p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="truetb_saa5050"><a class="anchor" href="#truetb_saa5050"></a>tb_saa5050</h3>
-<div class="paragraph">
-<p>Simulates an <a href="https://en.wikipedia.org/wiki/Mullard_SAA5050">SAA5050</a> teletext character generator. <a href="doc/designs/tb_saa5050/tb_saa5050.html">More&#8230;&#8203;</a></p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="truet65_functest"><a class="anchor" href="#truet65_functest"></a>T65_functest</h3>
-<div class="paragraph">
-<p>Simulates a T65 CPU core running <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>. <a href="doc/designs/T65_functest/T65_functest.html">More&#8230;&#8203;</a></p>
-</div>
-</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 20%;">
+<col style="width: 70%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Supported Boards</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/ddr3_test/ddr3_test.html">ddr3_test </a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A simple DDR3 SDRAM tester based on <a href="https://github.com/jorisvr/vhdl_prng">Joris van Rantwijk&#8217;s Pseudo Random Number Generator</a>. Hacks the generated HDL to generate the 200MHz IODELAYCTRL reference clock in the DDR3 IP core MMCM.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/mb_fb/mb_fb.html">mb_fb</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on <a href="https://github.com/tuupola/hagl">Mike Tuupola&#8217;s hagl graphics library</a>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/np6532_poc/np6532_poc.html">np6532_poc</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong, Altera Cyclone V Dev Kit, Terasic DE10-Nano</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A proof-of-concept demonstration of the <a href="doc/common/retro/np65/np65.html">np65</a> 6502 compatible CPU core clocked at 32MHz. Runs <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a> in a loop.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/np6532_functest/np6532_functest.html">np6532_functest</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(simulation only)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simulates an <a href="doc/common/retro/np65/np65.html">np65</a> CPU core unning <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_saa5050/tb_saa5050.html">tb_saa5050</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(simulation only)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simulates an <a href="https://en.wikipedia.org/wiki/Mullard_SAA5050">SAA5050</a> teletext character generator.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/T65_functest/T65_functest.html">T65_functest</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(simulation only)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simulates a T65 CPU core running <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div class="sect1">
@@ -556,7 +575,7 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-06 10:04:15 UTC
+Last updated 2022-03-07 11:47:15 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">
