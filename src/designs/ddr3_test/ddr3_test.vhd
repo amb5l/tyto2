@@ -57,8 +57,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library xil_defaultlib;
-
 entity ddr3_test is
     port (
 
@@ -280,7 +278,7 @@ begin
         else '0';
 
     GEN_PRNG: for i in 0 to 3 generate
-        PRNG: entity xil_defaultlib.rng_xoshiro128plusplus
+        PRNG: entity work.rng_xoshiro128plusplus
             generic map (
                 init_seed   => INIT_SEED(i),
                 pipeline    => true
