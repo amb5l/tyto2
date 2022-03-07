@@ -34,4 +34,8 @@ VIVADO_SIM_OUT=simulate.log
 VIVADO_SIM_VHDL_2008=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/tb_$(VIVADO_DSN_TOP).vhd \
 
+VIVADO_SIM_IP_ddr3=\
+    ddr3/ddr3/example_design/sim/ddr3_model.sv \
+    ddr3/ddr3/example_design/sim/ddr3_model_parameters.vh
+
 include $(XILINX_MK)/xilinx.mk
