@@ -21,7 +21,7 @@ VIVADO_SIM_TOP=tb_$(DESIGN)_$(BOARD)
 
 VIVADO_DSN_VHDL_2008=\
     $(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd \
-    $(SRC)/designs/$(DESIGN)/mb_fb.vhd \
+    $(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
     $(SRC)/designs/$(DESIGN)/$(BOARD)/global_pkg_$(BOARD).vhd \
     $(SRC)/common/basic/tyto_types_pkg.vhd \
     $(SRC)/designs/$(DESIGN)/mig_bridge_axi.vhd \
@@ -55,7 +55,7 @@ VIVADO_SIM_OUT=simulate.log
 
 VIVADO_SIM_VHDL_2008=\
     $(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd \
-    $(SRC)/designs/$(DESIGN)/tb_mb_fb.vhd \
+    $(SRC)/designs/$(DESIGN)/tb_$(DESIGN).vhd \
     $(SRC)/designs/$(DESIGN)/tb_crtc_etc.vhd \
     $(SRC)/common/ddr3/xilinx/model_mig.vhd \
     $(SRC)/common/basic/model_fifoctrl_s.vhd \
