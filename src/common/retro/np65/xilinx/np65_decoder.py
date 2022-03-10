@@ -236,6 +236,18 @@ for i, bf_name in enumerate(bf_names):
 f.write('\t\t);\n')
 f.write('\tend component np65_decoder;\n')
 f.write('\n')
+f.write('\ttype mnemonic_type is (\n')
+for i in range(0, 256):
+	n = instruction_definitions[i][0]
+	if i < 255:
+		n = n+','
+	else:
+		n = n+' '
+	f.write('\t\t%s' % n)
+	f.write(tab_align('\t\t', n, mnemonic_maxlen+1))
+	f.write('-- %0.2X\n' % i)
+f.write('\t);\n')
+f.write('\n')
 f.write('end package np65_decoder_pkg;\n')
 f.write('\n')
 f.write('--------------------------------------------------------------------------------\n')
@@ -243,6 +255,8 @@ f.write('\n')
 f.write('library ieee;\n')
 f.write('use ieee.std_logic_1164.all;\n')
 f.write('use ieee.numeric_std.all;\n')
+f.write('\n')
+f.write('use work.np65_decoder_pkg.all;\n')
 f.write('\n')
 f.write('entity np65_decoder is\n')
 f.write('\tport (\n')
@@ -274,19 +288,6 @@ for i in range(256):
 f.write('\t);\n')
 f.write('\n')
 f.write('\tsignal data : std_logic_vector(%d downto 0);\n' % (bit_width-1))
-f.write('\n')
-f.write('\ttype mnemonic_type is (\n')
-for i in range(0, 256):
-	n = instruction_definitions[i][0]
-	if i < 255:
-		n = n+','
-	else:
-		n = n+' '
-	f.write('\t\t%s' % n)
-	f.write(tab_align('\t\t', n, mnemonic_maxlen+1))
-	f.write('-- %0.2X\n' % i)
-f.write('\t);\n')
-f.write('\n')
 f.write('\tsignal mnemonic : mnemonic_type;\n')
 f.write('\n')
 f.write('begin\n')

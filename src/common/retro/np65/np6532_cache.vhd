@@ -25,21 +25,21 @@ package np6532_cache_pkg is
 
     component np6532_cache is
         generic (            
-            base     : std_logic_vector                           -- base address (also indicates total RAM size)
+            base     : std_logic_vector                          -- base address (also indicates total RAM size)
         );
         port (
-            clk_mem   : in  std_logic;                            -- clock (memory, may be multiple of CPU)
-            clken_0   : in  std_logic;                            -- clock enable (for CPU clock edges)
-            hold      : in  std_logic;                            -- pause execution on this cycle (and enable DMA)
-            dma_a     : in  std_logic_vector(base'high downto 3);
-            dma_bwe   : in  std_logic_vector(7 downto 0);
-            dma_dw    : in  std_logic_vector(63 downto 0);
-            ls_a      : in  std_logic_vector(15 downto 0);
-            ls_we     : in  std_logic;
-            ls_sz     : in  std_logic_vector(1 downto 0);
-            ls_dw     : in  std_logic_vector(31 downto 0);
-            cache_a   : in  std_logic_vector(7 downto 0);
-            cache_dr  : out std_logic_vector(31 downto 0)
+            clk_mem  : in  std_logic;                            -- clock (memory, may be multiple of CPU)
+            clken_0  : in  std_logic;                            -- clock enable (for CPU clock edges)
+            dma_en   : in  std_logic;                            -- DMA enable on this clk_mem cycle
+            dma_a    : in  std_logic_vector(base'high downto 3);
+            dma_bwe  : in  std_logic_vector(7 downto 0);
+            dma_dw   : in  std_logic_vector(63 downto 0);
+            ls_a     : in  std_logic_vector(15 downto 0);
+            ls_we    : in  std_logic;
+            ls_sz    : in  std_logic_vector(1 downto 0);
+            ls_dw    : in  std_logic_vector(31 downto 0);
+            cache_a  : in  std_logic_vector(7 downto 0);
+            cache_dr : out std_logic_vector(31 downto 0)
         );
     end component np6532_cache;
 
@@ -60,18 +60,18 @@ entity np6532_cache is
         base     : std_logic_vector                           -- base address (also indicates total RAM size)
     );
     port (
-        clk_mem   : in  std_logic;                            -- clock (memory, may be multiple of CPU)
-        clken_0   : in  std_logic;                            -- clock enable (for CPU clock edges)
-        hold      : in  std_logic;                            -- pause execution on this cycle (and enable DMA)
-        dma_a     : in  std_logic_vector(base'high downto 3);
-        dma_bwe   : in  std_logic_vector(7 downto 0);
-        dma_dw    : in  std_logic_vector(63 downto 0);
-        ls_a      : in  std_logic_vector(15 downto 0);
-        ls_we     : in  std_logic;
-        ls_sz     : in  std_logic_vector(1 downto 0);
-        ls_dw     : in  std_logic_vector(31 downto 0);
-        cache_a   : in  std_logic_vector(7 downto 0);
-        cache_dr  : out std_logic_vector(31 downto 0)
+        clk_mem  : in  std_logic;                            -- clock (memory, may be multiple of CPU)
+        clken_0  : in  std_logic;                            -- clock enable (for CPU clock edges)
+        dma_en   : in  std_logic;                            -- DMA enable on this clk_mem cycle
+        dma_a    : in  std_logic_vector(base'high downto 3);
+        dma_bwe  : in  std_logic_vector(7 downto 0);
+        dma_dw   : in  std_logic_vector(63 downto 0);
+        ls_a     : in  std_logic_vector(15 downto 0);
+        ls_we    : in  std_logic;
+        ls_sz    : in  std_logic_vector(1 downto 0);
+        ls_dw    : in  std_logic_vector(31 downto 0);
+        cache_a  : in  std_logic_vector(7 downto 0);
+        cache_dr : out std_logic_vector(31 downto 0)
     );
 end entity np6532_cache;
 
@@ -93,8 +93,8 @@ begin
     ls_bwe(7 downto 4) <= "0000";
 
     ce <= '1' when
-        (hold = '0' and clken_0 = '1' and ls_a(15 downto 8) = base(15 downto 8)) or
-        (hold = '1' and dma_a(base'high downto 8) = base(base'high downto 8))
+        (dma_en = '0' and clken_0 = '1' and ls_a(15 downto 8) = base(15 downto 8)) or
+        (dma_en = '1' and dma_a(base'high downto 8) = base(base'high downto 8))
         else '0';
 
     GEN_BYTE: for i in 0 to 3 generate
@@ -108,12 +108,12 @@ begin
             attribute keep_hierarchy of RAM : label is "yes";        
         begin
             dma_dw_v(i+(4*j)) <= dma_dw(7+(8*(i+(4*j))) downto 8*(i+(4*j)));
-            wa(i+(4*j)) <= dma_a(7 downto 3) when hold = '1' else
+            wa(i+(4*j)) <= dma_a(7 downto 3) when dma_en = '1' else
                 std_logic_vector(unsigned(ls_a(7 downto 3))+1) when i+(4*j) < to_integer(unsigned(ls_a(2 downto 0))) else
                 ls_a(7 downto 3);
-            we(i+(4*j)) <= dma_bwe(i+(4*j)) when hold = '1' else
+            we(i+(4*j)) <= dma_bwe(i+(4*j)) when dma_en = '1' else
                 ls_bwe(((i+(4*j))+(8-to_integer(unsigned(ls_a(2 downto 0))))) mod 8);
-            dw(i+(4*j)) <= dma_dw_v(i+(4*j)) when hold = '1' else
+            dw(i+(4*j)) <= dma_dw_v(i+(4*j)) when dma_en = '1' else
                 ls_dw_v((i+(4-to_integer(unsigned(ls_a(1 downto 0))))) mod 4);
             RAM : component ram_sdp_a_32
                 generic map (

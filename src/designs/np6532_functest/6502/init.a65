@@ -1,6 +1,16 @@
     .segment "INIT"
     .org    $FC00
 
+    ; change NMI and IRQ vectors
+    ; note IRQ vector has been moved from FFFE to FFF8 for this test!
+    LDA #0
+    STA $FFFA
+    STA $FFF8
+    LDA #$F0
+    STA $FFFB ; NMI = F000
+    LDA #$F1
+    STA $FFF9 ; IRQ = F100
+
     ; vector cache coherency
     LDX #$FA
 _L1:

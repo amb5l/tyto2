@@ -1,0 +1,5 @@
+    .segment "SEG_IRQ"
+    .org    $F100
+
+    STA $FE3F ; write anything to this address
+    RTI

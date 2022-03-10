@@ -63,9 +63,9 @@ entity np6532_poc is
         rsta      : in  std_logic;
         clk_cpu   : in  std_logic;
         clk_mem   : in  std_logic;
-		hold      : in  std_logic;
-		irq       : in  std_logic;
-		nmi       : in  std_logic;
+        hold      : in  std_logic;
+        irq       : in  std_logic;
+        nmi       : in  std_logic;
         dma_ti    : in  std_logic_vector(5 downto 0);
         dma_to    : out std_logic_vector(7 downto 0);
         led       : out std_logic_vector(7 downto 0)
@@ -74,7 +74,7 @@ end entity np6532_poc;
 
 architecture synth of np6532_poc is
 
-	signal clken         : std_logic_vector(0 to clk_ratio-1);
+    signal clken         : std_logic_vector(0 to clk_ratio-1);
 
     signal rst_core      : std_logic;
     signal rst_peri      : std_logic;
@@ -173,7 +173,7 @@ begin
         generic map (
             clk_ratio     => clk_ratio,
             ram_size_log2 => ram_size_log2,
-            vector_init   => x"FC00"
+            jmp_rst       => x"FC00"
         )
         port map (
             rsti      => rst_core,
@@ -197,14 +197,16 @@ begin
             ls_ext    => ls_ext,
             ls_drx    => ls_drx,
             ls_dwx    => ls_dwx,
-            trace_run => open,
             trace_stb => trace_stb,
+            trace_nmi => open,
+            trace_irq => open,
             trace_pc  => trace_pc,
             trace_s   => open,
             trace_p   => open,
             trace_a   => open,
             trace_x   => open,
             trace_y   => open,
+            dma_en    => open,
             dma_a     => dma_a,
             dma_bwe   => dma_bwe,
             dma_dw    => dma_dw,
@@ -357,24 +359,24 @@ begin
         variable i: integer;
     begin
         if rising_edge(clk_mem) then
-        	if dma_ti(0) = '1' then
-        		dma_a <= (others => '0');
-        	else
-        		dma_a <= std_logic_vector(unsigned(dma_a)+1);
-        	end if;
-        	if dma_ti(1) = '1' then
-        		dma_bwe <= (others => '0');
-        	else
-        		dma_bwe <= std_logic_vector(unsigned(dma_bwe)+1);
-        	end if;
-        	if dma_ti(2) = '1' then
-        		dma_dw <= (others => '0');
-        	else
-        		dma_dw <= std_logic_vector(unsigned(dma_dw)+1);
-        	end if;
+            if dma_ti(0) = '0' then
+                dma_a <= (others => '0');
+            else
+                dma_a <= std_logic_vector(unsigned(dma_a)+1);
+            end if;
+            if dma_ti(1) = '0' then
+                dma_bwe <= (others => '0');
+            else
+                dma_bwe <= std_logic_vector(unsigned(dma_bwe)+1);
+            end if;
+            if dma_ti(2) = '0' then
+                dma_dw <= (others => '0');
+            else
+                dma_dw <= std_logic_vector(unsigned(dma_dw)+1);
+            end if;
             i := to_integer(unsigned(dma_ti(5 downto 3)));
             dma_to <= dma_dr(7+(i*8) downto i*8);
-       end if;
+        end if;
     end process;
 
 end architecture synth;

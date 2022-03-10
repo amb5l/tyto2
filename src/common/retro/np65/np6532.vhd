@@ -22,9 +22,12 @@ package np6532_pkg is
 
     component np6532 is
         generic (
-            clk_ratio     : integer;                                   -- memory:CPU clock ratio (1,2,3...)
-            ram_size_log2 : integer;                                   -- 16 = 64kbytes, 17 = 128kbytes...
-            vector_init   : std_logic_vector(15 downto 0)              -- initialisation code (typically behind hardware registers)
+            clk_ratio     : integer;                                    -- memory:CPU clock ratio (1,2,3...)
+            ram_size_log2 : integer;                                    -- 16 = 64kbytes, 17 = 128kbytes...
+            jmp_rst       : std_logic_vector(15 downto 0);              -- reset jump address
+            vec_nmi       : std_logic_vector(15 downto 0) := x"FFFA";   -- NMI vector address
+            vec_irq       : std_logic_vector(15 downto 0) := x"FFFE";   -- IRQ vector address
+            vec_brk       : std_logic_vector(15 downto 0) := x"FFFE"    -- BRK vector address            
         );
         port (
 
@@ -54,8 +57,9 @@ package np6532_pkg is
             ls_drx    : in  std_logic_vector(7 downto 0);               -- load/store external (hardware) read data
             ls_dwx    : out std_logic_vector(7 downto 0);               -- load/store external (hardware) write data
 
-            trace_run : out std_logic;                                   -- trace: CPU running
             trace_stb : out std_logic;                                   -- trace: instruction strobe (complete)
+            trace_nmi : out std_logic;                                   -- trace: in NMI handler
+            trace_irq : out std_logic;                                   -- trace: in IRQ handler
             trace_op  : out std_logic_vector(23 downto 0);               -- trace opcode and operand
             trace_pc  : out std_logic_vector(15 downto 0);               -- trace register PC
             trace_s   : out std_logic_vector(7 downto 0);                -- trace register S
@@ -64,6 +68,7 @@ package np6532_pkg is
             trace_x   : out std_logic_vector(7 downto 0);                -- trace register X
             trace_y   : out std_logic_vector(7 downto 0);                -- trace register Y
 
+            dma_en    : out std_logic;                                   -- DMA enable on this clk_mem cycle
             dma_a     : in  std_logic_vector(ram_size_log2-1 downto 3);  -- DMA address (Qword aligned)
             dma_bwe   : in  std_logic_vector(7 downto 0);                -- DMA byte write enables
             dma_dw    : in  std_logic_vector(63 downto 0);               -- DMA write data
@@ -86,9 +91,12 @@ use work.np6532_cache_pkg.all;
 
 entity np6532 is
     generic (
-        clk_ratio     : integer;                                   -- memory:CPU clock ratio (1,2,3...)
-        ram_size_log2 : integer;                                   -- 16 = 64kbytes, 17 = 128kbytes...
-        vector_init   : std_logic_vector(15 downto 0)              -- initialisation code (typically behind hardware registers)
+        clk_ratio     : integer;                                    -- memory:CPU clock ratio (1,2,3...)
+        ram_size_log2 : integer;                                    -- 16 = 64kbytes, 17 = 128kbytes...
+        jmp_rst       : std_logic_vector(15 downto 0);              -- reset jump address
+        vec_nmi       : std_logic_vector(15 downto 0) := x"FFFA";   -- NMI vector address
+        vec_irq       : std_logic_vector(15 downto 0) := x"FFFE";   -- IRQ vector address
+        vec_brk       : std_logic_vector(15 downto 0) := x"FFFE"    -- BRK vector address            
     );
     port (
 
@@ -118,8 +126,9 @@ entity np6532 is
         ls_drx    : in  std_logic_vector(7 downto 0);               -- load/store external (hardware) read data
         ls_dwx    : out std_logic_vector(7 downto 0);               -- load/store external (hardware) write data
 
-        trace_run : out std_logic;                                   -- trace: CPU running
         trace_stb : out std_logic;                                   -- trace: instruction strobe (complete)
+        trace_nmi : out std_logic;                                   -- trace: in NMI handler
+        trace_irq : out std_logic;                                   -- trace: in IRQ handler        
         trace_op  : out std_logic_vector(23 downto 0);               -- trace opcode and operand
         trace_pc  : out std_logic_vector(15 downto 0);               -- trace register PC
         trace_s   : out std_logic_vector(7 downto 0);                -- trace register S
@@ -128,6 +137,7 @@ entity np6532 is
         trace_x   : out std_logic_vector(7 downto 0);                -- trace register X
         trace_y   : out std_logic_vector(7 downto 0);                -- trace register Y
 
+        dma_en    : out std_logic;                                   -- DMA enable on this clk_mem cycle
         dma_a     : in  std_logic_vector(ram_size_log2-1 downto 3);  -- DMA address (Qword aligned)
         dma_bwe   : in  std_logic_vector(7 downto 0);                -- DMA byte write enables
         dma_dw    : in  std_logic_vector(63 downto 0);               -- DMA write data
@@ -164,6 +174,8 @@ architecture synth of np6532 is
     signal cz_d      : std_logic_vector(31 downto 0);
     signal cs_a      : std_logic_vector(7 downto 0);
     signal cs_d      : std_logic_vector(31 downto 0);
+    
+    signal dma_eni   : std_logic;
 
     constant base_z  : std_logic_vector(ram_size_log2-1 downto 0) := (others => '0');
     constant base_s  : std_logic_vector(ram_size_log2-1 downto 0) := (8 => '1', others => '0');
@@ -191,6 +203,7 @@ begin
     ls_we <= ls_we_cpu;
     ls_dr_cpu <= x"000000" & ls_drx when ls_ext_1 = '1' else ls_dr_ram;
     ls_dwx <= ls_dw_cpu(7 downto 0);
+    dma_en <= dma_eni;
 
     -- reset and clock enables
 
@@ -247,11 +260,27 @@ begin
         end if; -- rising_edge(clk_mem) and clk_ratio > 1
     end process;
 
+    -- DMA enable
+
+    process(rsti,clk_mem)
+    begin
+        if rsti = '1' then
+            dma_eni <= '0';
+        elsif rising_edge(clk_mem) then
+            if clken_i(clk_ratio-1) = '1' then
+                dma_eni <= hold;
+            end if;
+        end if;
+    end process;
+
     -- main blocks
 
     CPU: component np6532_core
         generic map (
-            vector_init => vector_init
+            jmp_rst => jmp_rst,
+            vec_nmi => vec_nmi,
+            vec_irq => vec_irq,
+            vec_brk => vec_brk
         )
         port map (
             clk       => clk_cpu,
@@ -274,8 +303,9 @@ begin
             cz_d      => cz_d,
             cs_a      => cs_a,
             cs_d      => cs_d,
-            trace_run => trace_run,
             trace_stb => trace_stb,
+            trace_nmi => trace_nmi,
+            trace_irq => trace_irq,
             trace_op  => trace_op,
             trace_pc  => trace_pc,
             trace_s   => trace_s,
@@ -293,25 +323,25 @@ begin
             size_log2 => ram_size_log2
         )
         port map (
-            clk_cpu   => clk_cpu,
-            clk_mem   => clk_mem,
-            clken_0   => clken_i(0),
-            hold      => hold,
-            if_a      => if_ap,
-            if_en     => if_en,
-            if_z      => if_z_ram,
-            if_d      => if_d,
-            ls_a      => ls_ap,
-            ls_en     => ls_en_cpu,
-            ls_z      => ls_z,
-            ls_we     => ls_we_ram,
-            ls_sz     => ls_sz,
-            ls_dw     => ls_dw_cpu,
-            ls_dr     => ls_dr_ram,
-            dma_a     => dma_a,
-            dma_bwe   => dma_bwe,
-            dma_dw    => dma_dw,
-            dma_dr    => dma_dr
+            clk_cpu => clk_cpu,
+            clk_mem => clk_mem,
+            clken_0 => clken_i(0),
+            if_a    => if_ap,
+            if_en   => if_en,
+            if_z    => if_z_ram,
+            if_d    => if_d,
+            ls_a    => ls_ap,
+            ls_en   => ls_en_cpu,
+            ls_z    => ls_z,
+            ls_we   => ls_we_ram,
+            ls_sz   => ls_sz,
+            ls_dw   => ls_dw_cpu,
+            ls_dr   => ls_dr_ram,
+            dma_en  => dma_eni,
+            dma_a   => dma_a,
+            dma_bwe => dma_bwe,
+            dma_dw  => dma_dw,
+            dma_dr  => dma_dr
         );
 
     CACHE_Z: component np6532_cache
@@ -321,7 +351,7 @@ begin
         port map (
             clk_mem  => clk_mem,
             clken_0  => clken_i(0),
-            hold     => hold,
+            dma_en   => dma_eni,
             dma_a    => dma_a,
             dma_bwe  => dma_bwe,
             dma_dw   => dma_dw,
@@ -340,7 +370,7 @@ begin
         port map (
             clk_mem  => clk_mem,
             clken_0  => clken_i(0),
-            hold     => hold,
+            dma_en   => dma_eni,
             dma_a    => dma_a,
             dma_bwe  => dma_bwe,
             dma_dw   => dma_dw,

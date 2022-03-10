@@ -29,6 +29,14 @@ INIT=init
 INIT_BIN=$(BUILD_6502_DIR)/$(INIT).bin
 INIT_SRC=$(SRC)/designs/$(DESIGN)/6502/$(INIT).a65
 INIT_CFG=$(SRC)/designs/$(DESIGN)/6502/$(INIT).cfg
+NMI=nmi
+NMI_BIN=$(BUILD_6502_DIR)/$(NMI).bin
+NMI_SRC=$(SRC)/designs/$(DESIGN)/6502/$(NMI).a65
+NMI_CFG=$(SRC)/designs/$(DESIGN)/6502/$(NMI).cfg
+IRQ=irq
+IRQ_BIN=$(BUILD_6502_DIR)/$(IRQ).bin
+IRQ_SRC=$(SRC)/designs/$(DESIGN)/6502/$(IRQ).a65
+IRQ_CFG=$(SRC)/designs/$(DESIGN)/6502/$(IRQ).cfg
 REF_DIR=ref
 REF_FILE=$(abspath $(REF_DIR)/$(FUNCTEST).txt)
 MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace
@@ -65,8 +73,8 @@ $(DECODER_VHD): $(DECODER_CSV) | $(BUILD_VHDL_DIR)
 	$(PYTHON) $(DECODER_PY) $< $(@D)/
 
 raminit: $(RAM_INIT_VHD)
-$(RAM_INIT_VHD): $(FUNCTEST_BIN) $(INIT_BIN) | $(BUILD_VHDL_DIR)
-	$(PYTHON) $(RAM_INIT_PY) $(RAM_SIZE) 0 $(FUNCTEST_BIN) FC00 $(INIT_BIN) > $@
+$(RAM_INIT_VHD): $(FUNCTEST_BIN) $(NMI_BIN) $(IRQ_BIN) $(INIT_BIN) | $(BUILD_VHDL_DIR)
+	$(PYTHON) $(RAM_INIT_PY) $(RAM_SIZE) 0 $(FUNCTEST_BIN) F000 $(NMI_BIN) F100 $(IRQ_BIN) FC00 $(INIT_BIN) > $@
 
 $(BUILD_VHDL_DIR):
 	mkdir $(BUILD_VHDL_DIR)
@@ -84,6 +92,26 @@ $(INIT_BIN): $(BUILD_6502_DIR)/$(INIT).o $(INIT_CFG)
 
 $(BUILD_6502_DIR)/$(INIT).o: $(INIT_SRC) | $(BUILD_6502_DIR)
 	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(INIT).lst
+
+$(BUILD_6502_DIR):
+	mkdir $(BUILD_6502_DIR)
+
+nmi: $(NMI_BIN)
+$(NMI_BIN): $(BUILD_6502_DIR)/$(NMI).o $(NMI_CFG)
+	$(LD65) $< -o $@ -m $(BUILD_6502_DIR)/$(NMI).map -C $(NMI_CFG)
+
+$(BUILD_6502_DIR)/$(NMI).o: $(NMI_SRC) | $(BUILD_6502_DIR)
+	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(NMI).lst
+
+$(BUILD_6502_DIR):
+	mkdir $(BUILD_6502_DIR)
+
+irq: $(IRQ_BIN)
+$(IRQ_BIN): $(BUILD_6502_DIR)/$(IRQ).o $(IRQ_CFG)
+	$(LD65) $< -o $@ -m $(BUILD_6502_DIR)/$(IRQ).map -C $(IRQ_CFG)
+
+$(BUILD_6502_DIR)/$(IRQ).o: $(IRQ_SRC) | $(BUILD_6502_DIR)
+	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(IRQ).lst
 
 $(BUILD_6502_DIR):
 	mkdir $(BUILD_6502_DIR)

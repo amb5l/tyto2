@@ -14,6 +14,8 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
+-- todo:
+-- test races between NMI, IRQ and BRK
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -22,14 +24,17 @@ package np6532_core_pkg is
 
     component np6532_core is
         generic (
-            vector_init : std_logic_vector(15 downto 0)
+            jmp_rst : std_logic_vector(15 downto 0);            -- reset jump address
+            vec_nmi : std_logic_vector(15 downto 0) := x"FFFA"; -- NMI vector address
+            vec_irq : std_logic_vector(15 downto 0) := x"FFFE"; -- IRQ vector address
+            vec_brk : std_logic_vector(15 downto 0) := x"FFFE"  -- BRK vector address
         );
         port (
 
             clk       : in  std_logic;                     -- clock
 
             rst       : in  std_logic;                     -- reset
-            hold      : in  std_logic;                     -- pause execution on this cycle (and enable DMA)
+            hold      : in  std_logic;                     -- pause execution on this cycle
             nmi       : in  std_logic;                     -- NMI
             irq       : in  std_logic;                     -- IRQ
 
@@ -52,8 +57,9 @@ package np6532_core_pkg is
             cs_a      : out std_logic_vector(7 downto 0);  -- stack cache read address
             cs_d      : in  std_logic_vector(31 downto 0); -- stack cache read data
 
-            trace_run : out std_logic;                     -- trace: CPU running
             trace_stb : out std_logic;                     -- trace: instruction strobe (complete)
+            trace_nmi : out std_logic;                     -- trace: in NMI handler
+            trace_irq : out std_logic;                     -- trace: in IRQ handler
             trace_op  : out std_logic_vector(23 downto 0); -- trace opcode and operand
             trace_pc  : out std_logic_vector(15 downto 0); -- trace register PC
             trace_s   : out std_logic_vector(7 downto 0);  -- trace register S
@@ -78,7 +84,10 @@ use work.np65_decoder_pkg.all;
 
 entity np6532_core is
     generic (
-        vector_init : std_logic_vector(15 downto 0)
+        jmp_rst : std_logic_vector(15 downto 0);            -- reset jump address
+        vec_nmi : std_logic_vector(15 downto 0) := x"FFFA"; -- NMI vector address
+        vec_irq : std_logic_vector(15 downto 0) := x"FFFE"; -- IRQ vector address
+        vec_brk : std_logic_vector(15 downto 0) := x"FFFE"  -- BRK vector address
     );
     port (
 
@@ -108,8 +117,9 @@ entity np6532_core is
         cs_a      : out std_logic_vector(7 downto 0);  -- stack cache read address
         cs_d      : in  std_logic_vector(31 downto 0); -- stack cache read data
 
-        trace_run : out std_logic;                     -- trace: CPU running
         trace_stb : out std_logic;                     -- trace: instruction strobe (complete)
+        trace_nmi : out std_logic;                     -- trace: in NMI handler
+        trace_irq : out std_logic;                     -- trace: in IRQ handler
         trace_op  : out std_logic_vector(23 downto 0); -- trace opcode and operand
         trace_pc  : out std_logic_vector(15 downto 0); -- trace register PC
         trace_s   : out std_logic_vector(7 downto 0);  -- trace register S
@@ -164,30 +174,36 @@ architecture synth of np6532_core is
     constant SEL_REG_Y_MEM    : std_logic_vector(0 downto 0) := "1";
 
     --------------------------------------------------------------------------------
-    -- reset, execution
+    -- execution control
 
-    signal rst_1            : std_logic;                                    -- reset, 1 clock delay
-    signal rst_2            : std_logic;                                    -- reset, 2 clock delay
-    signal advex            : std_logic;                                    -- advance execution
+    signal fif              : std_logic;                                    -- first instruction fetch
+    signal run              : std_logic;                                    -- asserts and stays asserted after first instruction fetch
+    signal advex            : std_logic;                                    -- advance execution (instruction complete)
     signal cycle            : std_logic;                                    -- cycle (slow instructions)
+    signal smack            : std_logic;                                    -- self modifying code (write collision with instruction fetch)
 
     --------------------------------------------------------------------------------
     -- interrupts and vectors
 
-    signal nmi_1            : std_logic;                                    -- NMI delayed by 1 clock
-    signal nmi_2            : std_logic;                                    -- NMI delayed by 2 clocks
+    signal nmi_1            : std_logic;                                    -- NMI delayed by 1 instruction fetch (for edge detect)
+    signal nmi_active       : std_logic;                                    -- NMI in progress
+    signal irq_active       : std_logic;                                    -- IRQ in progress
 
-    signal vector_nmi       : std_logic_vector(15 downto 0);                -- cached NMI vector
-    signal vector_nmi_en    : std_logic_vector(1 downto 0);                 -- address decode for above
-    signal vector_irq       : std_logic_vector(15 downto 0);                -- cached BRK/IRQ vector
-    signal vector_irq_en    : std_logic_vector(1 downto 0);                 -- address decode for above
-    signal vector_dw        : std_logic_vector(7 downto 0);                 -- delayed write data
-    signal vector_we        : std_logic;                                    -- delayed write enable
+    signal vc_nmi           : std_logic_vector(15 downto 0);                -- cached NMI vector
+    signal vc_nmi_en        : std_logic_vector(1 downto 0);                 -- address decode for above
+    signal vc_irq           : std_logic_vector(15 downto 0);                -- cached IRQ vector
+    signal vc_irq_en        : std_logic_vector(1 downto 0);                 -- address decode for above
+    signal vc_brk           : std_logic_vector(15 downto 0);                -- cached BRK vector
+    signal vc_brk_en        : std_logic_vector(1 downto 0);                 -- address decode for above
+    signal vc_dw            : std_logic_vector(7 downto 0);                 -- delayed write data
+    signal vc_we            : std_logic;                                    -- delayed write enable
 
     --------------------------------------------------------------------------------
     -- pipeline stage 0
 
-    signal s0_if_a_vector   : std_logic_vector(15 downto 0);                -- instruction address (vector)
+    signal s0_nmi           : std_logic;                                    -- NMI (force BRK fetch)
+    signal s0_irq           : std_logic;                                    -- IRQ (force BRK fetch)
+    signal s0_if_a_brk      : std_logic_vector(15 downto 0);                -- instruction address (break)
     signal s0_if_a_next     : std_logic_vector(15 downto 0);                -- instruction address (next)
     signal s0_if_a_bxx      : std_logic_vector(15 downto 0);                -- instruction address (branch)
     signal s0_if_a_rts      : std_logic_vector(15 downto 0);                -- instruction address (RTS)
@@ -196,9 +212,10 @@ architecture synth of np6532_core is
     --------------------------------------------------------------------------------
     -- pipeline stage 1
 
-    signal s1_brk           : std_logic;                                        -- current instruction is BRK
-    signal s1_flag_i_clr    : std_logic;                                        -- I flag is being cleared by this instruction (CLI or PLP)
-    signal s1_col           : std_logic;                                        -- collision (data write to same address as instruction fetch i.e. self modifying code)
+    signal s1_nmi           : std_logic;                                    -- NMI
+    signal s1_irq           : std_logic;                                    -- IRQ
+    signal s1_int           : std_logic;                                    -- NMI or IRQ
+    signal s1_flag_i_clr    : std_logic;                                    -- I flag is being cleared by this instruction (CLI or PLP)
 
     -- instruction decoder outputs
     signal s1_id_valid      : std_logic;
@@ -252,6 +269,7 @@ architecture synth of np6532_core is
 
     -- registers
     signal s1_reg_pc        : std_logic_vector(15 downto 0);
+    signal s1_reg_pc1       : std_logic_vector(15 downto 0);
     signal s1_reg_pc2       : std_logic_vector(15 downto 0);
 
     --------------------------------------------------------------------------------
@@ -266,8 +284,6 @@ architecture synth of np6532_core is
     alias  s2_operand_8     : std_logic_vector(7 downto 0) is s2_operand_16(7 downto 0);
 
     -- load/store
-    signal s2_ls_a          : std_logic_vector(15 downto 0);            -- address (logical)
-    signal s2_ls_we         : std_logic;
     alias  s2_ls_dr         : std_logic_vector(31 downto 0) is ls_dr;
     alias  s2_ls_dr_16      : std_logic_vector(15 downto 0) is ls_dr(15 downto 0);
     alias  s2_ls_dr_8       : std_logic_vector(7 downto 0) is ls_dr(7 downto 0);
@@ -310,9 +326,6 @@ architecture synth of np6532_core is
     signal s2_sel_reg_y     : std_logic_vector(SEL_REG_Y_NOP'range);    -- Y register mux select
 
     -- registers
-    signal s2_reg_pc        : std_logic_vector(15 downto 0);            -- program counter (PC)
-    signal s2_reg_pc1       : std_logic_vector(15 downto 0);            -- PC+1
-    signal s2_reg_pc2       : std_logic_vector(15 downto 0);            -- PC+2
     signal s2_reg_s         : std_logic_vector(7 downto 0);             -- stack pointer (S)
     signal s2_reg_s1        : std_logic_vector(7 downto 0);             -- S+1
     signal s2_reg_p         : std_logic_vector(7 downto 0);
@@ -327,7 +340,7 @@ architecture synth of np6532_core is
     signal s2_reg_p_next    : std_logic_vector(7 downto 0);
     alias  s2_flag_c_next   : std_logic is s2_reg_p_next(0);
     alias  s2_flag_z_next   : std_logic is s2_reg_p_next(1);
-    alias  s2_flag_if_next  : std_logic is s2_reg_p_next(2);
+    alias  s2_flag_i_next   : std_logic is s2_reg_p_next(2);
     alias  s2_flag_d_next   : std_logic is s2_reg_p_next(3);
     alias  s2_flag_b_next   : std_logic is s2_reg_p_next(4);
     alias  s2_flag_x_next   : std_logic is s2_reg_p_next(5);
@@ -403,7 +416,8 @@ begin
 
     -- misc outputs
 
-    if_en  <= advex or rst_2;
+    if_en  <= advex or fif;
+    if_brk <= rst or s0_nmi or s0_irq;
     if_a   <= s0_if_a;
     ls_a   <= s1_ls_a;
     ls_en  <= s1_ls_en;
@@ -416,9 +430,10 @@ begin
 
     -- trace: conditions at start of instruction
 
-    trace_run <= not (rst_1 and rst_2);
-    trace_stb <= advex or (rst_2 and not rst_1);
-    trace_op <= s1_operand_16 & s1_opcode;
+    trace_stb <= advex;
+    trace_nmi <= nmi_active;
+    trace_irq <= irq_active;
+    trace_op  <= s1_operand_16 & s1_opcode;
     trace_pc  <= s1_reg_pc;
     trace_s   <= s2_reg_s;
     trace_p   <= s2_reg_p;
@@ -466,14 +481,7 @@ begin
     -- execution control
     --  almost all instructions are fast / single cycle
     --  exceptions are RMW (non zero page) and JMP indirect; these take 2 cycles and always start with a load
-    advex <= not rst_2 and not hold and not s1_col and s1_id_valid and (s1_id_fast or cycle);
-
-    -- interrupt on leading edge of NMI or enabled IRQ
-    -- if_brk <= not rst and ((nmi_1 and not nmi_2) or (irq and (s1_flag_i_clr or not s2_flag_i)));
-    if_brk <= rst or (nmi_1 and not nmi_2) or (irq and (s1_flag_i_clr or not s2_flag_i));
-
-    -- current instruction is BRK
-    s1_brk <= '1' when s1_id_flag_i = ID_FLAG_I_BRK else '0';
+    advex <= run and s1_id_valid and (s1_id_fast or cycle) and not hold;
 
     -- I flag will be cleared by this instruction (CLI, RTI or PLP)
     s1_flag_i_clr <= '1' when
@@ -481,35 +489,30 @@ begin
         (s1_id_reg_p = '1' and cs_d(2) = '0')
         else '0';
 
-    -- write collision with instruction fetch (self modifying code)
-    s1_col <= '1' when s2_ls_we = '1' and ((s2_ls_a = s2_reg_pc) or (s2_ls_a = s2_reg_pc1) or (s2_ls_a = s2_reg_pc2)) else '0';
-
-    process(rst, clk)
+    process(clk)
     begin
-
-        if rst = '1' then
-            rst_1  <= '1';
-            rst_2  <= '1';
-        elsif rising_edge(clk) then
-            rst_1  <= '0';
-            rst_2 <= rst_1;
-        end if;
-
         if rising_edge(clk) then
+
             if rst = '1' then
 
                 cycle           <= '0';
+                fif             <= '0';
+                run             <= '0';
+                smack           <= '0';
 
                 nmi_1           <= '0';
-                nmi_2           <= '0';
+                nmi_active      <= '0';
+                irq_active      <= '0';
 
-                s2_ls_we        <= '0';
+                s0_nmi          <= '0';
+                s0_irq          <= '0';
+
+                s1_nmi          <= '0';
+                s1_irq          <= '0';
+                s1_int          <= '0';
+
                 s2_rmw_z        <= '0';
                 s2_rmw_n        <= '0';
-                s2_ls_a         <= (others => '0');
-                s2_reg_pc       <= vector_init;
-                s2_reg_pc1      <= std_logic_vector(unsigned(vector_init)+1);
-                s2_reg_pc2      <= std_logic_vector(unsigned(vector_init)+2);
                 s2_reg_p_next   <= x"14"; -- X flag starts off clear to inhibit NMI during init
                 s2_reg_a_next   <= x"00";
                 s2_reg_x_next   <= x"00";
@@ -534,6 +537,7 @@ begin
             else
 
                 cycle <= ((not hold and not s1_id_fast) or cycle) and not advex;
+                smack <= '0';
 
                 s2_id_addsub    <= '0';
                 s2_id_shift     <= (others => '0');
@@ -554,16 +558,44 @@ begin
                 s2_reg_a_next   <= s2_reg_a;
                 s2_reg_x_next   <= s2_reg_x;
                 s2_reg_y_next   <= s2_reg_y;
-                s2_ls_we        <= s1_ls_we;
-                s2_reg_pc       <= s1_reg_pc;
-                s2_reg_pc1      <= std_logic_vector(unsigned(s1_reg_pc)+1);
-                s2_reg_pc2      <= s1_reg_pc2;
-                s2_ls_a         <= s1_ls_a;
 
-                if advex = '1' or (rst_2 = '1' and rst_1 = '0') then
 
-                    nmi_1 <= nmi and s2_flag_x; -- NMI inhibited during init
-                    nmi_2 <= nmi_1;
+                if fif = '0' and run = '0' and hold = '0' then
+                    fif <= '1';
+                elsif fif = '1' and hold = '0' then
+                    fif <= '0';
+                    run <= '1';
+                end if;
+
+                if s1_ls_we = '1' and ((s1_ls_a = s1_reg_pc) or (s1_ls_a = s1_reg_pc1) or (s1_ls_a = s1_reg_pc2)) then -- self modifying code - write collision with instruction fetch
+                    smack <= '1';
+                end if;
+
+                if advex = '1' then
+
+                    nmi_1 <= nmi and s2_flag_x;
+                    s0_nmi <= nmi and s2_flag_x and not nmi_1;
+                    if s0_nmi = '1' then
+                        nmi_active <= '1';
+                    end if;
+                    s0_irq <=
+                        not (nmi and s2_flag_x and not nmi_1) and                                 -- NMI about to taken
+                        not (s0_nmi or s1_nmi) and                                                -- NMI early stages
+                        (irq and (s1_flag_i_clr or not s2_flag_i) and not s0_irq and not s1_irq); -- IRQ is not masked
+                    if s0_irq = '1' then
+                        irq_active <= '1';
+                    end if;
+                    if to_integer(unsigned(s1_opcode)) = mnemonic_type'pos(RTI_imp) then
+                        if nmi_active = '1' then
+                            nmi_active <= '0';
+                        elsif irq_active = '1' then
+                            irq_active <= '0';
+                        end if;
+                    end if;
+
+                    s1_nmi <= s0_nmi;
+                    s1_irq <= s0_irq;
+                    s1_int <= s0_nmi or s0_irq;
 
                     s2_id_addsub    <= s1_id_addsub;
                     s2_id_shift     <= s1_id_shift;
@@ -634,9 +666,9 @@ begin
                     elsif s1_id_flag_zn = ID_FLAG_ZN_Y then   s2_sel_flag_zn <= SEL_FLAG_ZN_Y;
                     end if;
 
-                    if    s1_id_flag_i = ID_FLAG_I_CLR then s2_flag_if_next <= '0';
-                    elsif s1_id_flag_i = ID_FLAG_I_SET then s2_flag_if_next <= '1';
-                    elsif s1_id_flag_i = ID_FLAG_I_BRK then s2_flag_if_next <= '1';
+                    if    s1_id_flag_i = ID_FLAG_I_CLR then s2_flag_i_next <= '0';
+                    elsif s1_id_flag_i = ID_FLAG_I_SET then s2_flag_i_next <= '1';
+                    elsif s1_id_flag_i = ID_FLAG_I_BRK then s2_flag_i_next <= '1';
                     end if;
 
                     if    s1_id_flag_d = ID_FLAG_D_CLR then s2_flag_d_next <= '0';
@@ -701,26 +733,27 @@ begin
     s0_if_a_bxx <= s1_reg_pc2 when s1_if_bxx = '0' else
         std_logic_vector(unsigned(s1_reg_pc2)+unsigned(resize(signed(s1_operand_8), 16)));
 
-    s0_if_a_vector <=
-        vector_init when rst_2 = '1' else
-        vector_nmi  when nmi_1 = '1' and nmi_2 = '0' else
-        vector_irq;
+    s0_if_a_brk <=
+        jmp_rst when fif = '1' else
+        vc_nmi when s1_nmi = '1' else
+        vc_irq when s1_irq = '1' else
+        vc_brk;
 
     s0_if_a_next <=
-       std_logic_vector(unsigned(s1_reg_pc)+unsigned(s1_id_isize)+1) when s1_col = '0'
+       std_logic_vector(unsigned(s1_reg_pc)+unsigned(s1_id_isize)+1) when smack = '0'
        else s1_reg_pc;
 
     s0_if_a_rts <= std_logic_vector(unsigned(cs_d(15 downto 0))+1);
 
     with s1_id_iaddr select s0_if_a <=
-        s0_if_a_vector              when ID_IADDR_BRK, -- reset, IRQ, BRK, NMI
-        s0_if_a_next                when ID_IADDR_NXT, -- next instruction
-        s0_if_a_bxx                 when ID_IADDR_BRX, -- branch
-        s1_operand_16               when ID_IADDR_JMP, -- JMP/JSR absolute
-        s0_if_a_rts                 when ID_IADDR_RTS, -- RTS
-        cs_d(23 downto 8)           when ID_IADDR_RTI, -- RTI
-        s2_ls_dr_16                 when ID_IADDR_IND, -- JMP indirect
-        x"0000"                     when others;
+        s0_if_a_brk       when ID_IADDR_BRK, -- reset, IRQ, BRK, NMI
+        s0_if_a_next      when ID_IADDR_NXT, -- next instruction
+        s0_if_a_bxx       when ID_IADDR_BRX, -- branch
+        s1_operand_16     when ID_IADDR_JMP, -- JMP/JSR absolute
+        s0_if_a_rts       when ID_IADDR_RTS, -- RTS
+        cs_d(23 downto 8) when ID_IADDR_RTI, -- RTI
+        s2_ls_dr_16       when ID_IADDR_IND, -- JMP indirect
+        x"0000"           when others;
 
     -- load/store address generation
 
@@ -742,36 +775,42 @@ begin
     -- load/store strobes and byte write enables
 
     s1_ls_en <=
-        '0' when (rst_1 = '1') or (hold = '1') else
+        '0' when (run = '0') or (hold = '1') else
         '1' when (s1_id_dop /= ID_DOP_NOP) else
         '0';
 
     s1_ls_re <=
-        '0' when (rst_1 = '1') or (hold = '1') else
+        '0' when (run = '0') or (hold = '1') else
         '1' when (s1_id_dop = ID_DOP_R) or ((s1_id_dop = ID_DOP_RMW) and cycle = '0') else
         '0';
 
     s1_ls_we <=
-        '0' when (rst_1 = '1') or (hold = '1') else
+        '0' when (run = '0') or (hold = '1') else
         '1' when (s1_id_dop = ID_DOP_W) or ((s1_id_dop = ID_DOP_RMW) and cycle = '1') else
         '0';
 
+    -- store (write) data
+
     with s1_id_wdata select s1_ls_dw(7 downto 0) <=
-        s1_rmw_w                                             when ID_WDATA_RMW, -- RMW
-        s2_reg_a                                             when ID_WDATA_A,   -- STA, PHA
-        s2_reg_x                                             when ID_WDATA_X,   -- STX
-        s2_reg_y                                             when ID_WDATA_Y,   -- STY
-        s2_reg_p                                             when ID_WDATA_P,   -- PHP
-        s1_reg_pc2(7 downto 0)                               when ID_WDATA_JSR, -- JSR
-        s2_reg_p(7 downto 5) & s1_brk & s2_reg_p(3 downto 0) when ID_WDATA_BRK, -- BRK/IRQ/NMI
-        x"00"                                                when others;
+        s1_rmw_w                                                 when ID_WDATA_RMW, -- RMW
+        s2_reg_a                                                 when ID_WDATA_A,   -- STA, PHA
+        s2_reg_x                                                 when ID_WDATA_X,   -- STX
+        s2_reg_y                                                 when ID_WDATA_Y,   -- STY
+        s2_reg_p                                                 when ID_WDATA_P,   -- PHP
+        s1_reg_pc2(7 downto 0)                                   when ID_WDATA_JSR, -- JSR
+        s2_reg_p(7 downto 5) & not s1_int & s2_reg_p(3 downto 0) when ID_WDATA_BRK, -- BRK/IRQ/NMI
+        x"00"                                                    when others;
 
-    with s1_id_wdata select s1_ls_dw(15 downto 8) <=
-        s1_reg_pc2(15 downto 8) when ID_WDATA_JSR,  -- JSR
-        s1_reg_pc2(7 downto 0) when ID_WDATA_BRK,  -- BRK/IRQ/NMI
-        x"00"       when others;
+    s1_ls_dw(15 downto 8) <=
+        s1_reg_pc2(15 downto 8) when s1_id_wdata = ID_WDATA_JSR else                  -- JSR
+        s1_reg_pc(7 downto 0)   when s1_id_wdata = ID_WDATA_BRK and s1_int = '1' else -- IRQ/NMI
+        s1_reg_pc2(7 downto 0)  when s1_id_wdata = ID_WDATA_BRK else                  -- BRK
+        x"00";
 
-    s1_ls_dw(23 downto 16) <= s1_reg_pc2(15 downto 8) when s1_id_wdata = ID_WDATA_BRK else x"00"; -- INT
+    s1_ls_dw(23 downto 16) <=
+        s1_reg_pc(15 downto 8)  when s1_id_wdata = ID_WDATA_BRK and s1_int = '1' else -- IRQ/NMI
+        s1_reg_pc2(15 downto 8) when s1_id_wdata = ID_WDATA_BRK else                  -- BRK
+        x"00";
 
     s1_ls_dw(31 downto 24) <= (others => '0');
 
@@ -873,14 +912,16 @@ begin
 
     -- register PC (program counter)
 
-    process(rst, clk)
+    process(clk)
     begin
-        if rst = '1' then
-            s1_reg_pc <= vector_init;
-            s1_reg_pc2 <= std_logic_vector(unsigned(vector_init)+2);
-        elsif rising_edge(clk) then
-            if advex = '1' or (rst_2 = '1' and rst_1 = '0') then
+        if rising_edge(clk) then
+            if rst = '1' then
+                s1_reg_pc <= jmp_rst;
+                s1_reg_pc1 <= std_logic_vector(unsigned(jmp_rst)+1);
+                s1_reg_pc2 <= std_logic_vector(unsigned(jmp_rst)+2);
+            elsif advex = '1' or (fif = '1' and hold = '0') then
                 s1_reg_pc <= s0_if_a;
+                s1_reg_pc1 <= std_logic_vector(unsigned(s0_if_a)+1);
                 s1_reg_pc2 <= std_logic_vector(unsigned(s0_if_a)+2);
             end if;
         end if;
@@ -888,18 +929,20 @@ begin
 
     -- register S (stack pointer)
 
-    process(rst, clk)
+    process(clk)
     begin
-        if rst = '1' then
-            s2_reg_s <= x"00";
-            s2_reg_s1 <= x"01";
-        elsif rising_edge(clk) and (advex = '1' or (rst_2 = '1' and rst_1 = '0')) then
-            if s1_id_reg_s = '1' then -- TXS
-                s2_reg_s <= s2_reg_x;
-                s2_reg_s1 <= std_logic_vector(unsigned(s2_reg_x)+1);
-            else
-                s2_reg_s      <= std_logic_vector(unsigned(s2_reg_s)+unsigned(resize(signed(s1_id_sdelta), 8)));
-                s2_reg_s1 <= std_logic_vector(unsigned(s2_reg_s)+unsigned(resize(signed(s1_id_sdelta), 8))+1);
+        if rising_edge(clk) then
+            if rst = '1' then
+                s2_reg_s <= x"00";
+                s2_reg_s1 <= x"01";
+            elsif advex = '1' then
+                if s1_id_reg_s = '1' then -- TXS
+                    s2_reg_s  <= s2_reg_x;
+                    s2_reg_s1 <= std_logic_vector(unsigned(s2_reg_x)+1);
+                else
+                    s2_reg_s  <= std_logic_vector(unsigned(s2_reg_s)+unsigned(resize(signed(s1_id_sdelta), 8)));
+                    s2_reg_s1 <= std_logic_vector(unsigned(s2_reg_s)+unsigned(resize(signed(s1_id_sdelta), 8))+1);
+                end if;
             end if;
         end if;
     end process;
@@ -921,7 +964,7 @@ begin
         s2_logic_z     when    SEL_FLAG_ZN_BIT,
         s2_flag_z_next when    others;          -- NOP/PLP/RTI
 
-    s2_flag_i <= s2_flag_if_next;
+    s2_flag_i <= s2_flag_i_next;
 
     s2_flag_d <= s2_flag_d_next;
 
@@ -974,39 +1017,49 @@ begin
     -- 1 cycle delayed write timing is OK here because this happens
     -- under controlled circumstances (pre-reset code)
 
-    process(rst, clk, advex)
+    process(clk)
     begin
-        if rst = '1' then
-            vector_nmi_en <= (others => '0');
-            vector_irq_en <= (others => '0');
-            vector_dw <= (others => '0');
-            vector_we <= '0';
-            vector_nmi <= (others => '0');
-            vector_irq <= (others => '0');
-        elsif rising_edge(clk) and advex = '1' then
-            vector_nmi_en <= (others => '0');
-            vector_irq_en <= (others => '0');
-            vector_dw <= s1_ls_dw(7 downto 0);
-            vector_we <= s1_ls_we;
-            case s1_ls_a is
-                when x"FFFA" => vector_nmi_en(0) <= '1';
-                when x"FFFB" => vector_nmi_en(1) <= '1';
-                when x"FFFE" => vector_irq_en(0) <= '1';
-                when x"FFFF" => vector_irq_en(1) <= '1';
-                when others => null;
-            end case;
-            if vector_we = '1' then
-                if vector_nmi_en(0) = '1' then
-                    vector_nmi(7 downto 0) <= vector_dw;
-                end if;
-                if vector_nmi_en(1) = '1' then
-                    vector_nmi(15 downto 8) <= vector_dw;
-                end if;
-                if vector_irq_en(0) = '1' then
-                    vector_irq(7 downto 0) <= vector_dw;
-                end if;
-                if vector_irq_en(1) = '1' then
-                    vector_irq(15 downto 8) <= vector_dw;
+        if rising_edge(clk) then
+            if rst = '1' then
+                vc_nmi_en <= (others => '0');
+                vc_irq_en <= (others => '0');
+                vc_brk_en <= (others => '0');
+                vc_dw <= (others => '0');
+                vc_we <= '0';
+                vc_nmi <= (others => '0');
+                vc_irq <= (others => '0');
+                vc_brk <= (others => '0');
+            elsif advex = '1' then
+                vc_nmi_en <= (others => '0');
+                vc_irq_en <= (others => '0');
+                vc_brk_en <= (others => '0');
+                vc_dw <= s1_ls_dw(7 downto 0);
+                vc_we <= s1_ls_we;
+                if s1_ls_a = vec_nmi                               then vc_nmi_en(0) <= '1'; end if;
+                if s1_ls_a = std_logic_vector(unsigned(vec_nmi)+1) then vc_nmi_en(1) <= '1'; end if;
+                if s1_ls_a = vec_irq                               then vc_irq_en(0) <= '1'; end if;
+                if s1_ls_a = std_logic_vector(unsigned(vec_irq)+1) then vc_irq_en(1) <= '1'; end if;
+                if s1_ls_a = vec_brk                               then vc_brk_en(0) <= '1'; end if;
+                if s1_ls_a = std_logic_vector(unsigned(vec_brk)+1) then vc_brk_en(1) <= '1'; end if;
+                if vc_we = '1' then
+                    if vc_nmi_en(0) = '1' then
+                        vc_nmi(7 downto 0) <= vc_dw;
+                    end if;
+                    if vc_nmi_en(1) = '1' then
+                        vc_nmi(15 downto 8) <= vc_dw;
+                    end if;
+                    if vc_irq_en(0) = '1' then
+                        vc_irq(7 downto 0) <= vc_dw;
+                    end if;
+                    if vc_irq_en(1) = '1' then
+                        vc_irq(15 downto 8) <= vc_dw;
+                    end if;
+                    if vc_brk_en(0) = '1' then
+                        vc_brk(7 downto 0) <= vc_dw;
+                    end if;
+                    if vc_brk_en(1) = '1' then
+                        vc_brk(15 downto 8) <= vc_dw;
+                    end if;
                 end if;
             end if;
         end if;

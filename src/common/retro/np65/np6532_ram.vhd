@@ -29,7 +29,6 @@ package np6532_ram_pkg is
             clk_cpu   : in  std_logic;                              -- CPU clock
             clk_mem   : in  std_logic;                              -- memory/DMA clock
             clken_0   : in  std_logic;                              -- asserted when edges are coincident (start of clock phase 0)
-            hold      : in  std_logic;                              -- pause execution on this cycle (and enable DMA)
 
             if_a      : in  std_logic_vector(size_log2-1 downto 0); -- instruction fetch address
             if_en     : in  std_logic;                              -- instruction fetch enable
@@ -44,6 +43,7 @@ package np6532_ram_pkg is
             ls_dw     : in  std_logic_vector(31 downto 0);          -- store data (writes)
             ls_dr     : out std_logic_vector(31 downto 0);          -- load data (reads)
 
+            dma_en    : in  std_logic;                              -- DMA enable on this clk_mem cycle
             dma_a     : in  std_logic_vector(size_log2-1 downto 3); -- DMA address (Qword aligned)
             dma_bwe   : in  std_logic_vector(7 downto 0);           -- DMA byte write enables
             dma_dw    : in  std_logic_vector(63 downto 0);          -- DMA write data
@@ -73,7 +73,6 @@ entity np6532_ram is
         clk_cpu   : in  std_logic;                              -- CPU clock
         clk_mem   : in  std_logic;                              -- memory/DMA clock
         clken_0   : in  std_logic;                              -- asserted when edges are coincident (start of clock phase 0)
-        hold      : in  std_logic;                              -- pause execution on this cycle (and enable DMA)
 
         if_a      : in  std_logic_vector(size_log2-1 downto 0); -- instruction fetch address
         if_en     : in  std_logic;                              -- instruction fetch enable
@@ -88,6 +87,7 @@ entity np6532_ram is
         ls_dw     : in  std_logic_vector(31 downto 0);          -- store data (writes)
         ls_dr     : out std_logic_vector(31 downto 0);          -- load data (reads)
 
+        dma_en    : in  std_logic;                              -- DMA enable on this clk_mem cycle
         dma_a     : in  std_logic_vector(size_log2-1 downto 3); -- DMA address (Qword aligned)
         dma_bwe   : in  std_logic_vector(7 downto 0);           -- DMA byte write enables
         dma_dw    : in  std_logic_vector(63 downto 0);          -- DMA write data
@@ -100,11 +100,12 @@ architecture synth of np6532_ram is
 
     type ram_addr is array(natural range <>) of std_logic_vector(size_log2-1 downto 2);
 
-    signal hold_1     : std_logic;
+    signal if_en_1    : std_logic;
     signal if_i       : integer range 0 to 3;          -- 2 LSBs of if_a, latched
     signal if_z_1     : std_logic;                     -- if_z, 1 clock delay
     signal if_d_i     : std_logic_vector(31 downto 0); -- if_d, internal
     signal if_d_l     : std_logic_vector(31 downto 0); -- if_d, latched
+    signal ls_en_1    : std_logic;
     signal ls_i       : integer range 0 to 3;          -- 2 LSBs of ls_a, latched
     signal ls_z_1     : std_logic;                     -- ls_z, 1 clock delay
     signal ls_bwe     : std_logic_vector(3 downto 0);  -- ls byte write enables
@@ -131,24 +132,27 @@ begin
     process(clk_cpu)
     begin
         if rising_edge(clk_cpu) then
-            hold_1 <= hold;
-            if hold = '0' then
-                if_d_l <= if_d_i;
-                if if_en = '1' then
-                    if_z_1 <= if_z;
-                    if_i <= to_integer(unsigned(if_a(1 downto 0)));
-                end if;
+            if if_en = '1' then
+                if_z_1 <= if_z;
+                if_i <= to_integer(unsigned(if_a(1 downto 0)));
+            end if;
+            if_en_1 <= if_en;
+            if if_en_1 = '1' then
+                if_d_l <= if_d_i;            
+            end if;
+            if ls_en = '1' then
+                ls_z_1 <= ls_z;
+                ls_i <= to_integer(unsigned(ls_a(1 downto 0)));
+            end if;
+            ls_en_1 <= ls_en;
+            if ls_en_1 = '1' then            
                 ls_dr_l <= ls_dr_i;
-                if ls_en = '1' then
-                    ls_z_1 <= ls_z;
-                    ls_i <= to_integer(unsigned(ls_a(1 downto 0)));
-                end if;
             end if;
         end if;
     end process;
 
-    ram_ce_a <= hold or (clken_0 and if_en);
-    ram_ce_b <= hold or (clken_0 and ls_en);
+    ram_ce_a <= dma_en or (clken_0 and if_en);
+    ram_ce_b <= dma_en or (clken_0 and ls_en);
 
     GEN_RAM: for i in 0 to 3 generate
         -- Xilinx synthesis attributes
@@ -158,25 +162,25 @@ begin
 
         ls_bwe(i) <= ls_we when i <= to_integer(unsigned(ls_sz)) else '0';
 
-        ram_addr_a(i) <= dma_a & '0' when hold = '1' else
+        ram_addr_a(i) <= dma_a & '0' when dma_en = '1' else
             std_logic_vector(1+unsigned(if_a(size_log2-1 downto 2))) when i < to_integer(unsigned(if_a(1 downto 0))) else
             if_a(size_log2-1 downto 2);
 
-        ram_addr_b(i)(size_log2-1 downto 8) <= dma_a(size_log2-1 downto 8) when hold = '1' else
+        ram_addr_b(i)(size_log2-1 downto 8) <= dma_a(size_log2-1 downto 8) when dma_en = '1' else
             ls_a(size_log2-1 downto 8);
 
         -- multi byte writes wrap within page (because they are all stack pushes - for now)
-        ram_addr_b(i)(7 downto 2) <= dma_a(7 downto 3) & '1' when hold = '1' else
+        ram_addr_b(i)(7 downto 2) <= dma_a(7 downto 3) & '1' when dma_en = '1' else
             std_logic_vector(1+unsigned(ls_a(7 downto 2))) when i < to_integer(unsigned(ls_a(1 downto 0))) else
             ls_a(7 downto 2);
 
-        ram_we_a(i) <= dma_bwe(i) when hold = '1' else '0';
+        ram_we_a(i) <= dma_bwe(i) when dma_en = '1' else '0';
 
-        ram_we_b(i) <= dma_bwe(4+i) when hold = '1' else ls_bwe((i+(4-to_integer(unsigned(ls_a(1 downto 0))))) mod 4);
+        ram_we_b(i) <= dma_bwe(4+i) when dma_en = '1' else ls_bwe((i+(4-to_integer(unsigned(ls_a(1 downto 0))))) mod 4);
 
         ram_din_a(7+(8*i) downto 8*i) <= dma_dw(7+(8*i) downto 8*i);
 
-        ram_din_b(7+(8*i) downto 8*i) <= dma_dw(7+(8*(4+i)) downto 8*(4+i)) when hold = '1' else
+        ram_din_b(7+(8*i) downto 8*i) <= dma_dw(7+(8*(4+i)) downto 8*(4+i)) when dma_en = '1' else
             ls_dw(7+(8*((i+1) mod 4)) downto 8*((i+1) mod 4)) when ls_a(1 downto 0) = "11" else
             ls_dw(7+(8*((i+2) mod 4)) downto 8*((i+2) mod 4)) when ls_a(1 downto 0) = "10" else
             ls_dw(7+(8*((i+3) mod 4)) downto 8*((i+3) mod 4)) when ls_a(1 downto 0) = "01" else
@@ -203,11 +207,11 @@ begin
             );
 
         if_d_i(7+(8*i) downto 8*i) <=
-            if_d_l(7+(8*i) downto 8*i) when hold_1 = '1' else
+            if_d_l(7+(8*i) downto 8*i) when if_en_1 = '0' else
             (others => '0') when if_z_1 = '1' else
             ram_dout_a(7+(8*((i+if_i) mod 4)) downto 8*((i+if_i) mod 4));
         ls_dr_i(7+(8*i) downto 8*i) <=
-            ls_dr_l(7+(8*i) downto 8*i) when hold_1 = '1' else
+            ls_dr_l(7+(8*i) downto 8*i) when ls_en_1 = '0' else
             (others => '0') when ls_z_1 = '1' else
             ram_dout_b(7+(8*((i+ls_i) mod 4)) downto 8*((i+ls_i) mod 4));
         dma_dr(7+(8*i) downto 8*i) <= ram_dout_a(7+(8*i) downto 8*i);

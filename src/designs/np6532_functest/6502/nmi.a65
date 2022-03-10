@@ -1,0 +1,5 @@
+    .segment "SEG_NMI"
+    .org    $F000
+
+    STA $FE3E ; write anything to this address
+    RTI

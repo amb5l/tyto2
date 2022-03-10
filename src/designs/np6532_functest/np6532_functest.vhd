@@ -18,6 +18,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.math_real.all; -- for uniform function
 use ieee.std_logic_textio.all;
 
 library std;
@@ -26,6 +27,7 @@ use std.env.all;
 
 library work;
 use work.np6532_pkg.all;
+use work.np65_decoder_pkg.all;
 
 entity np6532_functest is
     generic (
@@ -37,59 +39,74 @@ end entity np6532_functest;
 
 architecture sim of np6532_functest is
 
-    constant clk_ratio      : integer := 2;
+    constant clk_ratio      : integer := 3;
     constant clk_mem_period : time := 10 ns;
+    constant test_hold      : boolean := true;
+    constant test_nmi       : boolean := true;
+    constant test_irq       : boolean := true;
 
-    signal clk_phase : integer range 0 to (clk_ratio*2)-1 := 0;
-    signal clk_cpu   : std_logic;
-    signal clk_mem   : std_logic;
+    signal clk_phase     : integer range 0 to (clk_ratio*2)-1 := 0;
+    signal clk_cpu       : std_logic;
+    signal clk_mem       : std_logic;
 
-    signal rst       : std_logic;
-    
-    signal hold      : std_logic;
-    signal nmi       : std_logic;
-    signal irq       : std_logic;
-    signal if_al     : std_logic_vector(15 downto 0);
-    signal if_ap     : std_logic_vector(15 downto 0);
-    signal if_z      : std_logic;
-    signal ls_al     : std_logic_vector(15 downto 0);
-    signal ls_ap     : std_logic_vector(15 downto 0);
-    signal ls_en     : std_logic;
-    signal ls_re     : std_logic;
-    signal ls_we     : std_logic;
-    signal ls_wp     : std_logic;
-    signal ls_z      : std_logic;
-    signal ls_ext    : std_logic;
-    signal ls_drx    : std_logic_vector(7 downto 0);
-    signal ls_dwx    : std_logic_vector(7 downto 0);
-    signal trace_stb : std_logic;
-    signal trace_pc  : std_logic_vector(15 downto 0);
-    signal trace_s   : std_logic_vector(7 downto 0);
-    signal trace_p   : std_logic_vector(7 downto 0);
-    signal trace_a   : std_logic_vector(7 downto 0);
-    signal trace_x   : std_logic_vector(7 downto 0);
-    signal trace_y   : std_logic_vector(7 downto 0);
-    signal dma_a     : std_logic_vector(15 downto 3);
-    signal dma_bwe   : std_logic_vector(7 downto 0);
-    signal dma_dw    : std_logic_vector(63 downto 0);
-    signal dma_dr    : std_logic_vector(63 downto 0);
+    signal rst           : std_logic;
+    signal rsto          : std_logic;
+
+    signal hold          : std_logic;
+    signal nmi           : std_logic;
+    signal irq           : std_logic;
+    signal if_al         : std_logic_vector(15 downto 0);
+    signal if_ap         : std_logic_vector(15 downto 0);
+    signal if_z          : std_logic;
+    signal ls_al         : std_logic_vector(15 downto 0);
+    signal ls_ap         : std_logic_vector(15 downto 0);
+    signal ls_en         : std_logic;
+    signal ls_re         : std_logic;
+    signal ls_we         : std_logic;
+    signal ls_wp         : std_logic;
+    signal ls_z          : std_logic;
+    signal ls_ext        : std_logic;
+    signal ls_drx        : std_logic_vector(7 downto 0);
+    signal ls_dwx        : std_logic_vector(7 downto 0);
+    signal trace_stb     : std_logic;
+    signal trace_nmi     : std_logic;
+    signal trace_irq     : std_logic;
+    signal trace_op      : std_logic_vector(23 downto 0);
+    signal trace_pc      : std_logic_vector(15 downto 0);
+    signal trace_s       : std_logic_vector(7 downto 0);
+    signal trace_p       : std_logic_vector(7 downto 0);
+    signal trace_a       : std_logic_vector(7 downto 0);
+    signal trace_x       : std_logic_vector(7 downto 0);
+    signal trace_y       : std_logic_vector(7 downto 0);
+    signal dma_a         : std_logic_vector(15 downto 3);
+    signal dma_bwe       : std_logic_vector(7 downto 0);
+    signal dma_dw        : std_logic_vector(63 downto 0);
+    signal dma_dr        : std_logic_vector(63 downto 0);
 
     signal trace_pc_prev : std_logic_vector(15 downto 0);
     signal started       : boolean;
     signal count_i       : integer;
     signal count_c       : integer;
-    
+
+    signal interval_nmi  : integer;
+    signal count_nmi     : integer;
+    signal interval_irq  : integer;
+    signal count_irq     : integer;
+
+    signal count_hold    : integer range 0 to 3;
+    signal count_hold_0  : integer range 0 to 3;
+    signal count_hold_1  : integer range 0 to 3;
+
+    signal test_case     : std_logic_vector(7 downto 0); -- functest code's test case - use to avoid stack test (case 3)
+
 begin
 
     clk_phase <= (clk_phase+1) mod (clk_ratio*2) after clk_mem_period/2;
     clk_mem <= '1' when clk_phase mod 2 = 0 else '0';
     clk_cpu <= '1' when clk_phase < clk_ratio else '0';
 
-    hold <= '0';
-    nmi <= '0';
-    irq <= '0';    
     if_ap <= if_al;
-    if_z <= '0';    
+    if_z <= '0';
     ls_ap <= ls_al;
     ls_wp <= '0';
     ls_z <= '0';
@@ -107,10 +124,10 @@ begin
         rst <= '0';
         while not endfile(f) loop
             wait until rising_edge(clk_cpu);
-            if started then
+            if started and hold = '0' and trace_nmi = '0' and trace_irq = '0' then
                 count_c <= count_c + 1;
             end if;
-            if trace_stb = '1' then
+            if trace_stb = '1' and trace_nmi = '0' and trace_irq = '0' then
                 if count_i > 0 and count_i mod 100000 = 0 then
                     report "instruction count: " & integer'image(count_i) & "  cycle count: " & integer'image(count_c);
                 end if;
@@ -160,12 +177,12 @@ begin
             count_i <= 0;
             trace_pc_prev <= (others => 'U');
         elsif falling_edge(clk_cpu) then
-            if trace_stb = '1' then
+            if trace_stb = '1' and trace_nmi = '0' and trace_irq = '0' then
                 if to_integer(unsigned(trace_pc)) = start_address then
                     count_i <= 1;
                     started <= true;
                 else
-                    count_i <= count_i+1;                
+                    count_i <= count_i+1;
                 end if;
             end if;
         elsif rising_edge(clk_cpu) then
@@ -181,13 +198,14 @@ begin
 
     UUT: component np6532
         generic map (
-            clk_ratio => clk_ratio,
+            clk_ratio     => clk_ratio,
             ram_size_log2 => 16,
-            vector_init => std_logic_vector(to_unsigned(vector_init,16))
+            jmp_rst       => std_logic_vector(to_unsigned(vector_init,16)),
+            vec_irq       => x"FFF8" -- hijack IRQ to make it invisible to functional test code
         )
         port map (
             rsti      => rst,
-            rsto      => open,
+            rsto      => rsto,
             clk_cpu   => clk_cpu,
             clk_mem   => clk_mem,
             clken     => open,
@@ -207,9 +225,10 @@ begin
             ls_ext    => ls_ext,
             ls_drx    => ls_drx,
             ls_dwx    => ls_dwx,
-            trace_run => open,
             trace_stb => trace_stb,
-            trace_op  => open,
+            trace_nmi => trace_nmi,
+            trace_irq => trace_irq,
+            trace_op  => trace_op,
             trace_pc  => trace_pc,
             trace_s   => trace_s,
             trace_p   => trace_p,
@@ -221,5 +240,97 @@ begin
             dma_dw    => dma_dw,
             dma_dr    => dma_dr
         );
+
+    -- NMI and IRQ testing
+
+    process(clk_cpu)
+        variable seed1, seed2 : integer := 123;
+        impure function rand_int(min, max : integer) return integer is
+            variable r : real;
+        begin
+            uniform(seed1, seed2, r);
+            return integer(round(r*real(max-min+1)+real(min)-0.5));
+        end function;
+    begin
+        if rising_edge(clk_cpu) then
+            if rsto = '1' then
+                nmi          <= '0';
+                irq          <= '0';
+                interval_nmi <= 0;
+                count_nmi    <= 0;
+                interval_irq <= 0;
+                count_irq    <= 0;
+                test_case    <= (others => '0');
+            elsif trace_stb = '1' then -- advex => instruction advance            
+                if trace_p(5) = '1' then -- flag X set = init done
+                    if test_nmi and nmi = '0' and test_case /= x"03" then
+                        if interval_nmi = 0 then
+                            nmi <= '1';
+                            interval_nmi <= rand_int(0,15);
+                        else
+                            interval_nmi <= interval_nmi-1;
+                        end if;
+                    end if;
+                    if test_irq and irq = '0' and test_case /= x"03" then
+                        if interval_irq = 0 then
+                            irq <= '1';
+                            interval_irq <= rand_int(0,15);
+                        else
+                            interval_irq <= interval_irq-1;
+                        end if;
+                    end if;
+                end if;
+                -- nmi/irq ack registers/counters
+                if ls_we = '1' then
+                    if ls_al = x"FE3E" then -- NMI ack
+                        count_nmi <= count_nmi+1;
+                        nmi <= '0';
+                    elsif ls_al = x"FE3F" then -- IRQ ack
+                        count_irq <= count_irq+1;
+                        irq <= '0';
+                    end if;
+                end if;
+                -- test case
+                if ls_we = '1' and ls_al = x"0200" then
+                    test_case <= ls_dwx;
+                end if;                
+            end if;
+        end if;
+    end process;
+
+    -- hold generation
+    -- try combinations of 1-4 cycle assertions and 1-4 cycle gaps
+
+    process(clk_cpu)
+    begin
+        if rising_edge(clk_cpu) then
+            if rsto = '1' then
+                hold <= '0';
+                count_hold <= 0;
+                count_hold_0 <= 0;
+                count_hold_1 <= 0;
+            elsif test_hold then
+                if hold = '0' then
+                    if count_hold = count_hold_0 then
+                        hold <= '1';
+                        count_hold <= 0;
+                    else
+                        count_hold <= (count_hold+1) mod 4;
+                    end if;
+                else -- hold = '1'
+                    if count_hold = count_hold_1 then
+                        hold <= '0';
+                        count_hold <= 0;
+                        count_hold_1 <= (count_hold_1+1) mod 4;
+                        if count_hold_1 = 0 then
+                            count_hold_0 <= (count_hold_0+1) mod 4;
+                        end if;
+                    else
+                        count_hold <= count_hold+1;
+                    end if;
+                end if;
+            end if;
+        end if;
+    end process;
 
 end architecture sim;
