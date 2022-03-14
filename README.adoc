@@ -54,9 +54,9 @@ Click on the design *Name* link to see further details.
 
 == Build and Simulation Tools
 
-https://www.gnu.org/software/make/[make] is required, along with https://en.wikipedia.org/wiki/Git[git] and assorted utilities that are usually present on Linux systems. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get these tools (as well as http://ghdl.free.fr/[GHDL]) running on Windows.
+Part of the motivation for this new repo was a move to a makefile driven build process - so https://www.gnu.org/software/make/[GNU make] is required, along with https://en.wikipedia.org/wiki/Git[git] and assorted utilities that are usually present on Linux systems. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get these tools (as well as http://ghdl.free.fr/[GHDL]) running on Windows. Some builds also require https://www.python.org/downloads/[Python 3].
 
-The makefile driven build process produces projects that can then be opened and worked on in the relevant IDE:
+The build process produces projects that can be opened and worked on in the relevant IDE:
 
 * For Xilinx FPGAs, *Vivado 2021.2* is required. Designs including a https://en.wikipedia.org/wiki/MicroBlaze[Microblaze soft CPU] also require *Vitis 2021.2*. These tools may be obtained from https://www.xilinx.com/support/download.html[here].
 
