@@ -58,8 +58,8 @@ architecture sim of tb_saa5050 is
     signal act       : boolean;                       -- video active region
 
     -- teletext engineering page data (1000 bytes)
-    type ttx_chrata_t is array(0 to 999) of std_logic_vector(7 downto 0);
-    constant ttx_chrata : ttx_chrata_t := (
+    type ttx_data_t is array(0 to 999) of std_logic_vector(7 downto 0);
+    constant ttx_data : ttx_data_t := (
         X"41", X"42", X"43", X"00", X"00", X"00", X"00", X"00", X"43", X"45", X"45", X"46", X"41", X"58", X"20", X"31", X"35", X"32", X"20", X"20", X"46", X"72", X"69", X"20", X"32", X"35", X"20", X"41", X"75", X"67", X"20", X"83", X"32", X"33", X"3A", X"32", X"32", X"2F", X"32", X"34",
         X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"01", X"00", X"30", X"31",
         X"97", X"9E", X"0F", X"73", X"93", X"9A", X"96", X"1B", X"9F", X"10", X"84", X"8D", X"9D", X"83", X"45", X"4E", X"47", X"49", X"4E", X"45", X"45", X"52", X"49", X"4E", X"47", X"20", X"92", X"9C", X"8C", X"9E", X"73", X"95", X"1B", X"91", X"00", X"94", X"00", X"87", X"30", X"32",
@@ -172,7 +172,7 @@ begin
     begin
         ttx_chr <= (others => 'U');
         if crt_de = '1' and to_integer(unsigned(crt_ma(9 downto 0))) < 1000 then
-            ttx_chr <= ttx_chrata(to_integer(unsigned(crt_ma(9 downto 0))))(6 downto 0);
+            ttx_chr <= ttx_data(to_integer(unsigned(crt_ma(9 downto 0))))(6 downto 0);
         end if;
     end process;
 
@@ -258,6 +258,8 @@ begin
             crt_ra    => crt_ra,
             crt_vs    => crt_vs,
             crt_hs    => crt_hs,
+            crt_vb    => open,
+            crt_hb    => open,
             crt_de    => crt_de,
             crt_cur   => open,
             crt_lps   => '0'

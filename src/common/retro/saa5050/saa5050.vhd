@@ -136,7 +136,6 @@ begin
             else
                 chr_vs1 <= chr_vs;
                 chr_d1 <= chr_d;
-                chr_hb1 <= chr_hb;
                 chr_de1 <= chr_de;
                 if chr_vs = '1' then
                     row_sd      <= (others => '0');
@@ -160,27 +159,6 @@ begin
                     held_s     <= '0';
                 end if;
                 if chr_de = '1' then
-                    -- handle set-at codes (take effect at current character)
-                    case to_integer(unsigned(chr_d)) is
-                        when 12 => -- normal size
-                            attr_dbl <= '0';
-                            attr_hold <= '0';
-                            held_c <= (others => '0');
-                            held_s <= '0';
-                        when 24 => -- conceal
-                            attr_hide <= '1';
-                        when 25 => -- contiguous graphics
-                            attr_sep <= '0';
-                        when 26 => -- separated graphics
-                            attr_sep <= '1';
-                        when 28 => -- black background colour
-                            attr_bgcol <= (others => '0');
-                        when 29 => -- new background colour
-                            attr_bgcol <= attr_fgcol;
-                        when 30 => -- graphics hold
-                            attr_hold <= '1';
-                        when others => null;
-                    end case;
                     -- handle set-after codes (take effect at next character)
                     if chr_de1 = '1' then
                         case to_integer(unsigned(chr_d1)) is
@@ -193,6 +171,8 @@ begin
                                 held_s <= '0';
                             when 8 => -- flash
                                 attr_flash <= '1';
+                            when 9 => -- steady
+                                attr_flash <= '0';
                             when 13 => -- double height
                                 attr_dbl <= '1';
                                 attr_dbltop <= not attr_dblbot;
@@ -218,6 +198,27 @@ begin
                         held_c <= chr_d;
                         held_s <= attr_sep;
                     end if;
+                    -- handle set-at codes (take effect at current character)
+                    case to_integer(unsigned(chr_d)) is
+                        when 12 => -- normal size
+                            attr_dbl <= '0';
+                            attr_hold <= '0';
+                            held_c <= (others => '0');
+                            held_s <= '0';
+                        when 24 => -- conceal
+                            attr_hide <= '1';
+                        when 25 => -- contiguous graphics
+                            attr_sep <= '0';
+                        when 26 => -- separated graphics
+                            attr_sep <= '1';
+                        when 28 => -- black background colour
+                            attr_bgcol <= (others => '0');
+                        when 29 => -- new background colour
+                            attr_bgcol <= attr_fgcol;
+                        when 30 => -- graphics hold
+                            attr_hold <= '1';
+                        when others => null;
+                    end case;
                 elsif chr_de1 = '1' then -- trailing edge of de
                     if row_sd = 9 then
                         row_sd <= (others => '0');

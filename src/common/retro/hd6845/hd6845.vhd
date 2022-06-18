@@ -41,6 +41,8 @@ package hd6845_pkg is
             crt_ra    : out   std_logic_vector(4 downto 0);  -- raster (scan line) address within character
             crt_vs    : out   std_logic;                     -- vertical sync
             crt_hs    : out   std_logic;                     -- horizontal sync
+            crt_vb    : out   std_logic;                     -- vertical blank
+            crt_hb    : out   std_logic;                     -- horizontal blank
             crt_de    : out   std_logic;                     -- display enable
             crt_cur   : out   std_logic;                     -- cursor active
             crt_lps   : in    std_logic                      -- light pen strobe
@@ -75,6 +77,8 @@ entity hd6845 is
         crt_ra    : out   std_logic_vector(4 downto 0);  -- raster (scan line) address within character
         crt_vs    : out   std_logic;                     -- vertical sync
         crt_hs    : out   std_logic;                     -- horizontal sync
+        crt_vb    : out   std_logic;                     -- vertical blank
+        crt_hb    : out   std_logic;                     -- horizontal blank
         crt_de    : out   std_logic;                     -- display enable
         crt_cur   : out   std_logic;                     -- cursor active
         crt_lps   : in    std_logic                      -- light pen strobe
@@ -122,8 +126,8 @@ architecture synth of hd6845 is
     signal crt_f      : std_logic;                                  -- field: 0 = first/odd/upper, 1 = second/even/lower
     signal crt_vs_i   : std_logic;                                  -- crt_vs, internal
     signal crt_hs_i   : std_logic;                                  -- crt_hs, internal
-    signal crt_de_h   : std_logic;                                  -- de horizontal
-    signal crt_de_v   : std_logic;                                  -- de vertical
+    signal crt_vb_i   : std_logic;                                  -- crt_vb, internal
+    signal crt_hb_i   : std_logic;                                  -- crt_hb, internal
 
     type crt_vphase_t is (
             NORMAL,
@@ -145,7 +149,9 @@ begin
 
     crt_vs <= crt_vs_i;
     crt_hs <= crt_hs_i;
-    crt_de <= crt_de_v and crt_de_h;
+    crt_vb <= crt_vb_i;
+    crt_hb <= crt_hb_i;
+    crt_de <= not (crt_vb_i or crt_hb_i);
 
     -- CRT control
     process(crt_clk)
@@ -167,8 +173,8 @@ begin
                 crt_f      <= '0';
                 crt_vs_i   <= '0';
                 crt_hs_i   <= '0';
-                crt_de_h   <= '0';
-                crt_de_v   <= '1';
+                crt_vb_i   <= '0';
+                crt_hb_i   <= '1';
                 crt_cur    <= '0';
                 crt_vphase <= NORMAL;
                 crt_lpma   <= (others => '0');
@@ -205,7 +211,7 @@ begin
                                     else
                                         crt_vphase <= NORMAL;
                                         crt_f <= '0';
-                                        crt_de_v <= '1';
+                                        crt_vb_i <= '0';
                                         count_ma_r <= r12 & r13;
                                         count_ma <= r12 & r13;
                                         count_v <= (others => '0');
@@ -228,7 +234,7 @@ begin
                                 else
                                     crt_vphase <= NORMAL;
                                     crt_f <= '0';
-                                    crt_de_v <= '1';
+                                    crt_vb_i <= '0';
                                     count_ma_r <= r12 & r13;
                                     count_ma <= r12 & r13;
                                     count_v <= (others => '0');
@@ -236,7 +242,7 @@ begin
                             end if;
                         when INTER => -- extra scan line for interlace
                             crt_vphase <= NORMAL;
-                            crt_de_v <= '1';
+                            crt_vb_i <= '0';
                             crt_f <= '1';
                             count_ma_r <= r12 & r13;
                             count_ma <= r12 & r13;
@@ -246,16 +252,16 @@ begin
                 end if;
 
                 if count_h = 0 then
-                    crt_de_h <= '1';
+                    crt_hb_i <= '0';
                 elsif count_h = r1 then
-                    crt_de_h <= '0';
+                    crt_hb_i <= '1';
                 end if;
 
                 if count_h = 0 then
                     if count_v = 0 then
-                        crt_de_v <= '1';
+                        crt_vb_i <= '0';
                     elsif count_v = r6 then
-                        crt_de_v <= '0';
+                        crt_vb_i <= '1';
                     end if;
                 end if;
 
