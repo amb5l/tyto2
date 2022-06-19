@@ -30,12 +30,14 @@ package saa5050_pkg is
             chr_f     : in    std_logic;                    -- field (0 = 1st/odd/upper, 1 = 2nd/even/lower)
             chr_vs    : in    std_logic;                    -- CRTC vertical sync
             chr_hs    : in    std_logic;                    -- CRTC horizontal sync
+            chr_hb    : in    std_logic;                    -- CRTC horizontal blank (optional)
             chr_de    : in    std_logic;                    -- CRTC display enable
             chr_d     : in    std_logic_vector(6 downto 0); -- CRTC character code (0..127)
             pix_clk   : in    std_logic;                    -- pixel clock        } normally
             pix_clken : in    std_logic;                    -- pixel clock enable }  12MHz
             pix_rst   : in    std_logic;                    -- pixel clock synchronous reset
             pix_d     : out   std_logic_vector(2 downto 0); -- pixel data (3 bit BGR)
+            pix_hb    : out   std_logic;                    -- pixel horizontal blank (optional)
             pix_de    : out   std_logic                     -- pixel enable
         );
     end component saa5050;
@@ -61,12 +63,14 @@ entity saa5050 is
         chr_f     : in    std_logic;                    -- field (0 = 1st/odd/upper, 1 = 2nd/even/lower)
         chr_vs    : in    std_logic;                    -- CRTC vertical sync
         chr_hs    : in    std_logic;                    -- CRTC horizontal sync
+        chr_hb    : in    std_logic;                    -- CRTC horizontal blank (optional)
         chr_de    : in    std_logic;                    -- CRTC display enable
         chr_d     : in    std_logic_vector(6 downto 0); -- CRTC character code (0..127)
         pix_clk   : in    std_logic;                    -- pixel clock        } normally
         pix_clken : in    std_logic;                    -- pixel clock enable }  12MHz
         pix_rst   : in    std_logic;                    -- pixel clock synchronous reset
         pix_d     : out   std_logic_vector(2 downto 0); -- pixel data (3 bit BGR)
+        pix_hb    : out   std_logic;                    -- pixel horizontal blank (optional)
         pix_de    : out   std_logic                     -- pixel enable
     );
 end entity saa5050;
@@ -77,10 +81,11 @@ architecture synth of saa5050 is
     signal rst_sp       : std_logic_vector(0 to 1);     -- rsta synchroniser to pixel clock
 
     signal chr_vs1      : std_logic;                    -- chr_vs, registered
+    signal chr_hb1      : std_logic;                    -- chr_hb, registered
+    signal chr_de1      : std_logic;                    -- chr_de, registered
     signal chr_di       : integer range 0 to 127;       -- integer version of input data
     signal chr_d1       : std_logic_vector(6 downto 0); -- character code, registered
     signal chr_di1      : integer range 0 to 127;       -- integer version of above
-    signal chr_de1      : std_logic;                    -- chr_de, registered
 
     -- attribute states                                                                         SET             CLEAR
     signal attr_gfx     : std_logic;                    -- graphics (not text)                  after 11..17    after 01..07
@@ -136,8 +141,9 @@ begin
         if rising_edge(chr_clk) and chr_clken = '1' then
             if chr_rst = '1' or rst_sc(1) = '1' then
                 chr_vs1     <= '0';
-                chr_d1      <= (others => '0');
+                chr_hb1     <= '1';
                 chr_de1     <= '0';
+                chr_d1      <= (others => '0');
                 row_sd      <= (others => '0');
                 attr_fgcol  <= (others => '1');
                 attr_bgcol  <= (others => '0');
@@ -155,8 +161,9 @@ begin
                 flash_state <= '1';
             else
                 chr_vs1 <= chr_vs;
-                chr_d1 <= chr_d;
+                chr_hb1 <= chr_hb;
                 chr_de1 <= chr_de;
+                chr_d1 <= chr_d;
                 if chr_vs = '1' then
                     row_sd      <= (others => '0');
                     attr_dbltop <= '0';
@@ -317,6 +324,7 @@ begin
                 pix_sr_cur <= (others => '0');
                 pix_sr_adj <= (others => '0');
             else
+                pix_hb <= chr_hb1;
                 if chr_de1 = '1' then
                     pix_de <= '1';
                     pix_d <= attr_bgcol;

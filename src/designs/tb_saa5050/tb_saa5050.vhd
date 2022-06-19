@@ -44,7 +44,9 @@ architecture sim of tb_saa5050 is
     signal crt_ma    : std_logic_vector(13 downto 0); -- CRTC memory address
     signal crt_ra    : std_logic_vector(4 downto 0);  -- CRTC raster (scan line) address within character
     signal crt_vs    : std_logic;                     -- CRTC vertical sync
-    signal crt_hs    : std_logic;                     -- CRTC horizontal sync
+    signal crt_hs    : std_logic;                     -- CRTC horizontal blank
+    signal crt_vb    : std_logic;                     -- CRTC vertical blank
+    signal crt_hb    : std_logic;                     -- CRTC horizontal sync
     signal crt_de    : std_logic;                     -- CRTC display enable
 
     signal ttx_chr   : std_logic_vector(6 downto 0);  -- character code (0..127)
@@ -234,12 +236,14 @@ begin
             chr_f     => crt_ra(0),
             chr_vs    => crt_vs,
             chr_hs    => crt_hs,
+            chr_hb    => crt_hb,
             chr_de    => crt_de,
             chr_d     => ttx_chr,
             pix_clk   => clk,
             pix_clken => '1',
             pix_rst   => crt_rst,
             pix_d     => ttx_pix,
+            pix_hb    => open,
             pix_de    => ttx_pixen
         );
 
@@ -260,8 +264,8 @@ begin
             crt_ra    => crt_ra,
             crt_vs    => crt_vs,
             crt_hs    => crt_hs,
-            crt_vb    => open,
-            crt_hb    => open,
+            crt_vb    => crt_vb,
+            crt_hb    => crt_hb,
             crt_de    => crt_de,
             crt_cur   => open,
             crt_lps   => '0'
