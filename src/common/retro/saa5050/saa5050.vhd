@@ -22,6 +22,8 @@ package saa5050_pkg is
 
     component saa5050  is
         port (
+            rsta      : in    std_logic;                    -- asynchronous (global) reset
+            debug     : in    std_logic;                    -- debug enable (display attributes)
             chr_clk   : in    std_logic;                    -- character clock        } normally
             chr_clken : in    std_logic;                    -- character clock enable }  1MHz
             chr_rst   : in    std_logic;                    -- character clock synchronous reset
@@ -51,6 +53,8 @@ use work.saa5050_rom_data_pkg.all;
 
 entity saa5050 is
     port (
+        rsta      : in    std_logic;                    -- asynchronous (global) reset
+        debug     : in    std_logic;                    -- debug enable (display attributes)
         chr_clk   : in    std_logic;                    -- character clock        } normally
         chr_clken : in    std_logic;                    -- character clock enable }  1MHz
         chr_rst   : in    std_logic;                    -- character clock synchronous reset
@@ -69,22 +73,35 @@ end entity saa5050;
 
 architecture synth of saa5050 is
 
+    signal rst_sc       : std_logic_vector(0 to 1);     -- rsta synchroniser to character clock
+    signal rst_sp       : std_logic_vector(0 to 1);     -- rsta synchroniser to pixel clock
+
     signal chr_vs1      : std_logic;                    -- chr_vs, registered
     signal chr_di       : integer range 0 to 127;       -- integer version of input data
     signal chr_d1       : std_logic_vector(6 downto 0); -- character code, registered
     signal chr_di1      : integer range 0 to 127;       -- integer version of above
     signal chr_de1      : std_logic;                    -- chr_de, registered
 
-    signal attr_fgcol   : std_logic_vector(2 downto 0); -- current foreground colour, BGR
-    signal attr_bgcol   : std_logic_vector(2 downto 0); -- current background colour, BGR
-    signal attr_flash   : std_logic;                    -- flash (not steady)
-    signal attr_dbl     : std_logic;                    -- double height text
+    -- attribute states                                                                         SET             CLEAR
+    signal attr_gfx     : std_logic;                    -- graphics (not text)                  after 11..17    after 01..07
+    signal attr_fgcol   : std_logic_vector(2 downto 0); -- current foreground colour, BGR       after 11..17      n/a
+    signal attr_flash   : std_logic;                    -- flash (not steady)                   after 08           at 09
+    signal attr_dbl     : std_logic;                    -- double height text                   after 0D           at 0C
+    signal attr_hide    : std_logic;                    -- conceal characters                      at 18
+    signal attr_sep     : std_logic;                    -- separate (not contiguous) graphics      at 1A           at 19
+    signal attr_bgcol   : std_logic_vector(2 downto 0); -- current background colour, BGR          at 1C,1D
+    signal attr_hold    : std_logic;                    -- graphics hold                           at 1E           at 1F
+
+    -- derived attributes
     signal attr_dbltop  : std_logic;                    -- latches occurence of top half of double height characters
     signal attr_dblbot  : std_logic;                    -- bottom half of double height characters
-    signal attr_gfx     : std_logic;                    -- graphics (not text)
-    signal attr_sep     : std_logic;                    -- separate (not contiguous) graphics
-    signal attr_hold    : std_logic;                    -- graphics hold
-    signal attr_hide    : std_logic;                    -- conceal characters
+
+    -- flags for set-after attributes
+    signal set_gfx      : std_logic;                    -- set attr_gfx at next character
+    signal clr_gfx      : std_logic;                    -- clr attr_gfx at next character
+    signal set_fgcol    : std_logic;                    -- set attr_fgcol at next character
+    signal set_flash    : std_logic;                    -- set attr_flash at next character
+    signal set_dbl      : std_logic;                    -- set attr_dbl at next character
 
     signal count_flash  : unsigned(5 downto 0);         -- counter for flashing characters
     signal flash_state  : std_logic;                    -- current flash state
@@ -94,7 +111,7 @@ architecture synth of saa5050 is
     signal col_hd       : unsigned(3 downto 0);         -- col within high def (smoothed) character (0..11)
 
     signal rom_row_cur  : unsigned(3 downto 0);         -- current row within ROM character pattern (0..9)
-    signal rom_row_adj  : unsigned(3 downto 0);         -- adjacent row within ROM character pattern (0..9) (above or below current row for rounchr_d1ng)
+    signal rom_row_adj  : unsigned(3 downto 0);         -- adjacent row within ROM character pattern (0..9) (above or below current row for rounding)
     signal rom_data_cur : std_logic_vector(4 downto 0); -- pixels for current row from ROM
     signal rom_data_adj : std_logic_vector(4 downto 0); -- pixels for adjacent row from ROM
     signal held_c       : std_logic_vector(6 downto 0); -- held graphics character code
@@ -103,7 +120,7 @@ architecture synth of saa5050 is
     signal chr_s        : std_logic;                    -- graphics separate (latest or held)
     signal gfx_data     : std_logic_vector(5 downto 0); -- pixels for graphics pattern
     signal pix_sr_cur   : std_logic_vector(6 downto 0); -- pixel output shift register (current row)
-    signal pix_sr_adj   : std_logic_vector(6 downto 0); -- pixel output shift register (adjacent row for character rounchr_ding)
+    signal pix_sr_adj   : std_logic_vector(6 downto 0); -- pixel output shift register (adjacent row for character rounding)
 
 begin
 
@@ -113,8 +130,11 @@ begin
     -- character clock domain
     process(chr_clk)
     begin
+        if rising_edge(chr_clk) then
+            rst_sc(0 to 1) <= rsta & rst_sc(0);
+        end if;
         if rising_edge(chr_clk) and chr_clken = '1' then
-            if chr_rst = '1' then
+            if chr_rst = '1' or rst_sc(1) = '1' then
                 chr_vs1     <= '0';
                 chr_d1      <= (others => '0');
                 chr_de1     <= '0';
@@ -147,6 +167,7 @@ begin
                     end if;
                 end if;
                 if chr_hs = '1' then
+                    -- defaults at beginning of row
                     attr_fgcol <= (others => '1');
                     attr_bgcol <= (others => '0');
                     attr_flash <= '0';
@@ -159,66 +180,86 @@ begin
                     held_s     <= '0';
                 end if;
                 if chr_de = '1' then
-                    -- handle set-after codes (take effect at next character)
-                    if chr_de1 = '1' then
-                        case to_integer(unsigned(chr_d1)) is
-                            when 1 to 7 => -- text colour
-                                attr_gfx <= '0';
-                                attr_fgcol <= chr_d1(2 downto 0);
-                                attr_hide <= '0';
-                                attr_hold <= '0';
-                                held_c <= (others => '0');
-                                held_s <= '0';
-                            when 8 => -- flash
-                                attr_flash <= '1';
-                            when 9 => -- steady
-                                attr_flash <= '0';
-                            when 13 => -- double height
-                                attr_dbl <= '1';
-                                attr_dbltop <= not attr_dblbot;
-                                attr_hold <= '0';
-                                held_c <= (others => '0');
-                                held_s <= '0';
-                            when 17 to 23 => -- graphics colour
-                                attr_gfx <= '1';
-                                attr_fgcol <= chr_d1(2 downto 0);
-                                attr_hide <= '0';
-                                if ((chr_di >= 32 and chr_di <= 63) or (chr_di >= 96 and chr_di <= 127)) then
-                                    held_c <= chr_d;
-                                    held_s <= attr_sep;
-                                end if;
-                            when 31 => -- graphics release
-                                attr_hold <= '0';
-                                held_c <= (others => '0');
-                                held_s <= '0';
-                            when others => null;
-                        end case;
-                    end if;
-                    if attr_gfx = '1' and ((chr_di >= 32 and chr_di <= 63) or (chr_di >= 96 and chr_di <= 127)) then
-                        held_c <= chr_d;
-                        held_s <= attr_sep;
-                    end if;
-                    -- handle set-at codes (take effect at current character)
-                    case to_integer(unsigned(chr_d)) is
-                        when 12 => -- normal size
-                            attr_dbl <= '0';
+                    -- handle set-after codes
+                    set_gfx   <= '0';
+                    clr_gfx   <= '0';
+                    set_fgcol <= '0';
+                    set_flash <= '0';
+                    set_dbl   <= '0';
+                    if clr_gfx = '1' then
+                        attr_gfx <= '0';
+                        if attr_gfx = '1' then -- change to alpha from mosaic
                             attr_hold <= '0';
                             held_c <= (others => '0');
                             held_s <= '0';
-                        when 24 => -- conceal
+                        end if;
+                    end if;
+                    if set_gfx = '1' then
+                        attr_gfx <= '1';
+                    end if;
+                    if set_fgcol = '1' then
+                        attr_fgcol <= chr_d1(2 downto 0);
+                        attr_hide <= '0';
+                    end if;
+                    if set_flash = '1' then
+                        attr_flash <= '1';
+                    end if;
+                    if set_dbl = '1' then
+                        attr_dbl <= '1';
+                        attr_dbltop <= not attr_dblbot;
+                        if attr_dbl = '0' then -- change of size
+                            attr_hold <= '0';
+                            held_c <= (others => '0');
+                            held_s <= '0';
+                        end if;
+                    end if;
+                    -- handle codes
+                    case to_integer(unsigned(chr_d)) is
+                        when 16#01# to 16#07# => -- text (alpha) colour (set-after)
+                            clr_gfx <= '1';
+                            set_fgcol <= '1';
+                        when 16#08# => -- flash (set-after)
+                            set_flash <= '1';
+                        when 16#09# => -- steady (set-at)
+                            attr_flash <= '0';
+                        when 16#0C# => -- normal size (set-at)
+                            attr_dbl <= '0';
+                            if attr_dbl = '1' then -- change of size
+                                attr_hold <= '0';
+                                held_c <= (others => '0');
+                                held_s <= '0';
+                            end if;
+                        when 16#0D# => -- double height (set-after)
+                            set_dbl <= '1';
+                        when 16#10# to 16#17# => -- graphics colour (set-after)
+                            set_gfx <= '1';
+                            set_fgcol <= '1';
+                        when 16#18# => -- conceal (set-at)
                             attr_hide <= '1';
-                        when 25 => -- contiguous graphics
+                        when 16#19# => -- contiguous graphics (set-at)
                             attr_sep <= '0';
-                        when 26 => -- separated graphics
+                        when 16#1A# => -- separated graphics (set-at)
                             attr_sep <= '1';
-                        when 28 => -- black background colour
+                        when 16#1C# => -- black background colour (set-at)
                             attr_bgcol <= (others => '0');
-                        when 29 => -- new background colour
-                            attr_bgcol <= attr_fgcol;
-                        when 30 => -- graphics hold
+                        when 16#1D# => -- new background colour (set-at)
+                            if set_fgcol = '1' then
+                                attr_bgcol <= chr_d1(2 downto 0);
+                            else
+                                attr_bgcol <= attr_fgcol;
+                            end if;
+                        when 16#1E# => -- graphics hold (set-at)
                             attr_hold <= '1';
+                        when 16#1F# => -- graphics release (set_after)
+                            clr_gfx <= '1';
                         when others => null;
                     end case;
+                    -- held graphics character
+                    if (set_gfx = '1' or attr_gfx = '1')
+                    and ((chr_di >= 32 and chr_di <= 63) or (chr_di >= 96 and chr_di <= 127)) then
+                        held_c <= chr_d;
+                        held_s <= attr_sep;
+                    end if;
                 elsif chr_de1 = '1' then -- trailing edge of de
                     if row_sd = 9 then
                         row_sd <= (others => '0');
@@ -233,6 +274,7 @@ begin
     end process;
 
     row_hd <=
+        row_sd & chr_f when debug = '1' and chr_d(6 downto 5) = "00" else
         ('0' & row_sd)+10 when attr_dbl = '1' and attr_dblbot = '1' else
         '0' & row_sd      when attr_dbl = '1' else
         row_sd & chr_f;
@@ -250,8 +292,8 @@ begin
     end process ROM;
 
     -- graphics character code / separation depends on hold
-    chr_g <= held_c when attr_hold = '1' else chr_d1;
-    chr_s <= held_s when attr_hold = '1' else attr_sep;
+    chr_g <= held_c when attr_hold = '1' and chr_di1 <= 31 else chr_d1;
+    chr_s <= held_s when attr_hold = '1' and chr_di1 <= 31 else attr_sep;
 
     -- graphics character pixel data
     gfx_data <=
@@ -264,10 +306,13 @@ begin
     process(pix_clk)
         variable nn_chr_diag, nn_v, nn_h : std_logic; -- nearest neighbour pixels
     begin
+        if rising_edge(pix_clk) then
+            rst_sp(0 to 1) <= rsta & rst_sp(0);
+        end if;
         if rising_edge(pix_clk) and pix_clken = '1' then
             pix_d <= (others => '0');
             pix_de <= '0';
-            if pix_rst = '1' then
+            if pix_rst = '1' or rst_sp(1) = '1' then
                 col_hd     <= (others => '0');
                 pix_sr_cur <= (others => '0');
                 pix_sr_adj <= (others => '0');
@@ -275,16 +320,20 @@ begin
                 if chr_de1 = '1' then
                     pix_de <= '1';
                     pix_d <= attr_bgcol;
+                    if debug = '1' and chr_d1(6 downto 5) = "00" then
+                        pix_d <= (others => '0');
+                    end if;
                     if col_hd = 0 then -- first pixel of 12
                         pix_sr_cur <= (others => '0');
                         pix_sr_adj <= (others => '0');
-                        if (attr_hide = '1')                        -- conceal
-                        or (attr_flash = '1' and flash_state = '0') -- flashing (off state)
-                        or (attr_dblbot = '1' and attr_dbl = '0')   -- bottom of double height row, without double height attribute
-                        then
+                        if (chr_di1 >= 32 or debug = '0') and (
+                            (attr_hide = '1') or                        -- conceal
+                            (attr_flash = '1' and flash_state = '0') or -- flashing (off state)
+                            (attr_dblbot = '1' and attr_dbl = '0')      -- bottom of double height row, without double height attribute
+                        ) then
                             null;
                         elsif (attr_gfx = '1' and ((chr_di1 >= 32 and chr_di1 <= 63) or (chr_di1 >= 96 and chr_di1 <= 127)))
-                            or (attr_hold = '1' and (chr_di1 >= 0 and chr_di1 <= 31))
+                            or (attr_hold = '1' and not (debug = '1' and chr_di1 <= 31))
                         then
                             pix_sr_cur <= '0' & gfx_data;
                             pix_sr_adj <= '0' & gfx_data;
@@ -292,14 +341,22 @@ begin
                                 pix_d <= attr_fgcol;
                             end if;
                         else
-                            pix_sr_cur <= "00" & rom_data_cur;
-                            pix_sr_adj <= "00" & rom_data_adj;
+                            if debug = '1' or chr_di1 >= 32 then
+                                pix_sr_cur <= "00" & rom_data_cur;
+                                pix_sr_adj <= "00" & rom_data_adj;
+                            else
+                                pix_sr_cur <= (others => '0');
+                                pix_sr_adj <= (others => '0');
+                            end if;
                         end if;
                         col_hd <= (col_hd+1) mod 12;
                     else
                         if pix_sr_cur(5) = '1' then -- filled pixel
                             pix_d <= attr_fgcol;
-                        else -- empty pixel -> look at character rounchr_ding...
+                            if debug = '1' and chr_d1(6 downto 5) = "00" then
+                                pix_d <= (others => '1');
+                            end if;
+                        else -- empty pixel -> look at character rounding...
                             nn_v := pix_sr_adj(5);
                             if col_hd(0) = '0' then -- left half pixel
                                 nn_chr_diag := pix_sr_adj(6);
@@ -308,8 +365,11 @@ begin
                                 nn_chr_diag := pix_sr_adj(4);
                                 nn_h := pix_sr_cur(4);
                             end if;
-                            if nn_chr_diag = '0' and nn_v = '1' and nn_h = '1' then -- rounchr_ding required
+                            if nn_chr_diag = '0' and nn_v = '1' and nn_h = '1' then -- rounding required
                                 pix_d <= attr_fgcol;
+                            end if;
+                            if debug = '1' and chr_d1(6 downto 5) = "00" then
+                                pix_d <= (others => '0');
                             end if;
                         end if;
                         if col_hd(0) = '1' then

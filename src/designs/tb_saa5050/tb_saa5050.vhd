@@ -226,6 +226,8 @@ begin
 
     UUT: component saa5050
         port map (
+            rsta      => '0',
+            debug     => '0',
             chr_clk   => clk,
             chr_clken => clken_1m,
             chr_rst   => crt_rst,
