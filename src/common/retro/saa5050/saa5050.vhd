@@ -231,13 +231,15 @@ begin
                             attr_dbl <= '0';
                             if attr_dbl = '1' then -- change of height
                                 attr_hold <= '0';
+                                held_c <= (others => '0');
+                                held_s <= '0';
                             end if;
-                            held_c <= (others => '0');
-                            held_s <= '0';
                         when 16#0D# => -- double height (set-after)
                             attr_dbl <= '1';
                             if attr_dbl = '0' then -- change of height
                                 attr_hold <= '0';
+                                held_c <= (others => '0');
+                                held_s <= '0';
                             end if;
                             dbl_top <= not dbl_bot;
                             held_c <= (others => '0');
@@ -246,6 +248,10 @@ begin
                             attr_gfx <= '1';
                             attr_fgcol <= chr_d(2 downto 0);
                             attr_hide <= '0';
+                            if attr_hold = '0' then
+                                held_c <= (others => '0');
+                                held_s <= '0';
+                            end if;
                         when 16#18# => -- conceal (set-at)
                             attr_hide <= '1';
                         when 16#19# => -- contiguous graphics (set-at)
@@ -342,7 +348,7 @@ begin
                         ) then
                             null;
                         elsif (attr_gfx1 = '1' and ((chr_di1 >= 32 and chr_di1 <= 63) or (chr_di1 >= 96 and chr_di1 <= 127)))
-                            or (attr_hold1 = '1' and not (debug = '1' and chr_di1 <= 31))
+                            or (attr_hold1 = '1' and debug = '0' and chr_di1 <= 31)
                         then
                             pix_sr_cur <= '0' & gfx_data;
                             pix_sr_adj <= '0' & gfx_data;
