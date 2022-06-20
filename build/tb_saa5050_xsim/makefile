@@ -12,13 +12,15 @@ XILINX_MK=$(SUBMODULES)/xilinx-mk
 all: check
 
 check: sim
-	diff --binary $(VIVADO_SIM_PATH)/$(VIVADO_SIM_OUT) ../../src/designs/$(DESIGN)/$(DESIGN).bmp
+	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_0.bmp ../../src/designs/$(DESIGN)/$(DESIGN)_0.bmp
+	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_1.bmp ../../src/designs/$(DESIGN)/$(DESIGN)_1.bmp
+	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_2.bmp ../../src/designs/$(DESIGN)/$(DESIGN)_2.bmp
 
 VIVADO_PROJ=fpga
 VIVADO_LANG=VHDL
 
 VIVADO_SIM_TOP=$(DESIGN)
-VIVADO_SIM_OUT=$(DESIGN)_0.bmp
+VIVADO_SIM_OUT=$(DESIGN)_2.bmp
 VIVADO_SIM_VHDL=\
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
     $(SRC)/common/video_out/sim_video_out_pkg.vhd \

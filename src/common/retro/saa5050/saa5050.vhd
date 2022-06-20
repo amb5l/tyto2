@@ -124,6 +124,7 @@ architecture synth of saa5050 is
     signal held_s1      : std_logic;                    -- held graphics separate state, registered
     signal chr_g        : std_logic_vector(6 downto 0); -- graphics character code (latest or held)
     signal chr_s        : std_logic;                    -- graphics separate (latest or held)
+    signal gfx_row      : unsigned(3 downto 0);         -- row within graphics character (0..9)
     signal gfx_data     : std_logic_vector(5 downto 0); -- pixels for graphics pattern
     signal pix_sr_cur   : std_logic_vector(6 downto 0); -- pixel output shift register (current row)
     signal pix_sr_adj   : std_logic_vector(6 downto 0); -- pixel output shift register (adjacent row for character rounding)
@@ -248,10 +249,6 @@ begin
                             attr_gfx <= '1';
                             attr_fgcol <= chr_d(2 downto 0);
                             attr_hide <= '0';
-                            if attr_hold = '0' then
-                                held_c <= (others => '0');
-                                held_s <= '0';
-                            end if;
                         when 16#18# => -- conceal (set-at)
                             attr_hide <= '1';
                         when 16#19# => -- contiguous graphics (set-at)
@@ -273,6 +270,10 @@ begin
                         held_c <= chr_d;
                         held_s <= attr_sep;
                     end if;
+                    if attr_hold = '0' and chr_di <= 31 and chr_di /= 16#1E# then -- SAA5050 hold bug
+                        held_c <= (others => '0');
+                        held_s <= '0';                    
+                    end if;
                 elsif chr_de1 = '1' then -- trailing edge of de
                     if row_sd = 9 then
                         row_sd <= (others => '0');
@@ -288,7 +289,6 @@ begin
 
     row_hd <= -- row within rounded (hi-def) character (0..19)
         row_sd & chr_f when debug = '1' and chr_di <= 31 else        -- attribute debug - always normal height
-        row_sd & chr_f when chr_di = 16#0C# else                     -- change to normal size is set-at
         ('0' & row_sd)+10 when attr_dbl = '1' and dbl_bot = '1' else -- bottom half of double height
         '0' & row_sd      when attr_dbl = '1' else                   -- top half of double height
         row_sd & chr_f;                                              -- normal height
@@ -310,10 +310,14 @@ begin
     chr_s <= held_s1 when attr_hold1 = '1' and chr_di1 <= 31 else attr_sep1;
 
     -- graphics character pixel data
+    gfx_row <=
+        ('0' & row_sd(3 downto 1))+5 when attr_dbl = '1' and dbl_bot = '1' else -- bottom half of double height
+        ('0' & row_sd(3 downto 1))   when attr_dbl = '1' else                   -- top half of double height
+        row_sd;                                                                 -- normal height
     gfx_data <=
-        (others => '0') when chr_s = '1' and (row_sd = 2 or row_sd = 6 or row_sd = 9) else
-        (chr_g(0) and not chr_s) & chr_g(0) & chr_g(0) & (chr_g(1) and not chr_s) & chr_g(1) & chr_g(1) when row_sd >= 0 and row_sd <= 2 else
-        (chr_g(2) and not chr_s) & chr_g(2) & chr_g(2) & (chr_g(3) and not chr_s) & chr_g(3) & chr_g(3) when row_sd >= 3 and row_sd <= 6 else
+        (others => '0') when chr_s = '1' and (gfx_row = 2 or gfx_row = 6 or gfx_row = 9) else
+        (chr_g(0) and not chr_s) & chr_g(0) & chr_g(0) & (chr_g(1) and not chr_s) & chr_g(1) & chr_g(1) when gfx_row >= 0 and gfx_row <= 2 else
+        (chr_g(2) and not chr_s) & chr_g(2) & chr_g(2) & (chr_g(3) and not chr_s) & chr_g(3) & chr_g(3) when gfx_row >= 3 and gfx_row <= 6 else
         (chr_g(4) and not chr_s) & chr_g(4) & chr_g(4) & (chr_g(6) and not chr_s) & chr_g(6) & chr_g(6);
 
     -- pixel clock domain
