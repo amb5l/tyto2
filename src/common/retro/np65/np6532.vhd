@@ -68,7 +68,7 @@ package np6532_pkg is
             trace_x   : out std_logic_vector(7 downto 0);                -- trace register X
             trace_y   : out std_logic_vector(7 downto 0);                -- trace register Y
 
-            dma_en    : out std_logic;                                   -- DMA enable on this clk_mem cycle
+            dma_en    : in std_logic;                                    -- DMA enable on this clk_mem cycle
             dma_a     : in  std_logic_vector(ram_size_log2-1 downto 3);  -- DMA address (Qword aligned)
             dma_bwe   : in  std_logic_vector(7 downto 0);                -- DMA byte write enables
             dma_dw    : in  std_logic_vector(63 downto 0);               -- DMA write data
@@ -137,7 +137,7 @@ entity np6532 is
         trace_x   : out std_logic_vector(7 downto 0);                -- trace register X
         trace_y   : out std_logic_vector(7 downto 0);                -- trace register Y
 
-        dma_en    : out std_logic;                                   -- DMA enable on this clk_mem cycle
+        dma_en    : in  std_logic;                                   -- DMA enable on this clk_mem cycle
         dma_a     : in  std_logic_vector(ram_size_log2-1 downto 3);  -- DMA address (Qword aligned)
         dma_bwe   : in  std_logic_vector(7 downto 0);                -- DMA byte write enables
         dma_dw    : in  std_logic_vector(63 downto 0);               -- DMA write data
@@ -175,8 +175,6 @@ architecture synth of np6532 is
     signal cs_a      : std_logic_vector(7 downto 0);
     signal cs_d      : std_logic_vector(31 downto 0);
     
-    signal dma_eni   : std_logic;
-
     constant base_z  : std_logic_vector(ram_size_log2-1 downto 0) := (others => '0');
     constant base_s  : std_logic_vector(ram_size_log2-1 downto 0) := (8 => '1', others => '0');
 
@@ -203,7 +201,6 @@ begin
     ls_we <= ls_we_cpu;
     ls_dr_cpu <= x"000000" & ls_drx when ls_ext_1 = '1' else ls_dr_ram;
     ls_dwx <= ls_dw_cpu(7 downto 0);
-    dma_en <= dma_eni;
 
     -- reset and clock enables
 
@@ -258,19 +255,6 @@ begin
                 clken_i((clk_phase+2) mod clk_ratio) <= '1';
             end if;
         end if; -- rising_edge(clk_mem) and clk_ratio > 1
-    end process;
-
-    -- DMA enable
-
-    process(rsti,clk_mem)
-    begin
-        if rsti = '1' then
-            dma_eni <= '0';
-        elsif rising_edge(clk_mem) then
-            if clken_i(clk_ratio-1) = '1' then
-                dma_eni <= hold;
-            end if;
-        end if;
     end process;
 
     -- main blocks
@@ -337,7 +321,7 @@ begin
             ls_sz   => ls_sz,
             ls_dw   => ls_dw_cpu,
             ls_dr   => ls_dr_ram,
-            dma_en  => dma_eni,
+            dma_en  => dma_en,
             dma_a   => dma_a,
             dma_bwe => dma_bwe,
             dma_dw  => dma_dw,
@@ -351,7 +335,7 @@ begin
         port map (
             clk_mem  => clk_mem,
             clken_0  => clken_i(0),
-            dma_en   => dma_eni,
+            dma_en   => dma_en,
             dma_a    => dma_a,
             dma_bwe  => dma_bwe,
             dma_dw   => dma_dw,
@@ -370,7 +354,7 @@ begin
         port map (
             clk_mem  => clk_mem,
             clken_0  => clken_i(0),
-            dma_en   => dma_eni,
+            dma_en   => dma_en,
             dma_a    => dma_a,
             dma_bwe  => dma_bwe,
             dma_dw   => dma_dw,

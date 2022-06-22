@@ -74,7 +74,7 @@ architecture synth of np6532_poc_256k_terasic_de10nano is
     signal hold       : std_logic;
     signal irq        : std_logic;
     signal nmi        : std_logic;
-    signal dma_ti     : std_logic_vector(5 downto 0);
+    signal dma_ti     : std_logic_vector(6 downto 0);
     signal dma_to     : std_logic_vector(7 downto 0);
     signal led_user   : std_logic_vector(7 downto 0);
 
@@ -129,7 +129,7 @@ begin
     hold <= not key(1);
     irq <= not gpio_1(6);
     nmi <= not gpio_1(7);
-    dma_ti <= not gpio_1(5 downto 0);
+    dma_ti <= not gpio_1(6 downto 0);
     gpio_1(15 downto 8) <= dma_to;
     led <= led_user(7 downto 0);
 

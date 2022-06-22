@@ -186,7 +186,7 @@ architecture synth of np6532_poc_128k_digilent_nexys_video is
     signal hold       : std_logic;
     signal irq        : std_logic;
     signal nmi        : std_logic;
-    signal dma_ti     : std_logic_vector(5 downto 0);
+    signal dma_ti     : std_logic_vector(6 downto 0);
     signal dma_to     : std_logic_vector(7 downto 0);
     signal led_user   : std_logic_vector(7 downto 0);
 
@@ -202,7 +202,8 @@ begin
             div         => 5,
             num_outputs => 2,
             odiv0       => 10.0,
-            odiv        => (30,0,0,0,0,0)
+            odiv        => (30,0,0,0,0,0),
+            duty_cycle  => (0.5,0.3,0.5,0.5,0.5,0.5,0.5)
         )
         port map (
             rst_ref => not btn_rst_n,
@@ -237,7 +238,7 @@ begin
     hold <= ja(0);
     irq <= ja(1);
     nmi <= ja(2);
-    dma_ti <= jb(5 downto 0);
+    dma_ti <= jb(6 downto 0);
     jc <= dma_to;
     led <= led_user;
 

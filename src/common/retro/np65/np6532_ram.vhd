@@ -26,7 +26,7 @@ package np6532_ram_pkg is
         );
         port (
 
-            clk_cpu   : in  std_logic;                              -- CPU clock
+            clk_cpu   : in  std_logic;                              -- CPU clock (duty cycle <= clk_cpu:clk_mem ratio to use as latch gate)
             clk_mem   : in  std_logic;                              -- memory/DMA clock
             clken_0   : in  std_logic;                              -- asserted when edges are coincident (start of clock phase 0)
 
@@ -63,6 +63,7 @@ use ieee.numeric_std.all;
 library work;
 use work.np6532_ram_init_pkg.all;
 use work.ram_tdp_s_pkg.all;
+use work.ldce_bus_pkg.all;
 
 entity np6532_ram is
     generic (
@@ -100,53 +101,36 @@ architecture synth of np6532_ram is
 
     type ram_addr is array(natural range <>) of std_logic_vector(size_log2-1 downto 2);
 
-    signal if_en_1    : std_logic;
-    signal if_i       : integer range 0 to 3;          -- 2 LSBs of if_a, latched
-    signal if_z_1     : std_logic;                     -- if_z, 1 clock delay
-    signal if_d_i     : std_logic_vector(31 downto 0); -- if_d, internal
-    signal if_d_l     : std_logic_vector(31 downto 0); -- if_d, latched
-    signal ls_en_1    : std_logic;
-    signal ls_i       : integer range 0 to 3;          -- 2 LSBs of ls_a, latched
-    signal ls_z_1     : std_logic;                     -- ls_z, 1 clock delay
-    signal ls_bwe     : std_logic_vector(3 downto 0);  -- ls byte write enables
-    signal ls_dr_i    : std_logic_vector(31 downto 0); -- ls_dr, internal
-    signal ls_dr_l    : std_logic_vector(31 downto 0); -- ls_dr, latched
+    signal if_en_1     : std_logic;                     -- if_en, latched
+    signal if_i        : integer range 0 to 3;          -- 2 LSBs of if_a, latched
+    signal ls_en_1     : std_logic;                     -- ls_en, latched
+    signal ls_i        : integer range 0 to 3;          -- 2 LSBs of ls_a, latched
+    signal ls_bwe      : std_logic_vector(3 downto 0);  -- ls byte write enables
 
-    signal ram_ce_a   : std_logic;
-    signal ram_we_a   : std_logic_vector(3 downto 0);
-    signal ram_addr_a : ram_addr(3 downto 0);
-    signal ram_din_a  : std_logic_vector(31 downto 0);
-    signal ram_dout_a : std_logic_vector(31 downto 0);
+    signal ram_ce_a    : std_logic;
+    signal ram_we_a    : std_logic_vector(3 downto 0);
+    signal ram_addr_a  : ram_addr(3 downto 0);
+    signal ram_din_a   : std_logic_vector(31 downto 0);
+    signal ram_dout_a  : std_logic_vector(31 downto 0);
+    signal ram_dout_al : std_logic_vector(31 downto 0);
 
-    signal ram_ce_b   : std_logic;
-    signal ram_we_b   : std_logic_vector(3 downto 0);
-    signal ram_addr_b : ram_addr(3 downto 0);
-    signal ram_din_b  : std_logic_vector(31 downto 0);
-    signal ram_dout_b : std_logic_vector(31 downto 0);
+    signal ram_ce_b    : std_logic;
+    signal ram_we_b    : std_logic_vector(3 downto 0);
+    signal ram_addr_b  : ram_addr(3 downto 0);
+    signal ram_din_b   : std_logic_vector(31 downto 0);
+    signal ram_dout_b  : std_logic_vector(31 downto 0);
+    signal ram_dout_bl : std_logic_vector(31 downto 0);
 
-    -- Quartus attributes
-    
-    
 begin
 
     process(clk_cpu)
     begin
         if rising_edge(clk_cpu) then
             if if_en = '1' then
-                if_z_1 <= if_z;
                 if_i <= to_integer(unsigned(if_a(1 downto 0)));
             end if;
-            if_en_1 <= if_en;
-            if if_en_1 = '1' then
-                if_d_l <= if_d_i;            
-            end if;
             if ls_en = '1' then
-                ls_z_1 <= ls_z;
                 ls_i <= to_integer(unsigned(ls_a(1 downto 0)));
-            end if;
-            ls_en_1 <= ls_en;
-            if ls_en_1 = '1' then            
-                ls_dr_l <= ls_dr_i;
             end if;
         end if;
     end process;
@@ -206,20 +190,45 @@ begin
                 dout_b  => ram_dout_b(7+(8*i) downto 8*i)
             );
 
-        if_d_i(7+(8*i) downto 8*i) <=
-            if_d_l(7+(8*i) downto 8*i) when if_en_1 = '0' else
-            (others => '0') when if_z_1 = '1' else
-            ram_dout_a(7+(8*((i+if_i) mod 4)) downto 8*((i+if_i) mod 4));
-        ls_dr_i(7+(8*i) downto 8*i) <=
-            ls_dr_l(7+(8*i) downto 8*i) when ls_en_1 = '0' else
-            (others => '0') when ls_z_1 = '1' else
-            ram_dout_b(7+(8*((i+ls_i) mod 4)) downto 8*((i+ls_i) mod 4));
+        if_d(7+(8*i) downto 8*i) <= ram_dout_al(7+(8*((i+if_i) mod 4)) downto 8*((i+if_i) mod 4));
+        ls_dr(7+(8*i) downto 8*i) <= ram_dout_bl(7+(8*((i+ls_i) mod 4)) downto 8*((i+ls_i) mod 4));
         dma_dr(7+(8*i) downto 8*i) <= ram_dout_a(7+(8*i) downto 8*i);
         dma_dr(7+(8*(4+i)) downto 8*(4+i)) <= ram_dout_b(7+(8*i) downto 8*i);
 
     end generate gen_ram;
 
-    if_d <= if_d_i;
-    ls_dr <= ls_dr_i;
+    process(clk_cpu,if_en)
+    begin
+        if clk_cpu = '0' then if_en_1 <= if_en; end if;
+    end process;
+
+    LATCH_A: component ldce_bus
+        generic map (
+            width => 32
+        )
+        port map (
+            clr => if_z,
+            g   => clk_cpu,
+            ge  => if_en_1,
+            d   => ram_dout_a,
+            q   => ram_dout_al
+        );
+
+    process(clk_cpu,if_en)
+    begin
+        if clk_cpu = '0' then ls_en_1 <= ls_en; end if;
+    end process;
+
+    LATCH_B: component ldce_bus
+        generic map (
+            width => 32
+        )
+        port map (
+            clr => ls_z,
+            g   => clk_cpu,
+            ge  => ls_en_1,
+            d   => ram_dout_b,
+            q   => ram_dout_bl
+        );
 
 end architecture synth;

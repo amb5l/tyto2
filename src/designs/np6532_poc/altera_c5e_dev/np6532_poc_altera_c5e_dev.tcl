@@ -1,6 +1,13 @@
+set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[0]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[1]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[2]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[3]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[4]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_p[5]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_n[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_n[1]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_n[2]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_n[3]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_n[4]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to header_n[5]

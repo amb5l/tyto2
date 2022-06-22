@@ -108,7 +108,7 @@ architecture synth of np6532_poc_256k_qmtech_wukong is
     signal hold       : std_logic;
     signal irq        : std_logic;
     signal nmi        : std_logic;
-    signal dma_ti     : std_logic_vector(5 downto 0);
+    signal dma_ti     : std_logic_vector(6 downto 0);
     signal dma_to     : std_logic_vector(7 downto 0);
     signal led_user   : std_logic_vector(7 downto 0);
 
@@ -140,7 +140,8 @@ begin
             div         => 5,
             num_outputs => 2,
             odiv0       => 10.0,
-            odiv        => (30,0,0,0,0,0)
+            odiv        => (30,0,0,0,0,0),
+            duty_cycle  => (0.5,0.28,0.5,0.5,0.5,0.5,0.5)
         )
         port map (
             rst_ref     => rst_100m,
@@ -175,7 +176,7 @@ begin
     hold <= j10(0);
     irq <= j10(1);
     nmi <= j10(2);
-    dma_ti <= j11(5 downto 0);
+    dma_ti <= j11(6 downto 0);
     jp2(7 downto 0) <= dma_to;
     led_n <= not led_user(1 downto 0);
 

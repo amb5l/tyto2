@@ -78,6 +78,7 @@ architecture sim of np6532_functest is
     signal trace_a       : std_logic_vector(7 downto 0);
     signal trace_x       : std_logic_vector(7 downto 0);
     signal trace_y       : std_logic_vector(7 downto 0);
+    signal dma_en        : std_logic;
     signal dma_a         : std_logic_vector(15 downto 3);
     signal dma_bwe       : std_logic_vector(7 downto 0);
     signal dma_dw        : std_logic_vector(63 downto 0);
@@ -103,7 +104,7 @@ begin
 
     clk_phase <= (clk_phase+1) mod (clk_ratio*2) after clk_mem_period/2;
     clk_mem <= '1' when clk_phase mod 2 = 0 else '0';
-    clk_cpu <= '1' when clk_phase < clk_ratio else '0';
+    clk_cpu <= '1' when clk_phase = 0 else '0';
 
     if_ap <= if_al;
     if_z <= '0';
@@ -192,6 +193,7 @@ begin
         end if;
     end process;
 
+    dma_en <= '0';
     dma_a <= (others => '0');
     dma_bwe <= (others => '0');
     dma_dw <= (others => '0');
@@ -235,6 +237,7 @@ begin
             trace_a   => trace_a,
             trace_x   => trace_x,
             trace_y   => trace_y,
+            dma_en    => dma_en,
             dma_a     => dma_a,
             dma_bwe   => dma_bwe,
             dma_dw    => dma_dw,

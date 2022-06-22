@@ -29,7 +29,8 @@ package mmcm_pkg is
             div         : integer;
             num_outputs : integer; -- 1..7
             odiv0       : real;
-            odiv        : int_array(1 to 6) := (0,0,0,0,0,0)
+            odiv        : int_array(1 to 6) := (0,0,0,0,0,0);
+            duty_cycle  : real_array(0 to 6) := (0.5,0.5,0.5,0.5,0.5,0.5,0.5)
         );
         port (
             rst_ref     : in    std_logic;                           -- external reset in
@@ -58,7 +59,8 @@ entity mmcm is
         div         : integer;
         num_outputs : integer; -- 1..7
         odiv0       : real;
-        odiv        : int_array(1 to 6) := (0,0,0,0,0,0)
+        odiv        : int_array(1 to 6) := (0,0,0,0,0,0);
+        duty_cycle  : real_array(0 to 6) := (0.5,0.5,0.5,0.5,0.5,0.5,0.5)
     );
     port (
         rst_ref     : in    std_logic;                           -- external reset in
@@ -106,32 +108,32 @@ begin
         CLKIN1_PERIOD           => 10.0,
         CLKIN2_PERIOD           => 0.0,
         CLKOUT0_DIVIDE_F        => odiv0,
-        CLKOUT0_DUTY_CYCLE      => 0.5,
+        CLKOUT0_DUTY_CYCLE      => duty_cycle(0),
         CLKOUT0_PHASE           => 0.0,
         CLKOUT0_USE_FINE_PS     => false,
         CLKOUT1_DIVIDE          => qdiv(odiv(1)),
-        CLKOUT1_DUTY_CYCLE      => 0.5,
+        CLKOUT1_DUTY_CYCLE      => duty_cycle(1),
         CLKOUT1_PHASE           => 0.0,
         CLKOUT1_USE_FINE_PS     => false,
         CLKOUT2_DIVIDE          => qdiv(odiv(2)),
-        CLKOUT2_DUTY_CYCLE      => 0.5,
+        CLKOUT2_DUTY_CYCLE      => duty_cycle(2),
         CLKOUT2_PHASE           => 0.0,
         CLKOUT2_USE_FINE_PS     => false,
         CLKOUT3_DIVIDE          => qdiv(odiv(3)),
-        CLKOUT3_DUTY_CYCLE      => 0.5,
+        CLKOUT3_DUTY_CYCLE      => duty_cycle(3),
         CLKOUT3_PHASE           => 0.0,
         CLKOUT3_USE_FINE_PS     => false,
         CLKOUT4_CASCADE         => false,
         CLKOUT4_DIVIDE          => qdiv(odiv(4)),
-        CLKOUT4_DUTY_CYCLE      => 0.5,
+        CLKOUT4_DUTY_CYCLE      => duty_cycle(4),
         CLKOUT4_PHASE           => 0.0,
         CLKOUT4_USE_FINE_PS     => false,
         CLKOUT5_DIVIDE          => qdiv(odiv(5)),
-        CLKOUT5_DUTY_CYCLE      => 0.5,
+        CLKOUT5_DUTY_CYCLE      => duty_cycle(5),
         CLKOUT5_PHASE           => 0.0,
         CLKOUT5_USE_FINE_PS     => false,
         CLKOUT6_DIVIDE          => qdiv(odiv(6)),
-        CLKOUT6_DUTY_CYCLE      => 0.5,
+        CLKOUT6_DUTY_CYCLE      => duty_cycle(6),
         CLKOUT6_PHASE           => 0.0,
         CLKOUT6_USE_FINE_PS     => false,
         COMPENSATION            => "ZHOLD",

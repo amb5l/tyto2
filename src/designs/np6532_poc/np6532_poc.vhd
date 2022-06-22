@@ -36,7 +36,7 @@ package np6532_poc_pkg is
             hold      : in  std_logic;
             irq       : in  std_logic;
             nmi       : in  std_logic;
-            dma_ti    : in  std_logic_vector(5 downto 0);
+            dma_ti    : in  std_logic_vector(6 downto 0);
             dma_to    : out std_logic_vector(7 downto 0);
             led       : out std_logic_vector(7 downto 0)
         );
@@ -66,7 +66,7 @@ entity np6532_poc is
         hold      : in  std_logic;
         irq       : in  std_logic;
         nmi       : in  std_logic;
-        dma_ti    : in  std_logic_vector(5 downto 0);
+        dma_ti    : in  std_logic_vector(6 downto 0);
         dma_to    : out std_logic_vector(7 downto 0);
         led       : out std_logic_vector(7 downto 0)
     );
@@ -206,7 +206,7 @@ begin
             trace_a   => open,
             trace_x   => open,
             trace_y   => open,
-            dma_en    => open,
+            dma_en    => dma_en,
             dma_a     => dma_a,
             dma_bwe   => dma_bwe,
             dma_dw    => dma_dw,
@@ -241,18 +241,21 @@ begin
     --  38000-3BFFF sideways RAM bank:       -      -       1
     --  3C000-3FFFF sideways RAM bank:       -      -       0
 
+    -- hardware registers
+    -- ROMSEL   sideways bank select (0..15)
+    -- WP0      write protect for sideways banks 0..7
+    -- WP1      write protect for sideways banks 8..15
+
     if_ap(13 downto 0) <= if_al(13 downto 0);
     process(if_al(15 downto 14),sw_bank)
     begin
         if_ap(ram_size_log2-1 downto 14) <= (others => '0');
         if if_al(15) = '0' or if_al(15 downto 14) = "11" then -- fixed RAM or OS ROM
             if_ap(15 downto 14) <= if_al(15 downto 14);
-        else 
+        else
             if_ap(ram_size_log2-1 downto 14) <= sw_bank(ram_size_log2-15 downto 0);
         end if;
     end process;
-
-    if_z <= sw_z when if_al(15 downto 14) = "10" else '0';
 
     ls_ap(13 downto 0) <= ls_al(13 downto 0);
     process(ls_al(15 downto 14),sw_bank)
@@ -260,7 +263,7 @@ begin
         ls_ap(ram_size_log2-1 downto 14) <= (others => '0');
         if ls_al(15) = '0' or ls_al(15 downto 14) = "11" then -- fixed RAM or OS ROM
             ls_ap(15 downto 14) <= ls_al(15 downto 14);
-        else 
+        else
             ls_ap(ram_size_log2-1 downto 14) <= sw_bank(ram_size_log2-15 downto 0);
         end if;
     end process;
@@ -270,20 +273,15 @@ begin
         sw_wp when ls_al(15 downto 14) = "10" else
         '0';
 
-    ls_z <= sw_z when ls_al(15 downto 14) = "10" else '0';
-
     ls_ext <= '1' when ls_al(15 downto 10) = "111111"
         and ls_al(9 downto 8) /= "11" else '0';
-
-    -- hardware registers
-    -- ROMSEL   sideways bank select (0..15)
-    -- WP0      write protect for sideways banks 0..7
-    -- WP1      write protect for sideways banks 8..15
 
     process(rst_peri,clk_cpu)
     begin
         if rising_edge(clk_cpu) then
             if rst_peri = '1' then
+                if_z <= '0';
+                ls_z <= '0';
                 hw_reg_romsel <= (others => '1');
                 sw_bank <= (1 => '1', others => '0');
                 sw_z <= '0';
@@ -292,6 +290,14 @@ begin
                 hw_reg_led <= (others => '0');
                 hw_reg_timer <= (others => '0');
             else
+                if_z <= '0';
+                if if_al(15 downto 14) = "10" then
+                    if_z <= sw_z;
+                end if;
+                ls_z <= '0';
+                if ls_al(15 downto 14) = "10" then
+                    ls_z <= sw_z;
+                end if;
                 hw_reg_timer <= std_logic_vector(unsigned(hw_reg_timer)+1);
                 if ls_al(15 downto 8) = x"FE" then
                     if ls_we = '1' then -- writes
@@ -359,22 +365,23 @@ begin
         variable i: integer;
     begin
         if rising_edge(clk_mem) then
-            if dma_ti(0) = '0' then
+            dma_en <= dma_ti(0);
+            if dma_ti(1) = '0' then
                 dma_a <= (others => '0');
             else
                 dma_a <= std_logic_vector(unsigned(dma_a)+1);
             end if;
-            if dma_ti(1) = '0' then
+            if dma_ti(2) = '0' then
                 dma_bwe <= (others => '0');
             else
                 dma_bwe <= std_logic_vector(unsigned(dma_bwe)+1);
             end if;
-            if dma_ti(2) = '0' then
+            if dma_ti(3) = '0' then
                 dma_dw <= (others => '0');
             else
                 dma_dw <= std_logic_vector(unsigned(dma_dw)+1);
             end if;
-            i := to_integer(unsigned(dma_ti(5 downto 3)));
+            i := to_integer(unsigned(dma_ti(6 downto 4)));
             dma_to <= dma_dr(7+(i*8) downto i*8);
         end if;
     end process;

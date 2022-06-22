@@ -52,7 +52,8 @@ VIVADO_DSN_VHDL=\
 	$(SRC)/common/basic/ram_tdp_s.vhd \
 	$(RAM_INIT_VHD) \
 	$(SRC)/common/retro/np65/np6532_cache.vhd \
-	$(SRC)/common/basic/$(VENDOR)/ram_sdp_a_32.vhd
+	$(SRC)/common/basic/$(VENDOR)/ram_sdp_a_32.vhd \
+	$(SRC)/common/basic/$(VENDOR)/ldce_bus.vhd
 VIVADO_DSN_VHDL_2008=\
 	$(SRC)/common/basic/$(VENDOR_FAMILY)/mmcm.vhd
 

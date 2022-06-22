@@ -216,7 +216,7 @@ architecture synth of np6532_poc_128k_altera_c5e_dev is
     signal hold       : std_logic;
     signal irq        : std_logic;
     signal nmi        : std_logic;
-    signal dma_ti     : std_logic_vector(5 downto 0);
+    signal dma_ti     : std_logic_vector(6 downto 0);
     signal dma_to     : std_logic_vector(7 downto 0);
     signal led_user   : std_logic_vector(7 downto 0);
 
@@ -273,7 +273,8 @@ begin
     hold <= not user_pb(1);
     irq <= not user_pb(2);
     nmi <= not user_pb(3);
-    dma_ti <= not header_p(5 downto 0);
+    dma_ti(3 downto 0) <= not header_p(3 downto 0);
+    dma_ti(6 downto 4) <= not header_n(2 downto 0);
     header_d <= dma_to;
     user_led <= not led_user(3 downto 0);
 

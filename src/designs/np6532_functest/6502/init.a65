@@ -28,6 +28,20 @@ _L2:
     INX
     BNE _L2
 
+; --------------------------------------------------------------------------------
+
+    ; tiny self modifying code test
+    SEC
+    INC _L3+1   ; change target of BCS from _L4 to _L5
+_L3:
+    BCS _L4
+_L4:
+    CLC
+_L5:
+    BCC _L5     ; spin here on fail
+
+; --------------------------------------------------------------------------------
+
     ; initial register values
     LDX #$FD
     TXS         ; S = $FD (like T65)

@@ -186,8 +186,6 @@ architecture synth of np6532_core is
     -- interrupts and vectors
 
     signal nmi_1            : std_logic;                                    -- NMI delayed by 1 instruction fetch (for edge detect)
-    signal nmi_active       : std_logic;                                    -- NMI in progress
-    signal irq_active       : std_logic;                                    -- IRQ in progress
 
     signal vc_nmi           : std_logic_vector(15 downto 0);                -- cached NMI vector
     signal vc_nmi_en        : std_logic_vector(1 downto 0);                 -- address decode for above
@@ -201,8 +199,6 @@ architecture synth of np6532_core is
     --------------------------------------------------------------------------------
     -- pipeline stage 0
 
-    signal s0_nmi           : std_logic;                                    -- NMI (force BRK fetch)
-    signal s0_irq           : std_logic;                                    -- IRQ (force BRK fetch)
     signal s0_if_a_brk      : std_logic_vector(15 downto 0);                -- instruction address (break)
     signal s0_if_a_next     : std_logic_vector(15 downto 0);                -- instruction address (next)
     signal s0_if_a_bxx      : std_logic_vector(15 downto 0);                -- instruction address (branch)
@@ -215,7 +211,9 @@ architecture synth of np6532_core is
     signal s1_nmi           : std_logic;                                    -- NMI
     signal s1_irq           : std_logic;                                    -- IRQ
     signal s1_int           : std_logic;                                    -- NMI or IRQ
-    signal s1_flag_i_clr    : std_logic;                                    -- I flag is being cleared by this instruction (CLI or PLP)
+    signal s1_force_brk     : std_logic;                                    -- force BRK opcode
+    signal s1_flag_i_clr    : std_logic;                                    -- I flag is being cleared by this instruction (CLI or PLP or RTI)
+    signal s1_flag_i_set    : std_logic;                                    -- I flag is being set by this instruction (SEI or BRK or PLP)
 
     -- instruction decoder outputs
     signal s1_id_valid      : std_logic;
@@ -362,6 +360,13 @@ architecture synth of np6532_core is
     signal sim_opcode       : std_logic_vector(7 downto 0);
     signal sim_operand_8    : std_logic_vector(7 downto 0);
     signal sim_operand_16   : std_logic_vector(15 downto 0);
+    signal sim_nmi          : std_logic;
+    signal sim_irq          : std_logic;
+    signal sim_reg_pc       : std_logic_vector(15 downto 0);
+    signal sim_reg_s        : std_logic_vector(7 downto 0);
+    signal sim_reg_a        : std_logic_vector(7 downto 0);
+    signal sim_reg_x        : std_logic_vector(7 downto 0);
+    signal sim_reg_y        : std_logic_vector(7 downto 0);
     signal sim_flag_c       : std_logic;
     signal sim_flag_z       : std_logic;
     signal sim_flag_i       : std_logic;
@@ -394,11 +399,18 @@ architecture synth of np6532_core is
 
 begin
 
-    -- simulation only
+    -- helpful signal names for simulation only
 
     sim_opcode <= s1_opcode;
     sim_operand_8 <= s1_operand_8;
     sim_operand_16 <= s1_operand_16;
+    sim_nmi <= s1_nmi;
+    sim_irq <= s1_irq;
+    sim_reg_pc <= s1_reg_pc;
+    sim_reg_s  <= s2_reg_s;
+    sim_reg_a  <= s2_reg_a;
+    sim_reg_x  <= s2_reg_x;
+    sim_reg_y  <= s2_reg_y;
     sim_flag_c <= s2_reg_p(0);
     sim_flag_z <= s2_reg_p(1);
     sim_flag_i <= s2_reg_p(2);
@@ -416,8 +428,8 @@ begin
 
     -- misc outputs
 
-    if_en  <= advex or fif;
-    if_brk <= rst or s0_nmi or s0_irq;
+    if_en  <= (run and s1_id_valid and (s1_id_fast or cycle) and not hold) or fif;   
+    if_brk <= s1_force_brk;
     if_a   <= s0_if_a;
     ls_a   <= s1_ls_a;
     ls_en  <= s1_ls_en;
@@ -431,8 +443,8 @@ begin
     -- trace: conditions at start of instruction
 
     trace_stb <= advex;
-    trace_nmi <= nmi_active;
-    trace_irq <= irq_active;
+    trace_nmi <= s1_nmi;
+    trace_irq <= s1_irq;
     trace_op  <= s1_operand_16 & s1_opcode;
     trace_pc  <= s1_reg_pc;
     trace_s   <= s2_reg_s;
@@ -481,12 +493,19 @@ begin
     -- execution control
     --  almost all instructions are fast / single cycle
     --  exceptions are RMW (non zero page) and JMP indirect; these take 2 cycles and always start with a load
-    advex <= run and s1_id_valid and (s1_id_fast or cycle) and not hold;
+    advex <= run and s1_id_valid and (s1_id_fast or cycle) and not hold and not smack;
 
     -- I flag will be cleared by this instruction (CLI, RTI or PLP)
     s1_flag_i_clr <= '1' when
         (s1_id_flag_i = ID_FLAG_I_CLR) or
         (s1_id_reg_p = '1' and cs_d(2) = '0')
+        else '0';
+
+    -- I flag will be set by this instruction (SEI or BRK or PLP)
+    s1_flag_i_set <= '1' when
+        (s1_id_flag_i = ID_FLAG_I_SET) or
+        (s1_id_flag_i = ID_FLAG_I_BRK) or
+        (s1_id_reg_p = '1' and cs_d(2) = '1')
         else '0';
 
     process(clk)
@@ -501,15 +520,10 @@ begin
                 smack           <= '0';
 
                 nmi_1           <= '0';
-                nmi_active      <= '0';
-                irq_active      <= '0';
-
-                s0_nmi          <= '0';
-                s0_irq          <= '0';
-
                 s1_nmi          <= '0';
                 s1_irq          <= '0';
                 s1_int          <= '0';
+                s1_force_brk    <= '0';
 
                 s2_rmw_z        <= '0';
                 s2_rmw_n        <= '0';
@@ -567,35 +581,37 @@ begin
                     run <= '1';
                 end if;
 
-                if s1_ls_we = '1' and ((s1_ls_a = s1_reg_pc) or (s1_ls_a = s1_reg_pc1) or (s1_ls_a = s1_reg_pc2)) then -- self modifying code - write collision with instruction fetch
+                if s1_ls_we = '1' and (
+                    (s1_ls_a = s0_if_a) or
+                    (s1_ls_a = std_logic_vector(unsigned(s0_if_a)+1)) or
+                    (s1_ls_a = std_logic_vector(unsigned(s0_if_a)+2))
+                ) then -- self modifying code - write collision with instruction fetch
                     smack <= '1';
                 end if;
 
                 if advex = '1' then
 
-                    nmi_1 <= nmi and s2_flag_x;
-                    s0_nmi <= nmi and s2_flag_x and not nmi_1;
-                    if s0_nmi = '1' then
-                        nmi_active <= '1';
-                    end if;
-                    s0_irq <=
-                        not (nmi and s2_flag_x and not nmi_1) and                                 -- NMI about to taken
-                        not (s0_nmi or s1_nmi) and                                                -- NMI early stages
-                        (irq and (s1_flag_i_clr or not s2_flag_i) and not s0_irq and not s1_irq); -- IRQ is not masked
-                    if s0_irq = '1' then
-                        irq_active <= '1';
-                    end if;
-                    if to_integer(unsigned(s1_opcode)) = mnemonic_type'pos(RTI_imp) then
-                        if nmi_active = '1' then
-                            nmi_active <= '0';
-                        elsif irq_active = '1' then
-                            irq_active <= '0';
+                    if s1_id_iaddr =  ID_IADDR_RTI then
+                        if s1_nmi = '1' then
+                            s1_nmi <= '0';
+                            s1_int <= s1_irq;
+                        elsif s1_irq = '1' then
+                            s1_irq <= '0';
+                            s1_int <= '0';
                         end if;
                     end if;
 
-                    s1_nmi <= s0_nmi;
-                    s1_irq <= s0_irq;
-                    s1_int <= s0_nmi or s0_irq;
+                    nmi_1 <= nmi and s2_flag_x;
+                    s1_force_brk <= '0';
+                    if nmi = '1' and s2_flag_x = '1' and nmi_1 = '0' then
+                        s1_nmi <= '1';
+                        s1_int <= '1';
+                        s1_force_brk <= '1';
+                    elsif irq = '1' and (s1_flag_i_clr = '1' or (s2_flag_i = '0' and s1_flag_i_set = '0')) and s1_irq = '0' then
+                        s1_irq <= '1';
+                        s1_int <= '1';
+                        s1_force_brk <= '1';                        
+                    end if;
 
                     s2_id_addsub    <= s1_id_addsub;
                     s2_id_shift     <= s1_id_shift;
@@ -745,15 +761,16 @@ begin
 
     s0_if_a_rts <= std_logic_vector(unsigned(cs_d(15 downto 0))+1);
 
-    with s1_id_iaddr select s0_if_a <=
-        s0_if_a_brk       when ID_IADDR_BRK, -- reset, IRQ, BRK, NMI
-        s0_if_a_next      when ID_IADDR_NXT, -- next instruction
-        s0_if_a_bxx       when ID_IADDR_BRX, -- branch
-        s1_operand_16     when ID_IADDR_JMP, -- JMP/JSR absolute
-        s0_if_a_rts       when ID_IADDR_RTS, -- RTS
-        cs_d(23 downto 8) when ID_IADDR_RTI, -- RTI
-        s2_ls_dr_16       when ID_IADDR_IND, -- JMP indirect
-        x"0000"           when others;
+    s0_if_a <=
+        s1_reg_pc         when advex = '0' else
+        s0_if_a_brk       when s1_id_iaddr = ID_IADDR_BRK else -- reset, IRQ, BRK, NMI
+        s0_if_a_next      when s1_id_iaddr = ID_IADDR_NXT else -- next instruction
+        s0_if_a_bxx       when s1_id_iaddr = ID_IADDR_BRX else -- branch
+        s1_operand_16     when s1_id_iaddr = ID_IADDR_JMP else -- JMP/JSR absolute
+        s0_if_a_rts       when s1_id_iaddr = ID_IADDR_RTS else -- RTS
+        cs_d(23 downto 8) when s1_id_iaddr = ID_IADDR_RTI else -- RTI
+        s2_ls_dr_16       when s1_id_iaddr = ID_IADDR_IND else -- JMP indirect
+        x"0000";         
 
     -- load/store address generation
 

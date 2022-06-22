@@ -21,6 +21,7 @@ use ieee.std_logic_1164.all;
 package tyto_types_pkg is
 
     type int_array is array(natural range <>) of integer;
+    type real_array is array(natural range <>) of real;
     type slv_31_0 is array(natural range <>) of std_logic_vector(31 downto 0);
     type slv_1_0 is array(natural range <>) of std_logic_vector(1 downto 0);
     type slv_7_0 is array(natural range <>) of std_logic_vector(7 downto 0);

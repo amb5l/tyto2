@@ -6,9 +6,8 @@ set clk_mem [get_clocks {CLOCK|pll_otus_50m_96m_32m_inst|altera_pll_i|general[2]
 set clk_cpu [get_clocks {CLOCK|pll_otus_50m_96m_32m_inst|altera_pll_i|general[3].gpll~PLL_OUTPUT_COUNTER|divclk}]
 
 # CPU RAM and cache read paths
-set pins_ram_cache_rd [get_pins -compatibility_mode {SYS|CORE|RAM|if_d[*]*|combout}]
-set pins_ram_cache_rd [add_to_collection $pins_ram_cache_rd [get_pins -compatibility_mode {SYS|CORE|RAM|ls_dr[*]*|combout}]]
-set pins_ram_cache_rd [add_to_collection $pins_ram_cache_rd [get_pins -compatibility_mode {SYS|CORE|ls_dr_cpu[*]*|combout}]]
+set pins_ram_cache_rd                                       [get_pins -compatibility_mode {SYS|CORE|RAM|LATCH_A|*|combout}]
+set pins_ram_cache_rd [add_to_collection $pins_ram_cache_rd [get_pins -compatibility_mode {SYS|CORE|RAM|LATCH_B|*|combout}]]
 set pins_ram_cache_rd [add_to_collection $pins_ram_cache_rd [get_pins -compatibility_mode {SYS|CORE|CACHE_*|*|portbdataout[0]}]]
 
 # clk_mem to clk_cpu: multicycle paths
@@ -22,7 +21,7 @@ set_multicycle_path $n_hold  -hold  -end   -from $clk_mem -to $clk_mem -through 
 # clk_cpu to clk_mem: multicycle by default, with few exceptions
 set_multicycle_path $n_setup -setup -end   -from $clk_cpu -to $clk_mem
 set_multicycle_path $n_hold  -hold  -end   -from $clk_cpu -to $clk_mem
-set c2m_sc [get_pins -compatibility_mode {SYS|CORE|rst_s[1]|q}]
+set c2m_sc                            [get_pins -compatibility_mode {SYS|CORE|rst_s[1]|q}]
 set c2m_sc [add_to_collection $c2m_sc [get_pins -compatibility_mode {SYS|CORE|rst|q}]]
 set c2m_sc [add_to_collection $c2m_sc [get_pins -compatibility_mode {SYS|CORE|clk_phdet[0]|q}]]
 set_multicycle_path 1 -setup -end -from $clk_cpu -to $clk_mem -through $c2m_sc

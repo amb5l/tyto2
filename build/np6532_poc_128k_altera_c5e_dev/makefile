@@ -41,9 +41,9 @@ QUARTUS_MAP_OPTIMIZE=speed
 QUARTUS_FIT_EFFORT=auto
 
 QUARTUS_QIP=\
-	$(SRC)/common/basic/intel_cyclone_v/pll_otus_50m_96m_32m/pll_otus_50m_96m_32m.qip
+	$(SRC)/common/basic/intel_cyclone_v/pll_otus_50m_96m_32m__28/pll_otus_50m_96m_32m.qip
 QUARTUS_SIP=\
-	$(SRC)/common/basic/intel_cyclone_v/pll_otus_50m_96m_32m/pll_otus_50m_96m_32m.sip
+	$(SRC)/common/basic/intel_cyclone_v/pll_otus_50m_96m_32m__28/pll_otus_50m_96m_32m.sip
 QUARTUS_MIF=\
 	$(DECODER_MIF)
 QUARTUS_VHDL=\
@@ -57,7 +57,8 @@ QUARTUS_VHDL=\
 	$(SRC)/common/basic/ram_tdp_s.vhd \
 	$(RAM_INIT_VHD) \
 	$(SRC)/common/retro/np65/np6532_cache.vhd \
-	$(SRC)/common/basic/intel_cyclone_v/ram_sdp_a_32.vhd
+	$(SRC)/common/basic/intel_cyclone_v/ram_sdp_a_32.vhd \
+	$(SRC)/common/basic/intel/ldce_bus.vhd
 QUARTUS_SDC=\
 	$(SRC)/boards/$(BOARD)/$(BOARD).sdc \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).sdc
@@ -69,8 +70,8 @@ QUARTUS_GEN=\
 
 include $(QUARTUS_MK)/quartus.mk
 
-decoder: $(DECODER_VHD)
-$(DECODER_VHD): $(DECODER_CSV) | $(BUILD_VHDL_DIR)
+decoder: $(DECODER_VHD) $(DECODER_MIF)
+$(DECODER_VHD) $(DECODER_MIF): $(DECODER_CSV) | $(BUILD_VHDL_DIR)
 	$(PYTHON) $(DECODER_PY) $< $(@D)/
 
 raminit: $(RAM_INIT_VHD)
