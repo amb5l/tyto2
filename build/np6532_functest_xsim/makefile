@@ -1,5 +1,5 @@
 DESIGN=np6532_functest
-RAM_SIZE=64
+RAM_SIZE=128
 VIVADO_PART=xc7a200tsbg484-1
 VENDOR=xilinx
 VENDOR_FAMILY=xilinx_7series
@@ -59,7 +59,8 @@ VIVADO_SIM_VHDL=\
 	$(RAM_INIT_VHD) \
 	$(SRC)/common/retro/np65/np6532_cache.vhd \
 	$(SRC)/common/basic/$(VENDOR)/ram_sdp_a_32.vhd \
-	$(SRC)/common/basic/$(VENDOR)/ldce_bus.vhd
+	$(SRC)/common/basic/$(VENDOR)/ldce_bus.vhd \
+	$(SUBMODULES)/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl
 VIVADO_SIM_GENERICS=\
 	vector_init=64512 \
 	start_address=1024 \
@@ -94,18 +95,12 @@ $(INIT_BIN): $(BUILD_6502_DIR)/$(INIT).o $(INIT_CFG)
 $(BUILD_6502_DIR)/$(INIT).o: $(INIT_SRC) | $(BUILD_6502_DIR)
 	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(INIT).lst
 
-$(BUILD_6502_DIR):
-	mkdir $(BUILD_6502_DIR)
-
 nmi: $(NMI_BIN)
 $(NMI_BIN): $(BUILD_6502_DIR)/$(NMI).o $(NMI_CFG)
 	$(LD65) $< -o $@ -m $(BUILD_6502_DIR)/$(NMI).map -C $(NMI_CFG)
 
 $(BUILD_6502_DIR)/$(NMI).o: $(NMI_SRC) | $(BUILD_6502_DIR)
 	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(NMI).lst
-
-$(BUILD_6502_DIR):
-	mkdir $(BUILD_6502_DIR)
 
 irq: $(IRQ_BIN)
 $(IRQ_BIN): $(BUILD_6502_DIR)/$(IRQ).o $(IRQ_CFG)
