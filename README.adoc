@@ -54,13 +54,13 @@ Click on the design *Name* link to see further details.
 
 == Build and Simulation Tools
 
-Part of the motivation for this new repo was a move to a makefile driven build process - so https://www.gnu.org/software/make/[GNU make] is required, along with https://en.wikipedia.org/wiki/Git[git] and assorted utilities that are usually present on Linux systems. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get these tools (as well as http://ghdl.free.fr/[GHDL]) running on Windows. Some builds also require https://www.python.org/downloads/[Python 3].
+Part of the motivation for this new repo was a move to a makefile driven build process - so https://www.gnu.org/software/make/[GNU make] is required, along with https://git-scm.com/[git] and assorted utilities that are usually present on Linux systems. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get GNU tools (as well as http://ghdl.free.fr/[GHDL]) running on Windows. Some builds also require https://www.python.org/downloads/[Python 3].
 
 The build process produces projects that can be opened and worked on in the relevant IDE:
 
-* For Xilinx FPGAs, *Vivado 2021.2* is required. Designs including a https://en.wikipedia.org/wiki/MicroBlaze[Microblaze soft CPU] also require *Vitis 2021.2*. These tools may be obtained from https://www.xilinx.com/support/download.html[here].
+* For AMD/Xilinx FPGAs, *Vivado* is required - the free *Standard Edition* is sufficient. Versions *2022.1* and *2021.2* are supported. Note that designs including a https://en.wikipedia.org/wiki/MicroBlaze[Microblaze soft CPU] also require *Vitis*. These tools may be obtained from https://www.xilinx.com/support/download.html[here].
 
-* For Intel FPGAs, *Quartus Prime Lite 21.1* is required. This may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
+* For Intel/Altera FPGAs, *Quartus Prime* is required - the free *Lite* edition is sufficient. Version *21.1* is supported. This may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
 
 == License
 
