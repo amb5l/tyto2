@@ -39,12 +39,13 @@ end entity np6532_functest;
 
 architecture sim of np6532_functest is
 
+    constant ram_size_log2  : integer := 17;   -- at least 128k required for DMA testing
     constant clk_ratio      : integer := 3;
     constant clk_mem_period : time := 10 ns;
     constant test_hold      : boolean := true;
+    constant test_dma       : boolean := true;
     constant test_nmi       : boolean := true;
     constant test_irq       : boolean := true;
-    constant ram_size_log2  : integer := 17;
 
     type slv_127_0_t is array(natural range <>) of std_logic_vector(127 downto 0);
 
@@ -220,11 +221,6 @@ begin
         end if;
     end process;
 
-    dma_en <= '0';
-    dma_a <= (others => '0');
-    dma_bwe <= (others => '0');
-    dma_dw <= (others => '0');
-
     UUT: component np6532
         generic map (
             clk_ratio     => clk_ratio,
@@ -368,10 +364,12 @@ begin
 
     process(hold,clken)
     begin
-        dma_en <= hold;
-        if clk_ratio > 1 then
-            if unsigned(clken(1 to clk_ratio-1)) /= 0 then
-                dma_en <= '1';
+        if test_dma then
+            dma_en <= hold;
+            if clk_ratio > 1 then
+                if unsigned(clken(1 to clk_ratio-1)) /= 0 then
+                    dma_en <= '1';
+                end if;
             end if;
         end if;
     end process;
@@ -389,7 +387,7 @@ begin
             dma_a <= (others => '1');
             prng_reseed <= '0';
             prng_seed <= INIT_SEED;
-        elsif rising_edge(clk_mem) then
+        elsif rising_edge(clk_mem) and test_dma then
             if ram_size_log2 > 16 then
                 dma_a(ram_size_log2-1 downto 16) <= (others => '1');
             end if;
