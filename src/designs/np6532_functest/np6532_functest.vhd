@@ -39,15 +39,25 @@ end entity np6532_functest;
 
 architecture sim of np6532_functest is
 
+    constant ram_size_log2  : integer := 17;   -- at least 128k required for DMA testing
     constant clk_ratio      : integer := 3;
     constant clk_mem_period : time := 10 ns;
     constant test_hold      : boolean := true;
+    constant test_dma       : boolean := true;
     constant test_nmi       : boolean := true;
     constant test_irq       : boolean := true;
+
+    type slv_127_0_t is array(natural range <>) of std_logic_vector(127 downto 0);
+
+    constant INIT_SEED : slv_127_0_t := (
+            x"0123456789ABCDEF0123456789ABCDEF",
+            x"123456789ABCDEF0123456789ABCDEF0"
+        );
 
     signal clk_phase     : integer range 0 to (clk_ratio*2)-1 := 0;
     signal clk_cpu       : std_logic;
     signal clk_mem       : std_logic;
+    signal clken         : std_logic_vector(0 to clk_ratio-1);
 
     signal rst           : std_logic;
     signal rsto          : std_logic;
@@ -56,10 +66,10 @@ architecture sim of np6532_functest is
     signal nmi           : std_logic;
     signal irq           : std_logic;
     signal if_al         : std_logic_vector(15 downto 0);
-    signal if_ap         : std_logic_vector(15 downto 0);
+    signal if_ap         : std_logic_vector(ram_size_log2-1 downto 0);
     signal if_z          : std_logic;
     signal ls_al         : std_logic_vector(15 downto 0);
-    signal ls_ap         : std_logic_vector(15 downto 0);
+    signal ls_ap         : std_logic_vector(ram_size_log2-1 downto 0);
     signal ls_en         : std_logic;
     signal ls_re         : std_logic;
     signal ls_we         : std_logic;
@@ -79,7 +89,7 @@ architecture sim of np6532_functest is
     signal trace_x       : std_logic_vector(7 downto 0);
     signal trace_y       : std_logic_vector(7 downto 0);
     signal dma_en        : std_logic;
-    signal dma_a         : std_logic_vector(15 downto 3);
+    signal dma_a         : std_logic_vector(ram_size_log2-1 downto 3);
     signal dma_bwe       : std_logic_vector(7 downto 0);
     signal dma_dw        : std_logic_vector(63 downto 0);
     signal dma_dr        : std_logic_vector(63 downto 0);
@@ -100,15 +110,29 @@ architecture sim of np6532_functest is
 
     signal test_case     : std_logic_vector(7 downto 0); -- functest code's test case - use to avoid stack test (case 3)
 
+    signal dma_en1       : std_logic;
+    signal dma_r_w       : std_logic;
+    signal dma_rrdy      : std_logic;
+    signal dma_error     : std_logic;
+    signal dma_check     : std_logic;
+
+    signal prng_reseed   : std_logic;
+    signal prng_seed     : slv_127_0_t(0 to 1);
+    signal prng_ok       : std_logic_vector(0 to 1);
+    signal prng_en       : std_logic;
+    signal prng_d        : std_logic_vector(63 downto 0);
+
 begin
 
     clk_phase <= (clk_phase+1) mod (clk_ratio*2) after clk_mem_period/2;
     clk_mem <= '1' when clk_phase mod 2 = 0 else '0';
     clk_cpu <= '1' when clk_phase = 0 else '0';
 
-    if_ap <= if_al;
+    if_ap(15 downto 0) <= if_al;
+    if_ap(ram_size_log2-1 downto 16) <= (others => '0');
     if_z <= '0';
-    ls_ap <= ls_al;
+    ls_ap(15 downto 0) <= ls_al;
+    ls_ap(ram_size_log2-1 downto 16) <= (others => '0');
     ls_wp <= '0';
     ls_z <= '0';
     ls_ext <= '0';
@@ -164,6 +188,10 @@ begin
                     end if;
                 end if;
             end if;
+            if dma_check = '1' and dma_error = '1' then
+                report "DMA error!";
+                finish;
+            end if;
         end loop;
         report "instruction count: " & integer'image(count_i) & "  cycle count: " & integer'image(count_c);
         report "*** END OF FILE ***";
@@ -193,15 +221,10 @@ begin
         end if;
     end process;
 
-    dma_en <= '0';
-    dma_a <= (others => '0');
-    dma_bwe <= (others => '0');
-    dma_dw <= (others => '0');
-
     UUT: component np6532
         generic map (
             clk_ratio     => clk_ratio,
-            ram_size_log2 => 16,
+            ram_size_log2 => ram_size_log2,
             jmp_rst       => std_logic_vector(to_unsigned(vector_init,16)),
             vec_irq       => x"FFF8" -- hijack IRQ to make it invisible to functional test code
         )
@@ -210,7 +233,7 @@ begin
             rsto      => rsto,
             clk_cpu   => clk_cpu,
             clk_mem   => clk_mem,
-            clken     => open,
+            clken     => clken,
             hold      => hold,
             nmi       => nmi,
             irq       => irq,
@@ -335,5 +358,83 @@ begin
             end if;
         end if;
     end process;
+
+    -- DMA test
+    -- fill then test top 64k of RAM (so 128k minimum required)
+
+    process(hold,clken)
+    begin
+        if test_dma then
+            dma_en <= hold;
+            if clk_ratio > 1 then
+                if unsigned(clken(1 to clk_ratio-1)) /= 0 then
+                    dma_en <= '1';
+                end if;
+            end if;
+        end if;
+    end process;
+
+    dma_bwe <= (others => prng_en and not dma_r_w);
+    dma_dw <= prng_d;
+
+    process(clk_mem)
+    begin
+        if rst = '1' then
+            dma_en1 <= '0';
+            dma_r_w <= '1';
+            dma_error <= '0';
+            dma_check <= '0';
+            dma_a <= (others => '1');
+            prng_reseed <= '0';
+            prng_seed <= INIT_SEED;
+        elsif rising_edge(clk_mem) and test_dma then
+            if ram_size_log2 > 16 then
+                dma_a(ram_size_log2-1 downto 16) <= (others => '1');
+            end if;
+            dma_en1 <= dma_en;
+            dma_rrdy <= '0';
+            prng_reseed <= '0';
+            if dma_en = '1' and prng_reseed = '0' and unsigned(not prng_ok) = 0 then
+                dma_a(15 downto 3) <= std_logic_vector(unsigned(dma_a(15 downto 3))+1);
+                dma_rrdy <= dma_r_w;
+                if unsigned(not dma_a(15 downto 3)) = 0 then -- all 1s
+                    dma_r_w <= not dma_r_w;
+                    prng_reseed <= '1';
+                    if dma_r_w = '1' then
+                        prng_seed(0) <= prng_d & not prng_d;
+                        prng_seed(1) <= not prng_d & prng_d;
+                    end if;
+                end if;
+            end if;
+            if dma_rrdy = '1' and dma_dr /= prng_d then
+                dma_error <= '1';
+            end if;
+            dma_check <= prng_reseed and not dma_r_w;
+            if dma_check = '1' then
+                dma_error <= '0';
+            end if;
+       end if;
+    end process;
+
+    -- random number generators (2 x 32 bits)
+
+    prng_en <= '1' when prng_reseed = '0' and unsigned(not prng_ok) = 0 and ((dma_r_w = '0' and dma_en = '1') or (dma_rrdy = '1'))  else '0';
+
+    GEN_PRNG: for i in 0 to 1 generate
+        PRNG: entity work.rng_xoshiro128plusplus
+            generic map (
+                init_seed   => (others => '0'),
+                pipeline    => true
+            )
+            port map (
+                clk         => clk_mem,
+                rst         => rst,
+                reseed      => prng_reseed,
+                newseed     => prng_seed(i),
+                out_ready   => prng_en,
+                out_valid   => prng_ok(i),
+                out_data    => prng_d(31+(i*32) downto i*32)
+            );
+    end generate;
 
 end architecture sim;
