@@ -33,10 +33,10 @@ package mmcm_pkg is
             duty_cycle  : real_array(0 to 6) := (0.5,0.5,0.5,0.5,0.5,0.5,0.5)
         );
         port (
-            rsti        : in    std_logic;                           -- reference reset in
-            clki        : in    std_logic;                           -- reference clock in
-            rsto        : out   std_logic;                           -- reset based on MMCM lock
-            clko        : out   std_logic_vector(0 TO num_outputs-1) -- clock outputs
+            rsti        : in  std_logic;                           -- reference reset in
+            clki        : in  std_logic;                           -- reference clock in
+            rsto        : out std_logic;                           -- reset based on MMCM lock
+            clko        : out std_logic_vector(0 TO num_outputs-1) -- clock outputs
         );
     end component mmcm;
 
@@ -63,19 +63,19 @@ entity mmcm is
         duty_cycle  : real_array(0 to 6) := (0.5,0.5,0.5,0.5,0.5,0.5,0.5)
     );
     port (
-        rsti        : in    std_logic;                           -- reference reset in
-        clki        : in    std_logic;                           -- reference clock in
-        rsto        : out   std_logic;                           -- reset based on MMCM lock
-        clko        : out   std_logic_vector(0 TO num_outputs-1) -- clock outputs
+        rsti        : in  std_logic;                           -- reference reset in
+        clki        : in  std_logic;                           -- reference clock in
+        rsto        : out std_logic;                           -- reset based on MMCM lock
+        clko        : out std_logic_vector(0 TO num_outputs-1) -- clock outputs
     );
 end entity mmcm;
 
 architecture struct of mmcm is
 
-    signal locked       : std_logic;                -- MMCM locked output
-    signal clko_fb      : std_logic;                -- unbuffered feedback clock
-    signal clki_fb      : std_logic;                -- feedback clock
-    signal clku         : std_logic_vector(0 to 6); -- unbuffered output clocks
+    signal locked  : std_logic;                -- MMCM locked output
+    signal clko_fb : std_logic;                -- unbuffered feedback clock
+    signal clki_fb : std_logic;                -- feedback clock
+    signal clku    : std_logic_vector(0 to 6); -- unbuffered output clocks
 
     function qdiv(div : integer) return integer is
     begin
@@ -101,102 +101,102 @@ begin
 
     MMCM: MMCME2_ADV
     generic map(
-        BANDWIDTH               => "OPTIMIZED",
-        CLKFBOUT_MULT_F         => mul,
-        CLKFBOUT_PHASE          => 0.0,
-        CLKFBOUT_USE_FINE_PS    => false,
-        CLKIN1_PERIOD           => 10.0,
-        CLKIN2_PERIOD           => 0.0,
-        CLKOUT0_DIVIDE_F        => odiv0,
-        CLKOUT0_DUTY_CYCLE      => duty_cycle(0),
-        CLKOUT0_PHASE           => 0.0,
-        CLKOUT0_USE_FINE_PS     => false,
-        CLKOUT1_DIVIDE          => qdiv(odiv(1)),
-        CLKOUT1_DUTY_CYCLE      => duty_cycle(1),
-        CLKOUT1_PHASE           => 0.0,
-        CLKOUT1_USE_FINE_PS     => false,
-        CLKOUT2_DIVIDE          => qdiv(odiv(2)),
-        CLKOUT2_DUTY_CYCLE      => duty_cycle(2),
-        CLKOUT2_PHASE           => 0.0,
-        CLKOUT2_USE_FINE_PS     => false,
-        CLKOUT3_DIVIDE          => qdiv(odiv(3)),
-        CLKOUT3_DUTY_CYCLE      => duty_cycle(3),
-        CLKOUT3_PHASE           => 0.0,
-        CLKOUT3_USE_FINE_PS     => false,
-        CLKOUT4_CASCADE         => false,
-        CLKOUT4_DIVIDE          => qdiv(odiv(4)),
-        CLKOUT4_DUTY_CYCLE      => duty_cycle(4),
-        CLKOUT4_PHASE           => 0.0,
-        CLKOUT4_USE_FINE_PS     => false,
-        CLKOUT5_DIVIDE          => qdiv(odiv(5)),
-        CLKOUT5_DUTY_CYCLE      => duty_cycle(5),
-        CLKOUT5_PHASE           => 0.0,
-        CLKOUT5_USE_FINE_PS     => false,
-        CLKOUT6_DIVIDE          => qdiv(odiv(6)),
-        CLKOUT6_DUTY_CYCLE      => duty_cycle(6),
-        CLKOUT6_PHASE           => 0.0,
-        CLKOUT6_USE_FINE_PS     => false,
-        COMPENSATION            => "ZHOLD",
-        DIVCLK_DIVIDE           => div,
-        IS_CLKINSEL_INVERTED    => '0',
-        IS_PSEN_INVERTED        => '0',
-        IS_PSINCDEC_INVERTED    => '0',
-        IS_PWRDWN_INVERTED      => '0',
-        IS_RST_INVERTED         => '0',
-        REF_JITTER1             => 0.01,
-        REF_JITTER2             => 0.01,
-        SS_EN                   => "FALSE",
-        SS_MODE                 => "CENTER_HIGH",
-        SS_MOD_PERIOD           => 10000,
-        STARTUP_WAIT            => false
+        BANDWIDTH            => "OPTIMIZED",
+        CLKFBOUT_MULT_F      => mul,
+        CLKFBOUT_PHASE       => 0.0,
+        CLKFBOUT_USE_FINE_PS => false,
+        CLKIN1_PERIOD        => 10.0,
+        CLKIN2_PERIOD        => 0.0,
+        CLKOUT0_DIVIDE_F     => odiv0,
+        CLKOUT0_DUTY_CYCLE   => duty_cycle(0),
+        CLKOUT0_PHASE        => 0.0,
+        CLKOUT0_USE_FINE_PS  => false,
+        CLKOUT1_DIVIDE       => qdiv(odiv(1)),
+        CLKOUT1_DUTY_CYCLE   => duty_cycle(1),
+        CLKOUT1_PHASE        => 0.0,
+        CLKOUT1_USE_FINE_PS  => false,
+        CLKOUT2_DIVIDE       => qdiv(odiv(2)),
+        CLKOUT2_DUTY_CYCLE   => duty_cycle(2),
+        CLKOUT2_PHASE        => 0.0,
+        CLKOUT2_USE_FINE_PS  => false,
+        CLKOUT3_DIVIDE       => qdiv(odiv(3)),
+        CLKOUT3_DUTY_CYCLE   => duty_cycle(3),
+        CLKOUT3_PHASE        => 0.0,
+        CLKOUT3_USE_FINE_PS  => false,
+        CLKOUT4_CASCADE      => false,
+        CLKOUT4_DIVIDE       => qdiv(odiv(4)),
+        CLKOUT4_DUTY_CYCLE   => duty_cycle(4),
+        CLKOUT4_PHASE        => 0.0,
+        CLKOUT4_USE_FINE_PS  => false,
+        CLKOUT5_DIVIDE       => qdiv(odiv(5)),
+        CLKOUT5_DUTY_CYCLE   => duty_cycle(5),
+        CLKOUT5_PHASE        => 0.0,
+        CLKOUT5_USE_FINE_PS  => false,
+        CLKOUT6_DIVIDE       => qdiv(odiv(6)),
+        CLKOUT6_DUTY_CYCLE   => duty_cycle(6),
+        CLKOUT6_PHASE        => 0.0,
+        CLKOUT6_USE_FINE_PS  => false,
+        COMPENSATION         => "ZHOLD",
+        DIVCLK_DIVIDE        => div,
+        IS_CLKINSEL_INVERTED => '0',
+        IS_PSEN_INVERTED     => '0',
+        IS_PSINCDEC_INVERTED => '0',
+        IS_PWRDWN_INVERTED   => '0',
+        IS_RST_INVERTED      => '0',
+        REF_JITTER1          => 0.01,
+        REF_JITTER2          => 0.01,
+        SS_EN                => "FALSE",
+        SS_MODE              => "CENTER_HIGH",
+        SS_MOD_PERIOD        => 10000,
+        STARTUP_WAIT         => false
     )
     port map (
-        PWRDWN          => '0',
-        RST             => rsti,
-        LOCKED          => locked,
-        CLKIN1          => clki,
-        CLKIN2          => '0',
-        CLKINSEL        => '1',
-        CLKINSTOPPED    => open,
-        CLKFBIN         => clki_fb,
-        CLKFBOUT        => clko_fb,
-        CLKFBOUTB       => open,
-        CLKFBSTOPPED    => open,
-        CLKOUT0         => clku(0),
-        CLKOUT0B        => open,
-        CLKOUT1         => clku(1),
-        CLKOUT1B        => open,
-        CLKOUT2         => clku(2),
-        CLKOUT2B        => open,
-        CLKOUT3         => clku(3),
-        CLKOUT3B        => open,
-        CLKOUT4         => clku(4),
-        CLKOUT5         => clku(5),
-        CLKOUT6         => clku(6),
-        DCLK            => '0',
-        DADDR           => (others => '0'),
-        DEN             => '0',
-        DWE             => '0',
-        DI              => (others => '0'),
-        DO              => open,
-        DRDY            => open,
-        PSCLK           => '0',
-        PSDONE          => open,
-        PSEN            => '0',
-        PSINCDEC        => '0'
+        PWRDWN               => '0',
+        RST                  => rsti,
+        LOCKED               => locked,
+        CLKIN1               => clki,
+        CLKIN2               => '0',
+        CLKINSEL             => '1',
+        CLKINSTOPPED         => open,
+        CLKFBIN              => clki_fb,
+        CLKFBOUT             => clko_fb,
+        CLKFBOUTB            => open,
+        CLKFBSTOPPED         => open,
+        CLKOUT0              => clku(0),
+        CLKOUT0B             => open,
+        CLKOUT1              => clku(1),
+        CLKOUT1B             => open,
+        CLKOUT2              => clku(2),
+        CLKOUT2B             => open,
+        CLKOUT3              => clku(3),
+        CLKOUT3B             => open,
+        CLKOUT4              => clku(4),
+        CLKOUT5              => clku(5),
+        CLKOUT6              => clku(6),
+        DCLK                 => '0',
+        DADDR                => (others => '0'),
+        DEN                  => '0',
+        DWE                  => '0',
+        DI                   => (others => '0'),
+        DO                   => open,
+        DRDY                 => open,
+        PSCLK                => '0',
+        PSDONE               => open,
+        PSEN                 => '0',
+        PSINCDEC             => '0'
     );
 
     BUFG_F: BUFG
         port map (
-            I   => clko_fb,
-            O   => clki_fb
+            I => clko_fb,
+            O => clki_fb
         );
 
     GEN: for i in 0 to num_outputs-1 generate
         BUFG_OUT: BUFG
             port map (
-                I   => clku(i),
-                O   => clko(i)
+                I => clku(i),
+                O => clko(i)
             );
     end generate GEN;
 

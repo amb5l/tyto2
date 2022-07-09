@@ -24,33 +24,33 @@ use work.sim_video_out_pkg.all;
 
 entity model_vga_sink is
     generic (
-        name    : string                                -- BMP filename prefix
+        name    : string                            -- BMP filename prefix
     );
     port
     (
-        vga_rst     : in    std_logic;                      -- pixel clock synchronous reset
-        vga_clk     : in    std_logic;                      -- pixel clock
-        vga_vs      : in    std_logic;                      -- vertical sync
-        vga_hs      : in    std_logic;                      -- horizontal sync
-        vga_de      : in    std_logic;                      -- pixel data enable
-        vga_r       : in    std_logic_vector(7 downto 0);   -- red
-        vga_g       : in    std_logic_vector(7 downto 0);   -- green
-        vga_b       : in    std_logic_vector(7 downto 0);   -- blue
-        cap_rst     : in    std_logic;                      -- capture reset
-        cap_stb     : out   std_logic                       -- capture strobe
+        vga_rst : in  std_logic;                    -- pixel clock synchronous reset
+        vga_clk : in  std_logic;                    -- pixel clock
+        vga_vs  : in  std_logic;                    -- vertical sync
+        vga_hs  : in  std_logic;                    -- horizontal sync
+        vga_de  : in  std_logic;                    -- pixel data enable
+        vga_r   : in  std_logic_vector(7 downto 0); -- red
+        vga_g   : in  std_logic_vector(7 downto 0); -- green
+        vga_b   : in  std_logic_vector(7 downto 0); -- blue
+        cap_rst : in  std_logic;                    -- capture reset
+        cap_stb : out std_logic                     -- capture strobe
     );
 end entity model_vga_sink;
 
 architecture model of model_vga_sink is
 
-    signal bmp_count    : integer := 0;
-    signal bmp          : bmp_t(0 to 1919,0 to 1079); -- max size
-    signal ax           : integer;
-    signal ay           : integer;
-    signal width        : integer;
-    signal hieght       : integer;
-    signal capturing    : boolean;
-    signal interlaced   : boolean;
+    signal bmp_count  : integer := 0;
+    signal bmp        : bmp_t(0 to 1919,0 to 1079); -- max size
+    signal ax         : integer;
+    signal ay         : integer;
+    signal width      : integer;
+    signal hieght     : integer;
+    signal capturing  : boolean;
+    signal interlaced : boolean;
 
 begin
 
@@ -62,29 +62,29 @@ begin
             bmp_count <= 0;
 
         end if;
-        
+
         if vga_rst = '1' then
 
-            ax          <= 0;
-            ay          <= 0;
-            width       <= 0;
-            hieght      <= 0;
-            capturing   <= false;
-            interlaced  <= false;
+            ax         <= 0;
+            ay         <= 0;
+            width      <= 0;
+            hieght     <= 0;
+            capturing  <= false;
+            interlaced <= false;
 
         else
 
             if capturing and vga_vs'event then
                 if vga_hs'event then
                     write_bmp(name,bmp,bmp_count,width,hieght,interlaced);
-                    bmp_count <= bmp_count + 1;
-                    ax          <= 0;
-                    ay          <= 0;
-                    width       <= 0;
-                    hieght      <= 0;
-                    capturing   <= false;
-                    interlaced  <= false;
-                    cap_stb <= '1';
+                    bmp_count  <= bmp_count + 1;
+                    ax         <= 0;
+                    ay         <= 0;
+                    width      <= 0;
+                    hieght     <= 0;
+                    capturing  <= false;
+                    interlaced <= false;
+                    cap_stb    <= '1';
                 else
                     interlaced <= true;
                 end if;

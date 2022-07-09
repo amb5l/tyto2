@@ -26,13 +26,13 @@ package ram_sdp_a_32_pkg is
             width : integer
         );
         port (
-            clk : in    std_logic;        
-            ce  : in    std_logic;
-            we  : in    std_logic;
-            wa  : in    std_logic_vector(4 downto 0);
-            wd  : in    std_logic_vector(width-1 downto 0);
-            ra  : in    std_logic_vector(4 downto 0);
-            rd  : out   std_logic_vector(width-1 downto 0)
+            clk : in  std_logic;        
+            ce  : in  std_logic;
+            we  : in  std_logic;
+            wa  : in  std_logic_vector(4 downto 0);
+            wd  : in  std_logic_vector(width-1 downto 0);
+            ra  : in  std_logic_vector(4 downto 0);
+            rd  : out std_logic_vector(width-1 downto 0)
         );
     end component ram_sdp_a_32;
 
@@ -52,13 +52,13 @@ entity ram_sdp_a_32 is
         width : integer
     );
     port (
-        clk : in    std_logic;        
-        ce  : in    std_logic;
-        we  : in    std_logic;
-        wa  : in    std_logic_vector(4 downto 0);
-        wd  : in    std_logic_vector(width-1 downto 0);
-        ra  : in    std_logic_vector(4 downto 0);
-        rd  : out   std_logic_vector(width-1 downto 0)
+        clk : in  std_logic;        
+        ce  : in  std_logic;
+        we  : in  std_logic;
+        wa  : in  std_logic_vector(4 downto 0);
+        wd  : in  std_logic_vector(width-1 downto 0);
+        ra  : in  std_logic_vector(4 downto 0);
+        rd  : out std_logic_vector(width-1 downto 0)
     );
 end entity ram_sdp_a_32;
 

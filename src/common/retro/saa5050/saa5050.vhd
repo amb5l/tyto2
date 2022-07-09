@@ -22,23 +22,23 @@ package saa5050_pkg is
 
     component saa5050  is
         port (
-            rsta      : in    std_logic;                    -- asynchronous (global) reset
-            debug     : in    std_logic;                    -- debug enable (display attributes)
-            chr_clk   : in    std_logic;                    -- character clock        } normally
-            chr_clken : in    std_logic;                    -- character clock enable }  1MHz
-            chr_rst   : in    std_logic;                    -- character clock synchronous reset
-            chr_f     : in    std_logic;                    -- field (0 = 1st/odd/upper, 1 = 2nd/even/lower)
-            chr_vs    : in    std_logic;                    -- CRTC vertical sync
-            chr_hs    : in    std_logic;                    -- CRTC horizontal sync
-            chr_hb    : in    std_logic;                    -- CRTC horizontal blank (optional)
-            chr_de    : in    std_logic;                    -- CRTC display enable
-            chr_d     : in    std_logic_vector(6 downto 0); -- CRTC character code (0..127)
-            pix_clk   : in    std_logic;                    -- pixel clock        } normally
-            pix_clken : in    std_logic;                    -- pixel clock enable }  12MHz
-            pix_rst   : in    std_logic;                    -- pixel clock synchronous reset
-            pix_d     : out   std_logic_vector(2 downto 0); -- pixel data (3 bit BGR)
-            pix_hb    : out   std_logic;                    -- pixel horizontal blank (optional)
-            pix_de    : out   std_logic                     -- pixel enable
+            rsta      : in  std_logic;                    -- asynchronous (global) reset
+            debug     : in  std_logic;                    -- debug enable (display attributes)
+            chr_clk   : in  std_logic;                    -- character clock        } normally
+            chr_clken : in  std_logic;                    -- character clock enable }  1MHz
+            chr_rst   : in  std_logic;                    -- character clock synchronous reset
+            chr_f     : in  std_logic;                    -- field (0 = 1st/odd/upper, 1 = 2nd/even/lower)
+            chr_vs    : in  std_logic;                    -- CRTC vertical sync
+            chr_hs    : in  std_logic;                    -- CRTC horizontal sync
+            chr_hb    : in  std_logic;                    -- CRTC horizontal blank (optional)
+            chr_de    : in  std_logic;                    -- CRTC display enable
+            chr_d     : in  std_logic_vector(6 downto 0); -- CRTC character code (0..127)
+            pix_clk   : in  std_logic;                    -- pixel clock        } normally
+            pix_clken : in  std_logic;                    -- pixel clock enable }  12MHz
+            pix_rst   : in  std_logic;                    -- pixel clock synchronous reset
+            pix_d     : out std_logic_vector(2 downto 0); -- pixel data (3 bit BGR)
+            pix_hb    : out std_logic;                    -- pixel horizontal blank (optional)
+            pix_de    : out std_logic                     -- pixel enable
         );
     end component saa5050;
 
@@ -55,23 +55,23 @@ use work.saa5050_rom_data_pkg.all;
 
 entity saa5050 is
     port (
-        rsta      : in    std_logic;                    -- asynchronous (global) reset
-        debug     : in    std_logic;                    -- debug enable (display attributes)
-        chr_clk   : in    std_logic;                    -- character clock        } normally
-        chr_clken : in    std_logic;                    -- character clock enable }  1MHz
-        chr_rst   : in    std_logic;                    -- character clock synchronous reset
-        chr_f     : in    std_logic;                    -- field (0 = 1st/odd/upper, 1 = 2nd/even/lower)
-        chr_vs    : in    std_logic;                    -- CRTC vertical sync
-        chr_hs    : in    std_logic;                    -- CRTC horizontal sync
-        chr_hb    : in    std_logic;                    -- CRTC horizontal blank (optional)
-        chr_de    : in    std_logic;                    -- CRTC display enable
-        chr_d     : in    std_logic_vector(6 downto 0); -- CRTC character code (0..127)
-        pix_clk   : in    std_logic;                    -- pixel clock        } normally
-        pix_clken : in    std_logic;                    -- pixel clock enable }  12MHz
-        pix_rst   : in    std_logic;                    -- pixel clock synchronous reset
-        pix_d     : out   std_logic_vector(2 downto 0); -- pixel data (3 bit BGR)
-        pix_hb    : out   std_logic;                    -- pixel horizontal blank (optional)
-        pix_de    : out   std_logic                     -- pixel enable
+        rsta      : in  std_logic;                    -- asynchronous (global) reset
+        debug     : in  std_logic;                    -- debug enable (display attributes)
+        chr_clk   : in  std_logic;                    -- character clock        } normally
+        chr_clken : in  std_logic;                    -- character clock enable }  1MHz
+        chr_rst   : in  std_logic;                    -- character clock synchronous reset
+        chr_f     : in  std_logic;                    -- field (0 = 1st/odd/upper, 1 = 2nd/even/lower)
+        chr_vs    : in  std_logic;                    -- CRTC vertical sync
+        chr_hs    : in  std_logic;                    -- CRTC horizontal sync
+        chr_hb    : in  std_logic;                    -- CRTC horizontal blank (optional)
+        chr_de    : in  std_logic;                    -- CRTC display enable
+        chr_d     : in  std_logic_vector(6 downto 0); -- CRTC character code (0..127)
+        pix_clk   : in  std_logic;                    -- pixel clock        } normally
+        pix_clken : in  std_logic;                    -- pixel clock enable }  12MHz
+        pix_rst   : in  std_logic;                    -- pixel clock synchronous reset
+        pix_d     : out std_logic_vector(2 downto 0); -- pixel data (3 bit BGR)
+        pix_hb    : out std_logic;                    -- pixel horizontal blank (optional)
+        pix_de    : out std_logic                     -- pixel enable
     );
 end entity saa5050;
 
@@ -272,7 +272,7 @@ begin
                     end if;
                     if attr_hold = '0' and chr_di <= 31 and chr_di /= 16#1E# then -- SAA5050 hold bug
                         held_c <= (others => '0');
-                        held_s <= '0';                    
+                        held_s <= '0';
                     end if;
                 elsif chr_de1 = '1' then -- trailing edge of de
                     if row_sd = 9 then

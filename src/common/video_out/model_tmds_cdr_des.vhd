@@ -21,23 +21,23 @@ use ieee.std_logic_1164.all;
 entity model_tmds_cdr_des is
     port
     (
-        refclk      : in    std_logic;
-        serial      : in    std_logic;
-        parallel    : out   std_logic_vector(9 downto 0);
-        clk         : out   std_logic;
-        locked      : out   std_logic
+        refclk   : in  std_logic;
+        serial   : in  std_logic;
+        parallel : out std_logic_vector(9 downto 0);
+        clk      : out std_logic;
+        locked   : out std_logic
     );
 end entity model_tmds_cdr_des;
 
 architecture model of model_tmds_cdr_des is
 
-    signal  refclk_prev : time := 0ps;
-    signal  tr          : time := 0ps;
-    signal  refclk_d    : std_logic_vector(1 to 4);
-    signal  sample      : std_logic := '0'; -- DDR sample clock
-    signal  count       : integer range 0 to 9 := 0;
-    signal  shift_reg   : std_logic_vector(9 downto 0);
-    signal  locked_i    : std_logic;
+    signal refclk_prev : time := 0ps;
+    signal tr          : time := 0ps;
+    signal refclk_d    : std_logic_vector(1 to 4);
+    signal sample      : std_logic := '0'; -- DDR sample clock
+    signal count       : integer range 0 to 9 := 0;
+    signal shift_reg   : std_logic_vector(9 downto 0);
+    signal locked_i    : std_logic;
 
 begin
 

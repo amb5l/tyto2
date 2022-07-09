@@ -26,11 +26,11 @@ package ldce_bus_pkg is
             width : integer
         );
         port (
-            clr : in    std_logic;
-            g   : in    std_logic;
-            ge  : in    std_logic;
-            d   : in    std_logic_vector(width-1 downto 0);
-            q   : out   std_logic_vector(width-1 downto 0)
+            clr : in  std_logic;
+            g   : in  std_logic;
+            ge  : in  std_logic;
+            d   : in  std_logic_vector(width-1 downto 0);
+            q   : out std_logic_vector(width-1 downto 0)
         );
     end component ldce_bus;
 
@@ -49,11 +49,11 @@ entity ldce_bus is
         width : integer
     );
     port (
-        clr : in    std_logic;
-        g   : in    std_logic;
-        ge  : in    std_logic;
-        d   : in    std_logic_vector(width-1 downto 0);
-        q   : out   std_logic_vector(width-1 downto 0)
+        clr : in  std_logic;
+        g   : in  std_logic;
+        ge  : in  std_logic;
+        d   : in  std_logic_vector(width-1 downto 0);
+        q   : out std_logic_vector(width-1 downto 0)
     );
 end entity ldce_bus;
 

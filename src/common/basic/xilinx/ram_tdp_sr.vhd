@@ -31,19 +31,19 @@ package ram_tdp_sr_pkg is
             init       : slv_7_0
         );
         port (
-            clk     : in    std_logic;
-            rst_a   : in    std_logic;
-            ce_a    : in    std_logic;
-            we_a    : in    std_logic;
-            addr_a  : in    std_logic_vector(depth_log2-1 downto 0);
-            din_a   : in    std_logic_vector(width-1 downto 0);
-            dout_a  : out   std_logic_vector(width-1 downto 0);
-            rst_b   : in    std_logic;
-            ce_b    : in    std_logic;
-            we_b    : in    std_logic;
-            addr_b  : in    std_logic_vector(depth_log2-1 downto 0);
-            din_b   : in    std_logic_vector(width-1 downto 0);
-            dout_b  : out   std_logic_vector(width-1 downto 0)
+            clk        : in  std_logic;
+            rst_a      : in  std_logic;
+            ce_a       : in  std_logic;
+            we_a       : in  std_logic;
+            addr_a     : in  std_logic_vector(depth_log2-1 downto 0);
+            din_a      : in  std_logic_vector(width-1 downto 0);
+            dout_a     : out std_logic_vector(width-1 downto 0);
+            rst_b      : in  std_logic;
+            ce_b       : in  std_logic;
+            we_b       : in  std_logic;
+            addr_b     : in  std_logic_vector(depth_log2-1 downto 0);
+            din_b      : in  std_logic_vector(width-1 downto 0);
+            dout_b     : out std_logic_vector(width-1 downto 0)
         );
     end component ram_tdp_sr;
 
@@ -65,19 +65,19 @@ entity ram_tdp_sr is
         init       : slv_7_0
     );
     port (
-        clk     : in    std_logic;
-        rst_a   : in    std_logic;
-        ce_a    : in    std_logic;
-        we_a    : in    std_logic;
-        addr_a  : in    std_logic_vector(depth_log2-1 downto 0);
-        din_a   : in    std_logic_vector(width-1 downto 0);
-        dout_a  : out   std_logic_vector(width-1 downto 0);
-        rst_b   : in    std_logic;
-        ce_b    : in    std_logic;
-        we_b    : in    std_logic;
-        addr_b  : in    std_logic_vector(depth_log2-1 downto 0);
-        din_b   : in    std_logic_vector(width-1 downto 0);
-        dout_b  : out   std_logic_vector(width-1 downto 0)
+        clk        : in  std_logic;
+        rst_a      : in  std_logic;
+        ce_a       : in  std_logic;
+        we_a       : in  std_logic;
+        addr_a     : in  std_logic_vector(depth_log2-1 downto 0);
+        din_a      : in  std_logic_vector(width-1 downto 0);
+        dout_a     : out std_logic_vector(width-1 downto 0);
+        rst_b      : in  std_logic;
+        ce_b       : in  std_logic;
+        we_b       : in  std_logic;
+        addr_b     : in  std_logic_vector(depth_log2-1 downto 0);
+        din_b      : in  std_logic_vector(width-1 downto 0);
+        dout_b     : out std_logic_vector(width-1 downto 0)
     );
 end entity ram_tdp_sr;
 

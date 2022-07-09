@@ -25,27 +25,27 @@ package hd6845_pkg is
     component hd6845 is
         port (
 
-            reg_clk   : in    std_logic;                     -- register clock
-            reg_clken : in    std_logic;                     -- register clock enable
-            reg_rst   : in    std_logic;                     -- register reset
-            reg_cs    : in    std_logic;                     -- register chip select
-            reg_we    : in    std_logic;                     -- register write enable
-            reg_rs    : in    std_logic;                     -- register select
-            reg_dw    : in    std_logic_vector(7 downto 0);  -- register write data
-            reg_dr    : out   std_logic_vector(7 downto 0);  -- register read data
+            reg_clk   : in  std_logic;                     -- register clock
+            reg_clken : in  std_logic;                     -- register clock enable
+            reg_rst   : in  std_logic;                     -- register reset
+            reg_cs    : in  std_logic;                     -- register chip select
+            reg_we    : in  std_logic;                     -- register write enable
+            reg_rs    : in  std_logic;                     -- register select
+            reg_dw    : in  std_logic_vector(7 downto 0);  -- register write data
+            reg_dr    : out std_logic_vector(7 downto 0);  -- register read data
 
-            crt_clk   : in    std_logic;                     -- clock        } video (character)
-            crt_clken : in    std_logic;                     -- clock enable }  clock
-            crt_rst   : in    std_logic;                     -- hard reset
-            crt_ma    : out   std_logic_vector(13 downto 0); -- memory address
-            crt_ra    : out   std_logic_vector(4 downto 0);  -- raster (scan line) address within character
-            crt_vs    : out   std_logic;                     -- vertical sync
-            crt_hs    : out   std_logic;                     -- horizontal sync
-            crt_vb    : out   std_logic;                     -- vertical blank
-            crt_hb    : out   std_logic;                     -- horizontal blank
-            crt_de    : out   std_logic;                     -- display enable
-            crt_cur   : out   std_logic;                     -- cursor active
-            crt_lps   : in    std_logic                      -- light pen strobe
+            crt_clk   : in  std_logic;                     -- clock        } video (character)
+            crt_clken : in  std_logic;                     -- clock enable }  clock
+            crt_rst   : in  std_logic;                     -- hard reset
+            crt_ma    : out std_logic_vector(13 downto 0); -- memory address
+            crt_ra    : out std_logic_vector(4 downto 0);  -- raster (scan line) address within character
+            crt_vs    : out std_logic;                     -- vertical sync
+            crt_hs    : out std_logic;                     -- horizontal sync
+            crt_vb    : out std_logic;                     -- vertical blank
+            crt_hb    : out std_logic;                     -- horizontal blank
+            crt_de    : out std_logic;                     -- display enable
+            crt_cur   : out std_logic;                     -- cursor active
+            crt_lps   : in  std_logic                      -- light pen strobe
 
         );
     end component hd6845;
@@ -61,27 +61,27 @@ use ieee.numeric_std.all;
 entity hd6845 is
     port (
 
-        reg_clk   : in    std_logic;                     -- register clock
-        reg_clken : in    std_logic;                     -- register clock enable
-        reg_rst   : in    std_logic;                     -- register reset
-        reg_cs    : in    std_logic;                     -- register chip select
-        reg_we    : in    std_logic;                     -- register write enable
-        reg_rs    : in    std_logic;                     -- register select
-        reg_dw    : in    std_logic_vector(7 downto 0);  -- register write data
-        reg_dr    : out   std_logic_vector(7 downto 0);  -- register read data
+        reg_clk   : in  std_logic;                     -- register clock
+        reg_clken : in  std_logic;                     -- register clock enable
+        reg_rst   : in  std_logic;                     -- register reset
+        reg_cs    : in  std_logic;                     -- register chip select
+        reg_we    : in  std_logic;                     -- register write enable
+        reg_rs    : in  std_logic;                     -- register select
+        reg_dw    : in  std_logic_vector(7 downto 0);  -- register write data
+        reg_dr    : out std_logic_vector(7 downto 0);  -- register read data
 
-        crt_clk   : in    std_logic;                     -- clock        } video (character)
-        crt_clken : in    std_logic;                     -- clock enable }  clock
-        crt_rst   : in    std_logic;                     -- hard reset
-        crt_ma    : out   std_logic_vector(13 downto 0); -- memory address
-        crt_ra    : out   std_logic_vector(4 downto 0);  -- raster (scan line) address within character
-        crt_vs    : out   std_logic;                     -- vertical sync
-        crt_hs    : out   std_logic;                     -- horizontal sync
-        crt_vb    : out   std_logic;                     -- vertical blank
-        crt_hb    : out   std_logic;                     -- horizontal blank
-        crt_de    : out   std_logic;                     -- display enable
-        crt_cur   : out   std_logic;                     -- cursor active
-        crt_lps   : in    std_logic                      -- light pen strobe
+        crt_clk   : in  std_logic;                     -- clock        } video (character)
+        crt_clken : in  std_logic;                     -- clock enable }  clock
+        crt_rst   : in  std_logic;                     -- hard reset
+        crt_ma    : out std_logic_vector(13 downto 0); -- memory address
+        crt_ra    : out std_logic_vector(4 downto 0);  -- raster (scan line) address within character
+        crt_vs    : out std_logic;                     -- vertical sync
+        crt_hs    : out std_logic;                     -- horizontal sync
+        crt_vb    : out std_logic;                     -- vertical blank
+        crt_hb    : out std_logic;                     -- horizontal blank
+        crt_de    : out std_logic;                     -- display enable
+        crt_cur   : out std_logic;                     -- cursor active
+        crt_lps   : in  std_logic                      -- light pen strobe
 
     );
 end entity hd6845;
@@ -142,7 +142,7 @@ architecture synth of hd6845 is
     begin
         r := (others => '0');
         r(u'length-1 downto 0) := std_logic_vector(u);
-        return r;        
+        return r;
     end function regpad;
 
 begin

@@ -21,14 +21,14 @@ use ieee.std_logic_1164.all;
 package sync_reg_pkg is
 
     component sync_reg is
-        generic (            
-            width   : integer := 1;
-            depth   : integer := 2
+        generic (
+            width : integer := 1;
+            depth : integer := 2
         );
         port (
-            clk     : in    std_logic;                          -- destination clock
-            d       : in    std_logic_vector(width-1 downto 0); -- input
-            q       : out   std_logic_vector(width-1 downto 0)  -- output
+            clk   : in  std_logic;                          -- destination clock
+            d     : in  std_logic_vector(width-1 downto 0); -- input
+            q     : out std_logic_vector(width-1 downto 0)  -- output
         );
     end component sync_reg;
 
@@ -40,14 +40,14 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity sync_reg is
-    generic (            
-        width   : integer := 1;
-        depth   : integer := 2
+    generic (
+        width : integer := 1;
+        depth : integer := 2
     );
     port (
-        clk     : in    std_logic;                          -- destination clock
-        d       : in    std_logic_vector(width-1 downto 0); -- input
-        q       : out   std_logic_vector(width-1 downto 0)  -- output
+        clk   : in    std_logic;                          -- destination clock
+        d     : in    std_logic_vector(width-1 downto 0); -- input
+        q     : out   std_logic_vector(width-1 downto 0)  -- output
     );
 end entity sync_reg;
 

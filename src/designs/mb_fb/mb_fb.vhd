@@ -29,33 +29,33 @@ package mb_fb_pkg is
         );
         port (
 
-            ref_rst    : in    std_logic;                -- reference reset (asynchronous)
-            ref_clk    : in    std_logic;                -- reference clock
+            ref_rst    : in  std_logic;                -- reference reset (asynchronous)
+            ref_clk    : in  std_logic;                -- reference clock
 
-            sys_rst    : in    std_logic;                -- system reset (synchronous)
-            sys_clk    : in    std_logic;                -- system clock
+            sys_rst    : in  std_logic;                -- system reset (synchronous)
+            sys_clk    : in  std_logic;                -- system clock
 
-            uart_txd   : out   std_logic;
-            uart_rxd   : in    std_logic;
+            uart_txd   : out std_logic;
+            uart_rxd   : in  std_logic;
 
-            mig_cc     : in    std_logic;
-            mig_avalid : out   std_logic;
-            mig_r_w    : out   std_logic;
-            mig_addr   : out   std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-            mig_aready : in    std_logic;
-            mig_wvalid : out   std_logic;
-            mig_wdata  : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-            mig_wbe    : out   std_logic_vector(2**data_width_log2-1 downto 0);
-            mig_wready : in    std_logic;
-            mig_rdata  : in    std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-            mig_rvalid : in    std_logic;
+            mig_cc     : in  std_logic;
+            mig_avalid : out std_logic;
+            mig_r_w    : out std_logic;
+            mig_addr   : out std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+            mig_aready : in  std_logic;
+            mig_wvalid : out std_logic;
+            mig_wdata  : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+            mig_wbe    : out std_logic_vector(2**data_width_log2-1 downto 0);
+            mig_wready : in  std_logic;
+            mig_rdata  : in  std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+            mig_rvalid : in  std_logic;
 
-            dvi_clk_p  : out   std_logic;                -- DVI TMDS clock (differential, P)
-            dvi_clk_n  : out   std_logic;                -- DVI TMDS clock (differential, N)
-            dvi_d_p    : out   std_logic_vector(0 to 2); -- DVI TMDS data channels 0..2 (differential, P)
-            dvi_d_n    : out   std_logic_vector(0 to 2); -- DVI TMDS data channels 0..2 (differential, N)
+            dvi_clk_p  : out std_logic;                -- DVI TMDS clock (differential, P)
+            dvi_clk_n  : out std_logic;                -- DVI TMDS clock (differential, N)
+            dvi_d_p    : out std_logic_vector(0 to 2); -- DVI TMDS data channels 0..2 (differential, P)
+            dvi_d_n    : out std_logic_vector(0 to 2); -- DVI TMDS data channels 0..2 (differential, N)
 
-            debug      : out   std_logic_vector(1 downto 0)
+            debug      : out std_logic_vector(1 downto 0)
 
         );
     end component mb_fb;
@@ -81,33 +81,33 @@ entity mb_fb  is
     );
     port (
 
-        ref_rst    : in    std_logic;                -- reference reset (asynchronous)
-        ref_clk    : in    std_logic;                -- reference clock
+        ref_rst    : in  std_logic;                -- reference reset (asynchronous)
+        ref_clk    : in  std_logic;                -- reference clock
 
-        sys_rst    : in    std_logic;                -- system reset (synchronous)
-        sys_clk    : in    std_logic;                -- system clock
+        sys_rst    : in  std_logic;                -- system reset (synchronous)
+        sys_clk    : in  std_logic;                -- system clock
 
-        uart_txd   : out   std_logic;
-        uart_rxd   : in    std_logic;
+        uart_txd   : out std_logic;
+        uart_rxd   : in  std_logic;
 
-        mig_cc     : in    std_logic;
-        mig_avalid : out   std_logic;
-        mig_r_w    : out   std_logic;
-        mig_addr   : out   std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-        mig_aready : in    std_logic;
-        mig_wvalid : out   std_logic;
-        mig_wdata  : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        mig_wbe    : out   std_logic_vector(2**data_width_log2-1 downto 0);
-        mig_wready : in    std_logic;
-        mig_rdata  : in    std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        mig_rvalid : in    std_logic;
+        mig_cc     : in  std_logic;
+        mig_avalid : out std_logic;
+        mig_r_w    : out std_logic;
+        mig_addr   : out std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+        mig_aready : in  std_logic;
+        mig_wvalid : out std_logic;
+        mig_wdata  : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        mig_wbe    : out std_logic_vector(2**data_width_log2-1 downto 0);
+        mig_wready : in  std_logic;
+        mig_rdata  : in  std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        mig_rvalid : in  std_logic;
 
-        dvi_clk_p  : out   std_logic;                -- DVI TMDS clock (differential, P)
-        dvi_clk_n  : out   std_logic;                -- DVI TMDS clock (differential, N)
-        dvi_d_p    : out   std_logic_vector(0 to 2); -- DVI TMDS data channels 0..2 (differential, P)
-        dvi_d_n    : out   std_logic_vector(0 to 2); -- DVI TMDS data channels 0..2 (differential, N)
+        dvi_clk_p  : out std_logic;                -- DVI TMDS clock (differential, P)
+        dvi_clk_n  : out std_logic;                -- DVI TMDS clock (differential, N)
+        dvi_d_p    : out std_logic_vector(0 to 2); -- DVI TMDS data channels 0..2 (differential, P)
+        dvi_d_n    : out std_logic_vector(0 to 2); -- DVI TMDS data channels 0..2 (differential, N)
 
-        debug      : out   std_logic_vector(1 downto 0)
+        debug      : out std_logic_vector(1 downto 0)
 
     );
 end entity mb_fb;

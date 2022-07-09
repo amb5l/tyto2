@@ -27,38 +27,38 @@ package mig_bridge_axi_pkg is
     component mig_bridge_axi is
         port (
 
-            clk             : in    std_logic;
-            rst             : in    std_logic;
+            clk         : in  std_logic;
+            rst         : in  std_logic;
 
-            axi_awaddr  : in    std_logic_vector(31 downto 0);
-            axi_awprot  : in    std_logic_vector(2 downto 0);
-            axi_awvalid : in    std_logic_vector(0 to 0);
-            axi_awready : out   std_logic_vector(0 to 0);
-            axi_wdata   : in    std_logic_vector(31 downto 0);
-            axi_wstrb   : in    std_logic_vector(3 downto 0);
-            axi_wvalid  : in    std_logic_vector(0 to 0);
-            axi_wready  : out   std_logic_vector(0 to 0);
-            axi_bresp   : out   std_logic_vector(1 downto 0);
-            axi_bvalid  : out   std_logic_vector(0 to 0);
-            axi_bready  : in    std_logic_vector(0 to 0);
-            axi_araddr  : in    std_logic_vector(31 downto 0);
-            axi_arprot  : in    std_logic_vector(2 downto 0);
-            axi_arvalid : in    std_logic_vector(0 to 0);
-            axi_arready : out   std_logic_vector(0 to 0);
-            axi_rdata   : out   std_logic_vector(31 downto 0);
-            axi_rresp   : out   std_logic_vector(1 downto 0);
-            axi_rvalid  : out   std_logic_vector(0 to 0);
-            axi_rready  : in    std_logic_vector(0 to 0);
+            axi_awaddr  : in  std_logic_vector(31 downto 0);
+            axi_awprot  : in  std_logic_vector(2 downto 0);
+            axi_awvalid : in  std_logic_vector(0 to 0);
+            axi_awready : out std_logic_vector(0 to 0);
+            axi_wdata   : in  std_logic_vector(31 downto 0);
+            axi_wstrb   : in  std_logic_vector(3 downto 0);
+            axi_wvalid  : in  std_logic_vector(0 to 0);
+            axi_wready  : out std_logic_vector(0 to 0);
+            axi_bresp   : out std_logic_vector(1 downto 0);
+            axi_bvalid  : out std_logic_vector(0 to 0);
+            axi_bready  : in  std_logic_vector(0 to 0);
+            axi_araddr  : in  std_logic_vector(31 downto 0);
+            axi_arprot  : in  std_logic_vector(2 downto 0);
+            axi_arvalid : in  std_logic_vector(0 to 0);
+            axi_arready : out std_logic_vector(0 to 0);
+            axi_rdata   : out std_logic_vector(31 downto 0);
+            axi_rresp   : out std_logic_vector(1 downto 0);
+            axi_rvalid  : out std_logic_vector(0 to 0);
+            axi_rready  : in  std_logic_vector(0 to 0);
 
-            mig_awvalid : out   std_logic;
-            mig_awready : in    std_logic;
-            mig_r_w     : out   std_logic;
-            mig_addr    : out   std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-            mig_wdata   : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-            mig_wbe     : out   std_logic_vector(2**data_width_log2-1 downto 0);
-            mig_rdata   : in    std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-            mig_rvalid  : in    std_logic;
-            mig_rready  : out   std_logic
+            mig_awvalid : out std_logic;
+            mig_awready : in  std_logic;
+            mig_r_w     : out std_logic;
+            mig_addr    : out std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+            mig_wdata   : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+            mig_wbe     : out std_logic_vector(2**data_width_log2-1 downto 0);
+            mig_rdata   : in  std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+            mig_rvalid  : in  std_logic;
+            mig_rready  : out std_logic
 
         );
     end component mig_bridge_axi;
@@ -77,38 +77,38 @@ use work.global_pkg.all;
 entity mig_bridge_axi is
     port (
 
-        clk             : in    std_logic;
-        rst             : in    std_logic;
+        clk         : in  std_logic;
+        rst         : in  std_logic;
 
-        axi_awaddr  : in    std_logic_vector(31 downto 0);
-        axi_awprot  : in    std_logic_vector(2 downto 0);
-        axi_awvalid : in    std_logic_vector(0 to 0);
-        axi_awready : out   std_logic_vector(0 to 0);
-        axi_wdata   : in    std_logic_vector(31 downto 0);
-        axi_wstrb   : in    std_logic_vector(3 downto 0);
-        axi_wvalid  : in    std_logic_vector(0 to 0);
-        axi_wready  : out   std_logic_vector(0 to 0);
-        axi_bresp   : out   std_logic_vector(1 downto 0);
-        axi_bvalid  : out   std_logic_vector(0 to 0);
-        axi_bready  : in    std_logic_vector(0 to 0);
-        axi_araddr  : in    std_logic_vector(31 downto 0);
-        axi_arprot  : in    std_logic_vector(2 downto 0);
-        axi_arvalid : in    std_logic_vector(0 to 0);
-        axi_arready : out   std_logic_vector(0 to 0);
-        axi_rdata   : out   std_logic_vector(31 downto 0);
-        axi_rresp   : out   std_logic_vector(1 downto 0);
-        axi_rvalid  : out   std_logic_vector(0 to 0);
-        axi_rready  : in    std_logic_vector(0 to 0);
+        axi_awaddr  : in  std_logic_vector(31 downto 0);
+        axi_awprot  : in  std_logic_vector(2 downto 0);
+        axi_awvalid : in  std_logic_vector(0 to 0);
+        axi_awready : out std_logic_vector(0 to 0);
+        axi_wdata   : in  std_logic_vector(31 downto 0);
+        axi_wstrb   : in  std_logic_vector(3 downto 0);
+        axi_wvalid  : in  std_logic_vector(0 to 0);
+        axi_wready  : out std_logic_vector(0 to 0);
+        axi_bresp   : out std_logic_vector(1 downto 0);
+        axi_bvalid  : out std_logic_vector(0 to 0);
+        axi_bready  : in  std_logic_vector(0 to 0);
+        axi_araddr  : in  std_logic_vector(31 downto 0);
+        axi_arprot  : in  std_logic_vector(2 downto 0);
+        axi_arvalid : in  std_logic_vector(0 to 0);
+        axi_arready : out std_logic_vector(0 to 0);
+        axi_rdata   : out std_logic_vector(31 downto 0);
+        axi_rresp   : out std_logic_vector(1 downto 0);
+        axi_rvalid  : out std_logic_vector(0 to 0);
+        axi_rready  : in  std_logic_vector(0 to 0);
 
-        mig_awvalid : out   std_logic;
-        mig_awready : in    std_logic;
-        mig_r_w     : out   std_logic;
-        mig_addr    : out   std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-        mig_wdata   : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        mig_wbe     : out   std_logic_vector(2**data_width_log2-1 downto 0);
-        mig_rdata   : in    std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        mig_rvalid  : in    std_logic;
-        mig_rready  : out   std_logic
+        mig_awvalid : out std_logic;
+        mig_awready : in  std_logic;
+        mig_r_w     : out std_logic;
+        mig_addr    : out std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+        mig_wdata   : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        mig_wbe     : out std_logic_vector(2**data_width_log2-1 downto 0);
+        mig_rdata   : in  std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        mig_rvalid  : in  std_logic;
+        mig_rready  : out std_logic
 
     );
 end entity mig_bridge_axi;
@@ -164,7 +164,7 @@ begin
     GEN_W: for i in 0 to ratio-1 generate
         mig_wdata(31+(i*32) downto i*32) <= axi_wdata;
         mig_wbe(3+(i*4) downto i*4) <= (others => '1') when i = sel else (others => '0');
-    end generate GEN_W;    
+    end generate GEN_W;
     mig_rready <= '1';
 
 end architecture synth;

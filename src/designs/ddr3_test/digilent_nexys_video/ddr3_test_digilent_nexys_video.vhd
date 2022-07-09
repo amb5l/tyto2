@@ -177,24 +177,24 @@ end entity ddr3_test_digilent_nexys_video;
 
 architecture synth of ddr3_test_digilent_nexys_video is
 
-    signal rst_100m     : std_logic;
-    signal clk_100m     : std_logic;
-    signal clk_50m      : std_logic;
-    signal ui_cc        : std_logic;
-    signal ui_rdy       : std_logic;
-    signal ui_en        : std_logic;
-    signal ui_r_w       : std_logic;
-    signal ui_a         : std_logic_vector(28 downto 4);
-    signal ui_wrdy      : std_logic;
-    signal ui_we        : std_logic;
-    signal ui_wbe       : std_logic_vector(15 downto 0);
-    signal ui_wd        : std_logic_vector(127 downto 0);
-    signal ui_rd        : std_logic_vector(127 downto 0);
-    signal ui_rstb      : std_logic;
+    signal rst_100m    : std_logic;
+    signal clk_100m    : std_logic;
+    signal clk_50m     : std_logic;
+    signal ui_cc       : std_logic;
+    signal ui_rdy      : std_logic;
+    signal ui_en       : std_logic;
+    signal ui_r_w      : std_logic;
+    signal ui_a        : std_logic_vector(28 downto 4);
+    signal ui_wrdy     : std_logic;
+    signal ui_we       : std_logic;
+    signal ui_wbe      : std_logic_vector(15 downto 0);
+    signal ui_wd       : std_logic_vector(127 downto 0);
+    signal ui_rd       : std_logic_vector(127 downto 0);
+    signal ui_rstb     : std_logic;
 
-    signal stat_run     : std_logic;
-    signal stat_passes  : std_logic_vector(31 downto 0);
-    signal stat_errors  : std_logic_vector(31 downto 0);
+    signal stat_run    : std_logic;
+    signal stat_passes : std_logic_vector(31 downto 0);
+    signal stat_errors : std_logic_vector(31 downto 0);
 
 begin
 
@@ -223,35 +223,35 @@ begin
 
     MC: component ddr3_wrapper_digilent_nexys_video
         port map (
-            xrst        => not btn_rst_n,
-            xclk        => clki_100m,
-            rst_100m    => rst_100m,
-            clk_100m    => clk_100m,
-            ui_cc       => ui_cc,
-            ui_rdy      => ui_rdy,
-            ui_en       => ui_en,
-            ui_r_w      => ui_r_w,
-            ui_a        => ui_a,
-            ui_wrdy     => ui_wrdy,
-            ui_we       => ui_we,
-            ui_wbe      => ui_wbe,
-            ui_wd       => ui_wd,
-            ui_rd       => ui_rd,
-            ui_rstb     => ui_rstb,
-            ddr3_rst_n  => ddr3_rst_n,
-            ddr3_ck_p   => ddr3_ck_p,
-            ddr3_ck_n   => ddr3_ck_n,
-            ddr3_cke    => ddr3_cke,
-            ddr3_ras_n  => ddr3_ras_n,
-            ddr3_cas_n  => ddr3_cas_n,
-            ddr3_we_n   => ddr3_we_n,
-            ddr3_odt    => ddr3_odt,
-            ddr3_addr   => ddr3_addr,
-            ddr3_ba     => ddr3_ba,
-            ddr3_dm     => ddr3_dm,
-            ddr3_dq     => ddr3_dq,
-            ddr3_dqs_p  => ddr3_dqs_p,
-            ddr3_dqs_n  => ddr3_dqs_n
+            xrst       => not btn_rst_n,
+            xclk       => clki_100m,
+            rst_100m   => rst_100m,
+            clk_100m   => clk_100m,
+            ui_cc      => ui_cc,
+            ui_rdy     => ui_rdy,
+            ui_en      => ui_en,
+            ui_r_w     => ui_r_w,
+            ui_a       => ui_a,
+            ui_wrdy    => ui_wrdy,
+            ui_we      => ui_we,
+            ui_wbe     => ui_wbe,
+            ui_wd      => ui_wd,
+            ui_rd      => ui_rd,
+            ui_rstb    => ui_rstb,
+            ddr3_rst_n => ddr3_rst_n,
+            ddr3_ck_p  => ddr3_ck_p,
+            ddr3_ck_n  => ddr3_ck_n,
+            ddr3_cke   => ddr3_cke,
+            ddr3_ras_n => ddr3_ras_n,
+            ddr3_cas_n => ddr3_cas_n,
+            ddr3_we_n  => ddr3_we_n,
+            ddr3_odt   => ddr3_odt,
+            ddr3_addr  => ddr3_addr,
+            ddr3_ba    => ddr3_ba,
+            ddr3_dm    => ddr3_dm,
+            ddr3_dq    => ddr3_dq,
+            ddr3_dqs_p => ddr3_dqs_p,
+            ddr3_dqs_n => ddr3_dqs_n
         );
 
     -- I/O
@@ -264,20 +264,20 @@ begin
 
     -- unused I/O
 
-    oled_res_n      <= '0';
-    oled_d_c        <= '0';
-    oled_sclk       <= '0';
-    oled_sdin       <= '0';
-    ac_mclk         <= '0';
-    ac_dac_sdata    <= '0';
-    uart_rx_out     <= '1';
-    eth_rst_n       <= '0';
-    ftdi_rd_n       <= '1';
-    ftdi_wr_n       <= '1';
-    ftdi_siwu_n     <= '1';
-    ftdi_oe_n       <= '1';
-    ps2_clk         <= 'Z';
-    ps2_data        <= 'Z';
-    qspi_cs_n       <= '1';
+    oled_res_n   <= '0';
+    oled_d_c     <= '0';
+    oled_sclk    <= '0';
+    oled_sdin    <= '0';
+    ac_mclk      <= '0';
+    ac_dac_sdata <= '0';
+    uart_rx_out  <= '1';
+    eth_rst_n    <= '0';
+    ftdi_rd_n    <= '1';
+    ftdi_wr_n    <= '1';
+    ftdi_siwu_n  <= '1';
+    ftdi_oe_n    <= '1';
+    ps2_clk      <= 'Z';
+    ps2_data     <= 'Z';
+    qspi_cs_n    <= '1';
 
 end architecture synth;

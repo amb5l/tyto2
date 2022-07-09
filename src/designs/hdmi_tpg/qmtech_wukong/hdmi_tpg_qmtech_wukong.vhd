@@ -156,10 +156,10 @@ begin
 
     -- unused I/Os
 
-    ser_tx      <= '1';
-    hdmi_scl    <= 'Z';
-    hdmi_sda    <= 'Z';
-    eth_rst_n   <= '0';
-    ddr3_rst_n  <= '0';
+    ser_tx     <= '1';
+    hdmi_scl   <= 'Z';
+    hdmi_sda   <= 'Z';
+    eth_rst_n  <= '0';
+    ddr3_rst_n <= '0';
 
 end architecture synth;

@@ -24,27 +24,27 @@ package ddr3_test_pkg is
     component ddr3_test is
         port (
 
-            clk_100m    : in   std_logic;
-            rst_100m    : in   std_logic;
+            clk_100m    : in  std_logic;
+            rst_100m    : in  std_logic;
 
-            ctrl_run    : in    std_logic;                      -- 1 = run, 0 = halt
-            ctrl_slow   : in    std_logic;                      -- 1 = run once per second, 0 = run as fast as possible
-            ctrl_size   : in    std_logic_vector(4 downto 0);   -- 00100 (4) = 16 Bytes, 00101 = 32 Bytes... 11101 (29) = 512MBytes
-            stat_run    : out   std_logic;                      -- toggles once per test
-            stat_passes : out   std_logic_vector(31 downto 0);  -- pass count
-            stat_errors : out   std_logic_vector(31 downto 0);  -- error count
+            ctrl_run    : in  std_logic;                      -- 1 = run, 0 = halt
+            ctrl_slow   : in  std_logic;                      -- 1 = run once per second, 0 = run as fast as possible
+            ctrl_size   : in  std_logic_vector(4 downto 0);   -- 00100 (4) = 16 Bytes, 00101 = 32 Bytes... 11101 (29) = 512MBytes
+            stat_run    : out std_logic;                      -- toggles once per test
+            stat_passes : out std_logic_vector(31 downto 0);  -- pass count
+            stat_errors : out std_logic_vector(31 downto 0);  -- error count
 
-            ui_cc       : in    std_logic;
-            ui_rdy      : in    std_logic;
-            ui_en       : out   std_logic;
-            ui_r_w      : out   std_logic;
-            ui_a        : out   std_logic_vector(28 downto 4);
-            ui_wrdy     : in    std_logic;
-            ui_we       : out   std_logic;
-            ui_wbe      : out   std_logic_vector(15 downto 0);
-            ui_wd       : out   std_logic_vector(127 downto 0);
-            ui_rd       : in    std_logic_vector(127 downto 0);
-            ui_rstb     : in    std_logic
+            ui_cc       : in  std_logic;
+            ui_rdy      : in  std_logic;
+            ui_en       : out std_logic;
+            ui_r_w      : out std_logic;
+            ui_a        : out std_logic_vector(28 downto 4);
+            ui_wrdy     : in  std_logic;
+            ui_we       : out std_logic;
+            ui_wbe      : out std_logic_vector(15 downto 0);
+            ui_wd       : out std_logic_vector(127 downto 0);
+            ui_rd       : in  std_logic_vector(127 downto 0);
+            ui_rstb     : in  std_logic
 
         );
     end component ddr3_test;
@@ -60,27 +60,27 @@ use ieee.numeric_std.all;
 entity ddr3_test is
     port (
 
-        clk_100m    : in   std_logic;
-        rst_100m    : in   std_logic;
+        clk_100m    : in  std_logic;
+        rst_100m    : in  std_logic;
 
-        ctrl_run    : in    std_logic;                      -- 1 = run, 0 = halt
-        ctrl_slow   : in    std_logic;                      -- 1 = run once per second, 0 = run as fast as possible
-        ctrl_size   : in    std_logic_vector(4 downto 0);   -- 00100 (4) = 16 Bytes, 00101 = 32 Bytes... 11101 (29) = 512MBytes
-        stat_run    : out   std_logic;                      -- toggles once per test
-        stat_passes : out   std_logic_vector(31 downto 0);  -- pass count
-        stat_errors : out   std_logic_vector(31 downto 0);  -- error count
-
-        ui_cc       : in    std_logic;
-        ui_rdy      : in    std_logic;
-        ui_en       : out   std_logic;
-        ui_r_w      : out   std_logic;
-        ui_a        : out   std_logic_vector(28 downto 4);
-        ui_wrdy     : in    std_logic;
-        ui_we       : out   std_logic;
-        ui_wbe      : out   std_logic_vector(15 downto 0);
-        ui_wd       : out   std_logic_vector(127 downto 0);
-        ui_rd       : in    std_logic_vector(127 downto 0);
-        ui_rstb     : in    std_logic
+        ctrl_run    : in  std_logic;                      -- 1 = run, 0 = halt
+        ctrl_slow   : in  std_logic;                      -- 1 = run once per second, 0 = run as fast as possible
+        ctrl_size   : in  std_logic_vector(4 downto 0);   -- 00100 (4) = 16 Bytes, 00101 = 32 Bytes... 11101 (29) = 512MBytes
+        stat_run    : out std_logic;                      -- toggles once per test
+        stat_passes : out std_logic_vector(31 downto 0);  -- pass count
+        stat_errors : out std_logic_vector(31 downto 0);  -- error count
+                          
+        ui_cc       : in  std_logic;
+        ui_rdy      : in  std_logic;
+        ui_en       : out std_logic;
+        ui_r_w      : out std_logic;
+        ui_a        : out std_logic_vector(28 downto 4);
+        ui_wrdy     : in  std_logic;
+        ui_we       : out std_logic;
+        ui_wbe      : out std_logic_vector(15 downto 0);
+        ui_wd       : out std_logic_vector(127 downto 0);
+        ui_rd       : in  std_logic_vector(127 downto 0);
+        ui_rstb     : in  std_logic
 
     );
 end entity ddr3_test;
@@ -95,7 +95,7 @@ architecture synth of ddr3_test is
             x"23456789ABCDEF0123456789ABCDEF01",
             x"3456789ABCDEF0123456789ABCDEF012"
         );
-    
+
     signal test_size    : std_logic_vector(31 downto 0);
     signal test_end     : std_logic_vector(31 downto 0);
     signal pulse_second : std_logic;
@@ -223,7 +223,7 @@ begin
                     if ui_rstb_1 = '0' and prng_ok = "1111" and ctrl_run = '1' and (ctrl_slow = '0' or pulse_second = '1') then
                         if not errors_found then
                             stat_passes <= std_logic_vector(unsigned(stat_passes)+1);
-                        end if;  
+                        end if;
                         state <= WRITE;
                         ui_en <= '1';
                         ui_r_w <= '0';
@@ -233,7 +233,7 @@ begin
                         errors_found <= false;
                         stat_run <= not stat_run;
                     end if;
-        
+
             end case;
 
             if ui_rstb = '1' then

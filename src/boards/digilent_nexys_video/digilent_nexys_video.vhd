@@ -175,21 +175,21 @@ architecture synth of digilent_nexys_video is
 begin
 
     -- safe states
-    uart_rx_out     <= '1';
-    oled_res_n      <= '0';
-    oled_d_c        <= '0';
-    oled_sclk       <= '0';
-    oled_sdin       <= '0';
-    ac_mclk         <= '0';
-    ac_dac_sdata    <= '0';
-    eth_rst_n       <= '0';
-    ftdi_rd_n       <= '1';
-    ftdi_wr_n       <= '1';
-    ftdi_siwu_n     <= '1';
-    ftdi_oe_n       <= '1';
-    ps2_clk         <= 'Z';
-    ps2_data        <= 'Z';
-    qspi_cs_n       <= '1';
-    ddr3_reset_n    <= '0';
+    uart_rx_out  <= '1';
+    oled_res_n   <= '0';
+    oled_d_c     <= '0';
+    oled_sclk    <= '0';
+    oled_sdin    <= '0';
+    ac_mclk      <= '0';
+    ac_dac_sdata <= '0';
+    eth_rst_n    <= '0';
+    ftdi_rd_n    <= '1';
+    ftdi_wr_n    <= '1';
+    ftdi_siwu_n  <= '1';
+    ftdi_oe_n    <= '1';
+    ps2_clk      <= 'Z';
+    ps2_data     <= 'Z';
+    qspi_cs_n    <= '1';
+    ddr3_reset_n <= '0';
 
 end architecture synth;

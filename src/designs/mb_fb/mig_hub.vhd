@@ -29,28 +29,28 @@ package mig_hub_pkg is
         );
         port (
 
-            clk             : in    std_logic;
-            rst             : in    std_logic;
+            clk             : in  std_logic;
+            rst             : in  std_logic;
 
-            hub_awvalid     : in    std_logic_vector(0 to ports-1);
-            hub_awready     : out   std_logic_vector(0 to ports-1);
-            hub_r_w         : in    std_logic_vector(0 to ports-1);
-            hub_addr        : in    mig_addr_t(0 to ports-1);
-            hub_wdata       : in    mig_data_t(0 to ports-1);
-            hub_wbe         : in    mig_be_t(0 to ports-1);
-            hub_rdata       : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-            hub_rvalid      : out   std_logic_vector(0 to ports-1);
+            hub_awvalid     : in  std_logic_vector(0 to ports-1);
+            hub_awready     : out std_logic_vector(0 to ports-1);
+            hub_r_w         : in  std_logic_vector(0 to ports-1);
+            hub_addr        : in  mig_addr_t(0 to ports-1);
+            hub_wdata       : in  mig_data_t(0 to ports-1);
+            hub_wbe         : in  mig_be_t(0 to ports-1);
+            hub_rdata       : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+            hub_rvalid      : out std_logic_vector(0 to ports-1);
 
-            mig_avalid      : out   std_logic;
-            mig_r_w         : out   std_logic;
-            mig_addr        : out   std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-            mig_aready      : in    std_logic;
-            mig_wvalid      : out   std_logic;
-            mig_wdata       : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-            mig_wbe         : out   std_logic_vector(2**data_width_log2-1 downto 0);
-            mig_wready      : in    std_logic;
-            mig_rdata       : in    std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-            mig_rvalid      : in    std_logic
+            mig_avalid      : out std_logic;
+            mig_r_w         : out std_logic;
+            mig_addr        : out std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+            mig_aready      : in  std_logic;
+            mig_wvalid      : out std_logic;
+            mig_wdata       : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+            mig_wbe         : out std_logic_vector(2**data_width_log2-1 downto 0);
+            mig_wready      : in  std_logic;
+            mig_rdata       : in  std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+            mig_rvalid      : in  std_logic
 
         );
     end component mig_hub;
@@ -77,28 +77,28 @@ entity mig_hub is
     );
     port (
 
-        clk             : in    std_logic;
-        rst             : in    std_logic;
+        clk             : in  std_logic;
+        rst             : in  std_logic;
 
-        hub_awvalid     : in    std_logic_vector(0 to ports-1);
-        hub_awready     : out   std_logic_vector(0 to ports-1);
-        hub_r_w         : in    std_logic_vector(0 to ports-1);
-        hub_addr        : in    mig_addr_t(0 to ports-1);
-        hub_wdata       : in    mig_data_t(0 to ports-1);
-        hub_wbe         : in    mig_be_t(0 to ports-1);
-        hub_rdata       : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        hub_rvalid      : out   std_logic_vector(0 to ports-1);
+        hub_awvalid     : in  std_logic_vector(0 to ports-1);
+        hub_awready     : out std_logic_vector(0 to ports-1);
+        hub_r_w         : in  std_logic_vector(0 to ports-1);
+        hub_addr        : in  mig_addr_t(0 to ports-1);
+        hub_wdata       : in  mig_data_t(0 to ports-1);
+        hub_wbe         : in  mig_be_t(0 to ports-1);
+        hub_rdata       : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        hub_rvalid      : out std_logic_vector(0 to ports-1);
 
-        mig_avalid      : out   std_logic;
-        mig_r_w         : out   std_logic;
-        mig_addr        : out   std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-        mig_aready      : in    std_logic;
-        mig_wvalid      : out   std_logic;
-        mig_wdata       : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        mig_wbe         : out   std_logic_vector(2**data_width_log2-1 downto 0);
-        mig_wready      : in    std_logic;
-        mig_rdata       : in    std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        mig_rvalid      : in    std_logic
+        mig_avalid      : out std_logic;
+        mig_r_w         : out std_logic;
+        mig_addr        : out std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+        mig_aready      : in  std_logic;
+        mig_wvalid      : out std_logic;
+        mig_wdata       : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        mig_wbe         : out std_logic_vector(2**data_width_log2-1 downto 0);
+        mig_wready      : in  std_logic;
+        mig_rdata       : in  std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        mig_rvalid      : in  std_logic
 
     );
 end entity mig_hub;

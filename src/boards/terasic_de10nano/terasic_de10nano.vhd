@@ -21,38 +21,38 @@ use ieee.std_logic_1164.all;
 entity terasic_de10nano is
     port (
 
-      fpga_clk1_50     : in    std_logic;
-      fpga_clk2_50     : in    std_logic;
-      fpga_clk3_50     : in    std_logic;
+      fpga_clk1_50    : in    std_logic;
+      fpga_clk2_50    : in    std_logic;
+      fpga_clk3_50    : in    std_logic;
 
-      sw               : in    std_logic_vector(3:0);
-      key              : in    std_logic_vector(1:0);
-      led              : out   std_logic_vector(7:0);
+      sw              : in    std_logic_vector(3:0);
+      key             : in    std_logic_vector(1:0);
+      led             : out   std_logic_vector(7:0);
 
-      hdmi_tx_clk      : out   std_logic;
-      hdmi_tx_d        : out   std_logic_vector(23:0);
-      hdmi_tx_vs       : out   std_logic;
-      hdmi_tx_hs       : out   std_logic;
-      hdmi_tx_de       : out   std_logic;
-      hdmi_tx_int      : in    std_logic;
+      hdmi_tx_clk     : out   std_logic;
+      hdmi_tx_d       : out   std_logic_vector(23:0);
+      hdmi_tx_vs      : out   std_logic;
+      hdmi_tx_hs      : out   std_logic;
+      hdmi_tx_de      : out   std_logic;
+      hdmi_tx_int     : in    std_logic;
 
-      hdmi_sclk        : inout std_logic;
-      hdmi_mclk        : inout std_logic;
-      hdmi_lrclk       : inout std_logic;
-      hdmi_i2s         : inout std_logic;
+      hdmi_sclk       : inout std_logic;
+      hdmi_mclk       : inout std_logic;
+      hdmi_lrclk      : inout std_logic;
+      hdmi_i2s        : inout std_logic;
 
-      hdmi_i2c_scl     : inout std_logic;
-      hdmi_i2c_sda     : inout std_logic;
+      hdmi_i2c_scl    : inout std_logic;
+      hdmi_i2c_sda    : inout std_logic;
 
-      adc_convst       : out   std_logic;
-      adc_sck          : out   std_logic;
-      adc_sdi          : out   std_logic;
-      adc_sdo          : in    std_logic;
+      adc_convst      : out   std_logic;
+      adc_sck         : out   std_logic;
+      adc_sdi         : out   std_logic;
+      adc_sdo         : in    std_logic;
 
-      arduino_reset_n  : inout std_logic;
-      arduino_io       : inout std_logic_vector(15:0);
-      gpio_0           : inout std_logic_vector(35:0);
-      gpio_1           : inout std_logic_vector(35:0)
+      arduino_reset_n : inout std_logic;
+      arduino_io      : inout std_logic_vector(15:0);
+      gpio_0          : inout std_logic_vector(35:0);
+      gpio_1          : inout std_logic_vector(35:0)
 
       -- hps_conv_usb_n   : inout std_logic;
       -- hps_ddr3_addr    : out   std_logic_vector(14:0);

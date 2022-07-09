@@ -23,28 +23,28 @@ package video_out_timing_pkg is
     component video_out_timing is
         port (
 
-            rst         : in    std_logic;                      -- reset
-            clk         : in    std_logic;                      -- pixel clock
+            rst       : in  std_logic;                      -- reset
+            clk       : in  std_logic;                      -- pixel clock
 
-            pix_rep     : in    std_logic;                      -- pixel repetition; 0 = none/x1, 1 = x2
-            interlace   : in    std_logic;
-            v_tot       : in    std_logic_vector(10 downto 0);  -- 1..2048 (must be odd if interlaced)
-            v_act       : in    std_logic_vector(10 downto 0);  -- 1..2048 (should be even)
-            v_sync      : in    std_logic_vector(2 downto 0);   -- 1..7
-            v_bp        : in    std_logic_vector(5 downto 0);   -- 1`..31
-            h_tot       : in    std_logic_vector(11 downto 0);  -- 1..4096
-            h_act       : in    std_logic_vector(10 downto 0);  -- 1..2048 (must be even)
-            h_sync      : in    std_logic_vector(6 downto 0);   -- 1..127
-            h_bp        : in    std_logic_vector(7 downto 0);   -- 0..255
+            pix_rep   : in  std_logic;                      -- pixel repetition; 0 = none/x1, 1 = x2
+            interlace : in  std_logic;
+            v_tot     : in  std_logic_vector(10 downto 0);  -- 1..2048 (must be odd if interlaced)
+            v_act     : in  std_logic_vector(10 downto 0);  -- 1..2048 (should be even)
+            v_sync    : in  std_logic_vector(2 downto 0);   -- 1..7
+            v_bp      : in  std_logic_vector(5 downto 0);   -- 1`..31
+            h_tot     : in  std_logic_vector(11 downto 0);  -- 1..4096
+            h_act     : in  std_logic_vector(10 downto 0);  -- 1..2048 (must be even)
+            h_sync    : in  std_logic_vector(6 downto 0);   -- 1..127
+            h_bp      : in  std_logic_vector(7 downto 0);   -- 0..255
 
-            align       : in    std_logic_vector(21 downto 0);  -- alignment delay
-            f           : out   std_logic;                      -- field ID
-            vs          : out   std_logic;                      -- vertical sync
-            hs          : out   std_logic;                      -- horizontal sync
-            vblank      : out   std_logic;                      -- vertical blank
-            hblank      : out   std_logic;                      -- horizontal blank
-            ax          : out   std_logic_vector(11 downto 0);  -- visible area X (signed)
-            ay          : out   std_logic_vector(11 downto 0)   -- visible area Y (signed)
+            align     : in  std_logic_vector(21 downto 0);  -- alignment delay
+            f         : out std_logic;                      -- field ID
+            vs        : out std_logic;                      -- vertical sync
+            hs        : out std_logic;                      -- horizontal sync
+            vblank    : out std_logic;                      -- vertical blank
+            hblank    : out std_logic;                      -- horizontal blank
+            ax        : out std_logic_vector(11 downto 0);  -- visible area X (signed)
+            ay        : out std_logic_vector(11 downto 0)   -- visible area Y (signed)
 
         );
     end component video_out_timing;
@@ -63,82 +63,82 @@ use work.sync_reg_pkg.all;
 entity video_out_timing is
     port (
 
-        rst         : in    std_logic;                      -- reset
-        clk         : in    std_logic;                      -- pixel clock
+        rst       : in  std_logic;                     -- reset
+        clk       : in  std_logic;                     -- pixel clock
 
-        pix_rep     : in    std_logic;                      -- pixel repetition; 0 = none/x1, 1 = x2
-        interlace   : in    std_logic;
-        v_tot       : in    std_logic_vector(10 downto 0);  -- 1..2048 (must be odd if interlaced)
-        v_act       : in    std_logic_vector(10 downto 0);  -- 1..2048 (should be even)
-        v_sync      : in    std_logic_vector(2 downto 0);   -- 1..7
-        v_bp        : in    std_logic_vector(5 downto 0);   -- 1`..31
-        h_tot       : in    std_logic_vector(11 downto 0);  -- 1..4096
-        h_act       : in    std_logic_vector(10 downto 0);  -- 1..2048 (must be even)
-        h_sync      : in    std_logic_vector(6 downto 0);   -- 1..127
-        h_bp        : in    std_logic_vector(7 downto 0);   -- 0..255
+        pix_rep   : in  std_logic;                     -- pixel repetition; 0 = none/x1, 1 = x2
+        interlace : in  std_logic;
+        v_tot     : in  std_logic_vector(10 downto 0); -- 1..2048 (must be odd if interlaced)
+        v_act     : in  std_logic_vector(10 downto 0); -- 1..2048 (should be even)
+        v_sync    : in  std_logic_vector(2 downto 0);  -- 1..7
+        v_bp      : in  std_logic_vector(5 downto 0);  -- 1`..31
+        h_tot     : in  std_logic_vector(11 downto 0); -- 1..4096
+        h_act     : in  std_logic_vector(10 downto 0); -- 1..2048 (must be even)
+        h_sync    : in  std_logic_vector(6 downto 0);  -- 1..127
+        h_bp      : in  std_logic_vector(7 downto 0);  -- 0..255
 
-        align       : in    std_logic_vector(21 downto 0);  -- alignment delay
-        f           : out   std_logic;                      -- field ID
-        vs          : out   std_logic;                      -- vertical sync
-        hs          : out   std_logic;                      -- horizontal sync
-        vblank      : out   std_logic;                      -- vertical blank
-        hblank      : out   std_logic;                      -- horizontal blank
-        ax          : out   std_logic_vector(11 downto 0);  -- visible area X (signed)
-        ay          : out   std_logic_vector(11 downto 0)   -- visible area Y (signed)
+        align     : in  std_logic_vector(21 downto 0); -- alignment delay
+        f         : out std_logic;                     -- field ID
+        vs        : out std_logic;                     -- vertical sync
+        hs        : out std_logic;                     -- horizontal sync
+        vblank    : out std_logic;                     -- vertical blank
+        hblank    : out std_logic;                     -- horizontal blank
+        ax        : out std_logic_vector(11 downto 0); -- visible area X (signed)
+        ay        : out std_logic_vector(11 downto 0)  -- visible area Y (signed)
 
     );
 end entity video_out_timing;
 
 architecture synth of video_out_timing is
 
-    signal pix_rep_s        : std_logic;                        -- } synchronised
-    signal interlace_s      : std_logic;                        -- }
-    signal v_tot_s          : std_logic_vector(10 downto 0);    -- }
-    signal v_act_s          : std_logic_vector(10 downto 0);    -- }
-    signal v_sync_s         : std_logic_vector(2 downto 0);     -- }
-    signal v_bp_s           : std_logic_vector(5 downto 0);     -- }
-    signal h_tot_s          : std_logic_vector(11 downto 0);    -- }
-    signal h_act_s          : std_logic_vector(10 downto 0);    -- }
-    signal h_sync_s         : std_logic_vector(6 downto 0);     -- }
-    signal h_bp_s           : std_logic_vector(7 downto 0);     -- }
+    signal pix_rep_s      : std_logic;                     -- } synchronised
+    signal interlace_s    : std_logic;                     -- }
+    signal v_tot_s        : std_logic_vector(10 downto 0); -- }
+    signal v_act_s        : std_logic_vector(10 downto 0); -- }
+    signal v_sync_s       : std_logic_vector(2 downto 0);  -- }
+    signal v_bp_s         : std_logic_vector(5 downto 0);  -- }
+    signal h_tot_s        : std_logic_vector(11 downto 0); -- }
+    signal h_act_s        : std_logic_vector(10 downto 0); -- }
+    signal h_sync_s       : std_logic_vector(6 downto 0);  -- }
+    signal h_bp_s         : std_logic_vector(7 downto 0);  -- }
 
-    signal pos_h_act        : unsigned(h_tot_s'range);
-    signal pos_h_fp         : unsigned(h_tot_s'range);
-    signal pos_v_act1       : unsigned(v_tot_s'range);
-    signal pos_v_fp1        : unsigned(v_tot_s'range);
-    signal pos_v_mid        : unsigned(v_tot_s'range);
-    signal pos_v_bp2        : unsigned(v_tot_s'range);
-    signal pos_v_act2       : unsigned(v_tot_s'range);
-    signal pos_v_fp2        : unsigned(v_tot_s'range);
+    signal pos_h_act      : unsigned(h_tot_s'range);
+    signal pos_h_fp       : unsigned(h_tot_s'range);
+    signal pos_v_act1     : unsigned(v_tot_s'range);
+    signal pos_v_fp1      : unsigned(v_tot_s'range);
+    signal pos_v_mid      : unsigned(v_tot_s'range);
+    signal pos_v_bp2      : unsigned(v_tot_s'range);
+    signal pos_v_act2     : unsigned(v_tot_s'range);
+    signal pos_v_fp2      : unsigned(v_tot_s'range);
 
-    signal s1_count_h       : unsigned(h_tot_s'range);
-    signal s1_h_zero        : std_logic;
-    signal s1_h_bp          : std_logic;
-    signal s1_h_act         : std_logic;
-    signal s1_h_mid         : std_logic;
-    signal s1_h_fp          : std_logic;
+    signal s1_count_h     : unsigned(h_tot_s'range);
+    signal s1_h_zero      : std_logic;
+    signal s1_h_bp        : std_logic;
+    signal s1_h_act       : std_logic;
+    signal s1_h_mid       : std_logic;
+    signal s1_h_fp        : std_logic;
 
-    signal s1_count_v       : unsigned(v_tot_s'range);
-    signal s1_v_zero        : std_logic;
-    signal s1_v_bp1         : std_logic;
-    signal s1_v_act1        : std_logic;
-    signal s1_v_fp1         : std_logic;
-    signal s1_v_mid         : std_logic;
-    signal s1_v_bp2         : std_logic;
-    signal s1_v_act2        : std_logic;
-    signal s1_v_fp2         : std_logic;
+    signal s1_count_v     : unsigned(v_tot_s'range);
+    signal s1_v_zero      : std_logic;
+    signal s1_v_bp1       : std_logic;
+    signal s1_v_act1      : std_logic;
+    signal s1_v_fp1       : std_logic;
+    signal s1_v_mid       : std_logic;
+    signal s1_v_bp2       : std_logic;
+    signal s1_v_act2      : std_logic;
+    signal s1_v_fp2       : std_logic;
 
-    signal s2_rep           : std_logic;
-    signal s2_f             : std_logic;
-    signal s2_vs            : std_logic;
-    signal s2_vblank        : std_logic;
-    signal s2_hs            : std_logic;
-    signal s2_hblank        : std_logic;
-    signal s2_ax            : signed(ax'range);
-    signal s2_ay            : signed(ay'range);
+    signal s2_rep         : std_logic;
+    signal s2_f           : std_logic;
+    signal s2_vs          : std_logic;
+    signal s2_vblank      : std_logic;
+    signal s2_hs          : std_logic;
+    signal s2_hblank      : std_logic;
+    signal s2_ax          : signed(ax'range);
+    signal s2_ay          : signed(ay'range);
 
-    signal align_hold       : std_logic;
-    signal align_counter    : unsigned(align'range);
+    signal align_hold     : std_logic;
+    signal align_counter  : unsigned(align'range);
 
 begin
 
@@ -196,28 +196,28 @@ begin
     begin
         if rst = '1' then
 
-            s1_count_h      <= (others => '0');
-            s1_h_zero       <= '1';
-            s1_count_v      <= (others => '0');
-            s1_v_zero       <= '1';
-            s2_rep          <= '0';
-            s2_f            <= '0';
-            s2_vs           <= '0';
-            s2_vblank       <= '1';
-            s2_hs           <= '0';
-            s2_hblank       <= '1';
-            s2_ax           <= (others => '0');
-            s2_ay           <= (others => '0');
-            align_hold      <= '0';
-            align_counter   <= (others => '0');
+            s1_count_h    <= (others => '0');
+            s1_h_zero     <= '1';
+            s1_count_v    <= (others => '0');
+            s1_v_zero     <= '1';
+            s2_rep        <= '0';
+            s2_f          <= '0';
+            s2_vs         <= '0';
+            s2_vblank     <= '1';
+            s2_hs         <= '0';
+            s2_hblank     <= '1';
+            s2_ax         <= (others => '0');
+            s2_ay         <= (others => '0');
+            align_hold    <= '0';
+            align_counter <= (others => '0');
 
-            f               <= '0';
-            vs              <= '0';
-            hs              <= '0';
-            vblank          <= '1';
-            hblank          <= '1';
-            ax              <= (others => '0');
-            ay              <= (others => '0');
+            f             <= '0';
+            vs            <= '0';
+            hs            <= '0';
+            vblank        <= '1';
+            hblank        <= '1';
+            ax            <= (others => '0');
+            ay            <= (others => '0');
 
         elsif rising_edge(clk) then
 

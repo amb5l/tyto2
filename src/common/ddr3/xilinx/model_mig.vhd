@@ -29,21 +29,21 @@ entity model_mig is
         sim_mem_log2    : integer       -- 19 => 2^19 * 16 = 8MBytes
     );
     port (
-        xrst            : in    std_logic;
-        clk             : out   std_logic;
-        rst             : out   std_logic;
-        mig_cc          : out   std_logic;
-        mig_avalid      : in    std_logic;
-        mig_r_w         : in    std_logic;
-        mig_addr        : in    std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-        mig_aready      : out   std_logic;
-        mig_wvalid      : in    std_logic;
-        mig_wdata       : in    std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        mig_wbe         : in    std_logic_vector(2**data_width_log2-1 downto 0);
-        mig_wready      : out   std_logic;
-        mig_rdata       : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        mig_raddr       : out   std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-        mig_rvalid      : out   std_logic
+        xrst            : in  std_logic;
+        clk             : out std_logic;
+        rst             : out std_logic;
+        mig_cc          : out std_logic;
+        mig_avalid      : in  std_logic;
+        mig_r_w         : in  std_logic;
+        mig_addr        : in  std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+        mig_aready      : out std_logic;
+        mig_wvalid      : in  std_logic;
+        mig_wdata       : in  std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        mig_wbe         : in  std_logic_vector(2**data_width_log2-1 downto 0);
+        mig_wready      : out std_logic;
+        mig_rdata       : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        mig_raddr       : out std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+        mig_rvalid      : out std_logic
     );
 end entity model_mig;
 
@@ -73,32 +73,32 @@ architecture model of model_mig is
     end record write_t;
     type fifo_write_t is array(0 to fifo_size_write-1) of write_t;
 
-    signal fifo_cmd             : fifo_cmd_t;
-    signal fifo_cmd_wen         : std_logic;
-    signal fifo_cmd_ren         : std_logic;
-    signal fifo_cmd_ef          : std_logic;
-    signal fifo_cmd_ff          : std_logic;
-    signal fifo_cmd_wptr        : integer range 0 to fifo_size_cmd-1;
-    signal fifo_cmd_wcount      : integer range 0 to fifo_size_cmd;
-    signal fifo_cmd_werr        : std_logic;
-    signal fifo_cmd_rptr        : integer range 0 to fifo_size_cmd-1;
-    signal fifo_cmd_rcount      : integer range 0 to fifo_size_cmd;
-    signal fifo_cmd_rerr        : std_logic;
+    signal fifo_cmd          : fifo_cmd_t;
+    signal fifo_cmd_wen      : std_logic;
+    signal fifo_cmd_ren      : std_logic;
+    signal fifo_cmd_ef       : std_logic;
+    signal fifo_cmd_ff       : std_logic;
+    signal fifo_cmd_wptr     : integer range 0 to fifo_size_cmd-1;
+    signal fifo_cmd_wcount   : integer range 0 to fifo_size_cmd;
+    signal fifo_cmd_werr     : std_logic;
+    signal fifo_cmd_rptr     : integer range 0 to fifo_size_cmd-1;
+    signal fifo_cmd_rcount   : integer range 0 to fifo_size_cmd;
+    signal fifo_cmd_rerr     : std_logic;
 
-    signal fifo_write           : fifo_write_t;
-    signal fifo_write_wen       : std_logic;
-    signal fifo_write_ren       : std_logic;
-    signal fifo_write_ef        : std_logic;
-    signal fifo_write_ff        : std_logic;
-    signal fifo_write_wptr      : integer range 0 to fifo_size_write-1;
-    signal fifo_write_wcount    : integer range 0 to fifo_size_write;
-    signal fifo_write_werr      : std_logic;
-    signal fifo_write_rptr      : integer range 0 to fifo_size_write-1;
-    signal fifo_write_rcount    : integer range 0 to fifo_size_write;
-    signal fifo_write_rerr      : std_logic;
+    signal fifo_write        : fifo_write_t;
+    signal fifo_write_wen    : std_logic;
+    signal fifo_write_ren    : std_logic;
+    signal fifo_write_ef     : std_logic;
+    signal fifo_write_ff     : std_logic;
+    signal fifo_write_wptr   : integer range 0 to fifo_size_write-1;
+    signal fifo_write_wcount : integer range 0 to fifo_size_write;
+    signal fifo_write_werr   : std_logic;
+    signal fifo_write_rptr   : integer range 0 to fifo_size_write-1;
+    signal fifo_write_rcount : integer range 0 to fifo_size_write;
+    signal fifo_write_rerr   : std_logic;
 
-    signal mem                  : mem_t;
-    signal count                : integer;
+    signal mem               : mem_t;
+    signal count             : integer;
 
 begin
 
@@ -188,7 +188,7 @@ begin
                 fifo_cmd    <= (others => (addr => 0, r_w => '0', latency => 0));
                 fifo_write  <= (others => (data => (others => 0), be => (others => '0')));
                 mem         <= (others => (others => 0));
-                count       <= 0;    
+                count       <= 0;
 
                     mig_rvalid <= '0';
                 mig_rdata <= (others => 'X');
@@ -230,7 +230,7 @@ begin
                     for i in burst_t'range loop
                         mig_rdata(7+(i*8) downto i*8) <= std_logic_vector(to_unsigned(mem(fifo_cmd(fifo_cmd_rptr).addr)(i),8));
                     end loop;
-                    mig_raddr <= std_logic_vector(to_unsigned(fifo_cmd(fifo_cmd_rptr).addr,addr_width_log2));                
+                    mig_raddr <= std_logic_vector(to_unsigned(fifo_cmd(fifo_cmd_rptr).addr,addr_width_log2));
                 end if;
 
                 if fifo_cmd_ren = '1' then

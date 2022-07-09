@@ -26,20 +26,20 @@ package hdmi_tpg_pkg is
         );
         port (
 
-            rst        : in    std_logic;                    -- reference/system reset (synchronous)
-            clk        : in    std_logic;                    -- reference/system clock
+            rst        : in  std_logic;                    -- reference/system reset (synchronous)
+            clk        : in  std_logic;                    -- reference/system clock
 
-            mode_step  : in    std_logic;                    -- video mode step (e.g. button)
-            mode       : out   std_logic_vector(3 downto 0); -- current video mode
-            dvi        : in    std_logic;                    -- 1 = DVI, 0 = HDMI
+            mode_step  : in  std_logic;                    -- video mode step (e.g. button)
+            mode       : out std_logic_vector(3 downto 0); -- current video mode
+            dvi        : in  std_logic;                    -- 1 = DVI, 0 = HDMI
 
-            heartbeat  : out   std_logic_vector(3 downto 0); -- 4 bit count @ 8Hz (heartbeat for LEDs)
-            status     : out   std_logic_vector(1 downto 0); -- MMCM lock status
+            heartbeat  : out std_logic_vector(3 downto 0); -- 4 bit count @ 8Hz (heartbeat for LEDs)
+            status     : out std_logic_vector(1 downto 0); -- MMCM lock status
 
-            hdmi_clk_p : out   std_logic;                    -- HDMI (TMDS) clock output (+ve)
-            hdmi_clk_n : out   std_logic;                    -- HDMI (TMDS) clock output (-ve)
-            hdmi_d_p   : out   std_logic_vector(0 to 2);     -- HDMI (TMDS) data output channels 0..2 (+ve)
-            hdmi_d_n   : out   std_logic_vector(0 to 2)      -- HDMI (TMDS) data output channels 0..2 (-ve)
+            hdmi_clk_p : out std_logic;                    -- HDMI (TMDS) clock output (+ve)
+            hdmi_clk_n : out std_logic;                    -- HDMI (TMDS) clock output (-ve)
+            hdmi_d_p   : out std_logic_vector(0 to 2);     -- HDMI (TMDS) data output channels 0..2 (+ve)
+            hdmi_d_n   : out std_logic_vector(0 to 2)      -- HDMI (TMDS) data output channels 0..2 (-ve)
 
         );
     end component hdmi_tpg;
@@ -68,20 +68,20 @@ entity hdmi_tpg is
     );
     port (
 
-        rst        : in    std_logic;                    -- reference/system reset (synchronous)
-        clk        : in    std_logic;                    -- reference/system clock
+        rst        : in  std_logic;                    -- reference/system reset (synchronous)
+        clk        : in  std_logic;                    -- reference/system clock
 
-        mode_step  : in    std_logic;                    -- video mode step (e.g. button)
-        mode       : out   std_logic_vector(3 downto 0); -- current video mode
-        dvi        : in    std_logic;                    -- 1 = DVI, 0 = HDMI
+        mode_step  : in  std_logic;                    -- video mode step (e.g. button)
+        mode       : out std_logic_vector(3 downto 0); -- current video mode
+        dvi        : in  std_logic;                    -- 1 = DVI, 0 = HDMI
 
-        heartbeat  : out   std_logic_vector(3 downto 0); -- 4 bit count @ 8Hz (heartbeat for LEDs)
-        status     : out   std_logic_vector(1 downto 0); -- MMCM lock status
+        heartbeat  : out std_logic_vector(3 downto 0); -- 4 bit count @ 8Hz (heartbeat for LEDs)
+        status     : out std_logic_vector(1 downto 0); -- MMCM lock status
 
-        hdmi_clk_p : out   std_logic;                    -- HDMI (TMDS) clock output (+ve)
-        hdmi_clk_n : out   std_logic;                    -- HDMI (TMDS) clock output (-ve)
-        hdmi_d_p   : out   std_logic_vector(0 to 2);     -- HDMI (TMDS) data output channels 0..2 (+ve)
-        hdmi_d_n   : out   std_logic_vector(0 to 2)      -- HDMI (TMDS) data output channels 0..2 (-ve)
+        hdmi_clk_p : out std_logic;                    -- HDMI (TMDS) clock output (+ve)
+        hdmi_clk_n : out std_logic;                    -- HDMI (TMDS) clock output (-ve)
+        hdmi_d_p   : out std_logic_vector(0 to 2);     -- HDMI (TMDS) data output channels 0..2 (+ve)
+        hdmi_d_n   : out std_logic_vector(0 to 2)      -- HDMI (TMDS) data output channels 0..2 (-ve)
 
     );
 end entity hdmi_tpg;

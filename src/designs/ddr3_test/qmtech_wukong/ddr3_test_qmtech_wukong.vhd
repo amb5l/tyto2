@@ -93,24 +93,24 @@ end entity ddr3_test_qmtech_wukong;
 
 architecture synth of ddr3_test_qmtech_wukong is
 
-    signal rst_100m     : std_logic;
-    signal clk_100m     : std_logic;
-    signal ui_cc        : std_logic;
-    signal ui_rdy       : std_logic;
-    signal ui_en        : std_logic;
-    signal ui_r_w       : std_logic;
-    signal ui_a         : std_logic_vector(28 downto 4);
-    signal ui_wrdy      : std_logic;
-    signal ui_we        : std_logic;
-    signal ui_wbe       : std_logic_vector(15 downto 0);
-    signal ui_wd        : std_logic_vector(127 downto 0);
-    signal ui_rd        : std_logic_vector(127 downto 0);
-    signal ui_rstb      : std_logic;
+    signal rst_100m    : std_logic;
+    signal clk_100m    : std_logic;
+    signal ui_cc       : std_logic;
+    signal ui_rdy      : std_logic;
+    signal ui_en       : std_logic;
+    signal ui_r_w      : std_logic;
+    signal ui_a        : std_logic_vector(28 downto 4);
+    signal ui_wrdy     : std_logic;
+    signal ui_we       : std_logic;
+    signal ui_wbe      : std_logic_vector(15 downto 0);
+    signal ui_wd       : std_logic_vector(127 downto 0);
+    signal ui_rd       : std_logic_vector(127 downto 0);
+    signal ui_rstb     : std_logic;
 
-    signal ctrl_size    : std_logic_vector(4 downto 0);
-    signal stat_run     : std_logic;
-    signal stat_passes  : std_logic_vector(31 downto 0);
-    signal stat_errors  : std_logic_vector(31 downto 0);
+    signal ctrl_size   : std_logic_vector(4 downto 0);
+    signal stat_run    : std_logic;
+    signal stat_passes : std_logic_vector(31 downto 0);
+    signal stat_errors : std_logic_vector(31 downto 0);
 
 begin
 
@@ -180,9 +180,9 @@ begin
 
     -- unused I/O
 
-    ser_tx      <= '1';
-    hdmi_scl    <= 'Z';
-    hdmi_sda    <= 'Z';
-    eth_rst_n   <= '0';
+    ser_tx    <= '1';
+    hdmi_scl  <= 'Z';
+    hdmi_sda  <= 'Z';
+    eth_rst_n <= '0';
 
 end architecture synth;

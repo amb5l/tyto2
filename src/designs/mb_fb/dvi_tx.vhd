@@ -23,21 +23,21 @@ package dvi_tx_pkg is
     component dvi_tx is
         port (
 
-            vga_clk     : in    std_logic;                      -- pixel clock
-            vga_clk_x5  : in    std_logic;                      -- serialiser clock
-            vga_rst     : in    std_logic;                      -- synchronous reset
-            vga_vs      : in     std_logic;                     -- vertical sync
-            vga_hs      : in     std_logic;                     -- horizontal sync
-            vga_vblank  : in     std_logic;                     -- vertical blank
-            vga_hblank  : in     std_logic;                     -- horizontal blank
-            vga_r       : in     std_logic_vector(7 downto 0);  -- red pixel data
-            vga_g       : in     std_logic_vector(7 downto 0);  -- green pixel data
-            vga_b       : in     std_logic_vector(7 downto 0);  -- blue pixel data
+            vga_clk    : in  std_logic;                     -- pixel clock
+            vga_clk_x5 : in  std_logic;                     -- serialiser clock
+            vga_rst    : in  std_logic;                     -- synchronous reset
+            vga_vs     : in  std_logic;                     -- vertical sync
+            vga_hs     : in  std_logic;                     -- horizontal sync
+            vga_vblank : in  std_logic;                     -- vertical blank
+            vga_hblank : in  std_logic;                     -- horizontal blank
+            vga_r      : in  std_logic_vector(7 downto 0);  -- red pixel data
+            vga_g      : in  std_logic_vector(7 downto 0);  -- green pixel data
+            vga_b      : in  std_logic_vector(7 downto 0);  -- blue pixel data
 
-            dvi_clk_p   : out   std_logic;                      -- DVI (TMDS) clock output (+ve)
-            dvi_clk_n   : out   std_logic;                      -- DVI (TMDS) clock output (-ve)
-            dvi_d_p     : out   std_logic_vector(0 to 2);       -- DVI (TMDS) data output channels 0..2 (+ve)
-            dvi_d_n     : out   std_logic_vector(0 to 2)        -- DVI (TMDS) data output channels 0..2 (-ve)
+            dvi_clk_p  : out std_logic;                     -- DVI (TMDS) clock output (+ve)
+            dvi_clk_n  : out std_logic;                     -- DVI (TMDS) clock output (-ve)
+            dvi_d_p    : out std_logic_vector(0 to 2);      -- DVI (TMDS) data output channels 0..2 (+ve)
+            dvi_d_n    : out std_logic_vector(0 to 2)       -- DVI (TMDS) data output channels 0..2 (-ve)
 
         );
     end component dvi_tx;
@@ -57,21 +57,21 @@ use work.serialiser_10to1_selectio_pkg.all;
 entity dvi_tx is
     port (
 
-        vga_clk     : in    std_logic;                      -- pixel clock
-        vga_clk_x5  : in    std_logic;                      -- serialiser clock
-        vga_rst     : in    std_logic;                      -- synchronous reset
-        vga_vs      : in     std_logic;                     -- vertical sync
-        vga_hs      : in     std_logic;                     -- horizontal sync
-        vga_vblank  : in     std_logic;                     -- vertical blank
-        vga_hblank  : in     std_logic;                     -- horizontal blank
-        vga_r       : in     std_logic_vector(7 downto 0);  -- red pixel data
-        vga_g       : in     std_logic_vector(7 downto 0);  -- green pixel data
-        vga_b       : in     std_logic_vector(7 downto 0);  -- blue pixel data
+        vga_clk    : in  std_logic;                     -- pixel clock
+        vga_clk_x5 : in  std_logic;                     -- serialiser clock
+        vga_rst    : in  std_logic;                     -- synchronous reset
+        vga_vs     : in  std_logic;                     -- vertical sync
+        vga_hs     : in  std_logic;                     -- horizontal sync
+        vga_vblank : in  std_logic;                     -- vertical blank
+        vga_hblank : in  std_logic;                     -- horizontal blank
+        vga_r      : in  std_logic_vector(7 downto 0);  -- red pixel data
+        vga_g      : in  std_logic_vector(7 downto 0);  -- green pixel data
+        vga_b      : in  std_logic_vector(7 downto 0);  -- blue pixel data
 
-        dvi_clk_p   : out   std_logic;                      -- DVI (TMDS) clock output (+ve)
-        dvi_clk_n   : out   std_logic;                      -- DVI (TMDS) clock output (-ve)
-        dvi_d_p     : out   std_logic_vector(0 to 2);       -- DVI (TMDS) data output channels 0..2 (+ve)
-        dvi_d_n     : out   std_logic_vector(0 to 2)        -- DVI (TMDS) data output channels 0..2 (-ve)
+        dvi_clk_p  : out std_logic;                     -- DVI (TMDS) clock output (+ve)
+        dvi_clk_n  : out std_logic;                     -- DVI (TMDS) clock output (-ve)
+        dvi_d_p    : out std_logic_vector(0 to 2);      -- DVI (TMDS) data output channels 0..2 (+ve)
+        dvi_d_n    : out std_logic_vector(0 to 2)       -- DVI (TMDS) data output channels 0..2 (-ve)
 
     );
 end entity dvi_tx;

@@ -20,24 +20,24 @@ use ieee.std_logic_1164.all;
 
 package hdmi_tx_encoder_pkg is
 
-    constant ENC_DVI        : std_logic_vector(1 downto 0) := "00";
-    constant ENC_GB_VIDEO   : std_logic_vector(1 downto 0) := "01";
-    constant ENC_DATA       : std_logic_vector(1 downto 0) := "10";
-    constant ENC_GB_DATA    : std_logic_vector(1 downto 0) := "11";
+    constant ENC_DVI      : std_logic_vector(1 downto 0) := "00";
+    constant ENC_GB_VIDEO : std_logic_vector(1 downto 0) := "01";
+    constant ENC_DATA     : std_logic_vector(1 downto 0) := "10";
+    constant ENC_GB_DATA  : std_logic_vector(1 downto 0) := "11";
 
     component hdmi_tx_encoder is
         generic (
-            channel : integer range 0 to 2                -- affects encoding of guard bands
+            channel : integer range 0 to 2              -- affects encoding of guard bands
         );
         port (
-            rst     : in    std_logic;                    -- synchronous reset
-            clk     : in    std_logic;                    -- pixel clock
-            de      : in    std_logic;                    -- pixel data enable
-            p       : in    std_logic_vector(7 downto 0); -- pixel data
-            enc     : in    std_logic_vector(1 downto 0); -- encoding type (non-video)
-            c       : in    std_logic_vector(1 downto 0); -- control
-            d       : in    std_logic_vector(3 downto 0); -- aux data (for data islands)
-            q       : out   std_logic_vector(9 downto 0)  -- TMDS encoded output
+            rst     : in  std_logic;                    -- synchronous reset
+            clk     : in  std_logic;                    -- pixel clock
+            de      : in  std_logic;                    -- pixel data enable
+            p       : in  std_logic_vector(7 downto 0); -- pixel data
+            enc     : in  std_logic_vector(1 downto 0); -- encoding type (non-video)
+            c       : in  std_logic_vector(1 downto 0); -- control
+            d       : in  std_logic_vector(3 downto 0); -- aux data (for data islands)
+            q       : out std_logic_vector(9 downto 0)  -- TMDS encoded output
         );
     end component hdmi_tx_encoder;
 
@@ -54,17 +54,17 @@ use work.hdmi_tx_encoder_pkg.all;
 
 entity hdmi_tx_encoder is
     generic (
-        channel : integer range 0 to 2                -- affects encoding of guard bands
+        channel : integer range 0 to 2              -- affects encoding of guard bands
     );
     port (
-        rst     : in    std_logic;                    -- synchronous reset
-        clk     : in    std_logic;                    -- pixel clock
-        de      : in    std_logic;                    -- pixel data enable
-        p       : in    std_logic_vector(7 downto 0); -- pixel data
-        enc     : in    std_logic_vector(1 downto 0); -- encoding type (non-video)
-        c       : in    std_logic_vector(1 downto 0); -- control
-        d       : in    std_logic_vector(3 downto 0); -- aux data (for data islands)
-        q       : out   std_logic_vector(9 downto 0)  -- TMDS encoded output
+        rst     : in  std_logic;                    -- synchronous reset
+        clk     : in  std_logic;                    -- pixel clock
+        de      : in  std_logic;                    -- pixel data enable
+        p       : in  std_logic_vector(7 downto 0); -- pixel data
+        enc     : in  std_logic_vector(1 downto 0); -- encoding type (non-video)
+        c       : in  std_logic_vector(1 downto 0); -- control
+        d       : in  std_logic_vector(3 downto 0); -- aux data (for data islands)
+        q       : out std_logic_vector(9 downto 0)  -- TMDS encoded output
     );
 end entity hdmi_tx_encoder;
 

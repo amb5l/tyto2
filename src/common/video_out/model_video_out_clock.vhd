@@ -21,15 +21,15 @@ use ieee.std_logic_1164.all;
 entity model_video_out_clock is
     port (
 
-        rsti        : in    std_logic;                      -- reset
-        clki        : in    std_logic;                      -- reference clock
-        sys_rst     : in    std_logic;                      -- system clock synchronous reset
-        sys_clk     : in    std_logic;                      -- system clock e.g. 100MHz
+        rsti    : in  std_logic;                      -- reset
+        clki    : in  std_logic;                      -- reference clock
+        sys_rst : in  std_logic;                      -- system clock synchronous reset
+        sys_clk : in  std_logic;                      -- system clock e.g. 100MHz
 
-        sel         : in    std_logic_vector(1 downto 0);   -- output clock select: 00 = 25.2, 01 = 27.0, 10 = 74.25, 11 = 148.5
-        rsto        : out   std_logic;                      -- output clock synchronous reset
-        clko        : out   std_logic;                      -- pixel clock
-        clko_x5     : out   std_logic                       -- serialiser clock (5x pixel clock)
+        sel     : in  std_logic_vector(1 downto 0);   -- output clock select: 00 = 25.2, 01 = 27.0, 10 = 74.25, 11 = 148.5
+        rsto    : out std_logic;                      -- output clock synchronous reset
+        clko    : out std_logic;                      -- pixel clock
+        clko_x5 : out std_logic                       -- serialiser clock (5x pixel clock)
 
     );
 end entity model_video_out_clock;
@@ -59,7 +59,7 @@ begin
             case sel is
                 when "00" => t10 <= 3968ps;
                 when "01" => t10 <= 3705ps;
-                when "10" => t10 <= 1347ps;                
+                when "10" => t10 <= 1347ps;
                 when "11" => t10 <= 673ps;
                 when others => t10 <= 3968ps;
             end case;
@@ -67,7 +67,7 @@ begin
     end process;
 
     process
-    begin    
+    begin
         wait until sel'event;
         rst <= '1';
         rsto <= '1';

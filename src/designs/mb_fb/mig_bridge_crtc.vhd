@@ -30,31 +30,31 @@ package mig_bridge_crtc_pkg is
         );
         port (
 
-            crtc_clk        : in    std_logic;
-            crtc_rst        : in    std_logic;
-            crtc_llen       : in    std_logic_vector(10 downto 6); -- line length (multiple of 64 pixels)
-            crtc_vs         : in    std_logic;
-            crtc_hs         : in    std_logic;
-            crtc_vblank     : in    std_logic;
-            crtc_hblank     : in    std_logic;
-            crtc_r          : out   std_logic_vector(7 downto 0);
-            crtc_g          : out   std_logic_vector(7 downto 0);
-            crtc_b          : out   std_logic_vector(7 downto 0);
+            crtc_clk        : in  std_logic;
+            crtc_rst        : in  std_logic;
+            crtc_llen       : in  std_logic_vector(10 downto 6); -- line length (multiple of 64 pixels)
+            crtc_vs         : in  std_logic;
+            crtc_hs         : in  std_logic;
+            crtc_vblank     : in  std_logic;
+            crtc_hblank     : in  std_logic;
+            crtc_r          : out std_logic_vector(7 downto 0);
+            crtc_g          : out std_logic_vector(7 downto 0);
+            crtc_b          : out std_logic_vector(7 downto 0);
 
-            mig_clk         : in    std_logic;
-            mig_rst         : in    std_logic;
-            mig_awvalid     : out   std_logic;
-            mig_awready     : in    std_logic;
-            mig_r_w         : out   std_logic;
-            mig_addr        : out   std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-            mig_wdata       : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-            mig_wbe         : out   std_logic_vector(2**data_width_log2-1 downto 0);
-            mig_rdata       : in    std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-            mig_rvalid      : in    std_logic;
-            mig_rready      : out   std_logic;
+            mig_clk         : in  std_logic;
+            mig_rst         : in  std_logic;
+            mig_awvalid     : out std_logic;
+            mig_awready     : in  std_logic;
+            mig_r_w         : out std_logic;
+            mig_addr        : out std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+            mig_wdata       : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+            mig_wbe         : out std_logic_vector(2**data_width_log2-1 downto 0);
+            mig_rdata       : in  std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+            mig_rvalid      : in  std_logic;
+            mig_rready      : out std_logic;
 
-            fifo_underflow  : out   std_logic;
-            fifo_overflow   : out   std_logic
+            fifo_underflow  : out std_logic;
+            fifo_overflow   : out std_logic
 
         );
     end component mig_bridge_crtc;
@@ -83,31 +83,31 @@ entity mig_bridge_crtc is
     );
     port (
 
-        crtc_clk        : in    std_logic;
-        crtc_rst        : in    std_logic;
-        crtc_llen       : in    std_logic_vector(4 downto 0); -- line length (multiple of 64 pixels)
-        crtc_vs         : in    std_logic;
-        crtc_hs         : in    std_logic;
-        crtc_vblank     : in    std_logic;
-        crtc_hblank     : in    std_logic;
-        crtc_r          : out   std_logic_vector(7 downto 0);
-        crtc_g          : out   std_logic_vector(7 downto 0);
-        crtc_b          : out   std_logic_vector(7 downto 0);
+        crtc_clk        : in  std_logic;
+        crtc_rst        : in  std_logic;
+        crtc_llen       : in  std_logic_vector(4 downto 0); -- line length (multiple of 64 pixels)
+        crtc_vs         : in  std_logic;
+        crtc_hs         : in  std_logic;
+        crtc_vblank     : in  std_logic;
+        crtc_hblank     : in  std_logic;
+        crtc_r          : out std_logic_vector(7 downto 0);
+        crtc_g          : out std_logic_vector(7 downto 0);
+        crtc_b          : out std_logic_vector(7 downto 0);
 
-        mig_clk         : in    std_logic;
-        mig_rst         : in    std_logic;
-        mig_awvalid     : out   std_logic;
-        mig_awready     : in    std_logic;
-        mig_r_w         : out   std_logic;
-        mig_addr        : out   std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-        mig_wdata       : out   std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        mig_wbe         : out   std_logic_vector(2**data_width_log2-1 downto 0);
-        mig_rdata       : in    std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-        mig_rvalid      : in    std_logic;
-        mig_rready      : out   std_logic;
+        mig_clk         : in  std_logic;
+        mig_rst         : in  std_logic;
+        mig_awvalid     : out std_logic;
+        mig_awready     : in  std_logic;
+        mig_r_w         : out std_logic;
+        mig_addr        : out std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+        mig_wdata       : out std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        mig_wbe         : out std_logic_vector(2**data_width_log2-1 downto 0);
+        mig_rdata       : in  std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+        mig_rvalid      : in  std_logic;
+        mig_rready      : out std_logic;
 
-        fifo_underflow  : out   std_logic;
-        fifo_overflow   : out   std_logic
+        fifo_underflow  : out std_logic;
+        fifo_overflow   : out std_logic
 
     );
 end entity mig_bridge_crtc;
@@ -176,7 +176,7 @@ begin
                     if mig_awready = '1' then
                         mig_addr(size_log2-1 downto data_width_log2) <= std_logic_vector(unsigned(mig_addr(size_log2-1 downto data_width_log2))+1);
                         if to_integer(signed(mig_addr(7 downto data_width_log2))) = -1 then -- completed 64 pixel chunk
-                            count <= std_logic_vector(unsigned(count)+1);                            
+                            count <= std_logic_vector(unsigned(count)+1);
                             if count = std_logic_vector(unsigned(crtc_llen)-1) then -- completed line
                                 state_cmd <= IDLE;
                                 count <= (others => '0');

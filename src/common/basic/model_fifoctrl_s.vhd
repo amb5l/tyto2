@@ -20,21 +20,21 @@ use ieee.std_logic_1164.all;
 
 entity model_fifoctrl_s is
     generic (
-        size    : integer
+        size   : integer
     );
     port (
-        rst     : in    std_logic;
-        clk     : in    std_logic;
-        wen     : in    std_logic;
-        ren     : in    std_logic;
-        ef      : out   std_logic;
-        ff      : out   std_logic;
-        wptr    : out   integer range 0 to size-1;
-        wcount  : out   integer range 0 to size;
-        werr    : out   std_logic;
-        rptr    : out   integer range 0 to size-1;
-        rcount  : out   integer range 0 to size;
-        rerr    : out   std_logic
+        rst    : in  std_logic;
+        clk    : in  std_logic;
+        wen    : in  std_logic;
+        ren    : in  std_logic;
+        ef     : out std_logic;
+        ff     : out std_logic;
+        wptr   : out integer range 0 to size-1;
+        wcount : out integer range 0 to size;
+        werr   : out std_logic;
+        rptr   : out integer range 0 to size-1;
+        rcount : out integer range 0 to size;
+        rerr   : out std_logic
     );
 end entity model_fifoctrl_s;
 
@@ -49,14 +49,14 @@ begin
     begin
         if rst = '1' then
 
-            ef      <= '1';
-            ff      <= '0';
-            wptr    <= 0;
-            wcount  <= size;
-            werr    <= '0';
-            rptr    <= 0;
-            rcount  <= 0;
-            rerr    <= '0';
+            ef     <= '1';
+            ff     <= '0';
+            wptr   <= 0;
+            wcount <= size;
+            werr   <= '0';
+            rptr   <= 0;
+            rcount <= 0;
+            rerr   <= '0';
 
         elsif rising_edge(clk) then
 

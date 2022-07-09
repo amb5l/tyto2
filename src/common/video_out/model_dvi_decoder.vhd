@@ -25,24 +25,24 @@ use work.tyto_types_pkg.all;
 entity model_dvi_decoder is
     port
     (
-        dvi_clk : in    std_logic;
-        dvi_d   : in    std_logic_vector(0 to 2);   -- 3x TMDS channels
+        dvi_clk : in  std_logic;
+        dvi_d   : in  std_logic_vector(0 to 2);   -- 3x TMDS channels
 
-        vga_clk : out   std_logic;
-        vga_vs  : out   std_logic;                  -- vertical sync
-        vga_hs  : out   std_logic;                  -- horizontal sync
-        vga_de  : out   std_logic;                  -- pixel data enable
-        vga_p   : out   slv_7_0(0 to 2)           -- pixel data components
+        vga_clk : out std_logic;
+        vga_vs  : out std_logic;                  -- vertical sync
+        vga_hs  : out std_logic;                  -- horizontal sync
+        vga_de  : out std_logic;                  -- pixel data enable
+        vga_p   : out slv_7_0(0 to 2)           -- pixel data components
     );
 end entity model_dvi_decoder;
 
 architecture model of model_dvi_decoder is
 
-    signal tmds_data        : slv_9_0(0 to 2);
-    signal tmds_clk         : std_logic_vector(0 to 2);
-    signal tmds_locked      : std_logic_vector(0 to 2);
-    signal tmds_c           : slv_1_0(0 to 2);        -- decoded control bits
-    signal tmds_de          : std_logic_vector(0 to 2);
+    signal tmds_data   : slv_9_0(0 to 2);
+    signal tmds_clk    : std_logic_vector(0 to 2);
+    signal tmds_locked : std_logic_vector(0 to 2);
+    signal tmds_c      : slv_1_0(0 to 2);        -- decoded control bits
+    signal tmds_de     : std_logic_vector(0 to 2);
 
 begin
 
@@ -50,11 +50,11 @@ begin
     GEN_TMDS_CDR_DES: for i in 0 to 2 generate
         TMDS_CDR_DES: entity work.model_tmds_cdr_des
             port map (
-                refclk      => dvi_clk,
-                serial      => dvi_d(i),
-                parallel    => tmds_data(i),
-                clk         => tmds_clk(i),
-                locked      => tmds_locked(i)
+                refclk   => dvi_clk,
+                serial   => dvi_d(i),
+                parallel => tmds_data(i),
+                clk      => tmds_clk(i),
+                locked   => tmds_locked(i)
             );
     end generate GEN_TMDS_CDR_DES;
 
