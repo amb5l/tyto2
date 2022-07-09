@@ -18,8 +18,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-library xil_defaultlib;
-
 entity ddr3_wrapper_qmtech_wukong is
     port (
 
@@ -72,7 +70,7 @@ architecture synth of ddr3_wrapper_qmtech_wukong is
 
 begin
 
-    DDR3_IP: entity xil_defaultlib.ddr3
+    DDR3_IP: entity work.ddr3
         port map (
 
             sys_rst             => xrst,

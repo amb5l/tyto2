@@ -18,8 +18,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-library xil_defaultlib;
-
 entity tb_ddr3_test_digilent_nexys_video is
 end entity tb_ddr3_test_digilent_nexys_video;
 
@@ -64,7 +62,7 @@ begin
         wait;
     end process;
 
-    UUT: entity xil_defaultlib.top
+    UUT: entity work.ddr3_test_digilent_nexys_video
         port map (
             clki_100m       => clki_100m,
             led             => led,
@@ -102,7 +100,7 @@ begin
             ddr3_dqs_n      => ddr3_dqs_n
         );
 
-    DDR3: entity xil_defaultlib.ddr3_model
+    DDR3: entity work.ddr3_model
         port map (
             rst_n           => ddr3_rst_n,
             ck              => ddr3_ck_p,

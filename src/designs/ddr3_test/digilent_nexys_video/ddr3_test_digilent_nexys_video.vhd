@@ -22,7 +22,7 @@ library work;
 use work.ddr3_test_pkg.all;
 use work.ddr3_wrapper_digilent_nexys_video_pkg.all;
 
-entity top is
+entity ddr3_test_digilent_nexys_video is
     port (
 
         -- clocks
@@ -173,9 +173,9 @@ entity top is
         ddr3_dqs_n      : inout std_logic_vector(1 downto 0)
 
     );
-end entity top;
+end entity ddr3_test_digilent_nexys_video;
 
-architecture synth of top is
+architecture synth of ddr3_test_digilent_nexys_video is
 
     signal rst_100m     : std_logic;
     signal clk_100m     : std_logic;

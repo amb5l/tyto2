@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- ddr3_test_nexys_video.vhd                                                  --
+-- ddr3_test_qmtech_wukong.vhd                                                --
 -- QMTECH Wukong board wrapper for the ddr3_test design.                      --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2021 Adam Barnes <ambarnes@gmail.com>                        --
@@ -18,9 +18,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-library xil_defaultlib;
-
-entity top is
+entity ddr3_test_qmtech_wukong is
     port (
 
         -- clocks
@@ -91,9 +89,9 @@ entity top is
 --      mgt_rx_n        : out   std_logic_vector(3 downto 0);
 
     );
-end entity top;
+end entity ddr3_test_qmtech_wukong;
 
-architecture synth of top is
+architecture synth of ddr3_test_qmtech_wukong is
 
     signal rst_100m     : std_logic;
     signal clk_100m     : std_logic;
@@ -118,7 +116,7 @@ begin
 
     ctrl_size <= "11100" when key_n(1) = '1' else "01000";
 
-    TEST: entity xil_defaultlib.ddr3_test
+    TEST: entity work.ddr3_test
         port map (
             clk_100m    => clk_100m,
             rst_100m    => rst_100m,
@@ -141,7 +139,7 @@ begin
             ui_rstb     => ui_rstb
         );
 
-    MC: entity xil_defaultlib.ddr3_wrapper_qmtech_wukong
+    MC: entity work.ddr3_wrapper_qmtech_wukong
         port map (
             xrst        => not key_n(0),
             xclk        => clki_50m,

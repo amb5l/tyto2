@@ -18,8 +18,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-library xil_defaultlib;
-
 entity tb_ddr3_test_qmtech_wukong is
 end entity tb_ddr3_test_qmtech_wukong;
 
@@ -61,7 +59,7 @@ begin
         wait;
     end process;
 
-    UUT: entity xil_defaultlib.top
+    UUT: entity work.ddr3_test_qmtech_wukong
         port map (
             clki_50m        => clki_50m,
             key_n           => key_n,
@@ -87,7 +85,7 @@ begin
             j10             => open
         );
 
-    DDR3: entity xil_defaultlib.ddr3_model
+    DDR3: entity work.ddr3_model
         port map (
             rst_n           => ddr3_rst_n,
             ck              => ddr3_ck_p,
