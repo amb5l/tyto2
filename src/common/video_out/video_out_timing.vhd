@@ -57,8 +57,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library xpm;
-use xpm.vcomponents.all;
+library work;
+use work.sync_reg_pkg.all;
 
 entity video_out_timing is
     port (
@@ -142,37 +142,33 @@ architecture synth of video_out_timing is
 
 begin
 
-    SYNC : xpm_cdc_array_single
+    SYNC : component sync_reg
         generic map (
-            DEST_SYNC_FF    => 2,
-            INIT_SYNC_FF    => 1,
-            SIM_ASSERT_CHK  => 1,
-            SRC_INPUT_REG   => 0,
-            WIDTH           => 71
+            width           => 71,
+            depth           => 2
         )
         port map (
-            src_clk                => '0',
-            src_in(70)             => pix_rep,
-            src_in(69)             => interlace,
-            src_in(68 downto 58)   => v_tot,
-            src_in(57 downto 47)   => v_act,
-            src_in(46 downto 44)   => v_sync,
-            src_in(43 downto 38)   => v_bp,
-            src_in(37 downto 26)   => h_tot,
-            src_in(25 downto 15)   => h_act,
-            src_in(14 downto 8)    => h_sync,
-            src_in(7 downto 0)     => h_bp,
-            dest_clk               => clk,
-            dest_out(70)           => pix_rep_s,
-            dest_out(69)           => interlace_s,
-            dest_out(68 downto 58) => v_tot_s,
-            dest_out(57 downto 47) => v_act_s,
-            dest_out(46 downto 44) => v_sync_s,
-            dest_out(43 downto 38) => v_bp_s,
-            dest_out(37 downto 26) => h_tot_s,
-            dest_out(25 downto 15) => h_act_s,
-            dest_out(14 downto 8)  => h_sync_s,
-            dest_out(7 downto 0)   => h_bp_s
+            clk             => clk,
+            d(70)           => pix_rep,
+            d(69)           => interlace,
+            d(68 downto 58) => v_tot,
+            d(57 downto 47) => v_act,
+            d(46 downto 44) => v_sync,
+            d(43 downto 38) => v_bp,
+            d(37 downto 26) => h_tot,
+            d(25 downto 15) => h_act,
+            d(14 downto 8)  => h_sync,
+            d(7 downto 0)   => h_bp,
+            q(70)           => pix_rep_s,
+            q(69)           => interlace_s,
+            q(68 downto 58) => v_tot_s,
+            q(57 downto 47) => v_act_s,
+            q(46 downto 44) => v_sync_s,
+            q(43 downto 38) => v_bp_s,
+            q(37 downto 26) => h_tot_s,
+            q(25 downto 15) => h_act_s,
+            q(14 downto 8)  => h_sync_s,
+            q(7 downto 0)   => h_bp_s
         );
 
     pos_h_act       <= resize(unsigned(h_sync_s),h_tot_s'length) + resize(unsigned(h_bp_s),h_tot_s'length);

@@ -244,35 +244,38 @@ begin
     -- main design
 
     MAIN: component mb_fb
+        generic map (
+            fref       => 100.0
+        )
         port map (
 
-            xclk            => clki_100m,
-            xrst            => not btn_rst_n,
+            ref_rst    => not btn_rst_n,
+            ref_clk    => clki_100m,
 
-            sclk            => clk,
-            srst            => rst,
+            sys_rst    => rst,
+            sys_clk    => clk,
 
-            uart_txd        => uart_rx_out,
-            uart_rxd        => uart_tx_in,
+            uart_txd   => uart_rx_out,
+            uart_rxd   => uart_tx_in,
 
-            mig_cc          => mig_cc,
-            mig_avalid      => mig_avalid,
-            mig_r_w         => mig_r_w,
-            mig_addr        => mig_addr,
-            mig_aready      => mig_aready,
-            mig_wvalid      => mig_wvalid,
-            mig_wdata       => mig_wdata,
-            mig_wbe         => mig_wbe,
-            mig_wready      => mig_wready,
-            mig_rdata       => mig_rdata,
-            mig_rvalid      => mig_rvalid,
+            mig_cc     => mig_cc,
+            mig_avalid => mig_avalid,
+            mig_r_w    => mig_r_w,
+            mig_addr   => mig_addr,
+            mig_aready => mig_aready,
+            mig_wvalid => mig_wvalid,
+            mig_wdata  => mig_wdata,
+            mig_wbe    => mig_wbe,
+            mig_wready => mig_wready,
+            mig_rdata  => mig_rdata,
+            mig_rvalid => mig_rvalid,
 
-            dvi_clk_p       => hdmi_tx_clk_p,
-            dvi_clk_n       => hdmi_tx_clk_n,
-            dvi_d_p         => hdmi_tx_d_p,
-            dvi_d_n         => hdmi_tx_d_n,
+            dvi_clk_p  => hdmi_tx_clk_p,
+            dvi_clk_n  => hdmi_tx_clk_n,
+            dvi_d_p    => hdmi_tx_d_p,
+            dvi_d_n    => hdmi_tx_d_n,
 
-            debug           => led(1 downto 0)
+            debug      => led(1 downto 0)
         );
 
     -- board specific DDR3 controller IP core
@@ -328,19 +331,19 @@ begin
 
     -- unused I/Os
 
-    oled_res_n      <= '0';
-    oled_d_c        <= '0';
-    oled_sclk       <= '0';
-    oled_sdin       <= '0';
-    ac_mclk         <= '0';
-    ac_dac_sdata    <= '0';
-    eth_rst_n       <= '0';
-    ftdi_rd_n       <= '1';
-    ftdi_wr_n       <= '1';
-    ftdi_siwu_n     <= '1';
-    ftdi_oe_n       <= '1';
-    ps2_clk         <= 'Z';
-    ps2_data        <= 'Z';
-    qspi_cs_n       <= '1';
+    oled_res_n   <= '0';
+    oled_d_c     <= '0';
+    oled_sclk    <= '0';
+    oled_sdin    <= '0';
+    ac_mclk      <= '0';
+    ac_dac_sdata <= '0';
+    eth_rst_n    <= '0';
+    ftdi_rd_n    <= '1';
+    ftdi_wr_n    <= '1';
+    ftdi_siwu_n  <= '1';
+    ftdi_oe_n    <= '1';
+    ps2_clk      <= 'Z';
+    ps2_data     <= 'Z';
+    qspi_cs_n    <= '1';
 
 end architecture synth;

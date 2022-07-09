@@ -21,25 +21,25 @@ use ieee.std_logic_1164.all;
 package crtc_pkg is
 
     component crtc is
+        generic (
+            fref      : real                               -- reference clock frequency (MHz) (typically 100.0)
+        );
         port (
 
-            xclk        : in    std_logic;                      -- reference clock
-            xrst        : in    std_logic;                      -- external reset (asynchronous)
+            rst       : in  std_logic;                     -- reference reset (asynchronous)
+            clk       : in  std_logic;                     -- reference clock
 
-            sclk        : in    std_logic;                      -- system clock (typically 100MHz)
-            srst        : in    std_logic;                      -- system clock synchronous reset
+            pclk      : out std_logic;                     -- pixel clock
+            pclk_x5   : out std_logic;                     -- serialiser clock
+            prst      : out std_logic;                     -- pixel clock synchronous reset
+                                                           
+            mode      : in  std_logic_vector(3 downto 0);  -- video mode select
 
-            pclk        : out   std_logic;                      -- pixel clock
-            pclk_x5     : out   std_logic;                      -- serialiser clock
-            prst        : out   std_logic;                      -- pixel clock synchronous reset
-
-            mode        : in    std_logic_vector(3 downto 0);   -- video mode select
-
-            fb_llen     : out    std_logic_vector(10 downto 6);
-            fb_vs       : out    std_logic;
-            fb_hs       : out    std_logic;
-            fb_vblank   : out    std_logic;
-            fb_hblank   : out    std_logic
+            fb_llen   : out std_logic_vector(10 downto 6);
+            fb_vs     : out std_logic;
+            fb_hs     : out std_logic;
+            fb_vblank : out std_logic;
+            fb_hblank : out std_logic
 
         );
     end component crtc;
@@ -60,50 +60,50 @@ use work.dvi_tx_encoder_pkg.all;
 use work.serialiser_10to1_selectio_pkg.all;
 
 entity crtc is
+    generic (
+        fref      : real                               -- reference clock frequency (MHz) (typically 100.0)
+    );
     port (
 
-        xclk        : in    std_logic;                      -- reference clock
-        xrst        : in    std_logic;                      -- external reset (asynchronous)
+        rst       : in  std_logic;                     -- reference reset (asynchronous)
+        clk       : in  std_logic;                     -- reference clock
 
-        sclk        : in    std_logic;                      -- system clock (100MHz)
-        srst        : in    std_logic;                      -- system clock synchronous reset
+        pclk      : out std_logic;                     -- pixel clock
+        pclk_x5   : out std_logic;                     -- serialiser clock
+        prst      : out std_logic;                     -- pixel clock synchronous reset
+                                                       
+        mode      : in  std_logic_vector(3 downto 0);  -- video mode select
 
-        pclk        : out   std_logic;                      -- pixel clock
-        pclk_x5     : out   std_logic;                      -- serialiser clock
-        prst        : out   std_logic;                      -- pixel clock synchronous reset
-
-        mode        : in    std_logic_vector(3 downto 0);   -- video mode select
-
-        fb_llen     : out    std_logic_vector(10 downto 6);
-        fb_vs       : out    std_logic;
-        fb_hs       : out    std_logic;
-        fb_vblank   : out    std_logic;
-        fb_hblank   : out    std_logic
+        fb_llen   : out std_logic_vector(10 downto 6);
+        fb_vs     : out std_logic;
+        fb_hs     : out std_logic;
+        fb_vblank : out std_logic;
+        fb_hblank : out std_logic
 
     );
 end entity crtc;
 
 architecture synth of crtc is
 
-    signal mode_clk_sel     : std_logic_vector(1 downto 0);     -- pixel frequency select
-    signal mode_dmt         : std_logic;                        -- 1 = DMT, 0 = CEA
-    signal mode_id          : std_logic_vector(7 downto 0);     -- DMT ID or CEA/CTA VIC
-    signal mode_pix_rep     : std_logic;                        -- 1 = pixel doubling/repetition
-    signal mode_aspect      : std_logic_vector(1 downto 0);     -- 0x = normal, 10 = force 16:9, 11 = force 4:3
-    signal mode_interlace   : std_logic;                        -- interlaced/progressive scan
-    signal mode_v_tot       : std_logic_vector(10 downto 0);    -- vertical total lines (must be odd if interlaced)
-    signal mode_v_act       : std_logic_vector(10 downto 0);    -- vertical total lines (must be odd if interlaced)
-    signal mode_v_sync      : std_logic_vector(2 downto 0);     -- vertical sync width
-    signal mode_v_bp        : std_logic_vector(5 downto 0);     -- vertical back porch
-    signal mode_h_tot       : std_logic_vector(11 downto 0);    -- horizontal total
-    signal mode_h_act       : std_logic_vector(10 downto 0);    -- vertical total lines (must be odd if interlaced)
-    signal mode_h_sync      : std_logic_vector(6 downto 0);     -- horizontal sync width
-    signal mode_h_bp        : std_logic_vector(7 downto 0);     -- horizontal back porch
-    signal mode_vs_pol      : std_logic;                        -- vertical sync polarity (1 = high)
-    signal mode_hs_pol      : std_logic;                        -- horizontal sync polarity (1 = high)
+    signal mode_clk_sel   : std_logic_vector(1 downto 0);  -- pixel frequency select
+    signal mode_dmt       : std_logic;                     -- 1 = DMT, 0 = CEA
+    signal mode_id        : std_logic_vector(7 downto 0);  -- DMT ID or CEA/CTA VIC
+    signal mode_pix_rep   : std_logic;                     -- 1 = pixel doubling/repetition
+    signal mode_aspect    : std_logic_vector(1 downto 0);  -- 0x = normal, 10 = force 16:9, 11 = force 4:3
+    signal mode_interlace : std_logic;                     -- interlaced/progressive scan
+    signal mode_v_tot     : std_logic_vector(10 downto 0); -- vertical total lines (must be odd if interlaced)
+    signal mode_v_act     : std_logic_vector(10 downto 0); -- vertical total lines (must be odd if interlaced)
+    signal mode_v_sync    : std_logic_vector(2 downto 0);  -- vertical sync width
+    signal mode_v_bp      : std_logic_vector(5 downto 0);  -- vertical back porch
+    signal mode_h_tot     : std_logic_vector(11 downto 0); -- horizontal total
+    signal mode_h_act     : std_logic_vector(10 downto 0); -- vertical total lines (must be odd if interlaced)
+    signal mode_h_sync    : std_logic_vector(6 downto 0);  -- horizontal sync width
+    signal mode_h_bp      : std_logic_vector(7 downto 0);  -- horizontal back porch
+    signal mode_vs_pol    : std_logic;                     -- vertical sync polarity (1 = high)
+    signal mode_hs_pol    : std_logic;                     -- horizontal sync polarity (1 = high)
 
-    signal fb_ax            : std_logic_vector(11 downto 0);    -- active area X (signed)
-    signal fb_ay            : std_logic_vector(11 downto 0);    -- active area Y (signed)
+    signal fb_ax          : std_logic_vector(11 downto 0); -- active area X (signed)
+    signal fb_ay          : std_logic_vector(11 downto 0); -- active area Y (signed)
 
 begin
 
@@ -135,11 +135,12 @@ begin
     -- reconfigurable MMCM: 100MHz ref => 25.2MHz, 27MHz, 74.25MHz or 148.5MHz
 
     CLOCK: component video_out_clock
+        generic map (
+            fref    => fref
+        )
         port map (
-            rsti    => xrst,
-            clki    => xclk,
-            sys_rst => srst,
-            sys_clk => sclk,
+            rsti    => rst,
+            clki    => clk,
             sel     => mode_clk_sel,
             rsto    => prst,
             clko    => pclk,

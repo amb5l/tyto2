@@ -30,6 +30,10 @@ Click on the design *Name* link to see further details.
 |Digilent Nexys Video, QMTech Wukong
 |A simple DDR3 SDRAM tester based on https://github.com/jorisvr/vhdl_prng[Joris van Rantwijk's Pseudo Random Number Generator]. Hacks the generated HDL to generate the 200MHz IODELAYCTRL reference clock in the DDR3 IP core MMCM.
 
+|<<./doc/designs/hdmi_tpg/hdmi_tpg.adoc#,hdmi_tpg>>
+|Digilent Nexys Video, QMTech Wukong
+|HDMI test pattern generator. Displays a test pattern on an HDMI monitor at various SD and HD TV resolutions. Includes test audio output.
+
 |<<./doc/designs/mb_fb/mb_fb.adoc#,mb_fb>>
 |Digilent Nexys Video, QMTech Wukong
 |A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on link:https://github.com/tuupola/hagl[Mike Tuupola's hagl graphics library]. 

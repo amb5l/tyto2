@@ -37,6 +37,7 @@ architecture model of model_tmds_cdr_des is
     signal  sample      : std_logic := '0'; -- DDR sample clock
     signal  count       : integer range 0 to 9 := 0;
     signal  shift_reg   : std_logic_vector(9 downto 0);
+    signal  locked_i    : std_logic;
 
 begin
 
@@ -61,7 +62,7 @@ begin
     sample <= refclk xor refclk_d(1) xor refclk_d(2) xor refclk_d(3) xor refclk_d(4) after tr/20;
 
     -- serial to parallel
-    process(locked,sample)
+    process(locked_i,sample)
     begin
         if sample'event then
             shift_reg <= serial & shift_reg(9 downto 1);
@@ -74,15 +75,15 @@ begin
             or (shift_reg = "0101010100")
             or (shift_reg = "1010101011")
             then -- control symbol
-                if locked = '0' then
-                    locked <= '1';
+                if locked_i = '0' then
+                    locked_i <= '1';
                     count <= 0;
                 elsif count /= 9 then
-                    locked <= '0';
+                    locked_i <= '0';
                     count <= 0;
                 end if;
             end if;
-            if locked = '1' then
+            if locked_i = '1' then
                 if count = 9 then
                     parallel <= shift_reg;
                     clk <= '0';
@@ -95,5 +96,6 @@ begin
             end if;
         end if;
     end process;
+    locked <= locked_i;
 
 end architecture model;

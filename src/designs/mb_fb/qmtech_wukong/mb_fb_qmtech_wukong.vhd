@@ -97,65 +97,65 @@ end entity mb_fb_qmtech_wukong;
 
 architecture synth of mb_fb_qmtech_wukong is
 
-    signal clk          : std_logic;
-    signal rst          : std_logic;
+    signal clk        : std_logic;
+    signal rst        : std_logic;
 
-    signal led          : std_logic_vector(1 downto 0);
+    signal led        : std_logic_vector(1 downto 0);
 
-    signal mig_cc       : std_logic;
-    signal mig_avalid   : std_logic;
-    signal mig_r_w      : std_logic;
-    signal mig_addr     : std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-    signal mig_aready   : std_logic;
-    signal mig_wvalid   : std_logic;
-    signal mig_wdata    : std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-    signal mig_wbe      : std_logic_vector(2**data_width_log2-1 downto 0);
-    signal mig_wready   : std_logic;
-    signal mig_rdata    : std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-    signal mig_rvalid   : std_logic;
+    signal mig_cc     : std_logic;
+    signal mig_avalid : std_logic;
+    signal mig_r_w    : std_logic;
+    signal mig_addr   : std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+    signal mig_aready : std_logic;
+    signal mig_wvalid : std_logic;
+    signal mig_wdata  : std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+    signal mig_wbe    : std_logic_vector(2**data_width_log2-1 downto 0);
+    signal mig_wready : std_logic;
+    signal mig_rdata  : std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+    signal mig_rvalid : std_logic;
 
     -- MIG (DDR3 controller IP core)
     component ddr3 is
         port (
-            sys_rst               : in    std_logic;
-            sys_clk_i             : in    std_logic;
-            clk_ref_i             : in    std_logic;
-            ui_clk_sync_rst       : out   std_logic;
-            ui_clk                : out   std_logic;
-            device_temp           : out   std_logic_vector(11 downto 0);
-            init_calib_complete   : out   std_logic;
-            app_addr              : in    std_logic_vector(27 downto 0);
-            app_cmd               : in    std_logic_vector(2 downto 0);
-            app_en                : in    std_logic;
-            app_rdy               : out   std_logic;
-            app_wdf_data          : in    std_logic_vector(127 downto 0);
-            app_wdf_end           : in    std_logic;
-            app_wdf_mask          : in    std_logic_vector(15 downto 0);
-            app_wdf_wren          : in    std_logic;
-            app_rd_data           : out   std_logic_vector(127 downto 0);
-            app_rd_data_end       : out   std_logic;
-            app_rd_data_valid     : out   std_logic;
-            app_wdf_rdy           : out   std_logic;
-            app_sr_req            : in    std_logic;
-            app_sr_active         : out   std_logic;
-            app_ref_req           : in    std_logic;
-            app_ref_ack           : out   std_logic;
-            app_zq_req            : in    std_logic;
-            app_zq_ack            : out   std_logic;
-            ddr3_reset_n          : out   std_logic;
-            ddr3_ck_p             : out   std_logic_vector(0 downto 0);
-            ddr3_ck_n             : out   std_logic_vector(0 downto 0);
-            ddr3_cke              : out   std_logic_vector(0 downto 0);
-            ddr3_ras_n            : out   std_logic;
-            ddr3_cas_n            : out   std_logic;
-            ddr3_we_n             : out   std_logic;
-            ddr3_odt              : out   std_logic_vector(0 downto 0);
-            ddr3_addr             : out   std_logic_vector(13 downto 0);
-            ddr3_ba               : out   std_logic_vector(2 downto 0);
-            ddr3_dm               : out   std_logic_vector(1 downto 0);
-            ddr3_dq               : inout std_logic_vector(15 downto 0);
-            ddr3_dqs_p            : inout std_logic_vector(1 downto 0);
-            ddr3_dqs_n            : inout std_logic_vector(1 downto 0)
+            sys_rst             : in    std_logic;
+            sys_clk_i           : in    std_logic;
+            clk_ref_i           : in    std_logic;
+            ui_clk_sync_rst     : out   std_logic;
+            ui_clk              : out   std_logic;
+            device_temp         : out   std_logic_vector(11 downto 0);
+            init_calib_complete : out   std_logic;
+            app_addr            : in    std_logic_vector(27 downto 0);
+            app_cmd             : in    std_logic_vector(2 downto 0);
+            app_en              : in    std_logic;
+            app_rdy             : out   std_logic;
+            app_wdf_data        : in    std_logic_vector(127 downto 0);
+            app_wdf_end         : in    std_logic;
+            app_wdf_mask        : in    std_logic_vector(15 downto 0);
+            app_wdf_wren        : in    std_logic;
+            app_rd_data         : out   std_logic_vector(127 downto 0);
+            app_rd_data_end     : out   std_logic;
+            app_rd_data_valid   : out   std_logic;
+            app_wdf_rdy         : out   std_logic;
+            app_sr_req          : in    std_logic;
+            app_sr_active       : out   std_logic;
+            app_ref_req         : in    std_logic;
+            app_ref_ack         : out   std_logic;
+            app_zq_req          : in    std_logic;
+            app_zq_ack          : out   std_logic;
+            ddr3_reset_n        : out   std_logic;
+            ddr3_ck_p           : out   std_logic_vector(0 downto 0);
+            ddr3_ck_n           : out   std_logic_vector(0 downto 0);
+            ddr3_cke            : out   std_logic_vector(0 downto 0);
+            ddr3_ras_n          : out   std_logic;
+            ddr3_cas_n          : out   std_logic;
+            ddr3_we_n           : out   std_logic;
+            ddr3_odt            : out   std_logic_vector(0 downto 0);
+            ddr3_addr           : out   std_logic_vector(13 downto 0);
+            ddr3_ba             : out   std_logic_vector(2 downto 0);
+            ddr3_dm             : out   std_logic_vector(1 downto 0);
+            ddr3_dq             : inout std_logic_vector(15 downto 0);
+            ddr3_dqs_p          : inout std_logic_vector(1 downto 0);
+            ddr3_dqs_n          : inout std_logic_vector(1 downto 0)
         );
     end component ddr3;
 
@@ -166,35 +166,38 @@ begin
     -- main design
 
     MAIN: component mb_fb
+        generic map (
+            fref       => 100.0
+        )
         port map (
 
-            xclk            => clk,
-            xrst            => rst,
+            ref_rst    => rst,
+            ref_clk    => clk,
 
-            sclk            => clk,
-            srst            => rst,
+            sys_rst    => rst,
+            sys_clk    => clk,
 
-            uart_txd        => ser_tx,
-            uart_rxd        => ser_rx,
+            uart_txd   => ser_tx,
+            uart_rxd   => ser_rx,
 
-            mig_cc          => mig_cc,
-            mig_avalid      => mig_avalid,
-            mig_r_w         => mig_r_w,
-            mig_addr        => mig_addr,
-            mig_aready      => mig_aready,
-            mig_wvalid      => mig_wvalid,
-            mig_wdata       => mig_wdata,
-            mig_wbe         => mig_wbe,
-            mig_wready      => mig_wready,
-            mig_rdata       => mig_rdata,
-            mig_rvalid      => mig_rvalid,
+            mig_cc     => mig_cc,
+            mig_avalid => mig_avalid,
+            mig_r_w    => mig_r_w,
+            mig_addr   => mig_addr,
+            mig_aready => mig_aready,
+            mig_wvalid => mig_wvalid,
+            mig_wdata  => mig_wdata,
+            mig_wbe    => mig_wbe,
+            mig_wready => mig_wready,
+            mig_rdata  => mig_rdata,
+            mig_rvalid => mig_rvalid,
 
-            dvi_clk_p       => hdmi_clk_p,
-            dvi_clk_n       => hdmi_clk_n,
-            dvi_d_p         => hdmi_d_p,
-            dvi_d_n         => hdmi_d_n,
+            dvi_clk_p  => hdmi_clk_p,
+            dvi_clk_n  => hdmi_clk_n,
+            dvi_d_p    => hdmi_d_p,
+            dvi_d_n    => hdmi_d_n,
 
-            debug           => led(1 downto 0)
+            debug      => led(1 downto 0)
         );
 
     -- board specific DDR3 controller IP core
@@ -250,8 +253,8 @@ begin
 
     -- unused I/Os
 
-    hdmi_scl    <= 'Z';
-    hdmi_sda    <= 'Z';
-    eth_rst_n   <= '0';
+    hdmi_scl  <= 'Z';
+    hdmi_sda  <= 'Z';
+    eth_rst_n <= '0';
 
 end architecture synth;

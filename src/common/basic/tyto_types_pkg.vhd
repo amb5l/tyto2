@@ -24,9 +24,12 @@ package tyto_types_pkg is
     type real_array is array(natural range <>) of real;
     type slv_31_0 is array(natural range <>) of std_logic_vector(31 downto 0);
     type slv_1_0 is array(natural range <>) of std_logic_vector(1 downto 0);
+    type slv_3_0 is array(natural range <>) of std_logic_vector(3 downto 0);
     type slv_7_0 is array(natural range <>) of std_logic_vector(7 downto 0);
     type slv_7_2 is array(natural range <>) of std_logic_vector(7 downto 2);
     type slv_7_3 is array(natural range <>) of std_logic_vector(7 downto 3);    
     type slv_9_0 is array(natural range <>) of std_logic_vector(9 downto 0);
+    type slv_7_0_2d is array(natural range <>,natural range <>) of std_logic_vector(7 downto 0);
+    type slv_3_0_2d is array(natural range <>,natural range <>) of std_logic_vector(3 downto 0);
 
 end package tyto_types_pkg;
