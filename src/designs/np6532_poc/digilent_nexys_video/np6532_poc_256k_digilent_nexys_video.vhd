@@ -181,7 +181,7 @@ end entity np6532_poc_256k_digilent_nexys_video;
 architecture synth of np6532_poc_256k_digilent_nexys_video is
 
     signal clk_cpu    : std_logic;
-    signal clk_mem    : std_logic;   
+    signal clk_mem    : std_logic;
     signal rst        : std_logic;
     signal hold       : std_logic;
     signal irq        : std_logic;
@@ -203,14 +203,14 @@ begin
             num_outputs => 2,
             odiv0       => 10.0,
             odiv        => (30,0,0,0,0,0),
-            duty_cycle  => (0.5,0.28,0.5,0.5,0.5,0.5,0.5)
+            duty_cycle  => (0.5,0.3,0.5,0.5,0.5,0.5,0.5)
         )
         port map (
-            rst_ref => not btn_rst_n,
-            clk_ref => clki_100m,
-            rst     => rst,
-            clk(0)  => clk_mem, -- 96MHz
-            clk(1)  => clk_cpu  -- 32MHz
+            rsti        => not btn_rst_n,
+            clki        => clki_100m,
+            rsto        => rst,
+            clko(0)     => clk_mem, -- 96MHz
+            clko(1)     => clk_cpu  -- 32MHz
         );
 
     -- system

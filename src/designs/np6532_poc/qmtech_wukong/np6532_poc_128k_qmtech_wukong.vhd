@@ -128,10 +128,10 @@ begin
             odiv0       => 10.0
         )
         port map (
-            rst_ref     => not key_n(0),
-            clk_ref     => clki_50m,
-            rst         => rst_100m,
-            clk(0)      => clk_100m
+            rsti        => not key_n(0),
+            clki        => clki_50m,
+            rsto        => rst_100m,
+            clko(0)     => clk_100m
         );
 
     CLOCK: component mmcm
@@ -144,11 +144,11 @@ begin
             duty_cycle  => (0.5,0.28,0.5,0.5,0.5,0.5,0.5)
         )
         port map (
-            rst_ref     => rst_100m,
-            clk_ref     => clk_100m,
-            rst     => rst,
-            clk(0)  => clk_mem, -- 96MHz
-            clk(1)  => clk_cpu  -- 32MHz
+            rsti        => rst_100m,
+            clki        => clk_100m,
+            rsto        => rst,
+            clko(0)     => clk_mem, -- 96MHz
+            clko(1)     => clk_cpu  -- 32MHz
         );
 
     -- system

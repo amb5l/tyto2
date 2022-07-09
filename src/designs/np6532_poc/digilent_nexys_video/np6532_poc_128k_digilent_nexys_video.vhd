@@ -206,11 +206,11 @@ begin
             duty_cycle  => (0.5,0.3,0.5,0.5,0.5,0.5,0.5)
         )
         port map (
-            rst_ref => not btn_rst_n,
-            clk_ref => clki_100m,
-            rst     => rst,
-            clk(0)  => clk_mem, -- 96MHz
-            clk(1)  => clk_cpu  -- 32MHz
+            rsti        => not btn_rst_n,
+            clki        => clki_100m,
+            rsto        => rst,
+            clko(0)     => clk_mem, -- 96MHz
+            clko(1)     => clk_cpu  -- 32MHz
         );
 
     -- system

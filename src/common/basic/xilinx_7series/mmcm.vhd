@@ -33,10 +33,10 @@ package mmcm_pkg is
             duty_cycle  : real_array(0 to 6) := (0.5,0.5,0.5,0.5,0.5,0.5,0.5)
         );
         port (
-            rst_ref     : in    std_logic;                           -- external reset in
-            clk_ref     : in    std_logic;                           -- reference clock in
-            rst         : out   std_logic;                           -- reset based on MMCM lock
-            clk         : out   std_logic_vector(0 TO num_outputs-1) -- clock outputs
+            rsti        : in    std_logic;                           -- reference reset in
+            clki        : in    std_logic;                           -- reference clock in
+            rsto        : out   std_logic;                           -- reset based on MMCM lock
+            clko        : out   std_logic_vector(0 TO num_outputs-1) -- clock outputs
         );
     end component mmcm;
 
@@ -63,10 +63,10 @@ entity mmcm is
         duty_cycle  : real_array(0 to 6) := (0.5,0.5,0.5,0.5,0.5,0.5,0.5)
     );
     port (
-        rst_ref     : in    std_logic;                           -- external reset in
-        clk_ref     : in    std_logic;                           -- reference clock in
-        rst         : out   std_logic;                           -- reset based on MMCM lock
-        clk         : out   std_logic_vector(0 TO num_outputs-1) -- clock outputs
+        rsti        : in    std_logic;                           -- reference reset in
+        clki        : in    std_logic;                           -- reference clock in
+        rsto        : out   std_logic;                           -- reset based on MMCM lock
+        clko        : out   std_logic_vector(0 TO num_outputs-1) -- clock outputs
     );
 end entity mmcm;
 
@@ -97,7 +97,7 @@ architecture struct of mmcm is
 
 begin
 
-    rst <= not locked;
+    rsto <= not locked;
 
     MMCM: MMCME2_ADV
     generic map(
@@ -152,9 +152,9 @@ begin
     )
     port map (
         PWRDWN          => '0',
-        RST             => rst_ref,
+        RST             => rsti,
         LOCKED          => locked,
-        CLKIN1          => clk_ref,
+        CLKIN1          => clki,
         CLKIN2          => '0',
         CLKINSEL        => '1',
         CLKINSTOPPED    => open,
@@ -196,7 +196,7 @@ begin
         BUFG_OUT: BUFG
             port map (
                 I   => clku(i),
-                O   => clk(i)
+                O   => clko(i)
             );
     end generate GEN;
 
