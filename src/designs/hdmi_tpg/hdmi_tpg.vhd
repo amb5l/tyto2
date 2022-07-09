@@ -144,7 +144,7 @@ architecture synth of hdmi_tpg is
     signal pcm_n          : std_logic_vector(19 downto 0); -- HDMI Audio Clock Regeneration packet N value
     signal pcm_cts        : std_logic_vector(19 downto 0); -- HDMI Audio Clock Regeneration packet CTS value
 
-    signal tmds           : slv_9_0(0 to 2);               -- parallel TMDS channels
+    signal tmds           : slv_9_0_t(0 to 2);             -- parallel TMDS channels
 
 begin
 

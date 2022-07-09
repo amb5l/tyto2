@@ -24,7 +24,7 @@ use work.tyto_types_pkg.all;
 package np6532_cache_pkg is
 
     component np6532_cache is
-        generic (            
+        generic (
             base     : std_logic_vector                          -- base address (also indicates total RAM size)
         );
         port (
@@ -56,7 +56,7 @@ use work.tyto_types_pkg.all;
 use work.ram_sdp_a_32_pkg.all;
 
 entity np6532_cache is
-    generic (            
+    generic (
         base     : std_logic_vector                           -- base address (also indicates total RAM size)
     );
     port (
@@ -77,16 +77,16 @@ end entity np6532_cache;
 
 architecture synth of np6532_cache is
 
-    signal dma_dw_v   : slv_7_0(7 downto 0);          -- DMA write data as array of bytes
-    signal ls_dw_v    : slv_7_0(3 downto 0);          -- CPU write data as array of bytes
-    signal cache_dr_v : slv_7_0(3 downto 0);          -- cache read data as array of bytes
+    signal dma_dw_v   : slv_7_0_t(7 downto 0);        -- DMA write data as array of bytes
+    signal ls_dw_v    : slv_7_0_t(3 downto 0);        -- CPU write data as array of bytes
+    signal cache_dr_v : slv_7_0_t(3 downto 0);        -- cache read data as array of bytes
     signal ls_bwe     : std_logic_vector(7 downto 0); -- CPU byte write enables (across 8 byte banks here)
     signal ce         : std_logic;                    -- chip select
     signal we         : std_logic_vector(7 downto 0); -- RAM byte bank write enable
-    signal wa         : slv_7_3(7 downto 0);          -- RAM byte bank write address
-    signal dw         : slv_7_0(7 downto 0);          -- RAM byte bank write data
-    signal ra         : slv_7_2(3 downto 0);          -- read address, per byte bank (of 4)
-    signal rd         : slv_7_0(7 downto 0);          -- raw 64 bit read data
+    signal wa         : slv_7_3_t(7 downto 0);        -- RAM byte bank write address
+    signal dw         : slv_7_0_t(7 downto 0);        -- RAM byte bank write data
+    signal ra         : slv_7_2_t(3 downto 0);        -- read address, per byte bank (of 4)
+    signal rd         : slv_7_0_t(7 downto 0);        -- raw 64 bit read data
 
 begin
 
@@ -105,7 +105,7 @@ begin
         GEN_DWORD: for j in 0 to 1 generate
             -- Xilinx synthesis attributes
             attribute keep_hierarchy : string;
-            attribute keep_hierarchy of RAM : label is "yes";        
+            attribute keep_hierarchy of RAM : label is "yes";
         begin
             dma_dw_v(i+(4*j)) <= dma_dw(7+(8*(i+(4*j))) downto 8*(i+(4*j)));
             wa(i+(4*j)) <= dma_a(7 downto 3) when dma_en = '1' else

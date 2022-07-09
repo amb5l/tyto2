@@ -29,8 +29,8 @@ package mmcm_pkg is
             div         : integer;
             num_outputs : integer; -- 1..7
             odiv0       : real;
-            odiv        : int_array(1 to 6) := (0,0,0,0,0,0);
-            duty_cycle  : real_array(0 to 6) := (0.5,0.5,0.5,0.5,0.5,0.5,0.5)
+            odiv        : int_array_t(1 to 6) := (0,0,0,0,0,0);
+            duty_cycle  : real_array_t(0 to 6) := (0.5,0.5,0.5,0.5,0.5,0.5,0.5)
         );
         port (
             rsti        : in  std_logic;                           -- reference reset in
@@ -59,8 +59,8 @@ entity mmcm is
         div         : integer;
         num_outputs : integer; -- 1..7
         odiv0       : real;
-        odiv        : int_array(1 to 6) := (0,0,0,0,0,0);
-        duty_cycle  : real_array(0 to 6) := (0.5,0.5,0.5,0.5,0.5,0.5,0.5)
+        odiv        : int_array_t(1 to 6) := (0,0,0,0,0,0);
+        duty_cycle  : real_array_t(0 to 6) := (0.5,0.5,0.5,0.5,0.5,0.5,0.5)
     );
     port (
         rsti        : in  std_logic;                           -- reference reset in

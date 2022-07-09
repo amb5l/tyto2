@@ -78,7 +78,7 @@ end entity dvi_tx;
 
 architecture synth of dvi_tx is
 
-    signal tmds : slv_9_0(0 to 2);
+    signal tmds : slv_9_0_t(0 to 2);
 
 begin
 

@@ -28,7 +28,7 @@ package ram_tdp_sr_pkg is
         generic (
             width      : integer;
             depth_log2 : integer;
-            init       : slv_7_0
+            init       : slv_7_0_t
         );
         port (
             clk     : in  std_logic;
@@ -62,7 +62,7 @@ entity ram_tdp_sr is
     generic (
         width      : integer;
         depth_log2 : integer;
-        init       : slv_7_0
+        init       : slv_7_0_t
     );
     port (
         clk     : in  std_logic;
@@ -83,7 +83,7 @@ end entity ram_tdp_sr;
 
 architecture inferred of ram_tdp_sr is
 
-    shared variable ram : slv_7_0(0 to (2**depth_log2)-1) := init;
+    shared variable ram : slv_7_0_t(0 to (2**depth_log2)-1) := init;
     signal clr_a    : std_logic;
     signal clr_b    : std_logic;
     signal dout_a_i : std_logic_vector(7 downto 0);

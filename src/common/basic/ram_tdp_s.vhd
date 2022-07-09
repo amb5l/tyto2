@@ -28,7 +28,7 @@ package ram_tdp_s_pkg is
         generic (
             width      : integer;
             depth_log2 : integer;
-            init       : slv_7_0
+            init       : slv_7_0_t
         );
         port (
             clk        : in  std_logic;
@@ -48,7 +48,7 @@ package ram_tdp_s_pkg is
 end package ram_tdp_s_pkg;
 
 --------------------------------------------------------------------------------
-  
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -60,7 +60,7 @@ entity ram_tdp_s is
     generic (
         width      : integer;
         depth_log2 : integer;
-        init       : slv_7_0
+        init       : slv_7_0_t
     );
     port (
         clk        : in  std_logic;
@@ -79,7 +79,7 @@ end entity ram_tdp_s;
 
 architecture inferred of ram_tdp_s is
 
-	shared variable ram : slv_7_0(0 to (2**depth_log2)-1) := init;
+	shared variable ram : slv_7_0_t(0 to (2**depth_log2)-1) := init;
 
 begin
 

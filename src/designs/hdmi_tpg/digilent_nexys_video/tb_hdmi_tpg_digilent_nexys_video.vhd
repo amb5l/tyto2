@@ -30,34 +30,34 @@ end entity tb_hdmi_tpg_digilent_nexys_video;
 
 architecture sim of tb_hdmi_tpg_digilent_nexys_video is
 
-    signal clki_100m        : std_logic;
-    signal btn_rst_n        : std_logic;
-    signal btn_c            : std_logic;
-    signal sw               : std_logic_vector(7 downto 0);
-    signal led              : std_logic_vector(7 downto 0);
+    signal clki_100m     : std_logic;
+    signal btn_rst_n     : std_logic;
+    signal btn_c         : std_logic;
+    signal sw            : std_logic_vector(7 downto 0);
+    signal led           : std_logic_vector(7 downto 0);
 
-    signal hdmi_tx_clk_p    : std_logic;
-    signal hdmi_tx_clk_n    : std_logic;
-    signal hdmi_tx_d_p      : std_logic_vector(0 to 2);
-    signal hdmi_tx_d_n      : std_logic_vector(0 to 2);
+    signal hdmi_tx_clk_p : std_logic;
+    signal hdmi_tx_clk_n : std_logic;
+    signal hdmi_tx_d_p   : std_logic_vector(0 to 2);
+    signal hdmi_tx_d_n   : std_logic_vector(0 to 2);
 
-    signal data_pstb        : std_logic;
-    signal data_hb          : slv_7_0(0 to 3);
-    signal data_hb_ok       : std_logic;
-    signal data_sb          : slv_7_0_2d(0 to 3,0 to 7);
-    signal data_sb_ok       : std_logic_vector(0 to 3);
+    signal data_pstb     : std_logic;
+    signal data_hb       : slv_7_0_t(0 to 3);
+    signal data_hb_ok    : std_logic;
+    signal data_sb       : slv_7_0_2d_t(0 to 3,0 to 7);
+    signal data_sb_ok    : std_logic_vector(0 to 3);
 
-    signal vga_rst          : std_logic;
-    signal vga_clk          : std_logic;
-    signal vga_vs           : std_logic;
-    signal vga_hs           : std_logic;
-    signal vga_de           : std_logic;
-    signal vga_r            : std_logic_vector(7 downto 0);
-    signal vga_g            : std_logic_vector(7 downto 0);
-    signal vga_b            : std_logic_vector(7 downto 0);
+    signal vga_rst       : std_logic;
+    signal vga_clk       : std_logic;
+    signal vga_vs        : std_logic;
+    signal vga_hs        : std_logic;
+    signal vga_de        : std_logic;
+    signal vga_r         : std_logic_vector(7 downto 0);
+    signal vga_g         : std_logic_vector(7 downto 0);
+    signal vga_b         : std_logic_vector(7 downto 0);
 
-    signal cap_rst          : std_logic;
-    signal cap_stb          : std_logic;
+    signal cap_rst       : std_logic;
+    signal cap_stb       : std_logic;
 
 begin
 

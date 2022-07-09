@@ -56,7 +56,7 @@ package vga_to_hdmi_pkg is
             pcm_n     : in  std_logic_vector(19 downto 0); -- HDMI ACR N value
             pcm_cts   : in  std_logic_vector(19 downto 0); -- HDMI ACR CTS value
 
-            tmds      : out slv_9_0(0 to 2)                -- parallel TMDS symbol stream x 3 channels
+            tmds      : out slv_9_0_t(0 to 2)              -- parallel TMDS symbol stream x 3 channels
 
         );
     end component vga_to_hdmi;
@@ -110,7 +110,7 @@ entity vga_to_hdmi is
         pcm_n     : in  std_logic_vector(19 downto 0); -- HDMI ACR N value
         pcm_cts   : in  std_logic_vector(19 downto 0); -- HDMI ACR CTS value
 
-        tmds      : out slv_9_0(0 to 2)                -- parallel TMDS symbol stream x 3 channels
+        tmds      : out slv_9_0_t(0 to 2)              -- parallel TMDS symbol stream x 3 channels
 
     );
 end entity vga_to_hdmi;
@@ -191,7 +191,7 @@ architecture synth of vga_to_hdmi is
     signal buf_vs           : std_logic;                     -- buffered VGA vertical sync
     signal buf_hs           : std_logic;                     -- buffered VGA horizontal sync
     signal buf_de           : std_logic;                     -- buffered VGA data (pixel) enable
-    signal buf_p            : slv_7_0(0 to 2);               -- buffered VGA pixel data, 3 channels
+    signal buf_p            : slv_7_0_t(0 to 2);             -- buffered VGA pixel data, 3 channels
     signal blank_count      : integer range 0 to buf_size;   -- video blank count
 
     ----------------------------------------------------------------------
@@ -229,7 +229,7 @@ architecture synth of vga_to_hdmi is
     signal s1_vs        : std_logic;                        -- vertical sync (pipelined from buffered input)
     signal s1_hs        : std_logic;                        -- horizontal sync (pipelined from buffered input)
     signal s1_de        : std_logic;                        -- data (pixel) enable (pipelined from buffered from input)
-    signal s1_p         : slv_7_0(0 to 2);                  -- pixel data (3 channels) (pipelined from buffered input)
+    signal s1_p         : slv_7_0_t(0 to 2);                -- pixel data (3 channels) (pipelined from buffered input)
     signal s1_enc       : std_logic_vector(1 downto 0);     -- encoding type required
     signal s1_ctl       : std_logic_vector(3 downto 0);     -- CTL bits (indicate preamble type)
 
@@ -242,7 +242,7 @@ architecture synth of vga_to_hdmi is
     signal s2_vs        : std_logic;                        -- vertical sync (pipelined from previous stage)
     signal s2_hs        : std_logic;                        -- horizontal sync (pipelined from previous stage)
     signal s2_de        : std_logic;                        -- data (pixel) enable (pipelined from previous stage)
-    signal s2_p         : slv_7_0(0 to 2);                  -- pixel data (3 channels) (pipelined from previous stage)
+    signal s2_p         : slv_7_0_t(0 to 2);                -- pixel data (3 channels) (pipelined from previous stage)
     signal s2_enc       : std_logic_vector(1 downto 0);     -- encoding type (pipelined from previous stage)
     signal s2_ctl       : std_logic_vector(3 downto 0);     -- CTL bits (pipelined from previous stage)
 
@@ -252,11 +252,11 @@ architecture synth of vga_to_hdmi is
     signal s3_bch4      : std_logic;                        -- BCH block 4 bit
     signal s3_bch_e     : std_logic_vector(s2_bch_e'range); -- BCH blocks 0-3 even bit
     signal s3_bch_o     : std_logic_vector(s2_bch_o'range); -- BCH blocks 0-3 odd bit
-    signal s3_bch_ecc   : slv_7_0(0 to SUBPACKETS);         -- ECC values for header (0) and 4 subpackets (1..4)
+    signal s3_bch_ecc   : slv_7_0_t(0 to SUBPACKETS);       -- ECC values for header (0) and 4 subpackets (1..4)
     signal s3_vs        : std_logic;                        -- vertical sync (pipelined from previous stage)
     signal s3_hs        : std_logic;                        -- horizontal sync (pipelined from previous stage)
     signal s3_de        : std_logic;                        -- data (pixel) enable (pipelined from previous stage)
-    signal s3_p         : slv_7_0(0 to 2);                  -- pixel data (3 channels) (pipelined from previous stage)
+    signal s3_p         : slv_7_0_t(0 to 2);                -- pixel data (3 channels) (pipelined from previous stage)
     signal s3_enc       : std_logic_vector(1 downto 0);     -- encoding type (pipelined from previous stage)
     signal s3_ctl       : std_logic_vector(3 downto 0);     -- CTL bits (pipelined from previous stage)
 
@@ -264,11 +264,11 @@ architecture synth of vga_to_hdmi is
     signal s4_vs        : std_logic;                        -- vertical sync (pipelined from previous stage)
     signal s4_hs        : std_logic;                        -- horizontal sync (pipelined from previous stage)
     signal s4_de        : std_logic;                        -- data (pixel) enable (pipelined from previous stage)
-    signal s4_p         : slv_7_0(0 to 2);                  -- pixel data (3 channels) (pipelined from previous stage)
+    signal s4_p         : slv_7_0_t(0 to 2);                -- pixel data (3 channels) (pipelined from previous stage)
     signal s4_enc       : std_logic_vector(1 downto 0);     -- encoding type (pipelined from previous stage)
     signal s4_ctl       : std_logic_vector(3 downto 0);     -- CTL bits (pipelined from previous stage)
-    signal s4_c         : slv_1_0(0 to 2);                  -- C input to TMDS encoder x 3 channels
-    signal s4_d         : slv_3_0(0 to 2);                  -- aux data input to TMDS encoder x 3 channels
+    signal s4_c         : slv_1_0_t(0 to 2);                -- C input to TMDS encoder x 3 channels
+    signal s4_d         : slv_3_0_t(0 to 2);                -- aux data input to TMDS encoder x 3 channels
 
     ----------------------------------------------------------------------
     -- constant packet content

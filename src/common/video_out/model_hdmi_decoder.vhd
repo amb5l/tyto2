@@ -31,20 +31,20 @@ package model_hdmi_decoder_pkg is
             rst        : in  std_logic;
 
             hdmi_clk   : in  std_logic;
-            hdmi_d     : in  std_logic_vector(0 to 2);  -- 3x TMDS channels
+            hdmi_d     : in  std_logic_vector(0 to 2);    -- 3x TMDS channels
 
-            data_pstb  : out std_logic;                 -- data packet strobe
-            data_hb    : out slv_7_0(0 to 3);           -- data header bytes
-            data_hb_ok : out std_logic;                 -- data header bytes ECC OK
-            data_sb    : out slv_7_0_2d(0 to 3,0 to 7); -- data subpacket bytes (4 subpackets)
-            data_sb_ok : out std_logic_vector(0 to 3);  -- data subpacket bytes ECC OK
+            data_pstb  : out std_logic;                   -- data packet strobe
+            data_hb    : out slv_7_0_t(0 to 3);           -- data header bytes
+            data_hb_ok : out std_logic;                   -- data header bytes ECC OK
+            data_sb    : out slv_7_0_2d_t(0 to 3,0 to 7); -- data subpacket bytes (4 subpackets)
+            data_sb_ok : out std_logic_vector(0 to 3);    -- data subpacket bytes ECC OK
 
-            vga_rst    : out std_logic;                 -- VGA reset
-            vga_clk    : out std_logic;                 -- VGA pixel clock
-            vga_vs     : out std_logic;                 -- VGA vertical sync
-            vga_hs     : out std_logic;                 -- VGA horizontal sync
-            vga_de     : out std_logic;                 -- VGA pixel data enable
-            vga_p      : out slv_7_0(0 to 2)            -- VGA pixel components
+            vga_rst    : out std_logic;                   -- VGA reset
+            vga_clk    : out std_logic;                   -- VGA pixel clock
+            vga_vs     : out std_logic;                   -- VGA vertical sync
+            vga_hs     : out std_logic;                   -- VGA horizontal sync
+            vga_de     : out std_logic;                   -- VGA pixel data enable
+            vga_p      : out slv_7_0_t(0 to 2)            -- VGA pixel components
 
         );
     end component model_hdmi_decoder;
@@ -67,20 +67,20 @@ entity model_hdmi_decoder is
         rst        : in  std_logic;
 
         hdmi_clk   : in  std_logic;
-        hdmi_d     : in  std_logic_vector(0 to 2);  -- 3x TMDS channels
+        hdmi_d     : in  std_logic_vector(0 to 2);    -- 3x TMDS channels
 
-        data_pstb  : out std_logic;                 -- data packet strobe
-        data_hb    : out slv_7_0(0 to 3);           -- data header bytes
-        data_hb_ok : out std_logic;                 -- data header bytes ECC OK
-        data_sb    : out slv_7_0_2d(0 to 3,0 to 7); -- data subpacket bytes (4 subpackets)
-        data_sb_ok : out std_logic_vector(0 to 3);  -- data subpacket bytes ECC OK
+        data_pstb  : out std_logic;                   -- data packet strobe
+        data_hb    : out slv_7_0_t(0 to 3);           -- data header bytes
+        data_hb_ok : out std_logic;                   -- data header bytes ECC OK
+        data_sb    : out slv_7_0_2d_t(0 to 3,0 to 7); -- data subpacket bytes (4 subpackets)
+        data_sb_ok : out std_logic_vector(0 to 3);    -- data subpacket bytes ECC OK
 
-        vga_rst    : out std_logic;                 -- VGA reset
-        vga_clk    : out std_logic;                 -- VGA pixel clock
-        vga_vs     : out std_logic;                 -- VGA vertical sync
-        vga_hs     : out std_logic;                 -- VGA horizontal sync
-        vga_de     : out std_logic;                 -- VGA pixel data enable
-        vga_p      : out slv_7_0(0 to 2)            -- VGA pixel components
+        vga_rst    : out std_logic;                   -- VGA reset
+        vga_clk    : out std_logic;                   -- VGA pixel clock
+        vga_vs     : out std_logic;                   -- VGA vertical sync
+        vga_hs     : out std_logic;                   -- VGA horizontal sync
+        vga_de     : out std_logic;                   -- VGA pixel data enable
+        vga_p      : out slv_7_0_t(0 to 2)            -- VGA pixel components
 
     );
 end entity model_hdmi_decoder;
@@ -88,14 +88,14 @@ end entity model_hdmi_decoder;
 architecture model of model_hdmi_decoder is
 
     signal hdmi_clk_lock  : std_logic := '0';
-    signal hdmi_clk_prev  : time := 0ps;      -- time of last event (since hdmi_clk'last_event always returns 0ps)
-    signal hdmi_clk_hp    : time := 0ps;      -- half clock period
+    signal hdmi_clk_prev  : time := 0ps;                 -- time of last event (since hdmi_clk'last_event always returns 0ps)
+    signal hdmi_clk_hp    : time := 0ps;                 -- half clock period
     signal hdmi_clk_count : integer := 0;
 
-    signal data_pstb_i    : std_logic;                      -- internal copy
-    signal data_hb_i      : slv_7_0(0 to 3);                -- "
-    signal data_sb_i      : slv_7_0_2d(0 to 3,0 to 7);      -- "
-    signal vga_clk_i      : std_logic;                      -- "
+    signal data_pstb_i    : std_logic;                   -- internal copy
+    signal data_hb_i      : slv_7_0_t(0 to 3);           -- "
+    signal data_sb_i      : slv_7_0_2d_t(0 to 3,0 to 7); -- "
+    signal vga_clk_i      : std_logic;                   -- "
 
     type period_t is (
             UNKNOWN,
@@ -109,18 +109,18 @@ architecture model of model_hdmi_decoder is
             DATA_GB_TRAILING
         );
 
-    signal tmds_data        : slv_9_0(0 to 2);
+    signal tmds_data        : slv_9_0_t(0 to 2);
     signal tmds_clk         : std_logic_vector(0 to 2);
     signal tmds_locked      : std_logic_vector(0 to 2);
     type tmds_type_t is (CTRL, TERC4, VIDEO);
     type tmds_type_array_t is array(0 to 2) of tmds_type_t;
     signal tmds_type        : tmds_type_array_t;
 
-    signal c                : slv_1_0(0 to 2);         -- decoded control
-    signal d                : slv_7_0(0 to 2);         -- decoded data
-    signal xd               : slv_3_0(0 to 2);         -- decoded auxilliary data
+    signal c                : slv_1_0_t(0 to 2);            -- decoded control
+    signal d                : slv_7_0_t(0 to 2);            -- decoded data
+    signal xd               : slv_3_0_t(0 to 2);            -- decoded auxilliary data
 
-    signal data             : slv_3_0_2d(0 to 2,0 to 31); -- extracted raw data
+    signal data             : slv_3_0_2d_t(0 to 2,0 to 31); -- extracted raw data
 
     signal debug_period     : period_t;
     signal debug_pcount     : integer;
@@ -128,7 +128,7 @@ architecture model of model_hdmi_decoder is
     signal debug_hb_bit     : integer range 0 to 7;
     signal debug_sb_byte    : integer range 0 to 7;
     signal debug_sb_2bit    : integer range 0 to 3;
-    signal debug_ecc        : slv_7_0(0 to 4);
+    signal debug_ecc        : slv_7_0_t(0 to 4);
 
 begin
 

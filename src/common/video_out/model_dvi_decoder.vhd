@@ -26,22 +26,22 @@ entity model_dvi_decoder is
     port
     (
         dvi_clk : in  std_logic;
-        dvi_d   : in  std_logic_vector(0 to 2);   -- 3x TMDS channels
+        dvi_d   : in  std_logic_vector(0 to 2); -- 3x TMDS channels
 
         vga_clk : out std_logic;
-        vga_vs  : out std_logic;                  -- vertical sync
-        vga_hs  : out std_logic;                  -- horizontal sync
-        vga_de  : out std_logic;                  -- pixel data enable
-        vga_p   : out slv_7_0(0 to 2)           -- pixel data components
+        vga_vs  : out std_logic;                -- vertical sync
+        vga_hs  : out std_logic;                -- horizontal sync
+        vga_de  : out std_logic;                -- pixel data enable
+        vga_p   : out slv_7_0_t(0 to 2)         -- pixel data components
     );
 end entity model_dvi_decoder;
 
 architecture model of model_dvi_decoder is
 
-    signal tmds_data   : slv_9_0(0 to 2);
+    signal tmds_data   : slv_9_0_t(0 to 2);
     signal tmds_clk    : std_logic_vector(0 to 2);
     signal tmds_locked : std_logic_vector(0 to 2);
-    signal tmds_c      : slv_1_0(0 to 2);        -- decoded control bits
+    signal tmds_c      : slv_1_0_t(0 to 2);        -- decoded control bits
     signal tmds_de     : std_logic_vector(0 to 2);
 
 begin

@@ -69,7 +69,7 @@ entity ddr3_test is
         stat_run    : out std_logic;                      -- toggles once per test
         stat_passes : out std_logic_vector(31 downto 0);  -- pass count
         stat_errors : out std_logic_vector(31 downto 0);  -- error count
-                          
+
         ui_cc       : in  std_logic;
         ui_rdy      : in  std_logic;
         ui_en       : out std_logic;
