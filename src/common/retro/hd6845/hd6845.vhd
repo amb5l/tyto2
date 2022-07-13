@@ -13,8 +13,6 @@
 -- License for more details. You should have received a copy of the GNU       --
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
-----------------------------------------------------------------------------------------------------------------------------------------------------------------
--- hd6845.vhd
 --------------------------------------------------------------------------------
 
 library ieee;
