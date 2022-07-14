@@ -32,15 +32,20 @@ end entity tb_saa5050;
 
 architecture sim of tb_saa5050 is
 
-    signal clk       : std_logic;                     -- 12MHz (pixel and register clock)
-    signal clk_count : integer range 0 to 11 := 0;    -- clock divide counter
-    signal clken_1m  : std_logic;                     -- 1MHz clock enable => character clock
-    signal reg_rst   : std_logic;                     -- register reset
-    signal crt_rst   : std_logic;                     -- CRT (video) reset
+    signal clk       : std_logic;                     -- base clock (12MHz)
+    signal clk_count : integer range 0 to 11 := 0;    -- base clock divide counter
 
+    signal pix_clk   : std_logic;                     -- pixel clock (12MHz)
+    signal pix_rst   : std_logic;                     -- pixel reset
+
+    signal reg_clk   : std_logic;                     -- CRTC register clock (2MHz)
+    signal reg_rst   : std_logic;                     -- CRTC register reset
     signal reg_we    : std_logic;                     -- CRTC register write enable
     signal reg_rs    : std_logic;                     -- CRTC register select
     signal reg_dw    : std_logic_vector(7 downto 0);  -- CRTC register write data
+
+    signal crt_clk   : std_logic;                     -- CRTC video (character) clock (1MHz)
+    signal crt_rst   : std_logic;                     -- CRTC video reset
     signal crt_ma    : std_logic_vector(13 downto 0); -- CRTC memory address
     signal crt_ra    : std_logic_vector(4 downto 0);  -- CRTC raster (scan line) address within character
     signal crt_vs    : std_logic;                     -- CRTC vertical sync
@@ -150,7 +155,7 @@ architecture sim of tb_saa5050 is
 
 begin
 
-    -- pixel clock (~12MHz)
+    -- base clock (~12MHz)
     clk <=
         '1' after 41666ps when clk = '0' else
         '0' after 41666ps when clk = '1' else
@@ -160,10 +165,18 @@ begin
     begin
         if rising_edge(clk) then
             clk_count <= (clk_count+1) mod 12;
-            clken_1m <= '0';
-            if clk_count = 11 then
-                clken_1m <= '1';
-            end if;
+        end if;
+        if rising_edge(clk) then
+            pix_clk <= '1';
+            case clk_count is
+                when 3 => reg_clk <= '1';
+                when 6 => reg_clk <= '0'; crt_clk <= '1';
+                when 9 => reg_clk <= '1';
+                when 0 => reg_clk <= '0'; crt_clk <= '0';
+                when others => null;
+            end case;
+        elsif falling_edge(clk) then
+            pix_clk <= '0';
         end if;
     end process;
 
@@ -197,34 +210,33 @@ begin
     begin
         reg_rst <= '1';
         crt_rst <= '1';
+        pix_rst <= '1';
         reg_we <= '0';
         reg_rs <= '0';
         reg_dw <= (others => '0');
-        wait for 100ns;
-        loop
-            wait until rising_edge(clk);
-            if clken_1m = '1' then
-                exit;
-            end if;
-        end loop;
-        wait until rising_edge(clk);
+        wait until rising_edge(reg_clk);
+        wait until rising_edge(crt_clk);
         reg_rst <= '0';
         -- set up 6845 for teletext display timing
-        crtc_poke_reg( x"00", x"3F", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"01", x"28", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"02", x"33", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"03", x"24", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"04", x"1E", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"05", x"02", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"06", x"19", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"07", x"1B", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"08", x"93", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"09", x"12", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"0A", x"72", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"0B", x"13", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"0C", x"20", clk, reg_we, reg_rs, reg_dw);
-        crtc_poke_reg( x"0D", x"00", clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"00", x"3F", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"01", x"28", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"02", x"33", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"03", x"24", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"04", x"1E", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"05", x"02", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"06", x"19", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"07", x"1B", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"08", x"93", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"09", x"12", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"0A", x"72", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"0B", x"13", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"0C", x"20", reg_clk, reg_we, reg_rs, reg_dw);
+        crtc_poke_reg( x"0D", x"00", reg_clk, reg_we, reg_rs, reg_dw);
         crt_rst <= '0';
+        wait until rising_edge(crt_clk);
+        wait until rising_edge(pix_clk);
+        wait until rising_edge(pix_clk);
+        pix_rst <= '0';
         wait;
     end process;
 
@@ -232,43 +244,41 @@ begin
     ttx_data <=
         ttx_data_engtest     when frame = 0 else
         ttx_data_scarybeasts when frame = 1 else
-        ttx_data_parrot; 
+        ttx_data_parrot;
     process(crt_de,crt_ma)
     begin
         ttx_chr <= (others => 'U');
-        if crt_de = '1' and to_integer(unsigned(crt_ma(9 downto 0))) < 1000 then            
+        if crt_de = '1' and to_integer(unsigned(crt_ma(9 downto 0))) < 1000 then
             ttx_chr <= ttx_data(to_integer(unsigned(crt_ma(9 downto 0))))(6 downto 0);
         end if;
     end process;
 
     -- bitmap capture
-    process(clk)
+    process(pix_clk)
     begin
-        if rising_edge(clk) then
-            if crt_rst = '1' then
+        if rising_edge(pix_clk) then
+            if pix_rst = '1' then
                 crt_hs_1 <= '0';
                 x <= 0;
                 y <= 0;
             else
-                if clken_1m = '1' then
-                    if crt_vs = '1' then
-                        if crt_ra(0) = '0' then
-                            y <= 1;
-                        else
-                            y <= 0;
-                        end if;
+                if crt_vs = '1' then
+                    if crt_ra(0) = '0' then
+                        y <= 1;
+                    else
+                        y <= 0;
                     end if;
-                    if crt_hs = '1' and crt_hs_1 = '0' then -- leading edge of h sync
-                       x <= 0;
-                        if act then
-                            y <= y+2;
-                        end if;
-                        act <= false;
+                end if;
+                if crt_hs = '1' and crt_hs_1 = '0' then -- leading edge of h sync
+                   x <= 0;
+                    if act then
+                        y <= y+2;
                     end if;
-                    crt_hs_1 <= crt_hs;
-                    if crt_de = '1' then
-                        act <= true;
-                    end if;
+                    act <= false;
+                end if;
+                crt_hs_1 <= crt_hs;
+                if crt_de = '1' then
+                    act <= true;
                 end if;
                 if ttx_pixen = '1' then
                     for j in 0 to 2 loop
@@ -296,8 +306,8 @@ begin
         port map (
             rsta      => '0',
             debug     => '0',
-            chr_clk   => clk,
-            chr_clken => clken_1m,
+            chr_clk   => crt_clk,
+            chr_clken => '1',
             chr_rst   => crt_rst,
             chr_f     => crt_ra(0),
             chr_vs    => crt_vs,
@@ -305,9 +315,9 @@ begin
             chr_hb    => crt_hb,
             chr_de    => crt_de,
             chr_d     => ttx_chr,
-            pix_clk   => clk,
+            pix_clk   => pix_clk,
             pix_clken => '1',
-            pix_rst   => crt_rst,
+            pix_rst   => pix_rst,
             pix_d     => ttx_pix,
             pix_hb    => open,
             pix_de    => ttx_pixen
@@ -315,7 +325,7 @@ begin
 
     CRTC: component hd6845
         port map (
-            reg_clk   => clk,
+            reg_clk   => reg_clk,
             reg_clken => '1',
             reg_rst   => reg_rst,
             reg_cs    => '1',
@@ -323,8 +333,8 @@ begin
             reg_rs    => reg_rs,
             reg_dw    => reg_dw,
             reg_dr    => open,
-            crt_clk   => clk,
-            crt_clken => clken_1m,
+            crt_clk   => crt_clk,
+            crt_clken => '1',
             crt_rst   => crt_rst,
             crt_ma    => crt_ma,
             crt_ra    => crt_ra,

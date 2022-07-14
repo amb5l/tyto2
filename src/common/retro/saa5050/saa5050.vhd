@@ -330,6 +330,7 @@ begin
         if rising_edge(pix_clk) and pix_clken = '1' then
             pix_d <= (others => '0');
             pix_de <= '0';
+            pix_hb <= '1';
             if pix_rst = '1' or rst_sp(1) = '1' then
                 col_hd     <= (others => '0');
                 pix_sr_cur <= (others => '0');
