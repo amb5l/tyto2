@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- tb_saa5050.vhd                                                             --
--- Simulation testbench for saa5050.vhd.                                      --
+-- tb_saa5050pp.vhd                                                            --
+-- Simulation testbench for saa5050p.vhd.                                     --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -24,13 +24,13 @@ use std.env.finish;
 
 library work;
 use work.sim_video_out_pkg.all;
-use work.saa5050_pkg.all;
+use work.saa5050p_pkg.all;
 use work.hd6845_pkg.all;
 
-entity tb_saa5050 is
-end entity tb_saa5050;
+entity tb_saa5050p is
+end entity tb_saa5050p;
 
-architecture sim of tb_saa5050 is
+architecture sim of tb_saa5050p is
 
     signal clk       : std_logic;                     -- base clock (12MHz)
     signal clk_count : integer range 0 to 11 := 0;    -- base clock divide counter
@@ -55,7 +55,8 @@ architecture sim of tb_saa5050 is
     signal crt_de    : std_logic;                     -- CRTC display enable
 
     signal ttx_chr   : std_logic_vector(6 downto 0);  -- character code (0..127)
-    signal ttx_pix   : std_logic_vector(2 downto 0);  -- pixel (3 bit BGR) (12 pixels per character)
+    signal ttx_pixu  : std_logic_vector(2 downto 0);  -- pixel (3 bit BGR) (12 pixels per character) (upper line)
+    signal ttx_pixl  : std_logic_vector(2 downto 0);  -- pixel (3 bit BGR) (12 pixels per character) (lower line)
     signal ttx_pixen : std_logic;                     -- pixel enable
 
     signal crt_hs_1  : std_logic;                     -- CRTC horizontal sync, delayed by 1 clock
@@ -262,11 +263,7 @@ begin
                 y <= 0;
             else
                 if crt_vs = '1' then
-                    if crt_ra(0) = '0' then
-                        y <= 1;
-                    else
-                        y <= 0;
-                    end if;
+                    y <= 0;
                 end if;
                 if crt_hs = '1' and crt_hs_1 = '0' then -- leading edge of h sync
                    x <= 0;
@@ -281,14 +278,19 @@ begin
                 end if;
                 if ttx_pixen = '1' then
                     for j in 0 to 2 loop
-                        if ttx_pix(j) = '1' then
+                        if ttx_pixu(j) = '1' then
                             bmp(x,y)(j) <= 255;
                         else
                             bmp(x,y)(j) <= 0;
                         end if;
+                        if ttx_pixl(j) = '1' then
+                            bmp(x,y+1)(j) <= 255;
+                        else
+                            bmp(x,y+1)(j) <= 0;
+                        end if;
                     end loop;
-                    if x = 479 and y = 499 then
-                        write_bmp("tb_saa5050", bmp, frame, 480, 500, false);
+                    if x = 479 and y = 498 then
+                        write_bmp("tb_saa5050p", bmp, frame, 480, 500, false);
                         if frame = 2 then
                             report "*** DONE ***";
                             finish;
@@ -301,7 +303,7 @@ begin
         end if;
     end process;
 
-    UUT: component saa5050
+    UUT: component saa5050p
         port map (
             rsta      => '0',
             debug     => '0',
@@ -317,7 +319,8 @@ begin
             pix_clk   => pix_clk,
             pix_clken => '1',
             pix_rst   => pix_rst,
-            pix_d     => ttx_pix,
+            pix_du    => ttx_pixu,
+            pix_dl    => ttx_pixl,
             pix_hb    => open,
             pix_de    => ttx_pixen
         );
