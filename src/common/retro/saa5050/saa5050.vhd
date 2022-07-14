@@ -322,7 +322,7 @@ begin
 
     -- pixel clock domain
     process(pix_clk)
-        variable nn_chr_diag, nn_v, nn_h : std_logic; -- nearest neighbour pixels
+        variable nn_d, nn_v, nn_h : std_logic; -- nearest neighbour pixels
     begin
         if rising_edge(pix_clk) then
             rst_sp(0 to 1) <= rsta & rst_sp(0);
@@ -379,13 +379,13 @@ begin
                         else -- empty pixel -> look at character rounding...
                             nn_v := pix_sr_adj(5);
                             if col_hd(0) = '0' then -- left half pixel
-                                nn_chr_diag := pix_sr_adj(6);
+                                nn_d := pix_sr_adj(6);
                                 nn_h := pix_sr_cur(6);
                             else -- right half pixels
-                                nn_chr_diag := pix_sr_adj(4);
+                                nn_d := pix_sr_adj(4);
                                 nn_h := pix_sr_cur(4);
                             end if;
-                            if nn_chr_diag = '0' and nn_v = '1' and nn_h = '1' then -- rounding required
+                            if nn_d = '0' and nn_v = '1' and nn_h = '1' then -- rounding required
                                 pix_d <= attr_fgcol1;
                             end if;
                             if debug = '1' and chr_d1(6 downto 5) = "00" then
