@@ -284,7 +284,7 @@ begin
                             crt_vs_i <= '1';
                         end if;
                     else
-                        if count_ra = r3_v then
+                        if count_vs = r3_v then
                             count_vs <= (others => '0');
                             crt_vs_i <= '0';
                         else
