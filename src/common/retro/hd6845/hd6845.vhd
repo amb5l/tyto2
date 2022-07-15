@@ -295,8 +295,8 @@ begin
 
                 crt_ma <= std_logic_vector(count_ma);
                 crt_ra <= std_logic_vector(count_ra);
-                if r8(1 downto 0) = "11" and crt_f = '1' then -- interlaced, 2nd (even) field
-                    crt_ra(0) <= '1';
+                if r8(1 downto 0) = "11" then -- interlaced
+                    crt_ra(0) <= crt_f;
                 end if;
                 crt_cur <= '0';
                 if count_ma = r14 & r15 then
