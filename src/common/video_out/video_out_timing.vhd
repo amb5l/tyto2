@@ -23,28 +23,29 @@ package video_out_timing_pkg is
     component video_out_timing is
         port (
 
-            rst       : in  std_logic;                      -- reset
-            clk       : in  std_logic;                      -- pixel clock
+            rst       : in  std_logic;                     -- reset
+            clk       : in  std_logic;                     -- pixel clock
 
-            pix_rep   : in  std_logic;                      -- pixel repetition; 0 = none/x1, 1 = x2
+            pix_rep   : in  std_logic;                     -- pixel repetition; 0 = none/x1, 1 = x2
             interlace : in  std_logic;
-            v_tot     : in  std_logic_vector(10 downto 0);  -- 1..2048 (must be odd if interlaced)
-            v_act     : in  std_logic_vector(10 downto 0);  -- 1..2048 (should be even)
-            v_sync    : in  std_logic_vector(2 downto 0);   -- 1..7
-            v_bp      : in  std_logic_vector(5 downto 0);   -- 1`..31
-            h_tot     : in  std_logic_vector(11 downto 0);  -- 1..4096
-            h_act     : in  std_logic_vector(10 downto 0);  -- 1..2048 (must be even)
-            h_sync    : in  std_logic_vector(6 downto 0);   -- 1..127
-            h_bp      : in  std_logic_vector(7 downto 0);   -- 0..255
+            v_tot     : in  std_logic_vector(10 downto 0); -- 1..2048 (must be odd if interlaced)
+            v_act     : in  std_logic_vector(10 downto 0); -- 1..2048 (should be even)
+            v_sync    : in  std_logic_vector(2 downto 0);  -- 1..7
+            v_bp      : in  std_logic_vector(5 downto 0);  -- 1`..31
+            h_tot     : in  std_logic_vector(11 downto 0); -- 1..4096
+            h_act     : in  std_logic_vector(10 downto 0); -- 1..2048 (must be even)
+            h_sync    : in  std_logic_vector(6 downto 0);  -- 1..127
+            h_bp      : in  std_logic_vector(7 downto 0);  -- 0..255
 
-            align     : in  std_logic_vector(21 downto 0);  -- alignment delay
-            f         : out std_logic;                      -- field ID
-            vs        : out std_logic;                      -- vertical sync
-            hs        : out std_logic;                      -- horizontal sync
-            vblank    : out std_logic;                      -- vertical blank
-            hblank    : out std_logic;                      -- horizontal blank
-            ax        : out std_logic_vector(11 downto 0);  -- visible area X (signed)
-            ay        : out std_logic_vector(11 downto 0)   -- visible area Y (signed)
+            genlock   : in  std_logic;                     -- genlock (external vsync) pulse
+            genlocked : out std_logic;                     -- genlock status                      
+            f         : out std_logic;                     -- field ID
+            vs        : out std_logic;                     -- vertical sync
+            hs        : out std_logic;                     -- horizontal sync
+            vblank    : out std_logic;                     -- vertical blank
+            hblank    : out std_logic;                     -- horizontal blank
+            ax        : out std_logic_vector(11 downto 0); -- visible area X (signed)
+            ay        : out std_logic_vector(11 downto 0)  -- visible area Y (signed)
 
         );
     end component video_out_timing;
@@ -77,7 +78,8 @@ entity video_out_timing is
         h_sync    : in  std_logic_vector(6 downto 0);  -- 1..127
         h_bp      : in  std_logic_vector(7 downto 0);  -- 0..255
 
-        align     : in  std_logic_vector(21 downto 0); -- alignment delay
+        genlock   : in  std_logic;                     -- genlock (external vsync) pulse
+        genlocked : out std_logic;                     -- genlock status                      
         f         : out std_logic;                     -- field ID
         vs        : out std_logic;                     -- vertical sync
         hs        : out std_logic;                     -- horizontal sync
@@ -111,6 +113,11 @@ architecture synth of video_out_timing is
     signal pos_v_act2     : unsigned(v_tot_s'range);
     signal pos_v_fp2      : unsigned(v_tot_s'range);
 
+    signal genlock_s      : std_logic_vector(0 to 2);
+    signal genlock_start  : std_logic;
+    signal genlock_end    : std_logic;
+    signal genlock_window : std_logic;
+
     signal s1_count_h     : unsigned(h_tot_s'range);
     signal s1_h_zero      : std_logic;
     signal s1_h_bp        : std_logic;
@@ -136,9 +143,6 @@ architecture synth of video_out_timing is
     signal s2_hblank      : std_logic;
     signal s2_ax          : signed(ax'range);
     signal s2_ay          : signed(ay'range);
-
-    signal align_hold     : std_logic;
-    signal align_counter  : unsigned(align'range);
 
 begin
 
@@ -171,6 +175,9 @@ begin
             q(7 downto 0)   => h_bp_s
         );
 
+    genlock_start   <= '1' when s1_count_h = unsigned(h_tot_s) - 4 else '0';
+    genlock_end     <= '1' when s1_count_h = to_unsigned(1,h_tot_s'length) else '0';
+
     pos_h_act       <= resize(unsigned(h_sync_s),h_tot_s'length) + resize(unsigned(h_bp_s),h_tot_s'length);
     pos_h_fp        <= pos_h_act + unsigned(h_act_s);
     pos_v_act1      <= resize(unsigned(v_sync_s),v_tot_s'length) + resize(unsigned(v_bp_s),v_tot_s'length);
@@ -194,61 +201,63 @@ begin
 
     process(rst,clk)
     begin
-        if rst = '1' then
+        if rising_edge(clk) then
 
-            s1_count_h    <= (others => '0');
-            s1_h_zero     <= '1';
-            s1_count_v    <= (others => '0');
-            s1_v_zero     <= '1';
-            s2_rep        <= '0';
-            s2_f          <= '0';
-            s2_vs         <= '0';
-            s2_vblank     <= '1';
-            s2_hs         <= '0';
-            s2_hblank     <= '1';
-            s2_ax         <= (others => '0');
-            s2_ay         <= (others => '0');
-            align_hold    <= '0';
-            align_counter <= (others => '0');
+            genlock_s(0 to 2) <= genlock & genlock_s(0 to 1);
+            if rst = '1' then
+                genlock_s(0 to 2) <= (others => '0');
+            end if;
 
-            f             <= '0';
-            vs            <= '0';
-            hs            <= '0';
-            vblank        <= '1';
-            hblank        <= '1';
-            ax            <= (others => '0');
-            ay            <= (others => '0');
+            if rst = '1'
+            or (genlock_s(1) = '1' and genlock_s(2) = '0' and genlock_window = '0') -- out of lock
+            then
 
-        elsif rising_edge(clk) then
+                s1_count_h     <= (others => '0');
+                s1_h_zero      <= '1';
+                s1_count_v     <= (others => '0');
+                s1_v_zero      <= '1';
+                s2_rep         <= '0';
+                s2_f           <= '0';
+                s2_vs          <= '0';
+                s2_vblank      <= '1';
+                s2_hs          <= '0';
+                s2_hblank      <= '1';
+                s2_ax          <= (others => '0');
+                s2_ay          <= (others => '0');
 
-            -- if ce = '1' then
+                genlocked      <= '0';
+                genlock_window <= '0';
+                f              <= '0';
+                vs             <= '0';
+                hs             <= '0';
+                vblank         <= '1';
+                hblank         <= '1';
+                ax             <= (others => '0');
+                ay             <= (others => '0');
+
+            else
+
+                if genlock_s(1) = '1' and genlock_s(2) = '0' and genlock_window = '1' then
+                    genlocked <= '1';
+                end if;
 
                 -- pipeline stage 1
 
-                if align_hold = '0' then
-                    if s1_count_h = unsigned(h_tot_s)-1 then
-                        s1_count_h <= (others => '0');
-                        s1_h_zero <= '1';
-                        if s1_count_v = unsigned(v_tot_s)-1 then
-                            s1_count_v <= (others => '0');
-                            s1_v_zero <= '1';
-                            if align /= (align'range => '0') then
-                                align_hold <= '1';
-                                align_counter <= unsigned(align);
-                            end if;
-                        else
-                            s1_count_v <= s1_count_v + 1;
-                            s1_v_zero <= '0';
-                        end if;
+                genlock_window <= genlock_start or (genlock_window and not genlock_end);
+
+                if s1_count_h = unsigned(h_tot_s)-1 then
+                    s1_count_h <= (others => '0');
+                    s1_h_zero <= '1';
+                    if s1_count_v = unsigned(v_tot_s)-1 then
+                        s1_count_v <= (others => '0');
+                        s1_v_zero <= '1';
                     else
-                        s1_count_h <= s1_count_h + 1;
-                        s1_h_zero <= '0';
+                        s1_count_v <= s1_count_v + 1;
+                        s1_v_zero <= '0';
                     end if;
                 else
-                    align_counter <= align_counter - 1;
-                    if align_counter = 1 then
-                        align_hold <= '0';
-                    end if;
+                    s1_count_h <= s1_count_h + 1;
+                    s1_h_zero <= '0';
                 end if;
 
                 -- pipeline stage 2
@@ -341,7 +350,7 @@ begin
                 vblank <= s2_vblank;
                 hblank <= s2_hblank;
 
-            -- end if;
+            end if;
 
         end if;
 
