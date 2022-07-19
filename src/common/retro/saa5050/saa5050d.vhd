@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- saa5050p.vhd                                                               --
--- SAA5050 compatible teletext character generator (progressive scan verion). --
+-- saa5050d.vhd                                                               --
+-- SAA5050 compatible teletext character generator (scan doubling verion).    --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -18,9 +18,9 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-package saa5050p_pkg is
+package saa5050d_pkg is
 
-    component saa5050p  is
+    component saa5050d  is
         port (
             rsta      : in  std_logic;                    -- asynchronous (global) reset
             debug     : in  std_logic;                    -- debug enable (display attributes)
@@ -41,9 +41,9 @@ package saa5050p_pkg is
             pix_hb    : out std_logic;                    -- pixel horizontal blank (optional)
             pix_de    : out std_logic                     -- pixel enable
         );
-    end component saa5050p;
+    end component saa5050d;
 
-end package saa5050p_pkg;
+end package saa5050d_pkg;
 
 --------------------------------------------------------------------------------
 
@@ -54,7 +54,7 @@ use ieee.numeric_std.all;
 library work;
 use work.saa5050_rom_data_pkg.all;
 
-entity saa5050p is
+entity saa5050d is
     port (
         rsta      : in  std_logic;                    -- asynchronous (global) reset
         debug     : in  std_logic;                    -- debug enable (display attributes)
@@ -75,9 +75,9 @@ entity saa5050p is
         pix_hb    : out std_logic;                    -- pixel horizontal blank (optional)
         pix_de    : out std_logic                     -- pixel enable
     );
-end entity saa5050p;
+end entity saa5050d;
 
-architecture synth of saa5050p is
+architecture synth of saa5050d is
 
     signal rst_sc       : std_logic_vector(0 to 1);     -- rsta synchroniser to character clock
     signal rst_sp       : std_logic_vector(0 to 1);     -- rsta synchroniser to pixel clock

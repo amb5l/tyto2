@@ -1,4 +1,4 @@
-DESIGN=tb_saa5050p
+DESIGN=tb_saa5050d
 VIVADO_PART=xc7a200tsbg484-1
 VENDOR=xilinx
 VENDOR_FAMILY=xilinx_7series
@@ -24,7 +24,7 @@ VIVADO_SIM_OUT=$(DESIGN)_2.bmp
 VIVADO_SIM_VHDL=\
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
     $(SRC)/common/video_out/sim_video_out_pkg.vhd \
-	$(SRC)/common/retro/saa5050/saa5050p.vhd \
+	$(SRC)/common/retro/saa5050/saa5050d.vhd \
 	$(SRC)/common/retro/saa5050/saa5050_rom_data.vhd \
 	$(SRC)/common/retro/hd6845/hd6845.vhd
 

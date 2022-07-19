@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- tb_saa5050p.vhd                                                            --
--- Simulation testbench for saa5050p.vhd.                                     --
+-- tb_saa5050d.vhd                                                            --
+-- Simulation testbench for saa5050d.vhd.                                     --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -24,13 +24,13 @@ use std.env.finish;
 
 library work;
 use work.sim_video_out_pkg.all;
-use work.saa5050p_pkg.all;
+use work.saa5050d_pkg.all;
 use work.hd6845_pkg.all;
 
-entity tb_saa5050p is
-end entity tb_saa5050p;
+entity tb_saa5050d is
+end entity tb_saa5050d;
 
-architecture sim of tb_saa5050p is
+architecture sim of tb_saa5050d is
 
     signal clk       : std_logic;                     -- base clock (12MHz)
     signal clk_count : integer range 0 to 11 := 0;    -- base clock divide counter
@@ -292,7 +292,7 @@ begin
                         end if;
                     end loop;
                     if x = 479 and y = 498 then
-                        write_bmp("tb_saa5050p", bmp, frame, 480, 500, false);
+                        write_bmp("tb_saa5050d", bmp, frame, 480, 500, false);
                         if frame = 2 then
                             report "*** DONE ***";
                             finish;
@@ -305,7 +305,7 @@ begin
         end if;
     end process;
 
-    UUT: component saa5050p
+    UUT: component saa5050d
         port map (
             rsta      => '0',
             debug     => '0',

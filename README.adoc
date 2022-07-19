@@ -50,7 +50,7 @@ Click on the design *Name* link to see further details.
 |(simulation only)
 |Simulates an https://en.wikipedia.org/wiki/Mullard_SAA5050[SAA5050] teletext character generator. 
 
-|<<doc/designs/tb_saa5050p/tb_saa5050p.adoc#,tb_saa5050p>>
+|<<doc/designs/tb_saa5050d/tb_saa5050d.adoc#,tb_saa5050d>>
 |(simulation only)
 |Progressive scan (scan doubling) equivalent of <<doc/designs/tb_saa5050/tb_saa5050.adoc#,tb_saa5050>>.
 
