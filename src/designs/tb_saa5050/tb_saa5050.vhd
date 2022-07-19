@@ -244,11 +244,13 @@ begin
         ttx_data_engtest     when frame = 0 else
         ttx_data_scarybeasts when frame = 1 else
         ttx_data_parrot;
-    process(crt_de,crt_ma)
+    process(crt_clk)
     begin
-        ttx_chr <= (others => 'U');
-        if crt_de = '1' and to_integer(unsigned(crt_ma(9 downto 0))) < 1000 then
-            ttx_chr <= ttx_data(to_integer(unsigned(crt_ma(9 downto 0))))(6 downto 0);
+        if rising_edge(crt_clk) then
+            ttx_chr <= (others => 'U');
+            if to_integer(unsigned(crt_ma(9 downto 0))) < 1000 then
+                ttx_chr <= ttx_data(to_integer(unsigned(crt_ma(9 downto 0))))(6 downto 0);
+            end if;
         end if;
     end process;
 

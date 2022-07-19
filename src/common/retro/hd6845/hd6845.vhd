@@ -95,16 +95,14 @@ architecture synth of hd6845 is
     signal r1         : unsigned(7 downto 0);                       -- register: horizontal displayed
     signal r2         : unsigned(7 downto 0);                       -- register: h sync position
     signal r3         : unsigned(7 downto 0);                       -- register: sync width
-    alias  r3_h       : unsigned(3 downto 0) is r3(3 downto 0);     -- register: sync width (horizontal)
-    alias  r3_v       : unsigned(3 downto 0) is r3(7 downto 4);     -- register: sync width (vertical)
     signal r4         : unsigned(6 downto 0);                       -- register: vertical total - 1
     signal r5         : unsigned(4 downto 0);                       -- register: v total adjust
     signal r6         : unsigned(6 downto 0);                       -- register: vertical displayed
     signal r7         : unsigned(6 downto 0);                       -- register: v sync position
-    signal r8         : unsigned(1 downto 0);                       -- register: interlace mode and skew
+    signal r8         : unsigned(7 downto 0);                       -- register: interlace mode and skew
     signal r9         : unsigned(crt_ra'range);                     -- register: max raster (scan line) address
-    signal r10        : unsigned(6 downto 0);                       -- register: crt_cur start
-    signal r11        : unsigned(4 downto 0);                       -- register: crt_cur end
+    signal r10        : unsigned(6 downto 0);                       -- register: cursor start
+    signal r11        : unsigned(4 downto 0);                       -- register: cursor end
     signal r12        : unsigned(crt_ma'length-9 downto 0);         -- register: start address high
     signal r13        : unsigned(7 downto 0);                       -- register: start address low
     signal r14        : unsigned(r12'range);                        -- register: cursor position high
@@ -113,19 +111,36 @@ architecture synth of hd6845 is
     alias  r17        : unsigned(r13'range) is crt_lpma(r13'range); -- register: light pen address low
     signal rd         : unsigned(7 downto 0);                       -- register: register read data
 
+    alias  r3_h       : unsigned(3 downto 0) is r3(3 downto 0);     -- register alias: sync width (horizontal)
+    alias  r3_v       : unsigned(3 downto 0) is r3(7 downto 4);     -- register alias: sync width (vertical)
+    alias  r8_i       : unsigned(1 downto 0) is r8(1 downto 0);     -- register alias: interlace mode
+    alias  r8_d       : unsigned(1 downto 0) is r8(5 downto 4);     -- register alias: display skew
+    alias  r8_c       : unsigned(1 downto 0) is r8(7 downto 6);     -- register alias: cursor skew
+    alias  r10_s      : unsigned(4 downto 0) is r10(4 downto 0);    -- register alias: cursor start raster
+    alias  r10_b      : std_logic is r10(6);                        -- register alias: cursor blink
+    alias  r10_p      : std_logic is r10(4);                        -- register alias: cursor period (16/32 fields)
+
     signal count_h    : unsigned(r0'range);                         -- horizontal position (character columns)
     signal count_hs   : unsigned(r3_h'range);                       -- h sync (character columns)
     signal count_v    : unsigned(r4'range);                         -- vertical (character rows)
     signal count_vs   : unsigned(r3_v'range);                       -- v sync position (character rows)
     signal count_ma   : unsigned(crt_ma'range);                     -- memory address
     signal count_ra   : unsigned(crt_ra'range);                     -- raster (scan line) within character
-    signal count_f    : unsigned(4 downto 0);                       -- field counter for crt_cur flash
+    signal count_f    : unsigned(4 downto 0);                       -- field counter for cursor flash
     signal count_ma_r : unsigned(crt_ma'range);                     -- memory address for row restart
     signal crt_f      : std_logic;                                  -- field: 0 = first/odd/upper, 1 = second/even/lower
     signal crt_vs_i   : std_logic;                                  -- crt_vs, internal
     signal crt_hs_i   : std_logic;                                  -- crt_hs, internal
     signal crt_vb_i   : std_logic;                                  -- crt_vb, internal
     signal crt_hb_i   : std_logic;                                  -- crt_hb, internal
+    signal crt_cur_i  : std_logic;                                  -- crt_cur, internal
+    signal crt_cur_r  : std_logic;                                  -- cursor raster
+
+    signal crt_de_1   : std_logic;                                  -- crt_de, skewed (delayed) by 1 clock
+    signal crt_de_2   : std_logic;                                  -- crt_de, skewed (delayed) by 2 clocks
+
+    signal crt_cur_1  : std_logic;                                  -- crt_cur, skewed (delayed) by 1 clock
+    signal crt_cur_2  : std_logic;                                  -- crt_cur, skewed (delayed) by 2 clocks
 
     type crt_vphase_t is (
             NORMAL,
@@ -149,7 +164,22 @@ begin
     crt_hs <= crt_hs_i;
     crt_vb <= crt_vb_i;
     crt_hb <= crt_hb_i;
-    crt_de <= not (crt_vb_i or crt_hb_i);
+    crt_de <=
+        not (crt_vb_i or crt_hb_i) when r8_d = "00" else
+        crt_de_1 when r8_d = "01" else
+        crt_de_2 when r8_d = "10" else
+        '0';
+    crt_cur <=
+        crt_cur_i when r8_c = "00" and r10_b = '0' and r10_p = '0' else
+        crt_cur_i when r8_c = "00" and r10_b = '1' and r10_p = '0' and count_f(3) = '0' else
+        crt_cur_i when r8_c = "00" and r10_b = '1' and r10_p = '1' and count_f(4) = '0' else
+        crt_cur_1 when r8_c = "01" else
+        crt_cur_1 when r8_c = "01" and r10_b = '1' and r10_p = '0' and count_f(3) = '0' else
+        crt_cur_1 when r8_c = "01" and r10_b = '1' and r10_p = '1' and count_f(4) = '0' else
+        crt_cur_2 when r8_c = "10" else
+        crt_cur_2 when r8_c = "10" and r10_b = '1' and r10_p = '0' and count_f(3) = '0' else
+        crt_cur_2 when r8_c = "10" and r10_b = '1' and r10_p = '1' and count_f(4) = '0' else
+        '0';
 
     -- CRT control
     process(crt_clk)
@@ -173,11 +203,22 @@ begin
                 crt_hs_i   <= '0';
                 crt_vb_i   <= '0';
                 crt_hb_i   <= '1';
-                crt_cur    <= '0';
+                crt_cur_i  <= '0';
+                crt_cur_r  <= '0';
                 crt_vphase <= NORMAL;
                 crt_lpma   <= (others => '0');
 
+                crt_de_1   <= '0';
+                crt_de_2   <= '0';
+                crt_cur_1  <= '0';
+                crt_cur_2  <= '0';
+
             else
+
+                crt_de_1 <= not (crt_vb_i or crt_hb_i);
+                crt_de_2 <= crt_de_1;
+                crt_cur_1 <= crt_cur_i;
+                crt_cur_2 <= crt_cur_1;
 
                 count_h <= count_h+1;
                 count_ma <= count_ma+1;
@@ -186,6 +227,12 @@ begin
                     count_h <= (others => '0');
                     case crt_vphase is
                         when NORMAL =>
+                            if count_ra = r10_s then
+                                crt_cur_r <= '1';
+                            end if;
+                            if count_ra = r11 then
+                                crt_cur_r <= '0';
+                            end if;
                             if r8(1 downto 0) = "11" then
                                 count_ra <= count_ra+2;
                             else
@@ -282,6 +329,7 @@ begin
                         if count_v = r7 and count_ra = 0 then
                             count_vs <= (0 => '1', others => '0');
                             crt_vs_i <= '1';
+                            count_f <= count_f+1;
                         end if;
                     else
                         if count_vs = r3_v then
@@ -298,9 +346,9 @@ begin
                 if r8(1 downto 0) = "11" then -- interlaced
                     crt_ra(0) <= crt_f;
                 end if;
-                crt_cur <= '0';
+                crt_cur_i <= '0';
                 if count_ma = r14 & r15 then
-                    crt_cur <= '1';
+                    crt_cur_i <= crt_cur_r;
                 end if;
 
                 if crt_lps = '1' then
