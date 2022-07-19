@@ -342,6 +342,7 @@ begin
             crt_rst   => crt_rst,
             crt_ma    => crt_ma,
             crt_ra    => crt_ra,
+            crt_f     => open,
             crt_vs    => crt_vs,
             crt_hs    => crt_hs,
             crt_vb    => crt_vb,

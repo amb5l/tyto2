@@ -35,6 +35,7 @@ package hd6845_pkg is
             crt_clk   : in  std_logic;                     -- clock        } video (character)
             crt_clken : in  std_logic;                     -- clock enable }  clock
             crt_rst   : in  std_logic;                     -- hard reset
+            crt_f     : out std_logic;                     -- field: 0 = 1st/odd/upper, 1 = 2nd/even/lower
             crt_ma    : out std_logic_vector(13 downto 0); -- memory address
             crt_ra    : out std_logic_vector(4 downto 0);  -- raster (scan line) address within character
             crt_vs    : out std_logic;                     -- vertical sync
@@ -71,6 +72,7 @@ entity hd6845 is
         crt_clk   : in  std_logic;                     -- clock        } video (character)
         crt_clken : in  std_logic;                     -- clock enable }  clock
         crt_rst   : in  std_logic;                     -- hard reset
+        crt_f     : out std_logic;                     -- field: 0 = 1st/odd/upper, 1 = 2nd/even/lower
         crt_ma    : out std_logic_vector(13 downto 0); -- memory address
         crt_ra    : out std_logic_vector(4 downto 0);  -- raster (scan line) address within character
         crt_vs    : out std_logic;                     -- vertical sync
@@ -128,7 +130,7 @@ architecture synth of hd6845 is
     signal count_ra   : unsigned(crt_ra'range);                     -- raster (scan line) within character
     signal count_f    : unsigned(4 downto 0);                       -- field counter for cursor flash
     signal count_ma_r : unsigned(crt_ma'range);                     -- memory address for row restart
-    signal crt_f      : std_logic;                                  -- field: 0 = first/odd/upper, 1 = second/even/lower
+    signal crt_f_i    : std_logic;                                  -- field: 0 = first/odd/upper, 1 = second/even/lower
     signal crt_vs_i   : std_logic;                                  -- crt_vs, internal
     signal crt_hs_i   : std_logic;                                  -- crt_hs, internal
     signal crt_vb_i   : std_logic;                                  -- crt_vb, internal
@@ -160,6 +162,7 @@ architecture synth of hd6845 is
 
 begin
 
+    crt_f <= crt_f_i; 
     crt_vs <= crt_vs_i;
     crt_hs <= crt_hs_i;
     crt_vb <= crt_vb_i;
@@ -198,7 +201,7 @@ begin
                 count_ma_r <= (others => '0');
                 crt_ma     <= (others => '0');
                 crt_ra     <= (others => '0');
-                crt_f      <= '0';
+                crt_f_i    <= '0';
                 crt_vs_i   <= '0';
                 crt_hs_i   <= '0';
                 crt_vb_i   <= '0';
@@ -248,14 +251,14 @@ begin
                                         count_ma_r <= count_ma_r+r1;
                                         count_ma <= count_ma_r+r1;
                                         count_ra(0) <= '1'; -- count from 1 to r5 during vertical adjust
-                                    elsif r8(0) = '1' and crt_f = '0' then
+                                    elsif r8(0) = '1' and crt_f_i = '0' then
                                         crt_vphase <= INTER;
                                         count_ma_r <= count_ma_r+r1;
                                         count_ma <= count_ma_r+r1;
                                         count_ra <= (others => '0');
                                     else
                                         crt_vphase <= NORMAL;
-                                        crt_f <= '0';
+                                        crt_f_i <= '0';
                                         crt_vb_i <= '0';
                                         count_ma_r <= r12 & r13;
                                         count_ma <= r12 & r13;
@@ -271,14 +274,14 @@ begin
                             count_ra <= count_ra+1;
                             if count_ra = r5 then
                                 count_ra <= (others => '0');
-                                if r8(0) = '1' and crt_f = '0' then
+                                if r8(0) = '1' and crt_f_i = '0' then
                                     crt_vphase <= INTER;
                                     count_ma_r <= count_ma_r+r1;
                                     count_ma <= count_ma_r+r1;
                                     count_ra <= (others => '0');
                                 else
                                     crt_vphase <= NORMAL;
-                                    crt_f <= '0';
+                                    crt_f_i <= '0';
                                     crt_vb_i <= '0';
                                     count_ma_r <= r12 & r13;
                                     count_ma <= r12 & r13;
@@ -288,7 +291,7 @@ begin
                         when INTER => -- extra scan line for interlace
                             crt_vphase <= NORMAL;
                             crt_vb_i <= '0';
-                            crt_f <= '1';
+                            crt_f_i <= '1';
                             count_ma_r <= r12 & r13;
                             count_ma <= r12 & r13;
                             count_ra <= (others => '0');
@@ -324,7 +327,7 @@ begin
                     end if;
                 end if;
 
-                if ((crt_f = '0' and count_h = shift_right(r0,1)) or (crt_f = '1' and count_h = 0)) then
+                if ((crt_f_i = '0' and count_h = shift_right(r0,1)) or (crt_f_i = '1' and count_h = 0)) then
                     if crt_vs_i = '0' then
                         if count_v = r7 and count_ra = 0 then
                             count_vs <= (0 => '1', others => '0');
@@ -344,7 +347,7 @@ begin
                 crt_ma <= std_logic_vector(count_ma);
                 crt_ra <= std_logic_vector(count_ra);
                 if r8(1 downto 0) = "11" then -- interlaced
-                    crt_ra(0) <= crt_f;
+                    crt_ra(0) <= crt_f_i;
                 end if;
                 crt_cur_i <= '0';
                 if count_ma = r14 & r15 then
