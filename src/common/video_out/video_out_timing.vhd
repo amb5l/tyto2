@@ -233,7 +233,15 @@ begin
                 vblank         <= '1';
                 hblank         <= '1';
                 ax             <= (others => '0');
-                ay             <= (others => '0');
+                ay             <= (others => '1');
+
+                if (genlock_s(1) = '1' and genlock_s(2) = '0' and genlock_window = '0') then -- out of lock
+                    s1_count_v     <= pos_v_act1;
+                    s1_v_zero      <= '0';
+                    s2_vblank      <= '0';
+                    vblank         <= '0';
+                    s2_ay          <= (others => '1');
+                end if;
 
             else
 
@@ -241,6 +249,7 @@ begin
                     genlocked <= '1';
                 end if;
 
+                --------------------------------------------------------------------------------
                 -- pipeline stage 1
 
                 genlock_window <= genlock_start or (genlock_window and not genlock_end);
@@ -260,6 +269,7 @@ begin
                     s1_h_zero <= '0';
                 end if;
 
+                --------------------------------------------------------------------------------
                 -- pipeline stage 2
 
                 -- pixel repetition
@@ -340,6 +350,7 @@ begin
                     end if;
                 end if;
 
+                --------------------------------------------------------------------------------
                 -- pipeline stage 3: outputs
 
                 ax <= std_logic_vector(s2_ax);
@@ -349,6 +360,8 @@ begin
                 hs <= s2_hs;
                 vblank <= s2_vblank;
                 hblank <= s2_hblank;
+
+                --------------------------------------------------------------------------------
 
             end if;
 
