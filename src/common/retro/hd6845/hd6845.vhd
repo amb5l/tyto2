@@ -386,10 +386,10 @@ begin
                 r15 <= (others => 'U');
                 r16 <= (others => 'U');
                 r17 <= (others => 'U');
-            elsif reg_clken = '1' then
-                if reg_cs = '1' and reg_we = '1' and reg_rs = '0' then
+            elsif reg_clken = '1' and reg_cs = '1' and reg_we = '1' then
+                if reg_rs = '0' then
                     a <= unsigned(reg_dw(a'range));
-                elsif reg_cs = '1' and reg_we = '1' and reg_rs = '1' then
+                elsif reg_rs = '1' then
                     case to_integer(unsigned(a)) is
                         when 0  => r0  <= unsigned(reg_dw(r0'range));
                         when 1  => r1  <= unsigned(reg_dw(r1'range));
