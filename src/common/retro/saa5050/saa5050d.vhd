@@ -150,7 +150,7 @@ begin
         if rising_edge(chr_clk) then
             if chr_rst = '1' or rst_sc(1) = '1' then
                 chr_vs1     <= '0';
-                chr_gp1     <= '1';
+                chr_gp1     <= '0';
                 chr_de1     <= '0';
                 chr_d1      <= (others => '0');
                 row_sd      <= (others => '0');
@@ -355,6 +355,9 @@ begin
                 pix_sr_above <= (others => '0');
                 pix_sr_below <= (others => '0');
                 pix_gp       <= '0';
+                pix_de       <= '0';
+                pix_du       <= (others => '0');
+                pix_dl       <= (others => '0');
             elsif pix_clken = '1' then
                 pix_gp <= chr_gp1;
                 pix_de <= '0';
