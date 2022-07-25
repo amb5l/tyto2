@@ -30,16 +30,16 @@ package saa5050d_pkg is
             chr_f     : in  std_logic;                    -- field (0 = 1st/odd/upper, 1 = 2nd/even/lower)
             chr_vs    : in  std_logic;                    -- CRTC vertical sync
             chr_hs    : in  std_logic;                    -- CRTC horizontal sync
-            chr_hb    : in  std_logic;                    -- CRTC horizontal blank (optional)
+            chr_gp    : in  std_logic;                    -- CRTC general purpose
             chr_de    : in  std_logic;                    -- CRTC display enable
             chr_d     : in  std_logic_vector(6 downto 0); -- CRTC character code (0..127)
             pix_clk   : in  std_logic;                    -- pixel clock        } normally
             pix_clken : in  std_logic;                    -- pixel clock enable }  12MHz
             pix_rst   : in  std_logic;                    -- pixel clock synchronous reset
+            pix_gp    : out std_logic;                    -- pixel general purpose
+            pix_de    : out std_logic;                    -- pixel enable
             pix_du    : out std_logic_vector(2 downto 0); -- pixel data (3 bit BGR) - 1st/odd/upper line
-            pix_dl    : out std_logic_vector(2 downto 0); -- pixel data (3 bit BGR) - 2nd/even/lower line
-            pix_hb    : out std_logic;                    -- pixel horizontal blank (optional)
-            pix_de    : out std_logic                     -- pixel enable
+            pix_dl    : out std_logic_vector(2 downto 0)  -- pixel data (3 bit BGR) - 2nd/even/lower line
         );
     end component saa5050d;
 
@@ -64,16 +64,16 @@ entity saa5050d is
         chr_f     : in  std_logic;                    -- field (0 = 1st/odd/upper, 1 = 2nd/even/lower)
         chr_vs    : in  std_logic;                    -- CRTC vertical sync
         chr_hs    : in  std_logic;                    -- CRTC horizontal sync
-        chr_hb    : in  std_logic;                    -- CRTC horizontal blank (optional)
+        chr_gp    : in  std_logic;                    -- CRTC general purpose
         chr_de    : in  std_logic;                    -- CRTC display enable
         chr_d     : in  std_logic_vector(6 downto 0); -- CRTC character code (0..127)
         pix_clk   : in  std_logic;                    -- pixel clock        } normally
         pix_clken : in  std_logic;                    -- pixel clock enable }  12MHz
         pix_rst   : in  std_logic;                    -- pixel clock synchronous reset
+        pix_gp    : out std_logic;                    -- pixel general purpose
+        pix_de    : out std_logic;                    -- pixel enable
         pix_du    : out std_logic_vector(2 downto 0); -- pixel data (3 bit BGR) - 1st/odd/upper line
-        pix_dl    : out std_logic_vector(2 downto 0); -- pixel data (3 bit BGR) - 2nd/even/lower line
-        pix_hb    : out std_logic;                    -- pixel horizontal blank (optional)
-        pix_de    : out std_logic                     -- pixel enable
+        pix_dl    : out std_logic_vector(2 downto 0)  -- pixel data (3 bit BGR) - 2nd/even/lower line
     );
 end entity saa5050d;
 
@@ -86,7 +86,7 @@ architecture synth of saa5050d is
     signal chr_clk_phb  : std_logic := '0';             -- }
 
     signal chr_vs1      : std_logic;                    -- chr_vs, registered
-    signal chr_hb1      : std_logic;                    -- chr_hb, registered
+    signal chr_gp1      : std_logic;                    -- chr_gp, registered
     signal chr_de1      : std_logic;                    -- chr_de, registered
     signal chr_di       : integer range 0 to 127;       -- integer version of input data
     signal chr_d1       : std_logic_vector(6 downto 0); -- character code, registered
@@ -150,7 +150,7 @@ begin
         if rising_edge(chr_clk) and chr_clken = '1' then
             if chr_rst = '1' or rst_sc(1) = '1' then
                 chr_vs1     <= '0';
-                chr_hb1     <= '1';
+                chr_gp1     <= '1';
                 chr_de1     <= '0';
                 chr_d1      <= (others => '0');
                 row_sd      <= (others => '0');
@@ -181,7 +181,7 @@ begin
             else
                 chr_clk_pha <= not chr_clk_pha;
                 chr_vs1     <= chr_vs;
-                chr_hb1     <= chr_hb;
+                chr_gp1     <= chr_gp;
                 chr_de1     <= chr_de;
                 chr_d1      <= chr_d;
                 held_c1     <= held_c;
@@ -352,14 +352,14 @@ begin
             pix_du <= (others => '0');
             pix_dl <= (others => '0');
             pix_de <= '0';
-            pix_hb <= '1';
+            pix_gp <= '1';
             if pix_rst = '1' or rst_sp(1) = '1' then
                 col_hd       <= (others => '0');
                 pix_sr_cur   <= (others => '0');
                 pix_sr_above <= (others => '0');
                 pix_sr_below <= (others => '0');
             else
-                pix_hb <= chr_hb1;
+                pix_gp <= chr_gp1;
                 col_hd <= (col_hd+1) mod 12;
                 chr_clk_phb <= chr_clk_pha;
                 if chr_clk_pha /= chr_clk_phb then

@@ -51,7 +51,7 @@ architecture sim of tb_saa5050d is
     signal crt_vs    : std_logic;                     -- CRTC vertical sync
     signal crt_hs    : std_logic;                     -- CRTC horizontal blank
     signal crt_vb    : std_logic;                     -- CRTC vertical blank
-    signal crt_hb    : std_logic;                     -- CRTC horizontal sync
+    signal crt_hb    : std_logic;                     -- CRTC horizontal blank
     signal crt_de    : std_logic;                     -- CRTC display enable
 
     signal ttx_chr   : std_logic_vector(6 downto 0);  -- character code (0..127)
@@ -315,7 +315,7 @@ begin
             chr_f     => crt_ra(0),
             chr_vs    => crt_vs,
             chr_hs    => crt_hs,
-            chr_hb    => crt_hb,
+            chr_gp    => crt_hb,
             chr_de    => crt_de,
             chr_d     => ttx_chr,
             pix_clk   => pix_clk,
@@ -323,7 +323,7 @@ begin
             pix_rst   => pix_rst,
             pix_du    => ttx_pixu,
             pix_dl    => ttx_pixl,
-            pix_hb    => open,
+            pix_gp    => open,
             pix_de    => ttx_pixen
         );
 
