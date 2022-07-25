@@ -349,17 +349,17 @@ begin
             rst_sp(0 to 1) <= rsta & rst_sp(0);
         end if;
         if rising_edge(pix_clk) then
-            pix_du <= (others => '0');
-            pix_dl <= (others => '0');
-            pix_de <= '0';
-            pix_gp <= '1';
             if pix_rst = '1' or rst_sp(1) = '1' then
                 col_hd       <= (others => '0');
                 pix_sr_cur   <= (others => '0');
                 pix_sr_above <= (others => '0');
                 pix_sr_below <= (others => '0');
+                pix_gp       <= '0';
             elsif pix_clken = '1' then
                 pix_gp <= chr_gp1;
+                pix_de <= '0';
+                pix_du <= (others => '0');
+                pix_dl <= (others => '0');
                 col_hd <= (col_hd+1) mod 12;
                 chr_clk_phb <= chr_clk_pha;
                 if chr_clk_pha /= chr_clk_phb then

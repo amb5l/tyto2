@@ -328,15 +328,16 @@ begin
             rst_sp(0 to 1) <= rsta & rst_sp(0);
         end if;
         if rising_edge(pix_clk) then
-            pix_d <= (others => '0');
-            pix_de <= '0';
             pix_gp <= '1';
             if pix_rst = '1' or rst_sp(1) = '1' then
                 col_hd     <= (others => '0');
                 pix_sr_cur <= (others => '0');
                 pix_sr_adj <= (others => '0');
+                pix_gp     <= '0';
             elsif pix_clken = '1' then
                 pix_gp <= chr_gp1;
+                pix_de <= '0';
+                pix_d <= (others => '0');
                 if chr_de1 = '1' then
                     pix_de <= '1';
                     pix_d <= attr_bgcol1;
