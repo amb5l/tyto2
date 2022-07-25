@@ -28,7 +28,7 @@ package ram_tdp_sr_pkg is
         generic (
             width      : integer;
             depth_log2 : integer;
-            init       : slv_7_0_t
+            init       : slv_7_0_t := (others => (others => '0'))
         );
         port (
             clk        : in  std_logic;
@@ -62,7 +62,7 @@ entity ram_tdp_sr is
     generic (
         width      : integer;
         depth_log2 : integer;
-        init       : slv_7_0_t
+        init       : slv_7_0_t := (others => (others => '0'))
     );
     port (
         clk        : in  std_logic;
