@@ -187,7 +187,7 @@ begin
     -- CRT control
     process(crt_clk)
     begin
-        if rising_edge(crt_clk) and crt_clken = '1' then
+        if rising_edge(crt_clk) then
 
             if crt_rst = '1' then
 
@@ -216,7 +216,7 @@ begin
                 crt_cur_1  <= '0';
                 crt_cur_2  <= '0';
 
-            else
+            elsif crt_clken = '1' then
 
                 crt_de_1 <= not (crt_vb_i or crt_hb_i);
                 crt_de_2 <= crt_de_1;
@@ -365,7 +365,7 @@ begin
     -- register writes
     process(reg_clk)
     begin
-        if rising_edge(reg_clk) and reg_clken = '1' then
+        if rising_edge(reg_clk) then
             if reg_rst = '1' then
                 a   <= (others => 'U');
                 r0  <= (others => 'U');
@@ -386,7 +386,7 @@ begin
                 r15 <= (others => 'U');
                 r16 <= (others => 'U');
                 r17 <= (others => 'U');
-            else
+            elsif reg_clken = '1' then
                 if reg_cs = '1' and reg_we = '1' and reg_rs = '0' then
                     a <= unsigned(reg_dw(a'range));
                 elsif reg_cs = '1' and reg_we = '1' and reg_rs = '1' then

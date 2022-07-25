@@ -147,7 +147,7 @@ begin
         if rising_edge(chr_clk) then
             rst_sc(0 to 1) <= rsta & rst_sc(0);
         end if;
-        if rising_edge(chr_clk) and chr_clken = '1' then
+        if rising_edge(chr_clk) then
             if chr_rst = '1' or rst_sc(1) = '1' then
                 chr_vs1     <= '0';
                 chr_gp1     <= '1';
@@ -178,7 +178,7 @@ begin
                 held_s1     <= '0';
                 count_flash <= (others => '0');
                 flash_state <= '1';
-            else
+            elsif chr_clken = '1' then
                 chr_clk_pha <= not chr_clk_pha;
                 chr_vs1     <= chr_vs;
                 chr_gp1     <= chr_gp;
@@ -348,7 +348,7 @@ begin
         if rising_edge(pix_clk) then
             rst_sp(0 to 1) <= rsta & rst_sp(0);
         end if;
-        if rising_edge(pix_clk) and pix_clken = '1' then
+        if rising_edge(pix_clk) then
             pix_du <= (others => '0');
             pix_dl <= (others => '0');
             pix_de <= '0';
@@ -358,7 +358,7 @@ begin
                 pix_sr_cur   <= (others => '0');
                 pix_sr_above <= (others => '0');
                 pix_sr_below <= (others => '0');
-            else
+            elsif pix_clken = '1' then
                 pix_gp <= chr_gp1;
                 col_hd <= (col_hd+1) mod 12;
                 chr_clk_phb <= chr_clk_pha;
