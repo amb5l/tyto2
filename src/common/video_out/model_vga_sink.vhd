@@ -17,6 +17,34 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+
+package model_vga_sink_pkg is
+
+    component model_vga_sink is
+        generic (
+            name    : string                            -- BMP filename prefix
+        );
+        port
+        (
+            vga_rst : in  std_logic;                    -- pixel clock synchronous reset
+            vga_clk : in  std_logic;                    -- pixel clock
+            vga_vs  : in  std_logic;                    -- vertical sync
+            vga_hs  : in  std_logic;                    -- horizontal sync
+            vga_de  : in  std_logic;                    -- pixel data enable
+            vga_r   : in  std_logic_vector(7 downto 0); -- red
+            vga_g   : in  std_logic_vector(7 downto 0); -- green
+            vga_b   : in  std_logic_vector(7 downto 0); -- blue
+            cap_rst : in  std_logic;                    -- capture reset
+            cap_stb : out std_logic                     -- capture strobe
+        );
+    end component model_vga_sink;
+
+end package model_vga_sink_pkg;
+
+--------------------------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library work;
@@ -54,7 +82,7 @@ architecture model of model_vga_sink is
 
 begin
 
-    process(cap_rst,vga_rst,vga_clk,vga_vs,vga_de)
+    process(cap_rst,vga_rst,vga_clk,vga_vs,vga_hs,vga_de)
     begin
 
         if cap_rst = '1' then
