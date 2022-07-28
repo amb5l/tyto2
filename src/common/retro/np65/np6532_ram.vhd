@@ -61,6 +61,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library work;
+use work.tyto_types_pkg.all;
 use work.np6532_ram_init_pkg.all;
 use work.ram_tdp_s_pkg.all;
 use work.ldce_bus_pkg.all;
@@ -121,6 +122,17 @@ architecture synth of np6532_ram is
     signal ram_dout_b  : std_logic_vector(31 downto 0);
     signal ram_dout_bl : std_logic_vector(31 downto 0);
 
+    function ram_bank_2_slv_2d(constant x : ram_bank_t) return slv_2d_t is
+        variable r : slv_2d_t(0 to (2**(size_log2-2))-1,7 downto 0);
+    begin
+        for i in 0 to r'length-1 loop
+            for j in 0 to 7 loop
+                r(i,j) := x(i)(j);
+            end loop;
+        end loop;
+        return r;
+    end function ram_bank_2_slv_2d;
+
 begin
 
     process(clk_cpu)
@@ -174,7 +186,7 @@ begin
             generic map (
                 width      => 8,
                 depth_log2 => size_log2-2,
-                init       => ram_init(i)
+                init       => ram_bank_2_slv_2d(ram_init(i))
             )
             port map (
                 clk     => clk_mem,

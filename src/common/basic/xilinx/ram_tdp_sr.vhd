@@ -28,7 +28,7 @@ package ram_tdp_sr_pkg is
         generic (
             width      : integer;
             depth_log2 : integer;
-            init       : slv_7_0_t := (others => (others => '0'))
+            init       : slv_2d_t := (0 downto 1 => (0 downto 1 => '0'))
         );
         port (
             clk        : in  std_logic;
@@ -62,7 +62,7 @@ entity ram_tdp_sr is
     generic (
         width      : integer;
         depth_log2 : integer;
-        init       : slv_7_0_t := (others => (others => '0'))
+        init       : slv_2d_t := (0 downto 1 => (0 downto 1 => '0'))
     );
     port (
         clk        : in  std_logic;
@@ -83,7 +83,22 @@ end entity ram_tdp_sr;
 
 architecture inferred of ram_tdp_sr is
 
-    shared variable ram : slv_7_0_t(0 to (2**depth_log2)-1) := init;
+    subtype ram_word_t is std_logic_vector(width-1 downto 0);
+    type ram_t is array(natural range <>) of ram_word_t;
+    function ram_init return ram_t is
+        variable r : ram_t(0 to (2**depth_log2)-1);
+    begin
+        r := (others => (others => '0'));
+        if init'high = r'high then
+            for i in 0 to r'length-1 loop
+                for j in 0 to width-1 loop
+                    r(i)(j) := init(i,j);
+                end loop;
+            end loop;
+        end if;
+        return r;
+    end function ram_init;
+    shared variable ram : ram_t(0 to (2**depth_log2)-1) := ram_init;
 
 begin
 

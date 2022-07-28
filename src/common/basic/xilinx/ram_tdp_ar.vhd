@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
--- ram_tdp_s.vhd                                                              --
--- True dual port RAM, single clock.                                          --
--- Infers block RAM correctly in Vivado and Quartus.                          --
+-- ram_tdp_ar.vhd                                                             --
+-- True dual port RAM, separate clocks, synchronous reset.                    --
+-- Infers block RAM correctly in Vivado.                                      --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -22,30 +22,33 @@ use ieee.std_logic_1164.all;
 library work;
 use work.tyto_types_pkg.all;
 
-package ram_tdp_s_pkg is
+package ram_tdp_ar_pkg is
 
-    component ram_tdp_s is
+    component ram_tdp_ar is
         generic (
             width      : integer;
             depth_log2 : integer;
             init       : slv_2d_t := (0 downto 1 => (0 downto 1 => '0'))
         );
         port (
-            clk        : in  std_logic;
+            clk_a      : in  std_logic;
+            rst_a      : in  std_logic;
             ce_a       : in  std_logic;
             we_a       : in  std_logic;
             addr_a     : in  std_logic_vector(depth_log2-1 downto 0);
             din_a      : in  std_logic_vector(width-1 downto 0);
             dout_a     : out std_logic_vector(width-1 downto 0);
+            clk_b      : in  std_logic;
+            rst_b      : in  std_logic;
             ce_b       : in  std_logic;
             we_b       : in  std_logic;
             addr_b     : in  std_logic_vector(depth_log2-1 downto 0);
             din_b      : in  std_logic_vector(width-1 downto 0);
             dout_b     : out std_logic_vector(width-1 downto 0)
         );
-    end component ram_tdp_s;
+    end component ram_tdp_ar;
 
-end package ram_tdp_s_pkg;
+end package ram_tdp_ar_pkg;
 
 --------------------------------------------------------------------------------
 
@@ -56,28 +59,31 @@ use ieee.numeric_std.all;
 library work;
 use work.tyto_types_pkg.all;
 
-entity ram_tdp_s is
+entity ram_tdp_ar is
     generic (
         width      : integer;
         depth_log2 : integer;
         init       : slv_2d_t := (0 downto 1 => (0 downto 1 => '0'))
     );
     port (
-        clk        : in  std_logic;
+        clk_a      : in  std_logic;
+        rst_a      : in  std_logic;
         ce_a       : in  std_logic;
         we_a       : in  std_logic;
         addr_a     : in  std_logic_vector(depth_log2-1 downto 0);
         din_a      : in  std_logic_vector(width-1 downto 0);
         dout_a     : out std_logic_vector(width-1 downto 0);
+        clk_b      : in  std_logic;
+        rst_b      : in  std_logic;
         ce_b       : in  std_logic;
         we_b       : in  std_logic;
         addr_b     : in  std_logic_vector(depth_log2-1 downto 0);
         din_b      : in  std_logic_vector(width-1 downto 0);
         dout_b     : out std_logic_vector(width-1 downto 0)
     );
-end entity ram_tdp_s;
+end entity ram_tdp_ar;
 
-architecture inferred of ram_tdp_s is
+architecture inferred of ram_tdp_ar is
 
     subtype ram_word_t is std_logic_vector(width-1 downto 0);
     type ram_t is array(natural range <>) of ram_word_t;
@@ -98,23 +104,31 @@ architecture inferred of ram_tdp_s is
 
 begin
 
-    process(clk)
+    process(clk_a)
     begin
-        if rising_edge(clk) and ce_a = '1' then
+        if rising_edge(clk_a) and ce_a = '1' then
             if(we_a = '1') then
                 ram(to_integer(unsigned(addr_a))) := din_a;
             end if;
-            dout_a <= ram(to_integer(unsigned(addr_a)));
+            if rst_a = '1' then
+                dout_a <= (others => '0');
+            else
+                dout_a <= ram(to_integer(unsigned(addr_a)));
+            end if;
         end if;
     end process;
 
-    process(clk)
+    process(clk_b)
     begin
-        if rising_edge(clk) and ce_b = '1' then
+        if rising_edge(clk_b) and ce_b = '1' then
             if(we_b = '1') then
                 ram(to_integer(unsigned(addr_b))) := din_b;
             end if;
-            dout_b <= ram(to_integer(unsigned(addr_b)));
+            if rst_b = '1' then
+                dout_b <= (others => '0');
+            else
+                dout_b <= ram(to_integer(unsigned(addr_b)));
+            end if;
         end if;
     end process;
 
