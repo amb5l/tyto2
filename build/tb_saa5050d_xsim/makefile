@@ -9,6 +9,10 @@ SRC=$(REPO_ROOT)/src
 SUBMODULES=$(REPO_ROOT)/submodules
 XILINX_MK=$(SUBMODULES)/xilinx-mk
 
+BINFILE_0=$(SRC)/common/retro/saa5050/test/engtest.bin
+BINFILE_1=$(SRC)/common/retro/saa5050/test/scarybeasts.bin
+BINFILE_2=$(SRC)/common/retro/saa5050/test/parrot.bin
+
 all: check
 
 check: sim
@@ -28,5 +32,13 @@ VIVADO_SIM_VHDL=\
 	$(SRC)/common/retro/saa5050/saa5050d.vhd \
 	$(SRC)/common/retro/saa5050/saa5050_rom_data.vhd \
 	$(SRC)/common/retro/hd6845/hd6845.vhd
+VIVADO_SIM_GENERICS=\
+	filename_0=$(abspath $(BINFILE_0)) \
+	filename_1=$(abspath $(BINFILE_1)) \
+	filename_2=$(abspath $(BINFILE_2))
+VIVADO_SIM_IN=\
+	$(BINFILE_0) \
+	$(BINFILE_1) \
+	$(BINFILE_2)
 
 include $(XILINX_MK)/xilinx.mk
