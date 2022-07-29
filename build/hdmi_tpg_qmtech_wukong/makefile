@@ -47,7 +47,7 @@ VIVADO_SIM_VHDL=\
 	$(SRC)/common/video_out/model_tmds_cdr_des.vhd \
 	$(SRC)/common/video_out/model_vga_sink.vhd \
 	$(SRC)/common/video_out/model_video_out_clock.vhd \
-	$(SRC)/common/video_out/sim_video_out_pkg.vhd
+	$(SRC)/common/tyto_sim_pkg.vhd
 
 ################################################################################
 
