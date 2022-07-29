@@ -19,6 +19,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library std;
+use std.textio.all;
+
 library work;
 use work.tyto_types_pkg.all;
 
@@ -26,7 +29,6 @@ package tyto_sim_pkg is
 
     procedure stim_clock(signal clock : inout std_logic; period : in time);
     procedure stim_reset(signal reset : inout std_logic; level : in std_logic; period : in time);
-
     procedure write_bmp(
        name : in string;
        img : in bmp_t;
@@ -35,6 +37,7 @@ package tyto_sim_pkg is
        hieght : in integer;
        interlaced : in boolean
     );
+    function read_bin(filename : string; size : integer) return uint8_array_t;
 
 end package tyto_sim_pkg;
 
@@ -109,5 +112,17 @@ package body tyto_sim_pkg is
             end loop;
         end loop;
     end procedure write_bmp;
+
+    function read_bin(filename : string; size : integer) return uint8_array_t is
+        variable r : uint8_array_t(0 to size-1);
+        file f : file_char_t open read_mode is filename;
+        variable c : character;
+    begin
+        for i in 0 to size-1 loop
+            read(f, c); 
+            r(i) := character'pos(c);
+        end loop;
+        return r;
+    end function read_bin;
 
 end package body tyto_sim_pkg;
