@@ -44,7 +44,7 @@ VIVADO_SIM_TOP=tb_$(DESIGN)_$(RAM_SIZE)k_$(BOARD)
 VIVADO_DSN_VHDL=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
-	$(SRC)/common/basic/tyto_types_pkg.vhd \
+	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/retro/np65/np6532.vhd \
 	$(SRC)/common/retro/np65/np6532_core.vhd \
 	$(DECODER_VHD) \

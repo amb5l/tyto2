@@ -50,7 +50,7 @@ VIVADO_SIM_TOP=$(DESIGN)
 VIVADO_SIM_OUT=simulate.log
 VIVADO_SIM_VHDL=\
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
-	$(SRC)/common/basic/tyto_types_pkg.vhd \
+	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/retro/np65/np6532.vhd \
 	$(SRC)/common/retro/np65/np6532_core.vhd \
 	$(DECODER_VHD) \
