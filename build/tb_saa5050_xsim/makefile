@@ -12,9 +12,9 @@ XILINX_MK=$(SUBMODULES)/xilinx-mk
 all: check
 
 check: sim
-	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_0.bmp ../../src/designs/$(DESIGN)/$(DESIGN)_0.bmp
-	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_1.bmp ../../src/designs/$(DESIGN)/$(DESIGN)_1.bmp
-	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_2.bmp ../../src/designs/$(DESIGN)/$(DESIGN)_2.bmp
+	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_0.bmp ../../src/common/retro/saa5050/test/$(DESIGN)_0.bmp
+	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_1.bmp ../../src/common/retro/saa5050/test/$(DESIGN)_1.bmp
+	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_2.bmp ../../src/common/retro/saa5050/test/$(DESIGN)_2.bmp
 
 VIVADO_PROJ=fpga
 VIVADO_LANG=VHDL
@@ -22,7 +22,7 @@ VIVADO_LANG=VHDL
 VIVADO_SIM_TOP=$(DESIGN)
 VIVADO_SIM_OUT=$(DESIGN)_2.bmp
 VIVADO_SIM_VHDL=\
-	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
+	$(SRC)/common/retro/saa5050/test/$(DESIGN).vhd \
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/retro/saa5050/saa5050.vhd \
