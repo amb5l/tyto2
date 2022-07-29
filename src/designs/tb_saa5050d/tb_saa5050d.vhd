@@ -23,7 +23,8 @@ library std;
 use std.env.finish;
 
 library work;
-use work.sim_video_out_pkg.all;
+use work.tyto_types_pkg.all;
+use work.tyto_sim_pkg.all;
 use work.saa5050d_pkg.all;
 use work.hd6845_pkg.all;
 

@@ -48,7 +48,8 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library work;
-use work.sim_video_out_pkg.all;
+use work.tyto_types_pkg.all;
+use work.tyto_sim_pkg.all;
 
 entity model_vga_sink is
     generic (

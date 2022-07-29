@@ -33,4 +33,8 @@ package tyto_types_pkg is
     type slv_7_0_2d_t is array(natural range <>,natural range <>) of std_logic_vector(7 downto 0);
     type slv_3_0_2d_t is array(natural range <>,natural range <>) of std_logic_vector(3 downto 0);
 
+    subtype uint8_t is integer range 0 to 255;
+	type pixel_t is array(0 to 2) of uint8_t;
+	type bmp_t is array(natural range <>,natural range <>) of pixel_t;
+
 end package tyto_types_pkg;
