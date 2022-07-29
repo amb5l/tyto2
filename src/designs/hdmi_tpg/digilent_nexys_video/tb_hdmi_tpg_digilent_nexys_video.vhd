@@ -91,7 +91,7 @@ begin
         end loop;
     end process;
 
-    UUT: entity work.top
+    UUT: entity work.hdmi_tpg_digilent_nexys_video
         port map (
             clki_100m       => clki_100m,
             led             => led,

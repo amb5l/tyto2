@@ -87,7 +87,7 @@ begin
         end loop;
     end process;
 
-    UUT: entity work.top
+    UUT: entity work.hdmi_tpg_qmtech_wukong
         port map (
             clki_50m    => clki_50m,
             led_n       => led_n,
