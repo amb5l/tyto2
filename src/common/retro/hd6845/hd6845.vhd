@@ -17,10 +17,15 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 package hd6845_pkg is
 
     component hd6845 is
+        generic (
+            rst_f     : std_logic := '0';                       -- reset value of crt_f
+            rst_v     : unsigned(6 downto 0) := (others => '0') -- reset value of count_v
+        );    
         port (
 
             reg_clk   : in  std_logic;                     -- register clock
@@ -58,6 +63,10 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity hd6845 is
+    generic (
+        rst_f     : std_logic := '0';                       -- reset value of crt_f
+        rst_v     : unsigned(6 downto 0) := (others => '0') -- reset value of count_v
+    );
     port (
 
         reg_clk   : in  std_logic;                     -- register clock
@@ -193,7 +202,7 @@ begin
 
                 count_h    <= (others => '0');
                 count_hs   <= (others => '0');
-                count_v    <= (others => '0');
+                count_v    <= rst_v;
                 count_vs   <= (others => '0');
                 count_ma   <= (others => '0');
                 count_ra   <= (others => '0');
@@ -201,7 +210,7 @@ begin
                 count_ma_r <= (others => '0');
                 crt_ma     <= (others => '0');
                 crt_ra     <= (others => '0');
-                crt_f_i    <= '0';
+                crt_f_i    <= rst_f;
                 crt_vs_i   <= '0';
                 crt_hs_i   <= '0';
                 crt_vb_i   <= '0';
