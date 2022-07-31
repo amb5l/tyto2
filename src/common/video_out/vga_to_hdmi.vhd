@@ -69,9 +69,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library xpm;
-use xpm.vcomponents.all;
-
 library work;
 use work.tyto_types_pkg.all;
 use work.sync_reg_pkg.all;
