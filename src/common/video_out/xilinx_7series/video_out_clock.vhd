@@ -323,11 +323,17 @@ begin
 
     mmcm_rst <= cfg_rst or rsti;
 
-    -- defaults: clk_s = 371.25MHz, clko = 74.25MHz (for clki = 100MHz)
+    -- The 7 series LVDS serdes is rated at as follows for DDR outputs:
+    --  1200Mbps max for -2 speed grade
+    --  950Mbps max for -1 speed grade
+    -- 1485Mbps (for full HD) overclocks these, so we use a fictional
+    --  recipe for the MMCM to achieve timing closure:
+    --   m = 9.25, d = 1, outdiv0 = 2.0, outdiv1 = 6
+    --    => fVCO = 925 MHz, fclko_x5 = 462.5 MHz, fclko = 154.166 MHz
     MMCM: component mmcme2_adv
     generic map(
         bandwidth               => "OPTIMIZED",
-        clkfbout_mult_f         => 37.125,
+        clkfbout_mult_f         => 9.25,
         clkfbout_phase          => 0.0,
         clkfbout_use_fine_ps    => false,
         clkin1_period           => 10.0,
@@ -336,7 +342,7 @@ begin
         clkout0_duty_cycle      => 0.5,
         clkout0_phase           => 0.0,
         clkout0_use_fine_ps     => false,
-        clkout1_divide          => 10,
+        clkout1_divide          => 6,
         clkout1_duty_cycle      => 0.5,
         clkout1_phase           => 0.0,
         clkout1_use_fine_ps     => false,
@@ -362,7 +368,7 @@ begin
         clkout6_phase           => 0.0,
         clkout6_use_fine_ps     => false,
         compensation            => "ZHOLD",
-        divclk_divide           => 5,
+        divclk_divide           => 1,
         is_clkinsel_inverted    => '0',
         is_psen_inverted        => '0',
         is_psincdec_inverted    => '0',

@@ -60,6 +60,7 @@ use ieee.numeric_std.all;
 
 library work;
 use work.sync_reg_pkg.all;
+use work.tyto_utils_pkg.all;
 
 entity video_out_timing is
     port (
@@ -113,7 +114,8 @@ architecture synth of video_out_timing is
     signal pos_v_act2     : unsigned(v_tot_s'range);
     signal pos_v_fp2      : unsigned(v_tot_s'range);
 
-    signal genlock_s      : std_logic_vector(0 to 2);
+    signal genlock_s      : std_logic;
+    signal genlock_s_1    : std_logic;
     signal genlock_start  : std_logic;
     signal genlock_end    : std_logic;
     signal genlock_window : std_logic;
@@ -148,11 +150,12 @@ begin
 
     SYNC : component sync_reg
         generic map (
-            width           => 71,
+            width           => 72,
             depth           => 2
         )
         port map (
             clk             => clk,
+            d(71)           => genlock,
             d(70)           => pix_rep,
             d(69)           => interlace,
             d(68 downto 58) => v_tot,
@@ -163,6 +166,7 @@ begin
             d(25 downto 15) => h_act,
             d(14 downto 8)  => h_sync,
             d(7 downto 0)   => h_bp,
+            q(71)           => genlock_s,
             q(70)           => pix_rep_s,
             q(69)           => interlace_s,
             q(68 downto 58) => v_tot_s,
@@ -174,18 +178,6 @@ begin
             q(14 downto 8)  => h_sync_s,
             q(7 downto 0)   => h_bp_s
         );
-
-    genlock_start   <= '1' when s1_count_h = unsigned(h_tot_s) - 4 else '0';
-    genlock_end     <= '1' when s1_count_h = to_unsigned(1,h_tot_s'length) else '0';
-
-    pos_h_act       <= resize(unsigned(h_sync_s),h_tot_s'length) + resize(unsigned(h_bp_s),h_tot_s'length);
-    pos_h_fp        <= pos_h_act + unsigned(h_act_s);
-    pos_v_act1      <= resize(unsigned(v_sync_s),v_tot_s'length) + resize(unsigned(v_bp_s),v_tot_s'length);
-    pos_v_fp1       <= pos_v_act1 + unsigned(v_act_s) when interlace_s = '0' else pos_v_act1 + shift_right(unsigned(v_act_s),1);
-    pos_v_mid       <= shift_right(unsigned(v_tot_s),1);
-    pos_v_bp2       <= pos_v_mid + resize(unsigned(v_sync_s),v_tot_s'length);
-    pos_v_act2      <= pos_v_bp2 + resize(unsigned(v_bp_s),v_tot_s'length) + 1;
-    pos_v_fp2       <= pos_v_act2 + shift_right(unsigned(v_act_s),1);
 
     s1_h_bp         <= '1' when s1_count_h = resize(unsigned(h_sync_s),h_tot_s'length) else '0';
     s1_h_act        <= '1' when s1_count_h = pos_h_act else '0';
@@ -203,13 +195,24 @@ begin
     begin
         if rising_edge(clk) then
 
-            genlock_s(0 to 2) <= genlock & genlock_s(0 to 1);
-            if rst = '1' then
-                genlock_s(0 to 2) <= (others => '0');
+            genlock_s_1   <= genlock_s;
+            genlock_start <= bool2sl(s1_count_h = unsigned(h_tot_s) - 5);
+            genlock_end   <= bool2sl(s1_count_h = to_unsigned(0,h_tot_s'length));
+            pos_h_act     <= resize(unsigned(h_sync_s),h_tot_s'length) + resize(unsigned(h_bp_s),h_tot_s'length);
+            pos_h_fp      <= pos_h_act + unsigned(h_act_s);
+            pos_v_act1    <= resize(unsigned(v_sync_s),v_tot_s'length) + resize(unsigned(v_bp_s),v_tot_s'length);
+            if interlace_s = '0' then
+                pos_v_fp1 <= pos_v_act1 + unsigned(v_act_s);
+            else
+                pos_v_fp1 <= pos_v_act1 + shift_right(unsigned(v_act_s),1);
             end if;
+            pos_v_mid     <= shift_right(unsigned(v_tot_s),1);
+            pos_v_bp2     <= pos_v_mid + resize(unsigned(v_sync_s),v_tot_s'length);
+            pos_v_act2    <= pos_v_bp2 + resize(unsigned(v_bp_s),v_tot_s'length) + 1;
+            pos_v_fp2     <= pos_v_act2 + shift_right(unsigned(v_act_s),1);
 
             if rst = '1'
-            or (genlock_s(1) = '1' and genlock_s(2) = '0' and genlock_window = '0') -- out of lock
+            or (genlock_s = '1' and genlock_s_1 = '0' and genlock_window = '0') -- out of lock
             then
 
                 s1_count_h     <= (others => '0');
@@ -235,17 +238,17 @@ begin
                 ax             <= (others => '0');
                 ay             <= (others => '1');
 
-                if (genlock_s(1) = '1' and genlock_s(2) = '0' and genlock_window = '0') then -- out of lock
-                    s1_count_v     <= pos_v_act1;
-                    s1_v_zero      <= '0';
-                    s2_vblank      <= '0';
-                    vblank         <= '0';
-                    s2_ay          <= (others => '1');
+                if (genlock_s = '1' and genlock_s_1 = '0' and genlock_window = '0') then -- out of lock
+                    s1_count_v <= pos_v_act1;
+                    s1_v_zero  <= '0';
+                    s2_vblank  <= '0';
+                    vblank     <= '0';
+                    s2_ay      <= (others => '1');
                 end if;
 
             else
 
-                if genlock_s(1) = '1' and genlock_s(2) = '0' and genlock_window = '1' then
+                if genlock_s = '1' and genlock_s_1 = '0' and genlock_window = '1' then -- in lock
                     genlocked <= '1';
                 end if;
 

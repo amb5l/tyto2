@@ -23,6 +23,7 @@ VIVADO_DSN_VHDL=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
 	$(SRC)/common/tyto_types_pkg.vhd \
+	$(SRC)/common/tyto_utils_pkg.vhd \
 	$(SRC)/common/basic/xilinx_7series/mmcm.vhd \
 	$(SRC)/common/video_out/video_mode.vhd \
 	$(SRC)/common/video_out/xilinx_7series/video_out_clock.vhd \

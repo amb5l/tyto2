@@ -57,6 +57,9 @@ architecture structural of sync_reg is
     type reg_t is array(0 to depth-1) of reg_level_t;
     signal reg : reg_t;
 
+    attribute ASYNC_REG : string;
+    attribute ASYNC_REG of reg : signal is "TRUE";
+
 begin
 
     process(clk)

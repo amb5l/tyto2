@@ -58,8 +58,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library xpm;
-use xpm.vcomponents.all;
+library work;
+use work.sync_reg_pkg.all;
 
 entity video_out_test_pattern is
     port (
@@ -100,7 +100,7 @@ architecture synth of video_out_test_pattern is
     signal h_act_s     : std_logic_vector(10 downto 0);     -- }
 
     signal h_act_r     : std_logic_vector(h_act_s'range);   -- input adjusted for pixel repetition
-    signal raw_ax_r    : std_logic_vector(raw_ax'range);  -- "
+    signal raw_ax_r    : std_logic_vector(raw_ax'range);    -- "
 
     signal cbs         : unsigned(15 downto 0);             -- colour bar scale coefficient
 
@@ -121,29 +121,24 @@ architecture synth of video_out_test_pattern is
 
 begin
 
-    SYNC : xpm_cdc_array_single
+    SYNC : component sync_reg
         generic map (
-            DEST_SYNC_FF    => 2,
-            INIT_SYNC_FF    => 1,
-            SIM_ASSERT_CHK  => 1,
-            SRC_INPUT_REG   => 0,
-            WIDTH           => 23
+            width           => 23,
+            depth           => 2
         )
         port map (
-            src_clk                => '0',
-            src_in(22)             => pix_rep,
-            src_in(21 downto 11)   => v_act,
-            src_in(10 downto 0)    => h_act,
-            dest_clk               => clk,
-            dest_out(22)           => pix_rep_s,
-            dest_out(21 downto 11) => v_act_s,
-            dest_out(10 downto 0)  => h_act_s
+            clk             => clk,
+            d(22)           => pix_rep,
+            d(21 downto 11) => v_act,
+            d(10 downto 0)  => h_act,
+            q(22)           => pix_rep_s,
+            q(21 downto 11) => v_act_s,
+            q(10 downto 0)  => h_act_s
         );
 
     h_act_r <= h_act_s when pix_rep_s = '0' else '0' & h_act_s(h_act_s'length-1 downto 1);
     raw_ax_r <= raw_ax when pix_rep_s = '0' else '0' & raw_ax(raw_ax'length-1 downto 1);
 
-    s0_cbx <= signed(raw_ax_r) - resize(signed('0' & h_act_r(h_act_r'length-1 downto 2)),raw_ax_r'length); -- colour bar region x pos
     s0_cby <= signed(raw_ay) - resize(signed('0' & v_act_s(v_act_s'length-1 downto 2)),raw_ay'length); -- colour bar region y pos
 
     process(rst,clk)
@@ -949,6 +944,9 @@ begin
 --            vga_b       <= (others => '0');
 
         if rising_edge(clk) then
+
+            -- colour bar region x pos
+            s0_cbx <= (signed(raw_ax_r)-1) - resize(signed('0' & h_act_r(h_act_r'length-1 downto 2)),raw_ax_r'length);
 
             -- infer synchronous 1k x 16 ROM
             cbs <= cbscale(unsigned(h_act_r(h_act_r'length-1 downto 1)));
