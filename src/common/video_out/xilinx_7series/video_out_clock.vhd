@@ -76,7 +76,7 @@ architecture synth of video_out_clock is
     signal locked       : std_logic;                     -- MMCM locked output
     signal locked_s     : std_logic;                     -- above, synchronised to clki
 
-    signal sel_prev     : std_logic_vector(1 downto 0);  -- to detect changes
+    signal sel_prev     : std_logic_vector(2 downto 0);  -- to detect changes
     signal clk_fb       : std_logic;                     -- feedback clock
     signal clku_fb      : std_logic;                     -- unbuffered feedback clock
     signal clko_u       : std_logic;                     -- unbuffered pixel clock
@@ -231,7 +231,7 @@ begin
             -- state machine
             case cfg_state is
                 when IDLE =>
-                    if sel /= sel_prev  -- frequency selection has changed
+                    if '0' & sel /= sel_prev  -- frequency selection has changed (or initial startup)
                     or locked_s = '0'       -- lock lost
                     then
                         rsto_req <= '1';
@@ -239,7 +239,7 @@ begin
                         cfg_state <= RESET;
                     end if;
                 when RESET => -- put MMCM into reset
-                    sel_prev <= sel;
+                    sel_prev <= '0' & sel;
                     cfg_tbl_addr <= sel & "00000";
                     cfg_state <= TBL;
                 when TBL => -- get table entry from sychronous ROM
@@ -278,7 +278,7 @@ begin
 
             if rsti = '1' then -- full reset
 
-                sel_prev    <= (others => '0');
+                sel_prev    <= (others => '1'); -- force reconfig
                 cfg_rst     <= '1';
                 cfg_daddr   <= (others => '0');
                 cfg_den     <= '0';
