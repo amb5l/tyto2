@@ -29,6 +29,7 @@ package otus_overscan_pkg is
             clk   : in  std_logic;  -- CRTC clock
             clken : in  std_logic;  -- 2MHz clock enable
             rst   : in  std_logic;  -- CRTC reset
+            ttx   : in  std_logic;  -- 1 = teletext, 0 = non-teletext
             f     : in  std_logic;  -- CRTC field ID
             vs    : in  std_logic;  -- CRTC vsync
             hs    : in  std_logic;  -- CRTC hsync
@@ -53,6 +54,7 @@ entity otus_overscan is
         clk   : in  std_logic;  -- CRTC clock
         clken : in  std_logic;  -- 2MHz clock enable
         rst   : in  std_logic;  -- CRTC reset
+        ttx   : in  std_logic;  -- 1 = teletext, 0 = non-teletext
         f     : in  std_logic;  -- CRTC field ID
         vs    : in  std_logic;  -- CRTC vsync
         hs    : in  std_logic;  -- CRTC hsync
@@ -64,7 +66,8 @@ architecture synth of otus_overscan is
 
     constant v_bp         : integer := 38;  -- vertical back porch (video lines, odd field)
     constant v_act        : integer := 256; -- vertical active period (video lines)
-    constant h_bp         : integer := 18;  -- horizontal back porch (characters @ 2MHz)
+    constant h_bp_gfx     : integer := 22;  -- horizontal back porch (characters @ 2MHz, non-teletext)
+    constant h_bp_ttx     : integer := 18;  -- horizontal back porch (characters @ 2MHz, teletext)
     constant h_act        : integer := 80;  -- horizontal active period (characters @ 2MHz)
     constant count_v_max  : integer := 511;
     constant count_h_wrap : integer := 127;
@@ -75,8 +78,11 @@ architecture synth of otus_overscan is
     signal count_h : integer range 0 to count_h_wrap;
     signal hs_1    : std_logic;
     signal en_h    : std_logic;
+    signal h_bp    : integer range 0 to count_h_wrap;
 
 begin
+
+    h_bp <= h_bp_ttx when ttx = '1' else h_bp_gfx;
 
     process(clk)
     begin
@@ -85,7 +91,7 @@ begin
             count_v <= v_bp+v_act;
             vs_1 <= '0';
             en_v <= '0';
-            count_h <= h_bp-5;
+            count_h <= h_bp_ttx-5;
             hs_1 <= '0';
             en_h <= '0';
 

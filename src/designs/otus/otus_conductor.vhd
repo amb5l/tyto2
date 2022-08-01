@@ -34,13 +34,14 @@ package otus_conductor_pkg is
             rst_32m          : out std_logic; -- } start together
             rst_8m           : out std_logic; -- }
 
+            clken_96m_8m     : out std_logic;
             clken_48m_16m    : out std_logic;
             clken_48m_12m    : out std_logic;
-            clken_48m_2m_180 : out std_logic;
-            clken_48m_1m_90  : out std_logic;
+            clken_48m_8m     : out std_logic;
             clken_8m_4m      : out std_logic;
             clken_8m_2m_0    : out std_logic;
             clken_8m_2m_180  : out std_logic;
+            clken_8m_2m_270  : out std_logic;
             clken_8m_1m_0    : out std_logic;
             clken_8m_1m_90   : out std_logic
 
@@ -72,13 +73,14 @@ entity otus_conductor is
         rst_32m          : out std_logic; -- } start together
         rst_8m           : out std_logic; -- }
 
+        clken_96m_8m     : out std_logic;
         clken_48m_16m    : out std_logic;
         clken_48m_12m    : out std_logic;
-        clken_48m_2m_180 : out std_logic;
-        clken_48m_1m_90  : out std_logic;
+        clken_48m_8m     : out std_logic;
         clken_8m_4m      : out std_logic;
         clken_8m_2m_0    : out std_logic;
         clken_8m_2m_180  : out std_logic;
+        clken_8m_2m_270  : out std_logic;
         clken_8m_1m_0    : out std_logic;
         clken_8m_1m_90   : out std_logic
 
@@ -101,14 +103,15 @@ architecture synth of otus_conductor is
     signal nrst_48m_e         : std_logic := '0'; -- }  facilitates register duplication
     signal nrst_32m_e         : std_logic := '0'; -- }   on these high fanout signals
     signal nrst_8m_e          : std_logic := '0'; -- }
+    signal clken_96m_8m_e     : std_logic := '0'; -- }
     signal clken_48m_16m_e    : std_logic := '0'; -- }
     signal clken_48m_12m_e    : std_logic := '0'; -- }
-    signal clken_48m_2m_180_e : std_logic := '0'; -- }
+    signal clken_48m_8m_e     : std_logic := '0'; -- }
     signal clken_48m_1m_0_e   : std_logic := '0'; -- }
-    signal clken_48m_1m_90_e  : std_logic := '0'; -- }
     signal clken_8m_4m_e      : std_logic := '0'; -- }
     signal clken_8m_2m_0_e    : std_logic := '0'; -- }
     signal clken_8m_2m_180_e  : std_logic := '0'; -- }
+    signal clken_8m_2m_270_e  : std_logic := '0'; -- }
     signal clken_8m_1m_0_e    : std_logic := '0'; -- }
     signal clken_8m_1m_90_e   : std_logic := '0'; -- }
 
@@ -134,13 +137,16 @@ begin
             if nrst = '0' then
                 ph_96m_8m <= 0;
                 nrst_96m_e <= '0';
+                clken_96m_8m <= '0';
             else
                 ph_96m_8m <= (ph_96m_8m+1) mod 12;
                 if ph_8m_1m = 7 and ph_96m_8m = 9 then
                     nrst_96m_e <= '1';
                 end if;
+                clken_96m_8m_e <= bool2sl(ph_96m_8m = 9);
             end if;
             rst_96m <= not nrst_96m_e;
+            clken_96m_8m <= clken_96m_8m_e;
         end if;
     end process;
 
@@ -154,8 +160,7 @@ begin
                 nrst_48m_e <= '0';
                 clken_48m_16m_e <= '0';
                 clken_48m_12m_e <= '0';
-                clken_48m_2m_180 <= '0';
-                clken_48m_1m_90 <= '0';
+                clken_48m_8m_e <= '0';
             else
                 ph_48m_16m <= (ph_48m_16m+1) mod 3;
                 ph_48m_12m <= (ph_48m_12m+1) mod 4;
@@ -165,14 +170,12 @@ begin
                 end if;
                 clken_48m_16m_e <= bool2sl(ph_48m_16m = 0);
                 clken_48m_12m_e <= bool2sl(ph_48m_12m = 1);
-                clken_48m_2m_180_e <= bool2sl(ph_8m_1m mod 4 = 1 and ph_48m_8m = 3);
-                clken_48m_1m_90_e <= bool2sl(ph_8m_1m = 1 and ph_48m_8m = 3);
+                clken_48m_8m_e  <= bool2sl(ph_48m_8m = 3);
             end if;
             rst_48m <= not nrst_48m_e;
             clken_48m_16m <= clken_48m_16m_e;
             clken_48m_12m <= clken_48m_12m_e;
-            clken_48m_2m_180 <= clken_48m_2m_180_e;
-            clken_48m_1m_90 <= clken_48m_1m_90_e;
+            clken_48m_8m  <= clken_48m_8m_e;
         end if;
     end process;
 
@@ -201,6 +204,7 @@ begin
                 clken_8m_4m_e <= '0';
                 clken_8m_2m_0_e <= '0';
                 clken_8m_2m_180_e <= '0';
+                clken_8m_2m_270_e <= '0';
                 clken_8m_1m_0_e <= '0';
                 clken_8m_1m_90_e <= '0';
             else
@@ -209,6 +213,7 @@ begin
                 clken_8m_4m_e <= bool2sl(ph_8m_1m mod 2 = 1);
                 clken_8m_2m_0_e <= bool2sl(ph_8m_1m mod 4 = 1);
                 clken_8m_2m_180_e <= bool2sl(ph_8m_1m mod 4 = 3);
+                clken_8m_2m_270_e <= bool2sl(ph_8m_1m mod 4 = 0);
                 clken_8m_1m_0_e <= bool2sl(ph_8m_1m = 5);
                 clken_8m_1m_90_e <= bool2sl(ph_8m_1m = 7);
             end if;
@@ -216,6 +221,7 @@ begin
             clken_8m_4m <= clken_8m_4m_e;
             clken_8m_2m_0 <= clken_8m_2m_0_e;
             clken_8m_2m_180 <= clken_8m_2m_180_e;
+            clken_8m_2m_270 <= clken_8m_2m_270_e;
             clken_8m_1m_0 <= clken_8m_1m_0_e;
             clken_8m_1m_90 <= clken_8m_1m_90_e;
         end if;

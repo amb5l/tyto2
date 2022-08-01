@@ -251,7 +251,6 @@ begin
                 vis_y     <= '0';
                 raddr     <= (others => '0');
                 raddr_sol <= (others => '0');            
-                ram_rd    <= (others => '0');
                 vtg_vs_r  <= (others => '0');
                 vtg_hs_r  <= (others => '0');
                 vtg_de_r  <= (others => '0');

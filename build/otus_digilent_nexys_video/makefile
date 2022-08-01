@@ -1,7 +1,7 @@
 DESIGN=otus
 RAM_SIZE=256
-BOARD=qmtech_wukong
-VIVADO_PART=xc7a100tfgg676-1
+BOARD=digilent_nexys_video
+VIVADO_PART=xc7a200tsbg484-1
 VENDOR=xilinx
 VENDOR_FAMILY=xilinx_7series
 

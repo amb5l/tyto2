@@ -21,6 +21,9 @@ use ieee.std_logic_1164.all;
 package video_out_timing_pkg is
 
     component video_out_timing is
+        generic (
+            hold      : boolean := false                   -- hold until genlock pulse received
+        );
         port (
 
             rst       : in  std_logic;                     -- reset
@@ -37,7 +40,7 @@ package video_out_timing_pkg is
             h_sync    : in  std_logic_vector(6 downto 0);  -- 1..127
             h_bp      : in  std_logic_vector(7 downto 0);  -- 0..255
 
-            genlock   : in  std_logic;                     -- genlock (external vsync) pulse
+            genlock   : in  std_logic;                     -- genlock pulse
             genlocked : out std_logic;                     -- genlock status                      
             f         : out std_logic;                     -- field ID
             vs        : out std_logic;                     -- vertical sync
@@ -63,6 +66,9 @@ use work.sync_reg_pkg.all;
 use work.tyto_utils_pkg.all;
 
 entity video_out_timing is
+    generic (
+        hold      : boolean := false                   -- hold until genlock pulse received
+    );
     port (
 
         rst       : in  std_logic;                     -- reset
@@ -79,7 +85,7 @@ entity video_out_timing is
         h_sync    : in  std_logic_vector(6 downto 0);  -- 1..127
         h_bp      : in  std_logic_vector(7 downto 0);  -- 0..255
 
-        genlock   : in  std_logic;                     -- genlock (external vsync) pulse
+        genlock   : in  std_logic;                     -- genlock pulse
         genlocked : out std_logic;                     -- genlock status                      
         f         : out std_logic;                     -- field ID
         vs        : out std_logic;                     -- vertical sync
@@ -93,6 +99,8 @@ entity video_out_timing is
 end entity video_out_timing;
 
 architecture synth of video_out_timing is
+
+    signal run            : std_logic;
 
     signal pix_rep_s      : std_logic;                     -- } synchronised
     signal interlace_s    : std_logic;                     -- }
@@ -211,9 +219,9 @@ begin
             pos_v_act2    <= pos_v_bp2 + resize(unsigned(v_bp_s),v_tot_s'length) + 1;
             pos_v_fp2     <= pos_v_act2 + shift_right(unsigned(v_act_s),1);
 
-            if rst = '1'
-            or (genlock_s = '1' and genlock_s_1 = '0' and genlock_window = '0') -- out of lock
-            then
+            if rst = '1' then
+
+                run            <= '0';
 
                 s1_count_h     <= (others => '0');
                 s1_h_zero      <= '1';
@@ -238,17 +246,36 @@ begin
                 ax             <= (others => '0');
                 ay             <= (others => '1');
 
-                if (genlock_s = '1' and genlock_s_1 = '0' and genlock_window = '0') then -- out of lock
-                    s1_count_v <= pos_v_act1;
-                    s1_v_zero  <= '0';
-                    s2_vblank  <= '0';
-                    vblank     <= '0';
-                    s2_ay      <= (others => '1');
-                end if;
+            elsif genlock_s = '1' and genlock_s_1 = '0' and genlock_window = '0' then -- out of lock, re-establish
 
-            else
+                run            <= '1';
 
-                if genlock_s = '1' and genlock_s_1 = '0' and genlock_window = '1' then -- in lock
+                s1_count_h     <= (others => '0');
+                s1_h_zero      <= '1';
+                s1_count_v     <= pos_v_act1;
+                s1_v_zero      <= '0';
+                s2_rep         <= '0';
+                s2_f           <= '0';
+                s2_vs          <= '0';
+                s2_vblank      <= '0';
+                s2_hs          <= '0';
+                s2_hblank      <= '1';
+                s2_ax          <= (others => '0');
+                s2_ay          <= (others => '1');
+
+                genlocked      <= '0';
+                genlock_window <= '0';
+                f              <= '0';
+                vs             <= '0';
+                hs             <= '0';
+                vblank         <= '0';
+                hblank         <= '1';
+                ax             <= (others => '0');
+                ay             <= (others => '1');
+
+            elsif run = '1' or not hold then
+
+                if genlock_s = '1' and genlock_s_1 = '0' and genlock_window = '1' then -- lock established
                     genlocked <= '1';
                 end if;
 
