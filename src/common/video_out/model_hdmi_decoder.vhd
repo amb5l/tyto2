@@ -23,7 +23,6 @@ use work.tyto_types_pkg.all;
 
 package model_hdmi_decoder_pkg is
 
-
     component model_hdmi_decoder is
         port
         (
