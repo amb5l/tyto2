@@ -14,8 +14,8 @@ VIVADO_LANG=VHDL
 
 VIVADO_SIM_TOP=tb_$(DESIGN)
 VIVADO_SIM_VHDL=\
-	$(SRC)/common/retro/ps2/tb_$(DESIGN).vhd \
-	$(SRC)/common/retro/ps2/$(DESIGN).vhd \
+	$(SRC)/common/ps2/tb_$(DESIGN).vhd \
+	$(SRC)/common/ps2/$(DESIGN).vhd \
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/tyto_sim_pkg.vhd
 
