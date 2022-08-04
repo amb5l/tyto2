@@ -1,4 +1,4 @@
-DESIGN=ps2
+DESIGN=ps2_host
 VIVADO_PART=xc7a200tsbg484-1
 
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
@@ -14,10 +14,9 @@ VIVADO_LANG=VHDL
 
 VIVADO_SIM_TOP=tb_$(DESIGN)
 VIVADO_SIM_VHDL=\
-	$(SRC)/common/retro/$(DESIGN)/tb_$(DESIGN).vhd \
-	$(SRC)/common/retro/$(DESIGN)/$(DESIGN).vhd \
+	$(SRC)/common/retro/ps2/tb_$(DESIGN).vhd \
+	$(SRC)/common/retro/ps2/$(DESIGN).vhd \
 	$(SRC)/common/tyto_types_pkg.vhd \
-	$(SRC)/common/tyto_utils_pkg.vhd \
-	$(SRC)/common/tyto_sim_pkg.vhd \
+	$(SRC)/common/tyto_sim_pkg.vhd
 
 include $(XILINX_MK)/xilinx.mk
