@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- tb_ps2_host.vhd                                                            --
--- Simulation testbench for ps2_host.vhd.                                     --
+-- tb_ps2_to_usbhid.vhd                                                       --
+-- Simulation testbench for ps2_to_usbhid.vhd.                                --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -23,13 +23,16 @@ library std;
 use std.env.finish;
 
 library work;
+use work.tyto_types_pkg.all;
 use work.tyto_sim_pkg.all;
+use work.ps2_to_usbhid_pkg.all;
+use work.ps2set_to_usbhid_pkg.all;
 use work.ps2_host_pkg.all;
 
-entity tb_ps2_host is
-end entity tb_ps2_host;
+entity tb_ps2_to_usbhid is
+end entity tb_ps2_to_usbhid;
 
-architecture sim of tb_ps2_host is
+architecture sim of tb_ps2_to_usbhid is
 
     constant tps2 : time := 66 us; -- PS/2 clock period (~16.7kHz)
     constant tclk : time := 1 us;  -- clock period
@@ -45,20 +48,29 @@ architecture sim of tb_ps2_host is
     signal d2h_stb     : std_logic;
     signal d2h_data_tx : std_logic_vector(7 downto 0);
     signal d2h_data_rx : std_logic_vector(7 downto 0);
-    signal d2h_pass    : integer;
-    signal d2h_fail    : integer;
 
     signal h2d_req     : std_logic;
     signal h2d_ack     : std_logic;
     signal h2d_nack    : std_logic;
     signal h2d_data_tx : std_logic_vector(7 downto 0);
     signal h2d_data_rx : std_logic_vector(7 downto 0);
-    signal h2d_pass    : integer;
-    signal h2d_fail    : integer;
 
-    signal h2d_perr   : boolean;
-    signal ps2_clk    : std_logic := 'H';
-    signal ps2_data   : std_logic := 'H';
+    signal h2d_perr    : boolean;
+    signal ps2_clk     : std_logic := 'H';
+    signal ps2_data    : std_logic := 'H';
+
+    signal hid_code    : std_logic_vector(7 downto 0);
+    signal last        : std_logic;
+
+    signal hid_stb     : std_logic;
+    signal hid_data    : std_logic_vector(7 downto 0);
+    signal hid_make    : std_logic;
+
+    signal pass        : integer;
+    signal fail        : integer;
+
+    signal t           : time;
+    signal maxlat      : time;
 
     function oco(i : std_logic) return std_logic is
     begin
@@ -137,86 +149,84 @@ begin
             ps2_clk <= oco('1');
             ps2_data <= oco('1');
         end procedure ps2_d2h;
-        procedure ps2_h2d(
-            signal   ps2_clk  : inout std_logic;
-            signal   ps2_data : inout std_logic;
-            signal   h2d_data : out std_logic_vector(7 downto 0);
-            signal   h2d_perr : out boolean;
-            constant period   : in time
-        ) is
-            variable sr : std_logic_vector(10 downto 0);
-        begin
-            wait until oci(ps2_clk) = '0';
-            wait until oci(ps2_data) = '0';
-            wait until oci(ps2_clk) = '1';
-            for i in 0 to 10 loop
-                wait for period/2;
-                ps2_clk <= oco('0');
-                ps2_data <= oco('1');
-                if i = 10 then
-                    ps2_data <= oco('0');
-                end if;
-                wait for period/2;
-                ps2_clk <= oco('1');
-                sr(i) := oci(ps2_data);
-            end loop;
-            ps2_data <= oco('1');
-            h2d_data <= sr(7 downto 0);
-            h2d_perr <= sr(8) /= parity_odd(sr(7 downto 0));
-        end procedure ps2_h2d;
+        constant tbl : slv_8_0_t := ps2set_to_usbhid(true);
+        variable i : integer;
     begin
         h2d_req <= '0';
+        pass <= 0;
+        fail <= 0;
         wait for tps2;
-        for i in 0 to 255 loop
-            d2h_data_tx <= std_logic_vector(to_unsigned(i,8));
-            ps2_d2h(ps2_clk, ps2_data, std_logic_vector(to_unsigned(i,8)), tps2);
-            wait for 100 us;
+        i := 0;
+        while true loop
+            hid_code <= tbl(i)(7 downto 0);
+            last <= tbl(i)(8);
+            -- make code(s)
+            while true loop
+                i := i+1;
+                ps2_d2h(ps2_clk,ps2_data,tbl(i)(7 downto 0),tps2);
+                --report "i: " & integer'image(i) & "  sending " & integer'image(to_integer(unsigned(tbl(i)(7 downto 0))));
+                if tbl(i)(8) = '0' then exit; end if;
+            end loop;
+            wait until falling_edge(hid_stb);
+            if hid_data /= hid_code or hid_make /= '1' then
+                report "mismatch!" severity FAILURE;
+            end if;
+            wait for 200us;
+            -- break code(s) (if they exist)
+            if tbl(i+1) /= "000000000" then
+                while true loop
+                    i := i+1;
+                    ps2_d2h(ps2_clk,ps2_data,tbl(i)(7 downto 0),tps2);
+                    --report "i: " & integer'image(i) & "  sending " & integer'image(to_integer(unsigned(tbl(i)(7 downto 0))));
+                    if tbl(i)(8) = '0' then exit; end if;
+                end loop;
+                wait until falling_edge(hid_stb);
+                if hid_data /= hid_code or hid_make /= '0' then
+                    fail <= fail+1;
+                else
+                    pass <= pass+1;
+                end if;
+                wait for 200us;
+            else
+                report "no break code";
+                i := i+1;
+            end if;
+            i := i+1;
+            if last = '1' then
+                exit;
+            end if;
         end loop;
-        wait for 100 us;
-        for i in 0 to 255 loop
-            wait until falling_edge(clk);
-            h2d_data_tx <= std_logic_vector(to_unsigned(i,8));
-            h2d_req <= '1';
-            ps2_h2d(ps2_clk, ps2_data, h2d_data_rx, h2d_perr, tps2 );
-            wait until h2d_ack = '1' or h2d_nack = '1';
-            wait until falling_edge(clk);
-            h2d_req <= '0';
-            wait for 100 us;
-        end loop;
-        report "D2H: pass = " & integer'image(d2h_pass) & "  fail = " & integer'image(d2h_fail);
-        report "H2D: pass = " & integer'image(h2d_pass) & "  fail = " & integer'image(h2d_fail);
+        report "pass = " & integer'image(pass) & "  fail = " & integer'image(fail) & "  max latency = " & time'image(maxlat);
         finish;
     end process;
 
-    process(rst,d2h_stb)
+    process(rst,d2h_stb,hid_stb)
     begin
         if rst = '1' then
-            d2h_pass <= 0;
-            d2h_fail <= 0;
-        elsif falling_edge(d2h_stb) then
-            if d2h_data_rx /= d2h_data_tx then
-                d2h_fail <= d2h_fail+1;
-            else
-                d2h_pass <= d2h_pass+1;
+        elsif rising_edge(d2h_stb) then
+            t <= now;
+        elsif rising_edge(hid_stb) then
+            if now-t > maxlat then
+                maxlat <= now-t;
             end if;
         end if;
     end process;
 
-    process(rst,h2d_req)
-    begin
-        if rst = '1' then
-            h2d_pass <= 0;
-            h2d_fail <= 0;
-        elsif falling_edge(h2d_req) then
-            if h2d_data_rx /= h2d_data_tx then
-                h2d_fail <= h2d_fail+1;
-            else
-                h2d_pass <= h2d_pass+1;
-            end if;
-        end if;
-    end process;
+    UUT: component ps2_to_usbhid
+        generic map (
+            nonUS => true
+        )
+        port map (
+            clk      => clk,
+            rst      => rst,
+            ps2_stb  => d2h_stb,
+            ps2_data => d2h_data_rx,
+            hid_stb  => hid_stb,
+            hid_data => hid_data,
+            hid_make => hid_make
+        );
 
-    UUT: component ps2_host
+    HOST: component ps2_host
         generic map (
             fclk       => 1.0
         )
