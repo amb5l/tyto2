@@ -24,6 +24,7 @@ VIVADO_DSN_VHDL_2008=\
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/global_pkg_$(BOARD).vhd \
 	$(SRC)/common/tyto_types_pkg.vhd \
+	$(SRC)/common/tyto_utils_pkg.vhd \
 	$(SRC)/designs/$(DESIGN)/mig_bridge_axi.vhd \
 	$(SRC)/designs/$(DESIGN)/mig_bridge_crtc.vhd \
 	$(SRC)/designs/$(DESIGN)/mig_hub.vhd \
