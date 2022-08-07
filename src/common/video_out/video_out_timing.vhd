@@ -26,8 +26,8 @@ package video_out_timing_pkg is
         );
         port (
 
-            rst       : in  std_logic;                     -- reset
             clk       : in  std_logic;                     -- pixel clock
+            rst       : in  std_logic;                     -- pixel clock synchronous reset
 
             pix_rep   : in  std_logic;                     -- pixel repetition; 0 = none/x1, 1 = x2
             interlace : in  std_logic;
@@ -71,8 +71,8 @@ entity video_out_timing is
     );
     port (
 
-        rst       : in  std_logic;                     -- reset
         clk       : in  std_logic;                     -- pixel clock
+        rst       : in  std_logic;                     -- pixel clock synchronous reset
 
         pix_rep   : in  std_logic;                     -- pixel repetition; 0 = none/x1, 1 = x2
         interlace : in  std_logic;
