@@ -201,7 +201,7 @@ begin
     mode <= gpo(3 downto 0);
     gpi <= (0 => mig_cc, others => '0');
 
-    U_CPU: entity work.microblaze
+    U_CPU: component microblaze
         port map (
             clk         => sys_clk,
             rsti_n      => not (sys_rst or not mig_cc),
