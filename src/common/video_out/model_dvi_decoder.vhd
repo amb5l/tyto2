@@ -17,6 +17,32 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+
+library work;
+use work.tyto_types_pkg.all;
+
+package model_dvi_decoder_pkg is
+
+    component model_dvi_decoder is
+        port
+        (
+            dvi_clk : in  std_logic;
+            dvi_d   : in  std_logic_vector(0 to 2); -- 3x TMDS channels
+
+            vga_clk : out std_logic;
+            vga_vs  : out std_logic;                -- vertical sync
+            vga_hs  : out std_logic;                -- horizontal sync
+            vga_de  : out std_logic;                -- pixel data enable
+            vga_p   : out slv_7_0_t(0 to 2)         -- pixel data components
+        );
+    end component model_dvi_decoder;
+
+end package model_dvi_decoder_pkg;
+
+--------------------------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library work;
