@@ -66,11 +66,11 @@ debug:: CPU debug controller IP core.
 
 If you alter the block diagram in Vivado, you will need to export a TCL script to recreate by entering the following command in the TCL Console:
 
- write_bd_tcl -force -include_layout ../../../src/fpga/dsn/mb_fb/microblaze.tcl
+ write_bd_tcl -force -include_layout ../../../src/designs/mb_fb/microblaze.tcl
  
 To update the documentation, export an SVG image by entering the following command in the TCL Console:
 
- write_bd_layout ‑force ‑format svg ../../../doc/mb_fb/microblaze.svg
+ write_bd_layout ‑force ‑format svg ../../../doc/designs/mb_fb/microblaze.svg
 
 == MicroBlaze Software
 
