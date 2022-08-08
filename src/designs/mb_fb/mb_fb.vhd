@@ -166,33 +166,33 @@ architecture synth of mb_fb is
 
     component microblaze is
         port (
-        clk         : in  std_logic;
-        rsti_n      : in  std_logic;
-        rsto        : out std_logic_vector(0 to 0);
-        uart_txd    : out std_logic;
-        uart_rxd    : in  std_logic;
-        gpio_tri_i  : in  std_logic_vector(31 downto 0);
-        gpio_tri_o  : out std_logic_vector(31 downto 0);
-        gpio_tri_t  : out std_logic_vector(31 downto 0);
-        axi_awaddr  : out std_logic_vector(31 downto 0);
-        axi_awprot  : out std_logic_vector(2 downto 0);
-        axi_awvalid : out std_logic_vector(0 to 0);
-        axi_awready : in  std_logic_vector(0 to 0);
-        axi_wdata   : out std_logic_vector(31 downto 0);
-        axi_wstrb   : out std_logic_vector(3 downto 0);
-        axi_wvalid  : out std_logic_vector(0 to 0);
-        axi_wready  : in  std_logic_vector(0 to 0);
-        axi_bresp   : in  std_logic_vector(1 downto 0);
-        axi_bvalid  : in  std_logic_vector(0 to 0);
-        axi_bready  : out std_logic_vector(0 to 0);
-        axi_araddr  : out std_logic_vector(31 downto 0);
-        axi_arprot  : out std_logic_vector(2 downto 0);
-        axi_arvalid : out std_logic_vector(0 to 0);
-        axi_arready : in  std_logic_vector(0 to 0);
-        axi_rdata   : in  std_logic_vector(31 downto 0);
-        axi_rresp   : in  std_logic_vector(1 downto 0);
-        axi_rvalid  : in  std_logic_vector(0 to 0);
-        axi_rready  : out std_logic_vector(0 to 0)
+            clk         : in  std_logic;
+            rsti_n      : in  std_logic;
+            rsto        : out std_logic_vector(0 to 0);
+            uart_txd    : out std_logic;
+            uart_rxd    : in  std_logic;
+            gpio_tri_i  : in  std_logic_vector(31 downto 0);
+            gpio_tri_o  : out std_logic_vector(31 downto 0);
+            gpio_tri_t  : out std_logic_vector(31 downto 0);
+            axi_awaddr  : out std_logic_vector(31 downto 0);
+            axi_awprot  : out std_logic_vector(2 downto 0);
+            axi_awvalid : out std_logic_vector(0 to 0);
+            axi_awready : in  std_logic_vector(0 to 0);
+            axi_wdata   : out std_logic_vector(31 downto 0);
+            axi_wstrb   : out std_logic_vector(3 downto 0);
+            axi_wvalid  : out std_logic_vector(0 to 0);
+            axi_wready  : in  std_logic_vector(0 to 0);
+            axi_bresp   : in  std_logic_vector(1 downto 0);
+            axi_bvalid  : in  std_logic_vector(0 to 0);
+            axi_bready  : out std_logic_vector(0 to 0);
+            axi_araddr  : out std_logic_vector(31 downto 0);
+            axi_arprot  : out std_logic_vector(2 downto 0);
+            axi_arvalid : out std_logic_vector(0 to 0);
+            axi_arready : in  std_logic_vector(0 to 0);
+            axi_rdata   : in  std_logic_vector(31 downto 0);
+            axi_rresp   : in  std_logic_vector(1 downto 0);
+            axi_rvalid  : in  std_logic_vector(0 to 0);
+            axi_rready  : out std_logic_vector(0 to 0)
         );
     end component microblaze;
 
