@@ -1,5 +1,5 @@
 ################################################################################
-## otus_qmtech_wukong.tcl                                                     ##
+## otus_digilent_nexys_video.tcl                                              ##
 ## Digilent Nexys Video board specific constraints for the Otus design.       ##
 ################################################################################
 ## (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        ##
