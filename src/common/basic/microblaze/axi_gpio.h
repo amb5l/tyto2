@@ -27,4 +27,7 @@ uint32_t axi_gpio_get_gpo(uint8_t channel);
 void axi_gpio_set_gpo(uint8_t channel, uint32_t data);
 uint32_t axi_gpio_get_gpi(uint8_t channel);
 
+void axi_gpio_set_gpo_bit(uint8_t channel, uint8_t bit, uint8_t state);
+uint8_t axi_gpio_get_gpi_bit(uint8_t channel, uint8_t bit);
+
 #endif

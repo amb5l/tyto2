@@ -48,3 +48,22 @@ uint32_t axi_gpio_get_gpi(uint8_t channel)
 {
     return peek32(BASE+(channel?REG_GPIO2_DATA:REG_GPIO_DATA));
 }
+
+void axi_gpio_set_gpo_bit(uint8_t channel, uint8_t bit, uint8_t state)
+{
+    uint32_t r;
+
+    if (bit < 32) {
+        r = peek32(BASE+(channel?REG_GPIO2_DATA:REG_GPIO_DATA));
+        if (state)
+            r |= (1 << bit);
+        else
+            r &= ~(1 << bit);
+        poke32(BASE+(channel?REG_GPIO2_DATA:REG_GPIO_DATA),r);
+    }
+}
+
+uint8_t axi_gpio_get_gpi_bit(uint8_t channel, uint8_t bit)
+{
+    return (peek32(BASE+(channel?REG_GPIO2_DATA:REG_GPIO_DATA)) >> bit) & 1;
+}
