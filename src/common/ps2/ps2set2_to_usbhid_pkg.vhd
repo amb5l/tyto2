@@ -40,7 +40,7 @@ package body ps2set_to_usbhid_pkg is
         constant tbl: slv_8_0_t := (
 --          USB HID keycode                      PS/2 MAKE         PS/2 BREAK
             N&KEY_Backslash_Pipe_US,             C&x"5D",          P&x"F0",C&x"5D",
-            N&KEY_Backslash_Pipe_UK,             C&x"61",          P&x"E0",C&x"61",
+            N&KEY_Backslash_Pipe_UK,             C&x"61",          P&x"F0",C&x"61",
             N&KEY_A,                             C&x"1C",          P&x"F0",C&x"1C",
             N&KEY_B,                             C&x"32",          P&x"F0",C&x"32",
             N&KEY_C,                             C&x"21",          P&x"F0",C&x"21",
