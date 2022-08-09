@@ -61,7 +61,6 @@ package usb_hid_codes_pkg is
     constant KEY_Enter                        : std_logic_vector(7 downto 0) := x"28";
     constant KEY_Escape                       : std_logic_vector(7 downto 0) := x"29";
     constant KEY_Backspace                    : std_logic_vector(7 downto 0) := x"2a";
-    constant KEY_SemiColon_Colon              : std_logic_vector(7 downto 0) := x"2a";
     constant KEY_Tab                          : std_logic_vector(7 downto 0) := x"2b";
     constant KEY_Space                        : std_logic_vector(7 downto 0) := x"2c";
     constant KEY_Minus_Underscore             : std_logic_vector(7 downto 0) := x"2d";
@@ -70,6 +69,7 @@ package usb_hid_codes_pkg is
     constant KEY_RSquareBracket_RCurlyBracket : std_logic_vector(7 downto 0) := x"30";
     constant KEY_Backslash_Pipe_US            : std_logic_vector(7 downto 0) := x"31";
     constant KEY_Hash_Tilde_UK                : std_logic_vector(7 downto 0) := x"32";
+    constant KEY_SemiColon_Colon              : std_logic_vector(7 downto 0) := x"33";
     constant KEY_Apostrophe_DoubleQuote_US    : std_logic_vector(7 downto 0) := x"34";
     constant KEY_Apostrophe_At_UK             : std_logic_vector(7 downto 0) := x"34";
     constant KEY_Grave_Negate_BrokenBar       : std_logic_vector(7 downto 0) := x"35";
@@ -127,7 +127,7 @@ package usb_hid_codes_pkg is
     constant KEY_LWin                         : std_logic_vector(7 downto 0) := x"e3";
     constant KEY_RCtrl                        : std_logic_vector(7 downto 0) := x"e4";
     constant KEY_RShift                       : std_logic_vector(7 downto 0) := x"e5";
-    constant KEY_RAlt                         : std_logic_vector(7 downto 0) := x"e7";
     constant KEY_RWin                         : std_logic_vector(7 downto 0) := x"e6";
+    constant KEY_RAlt                         : std_logic_vector(7 downto 0) := x"e7";
 
 end package usb_hid_codes_pkg;
