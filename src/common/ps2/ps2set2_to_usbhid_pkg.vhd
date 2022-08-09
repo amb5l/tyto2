@@ -39,8 +39,8 @@ package body ps2set_to_usbhid_pkg is
     function ps2set_to_usbhid(constant nonUS : boolean := true) return slv_8_0_t is
         constant tbl: slv_8_0_t := (
 --          USB HID keycode                      PS/2 MAKE         PS/2 BREAK
-            N&KEY_Backslash_Pipe,                C&x"5D",          P&x"F0",C&x"5D", -- KEY_hash_tilde for non-US keyboards
-            N&KEY_Europe2,                       C&x"61",          P&x"E0",C&x"61", -- Backslash_Pipe (non-US)
+            N&KEY_Backslash_Pipe_US,             C&x"5D",          P&x"F0",C&x"5D",
+            N&KEY_Backslash_Pipe_UK,             C&x"61",          P&x"E0",C&x"61",
             N&KEY_A,                             C&x"1C",          P&x"F0",C&x"1C",
             N&KEY_B,                             C&x"32",          P&x"F0",C&x"32",
             N&KEY_C,                             C&x"21",          P&x"F0",C&x"21",
@@ -68,8 +68,8 @@ package body ps2set_to_usbhid_pkg is
             N&KEY_Y,                             C&x"35",          P&x"F0",C&x"35",
             N&KEY_Z,                             C&x"1A",          P&x"F0",C&x"1A",
             N&KEY_1_ExclamationMark,             C&x"16",          P&x"F0",C&x"16",
-            N&KEY_2_DoubleQuote,                 C&x"1E",          P&x"F0",C&x"1E",
-            N&KEY_3_Pound,                       C&x"26",          P&x"F0",C&x"26",
+            N&KEY_2_At_US,                       C&x"1E",          P&x"F0",C&x"1E",
+            N&KEY_3_Hash_US,                     C&x"26",          P&x"F0",C&x"26",
             N&KEY_4_Dollar,                      C&x"25",          P&x"F0",C&x"25",
             N&KEY_5_Percent,                     C&x"2E",          P&x"F0",C&x"2E",
             N&KEY_6_Caret,                       C&x"36",          P&x"F0",C&x"36",
@@ -87,7 +87,7 @@ package body ps2set_to_usbhid_pkg is
             N&KEY_Equal_Plus,                    C&x"55",          P&x"F0",C&x"55",
             N&KEY_LSquareBracket_LCurlyBracket,  C&x"54",          P&x"F0",C&x"54",
             N&KEY_RSquareBracket_RCurlyBracket,  C&x"5B",          P&x"F0",C&x"5B",
-            N&KEY_Apostrophe_At,                 C&x"52",          P&x"F0",C&x"52",
+            N&KEY_Apostrophe_DoubleQuote_US,     C&x"52",          P&x"F0",C&x"52",
             N&KEY_Grave_Negate_BrokenBar,        C&x"0E",          P&x"F0",C&x"0E",
             N&KEY_Comma_LessThan,                C&x"41",          P&x"F0",C&x"41",
             N&KEY_Period_GreaterThan,            C&x"49",          P&x"F0",C&x"49",
@@ -150,7 +150,7 @@ package body ps2set_to_usbhid_pkg is
     begin
         -- PS/2 code 5D (first table entry) varies
         if nonUS then
-            r(0) := N & KEY_Europe1; -- Hash_Tilde
+            r(0) := N & KEY_Hash_Tilde_UK; -- Hash_Tilde
         end if;
         return r;
     end function ps2set_to_usbhid;

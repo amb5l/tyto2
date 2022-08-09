@@ -47,8 +47,10 @@ package usb_hid_codes_pkg is
     constant KEY_Y                            : std_logic_vector(7 downto 0) := x"1c";
     constant KEY_Z                            : std_logic_vector(7 downto 0) := x"1d";
     constant KEY_1_ExclamationMark            : std_logic_vector(7 downto 0) := x"1e";
-    constant KEY_2_DoubleQuote                : std_logic_vector(7 downto 0) := x"1f";
-    constant KEY_3_Pound                      : std_logic_vector(7 downto 0) := x"20";
+    constant KEY_2_At_US                      : std_logic_vector(7 downto 0) := x"1f";
+    constant KEY_2_DoubleQuote_UK             : std_logic_vector(7 downto 0) := x"1f";
+    constant KEY_3_Hash_US                    : std_logic_vector(7 downto 0) := x"20";
+    constant KEY_3_Pound_UK                   : std_logic_vector(7 downto 0) := x"20";
     constant KEY_4_Dollar                     : std_logic_vector(7 downto 0) := x"21";
     constant KEY_5_Percent                    : std_logic_vector(7 downto 0) := x"22";
     constant KEY_6_Caret                      : std_logic_vector(7 downto 0) := x"23";
@@ -66,9 +68,10 @@ package usb_hid_codes_pkg is
     constant KEY_Equal_Plus                   : std_logic_vector(7 downto 0) := x"2e";
     constant KEY_LSquareBracket_LCurlyBracket : std_logic_vector(7 downto 0) := x"2F";
     constant KEY_RSquareBracket_RCurlyBracket : std_logic_vector(7 downto 0) := x"30";
-    constant KEY_Backslash_Pipe               : std_logic_vector(7 downto 0) := x"31";
-    constant KEY_Europe1                      : std_logic_vector(7 downto 0) := x"32";
-    constant KEY_Apostrophe_At                : std_logic_vector(7 downto 0) := x"34";
+    constant KEY_Backslash_Pipe_US            : std_logic_vector(7 downto 0) := x"31";
+    constant KEY_Hash_Tilde_UK                : std_logic_vector(7 downto 0) := x"32";
+    constant KEY_Apostrophe_DoubleQuote_US    : std_logic_vector(7 downto 0) := x"34";
+    constant KEY_Apostrophe_At_UK             : std_logic_vector(7 downto 0) := x"34";
     constant KEY_Grave_Negate_BrokenBar       : std_logic_vector(7 downto 0) := x"35";
     constant KEY_Comma_LessThan               : std_logic_vector(7 downto 0) := x"36";
     constant KEY_Period_GreaterThan           : std_logic_vector(7 downto 0) := x"37";
@@ -116,7 +119,7 @@ package usb_hid_codes_pkg is
     constant KEY_KP_9_PgUp                    : std_logic_vector(7 downto 0) := x"61";
     constant KEY_KP_0_Ins                     : std_logic_vector(7 downto 0) := x"62";
     constant KEY_KP_Period_Delete             : std_logic_vector(7 downto 0) := x"63";
-    constant KEY_Europe2                      : std_logic_vector(7 downto 0) := x"64";
+    constant KEY_Backslash_Pipe_UK            : std_logic_vector(7 downto 0) := x"64";
     constant KEY_Menu                         : std_logic_vector(7 downto 0) := x"65";
     constant KEY_LCtrl                        : std_logic_vector(7 downto 0) := x"e0";
     constant KEY_LShift                       : std_logic_vector(7 downto 0) := x"e1";
