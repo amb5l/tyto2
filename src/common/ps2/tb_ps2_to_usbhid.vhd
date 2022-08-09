@@ -164,12 +164,13 @@ begin
             while true loop
                 i := i+1;
                 ps2_d2h(ps2_clk,ps2_data,tbl(i)(7 downto 0),tps2);
-                --report "i: " & integer'image(i) & "  sending " & integer'image(to_integer(unsigned(tbl(i)(7 downto 0))));
                 if tbl(i)(8) = '0' then exit; end if;
             end loop;
             wait until falling_edge(hid_stb);
             if hid_data /= hid_code or hid_make /= '1' then
-                report "mismatch!" severity FAILURE;
+                fail <= fail+1;
+            else
+                pass <= pass+1;
             end if;
             wait for 200us;
             -- break code(s) (if they exist)
@@ -177,7 +178,6 @@ begin
                 while true loop
                     i := i+1;
                     ps2_d2h(ps2_clk,ps2_data,tbl(i)(7 downto 0),tps2);
-                    --report "i: " & integer'image(i) & "  sending " & integer'image(to_integer(unsigned(tbl(i)(7 downto 0))));
                     if tbl(i)(8) = '0' then exit; end if;
                 end loop;
                 wait until falling_edge(hid_stb);
