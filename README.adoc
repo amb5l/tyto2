@@ -38,6 +38,10 @@ Click on the design *Name* link to see further details.
 |Digilent Nexys Video, QMTech Wukong
 |A MicroBlaze CPU with a character buffer display, supporting 480i60 and 576i50 resolutions.
 
+|<<./doc/designs/mb_cb_ps2/mb_cb_ps2.adoc#,mb_cb_ps2>>
+|Digilent Nexys Video
+|The <<./doc/designs/mb_cb/mb_cb.adoc#,mb_cb>> design with an added PS/2 keyboard interface.
+
 |<<./doc/designs/mb_fb/mb_fb.adoc#,mb_fb>>
 |Digilent Nexys Video, QMTech Wukong
 |A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on link:https://github.com/tuupola/hagl[Mike Tuupola's hagl graphics library]. 

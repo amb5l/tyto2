@@ -1,6 +1,6 @@
 == mb_cb_ps2
 
-This design adds a PS/2 keyboard interface to the <<./doc/designs/mb_cb/mb_cb.adoc#,mb_cb>> design.
+This design adds a PS/2 keyboard interface to the <<../mb_cb/mb_cb.adoc#,mb_cb>> design.
 
 Supported boards: *Digilent Nexys Video*.
 
@@ -8,7 +8,7 @@ image::./mb_cb_ps2.png[title="Simulation Output.",align="center"]
 
 == Design Description
 
-Please refer to the description of the <<./doc/designs/mb_cb/mb_cb.adoc#,mb_cb>> design. This design adds the following blocks, wired to CPU GPIOs:
+Please refer to the description of the <<../mb_cb/mb_cb.adoc#,mb_cb>> design. This design adds the following blocks, wired to CPU GPIOs:
 
 * *PS2*: A `ps2_host` IP core - this presents a pair of unidirectional parallel interfaces and moves data between these and a bidirectional PS/2 serial port.
 * *HID*: A `ps2_to_usbhid` IP core - this converts variable length PS/2 code sequences into single byte USB HID key codes.
