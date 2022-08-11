@@ -44,7 +44,9 @@ package mb_cb_ps2_pkg is
             vga_de  : out std_logic;                    -- display enable
             vga_r   : out std_logic_vector(7 downto 0); -- red
             vga_g   : out std_logic_vector(7 downto 0); -- green
-            vga_b   : out std_logic_vector(7 downto 0)  -- blue
+            vga_b   : out std_logic_vector(7 downto 0); -- blue
+
+            debug      : out std_logic_vector(15 downto 0)
 
         );
     end component mb_cb_ps2;
@@ -85,7 +87,9 @@ entity mb_cb_ps2 is
         vga_de     : out std_logic;                    -- display enable
         vga_r      : out std_logic_vector(7 downto 0); -- red
         vga_g      : out std_logic_vector(7 downto 0); -- green
-        vga_b      : out std_logic_vector(7 downto 0)  -- blue
+        vga_b      : out std_logic_vector(7 downto 0); -- blue
+
+        debug      : out std_logic_vector(15 downto 0)
 
     );
 end entity mb_cb_ps2;
@@ -111,8 +115,8 @@ architecture synth of mb_cb_ps2 is
     signal h2d_data   : std_logic_vector(7 downto 0);
                       
     signal hid_stb    : std_logic;
-    signal hid_data   : std_logic_vector(7 downto 0);
     signal hid_make   : std_logic;
+    signal hid_code   : std_logic_vector(7 downto 0);
     signal hid_req    : std_logic;
     signal hid_ack    : std_logic;
 
@@ -172,7 +176,7 @@ begin
     gpi(9)            <= h2d_ack;
     gpi(10)           <= h2d_nack;
     gpi(15 downto 11) <= (others => '0');
-    gpi(23 downto 16) <= hid_data;
+    gpi(23 downto 16) <= hid_code;
     gpi(24)           <= hid_make;
     gpi(31 downto 25) <= (others => '0');
 
@@ -181,6 +185,8 @@ begin
     hid_ack    <= gpo(8);
     h2d_req    <= gpo(9);
     h2d_data   <= gpo(23 downto 16);
+
+    debug <= gpo(8) & "000000" & gpo(24 downto 16);
 
     process(cpu_clk)
     begin
@@ -227,7 +233,7 @@ begin
             ps2_stb  => d2h_stb,
             ps2_data => d2h_data,
             hid_stb  => hid_stb,
-            hid_data => hid_data,
+            hid_code => hid_code,
             hid_make => hid_make
         );
 

@@ -59,11 +59,11 @@ architecture sim of tb_ps2_to_usbhid is
     signal ps2_clk     : std_logic := 'H';
     signal ps2_data    : std_logic := 'H';
 
-    signal hid_code    : std_logic_vector(7 downto 0);
+    signal this_code   : std_logic_vector(7 downto 0);
     signal last        : std_logic;
 
     signal hid_stb     : std_logic;
-    signal hid_data    : std_logic_vector(7 downto 0);
+    signal hid_code    : std_logic_vector(7 downto 0);
     signal hid_make    : std_logic;
 
     signal pass        : integer;
@@ -158,7 +158,7 @@ begin
         wait for tps2;
         i := 0;
         while true loop
-            hid_code <= tbl(i)(7 downto 0);
+            this_code <= tbl(i)(7 downto 0);
             last <= tbl(i)(8);
             -- make code(s)
             while true loop
@@ -167,7 +167,7 @@ begin
                 if tbl(i)(8) = '0' then exit; end if;
             end loop;
             wait until falling_edge(hid_stb);
-            if hid_data /= hid_code or hid_make /= '1' then
+            if hid_code /= this_code or hid_make /= '1' then
                 fail <= fail+1;
             else
                 pass <= pass+1;
@@ -181,7 +181,7 @@ begin
                     if tbl(i)(8) = '0' then exit; end if;
                 end loop;
                 wait until falling_edge(hid_stb);
-                if hid_data /= hid_code or hid_make /= '0' then
+                if hid_code /= this_code or hid_make /= '0' then
                     fail <= fail+1;
                 else
                     pass <= pass+1;
@@ -222,8 +222,8 @@ begin
             ps2_stb  => d2h_stb,
             ps2_data => d2h_data_rx,
             hid_stb  => hid_stb,
-            hid_data => hid_data,
-            hid_make => hid_make
+            hid_make => hid_make,
+            hid_code => hid_code
         );
 
     HOST: component ps2_host

@@ -91,8 +91,8 @@ entity mb_cb_ps2_digilent_nexys_video is
 --      ac_adc_sdata    : in    std_logic;
 
         -- PMODs
---      ja              : inout std_logic_vector(7 downto 0);
---      jb              : inout std_logic_vector(7 downto 0);
+        ja              : out std_logic_vector(7 downto 0);
+        jb              : out std_logic_vector(7 downto 0);
 --      jc              : inout std_logic_vector(7 downto 0);
 --      xa_p            : inout std_logic_vector(3 downto 0);
 --      xa_n            : inout std_logic_vector(3 downto 0);
@@ -242,23 +242,25 @@ begin
 
     MAIN: component mb_cb_ps2
         port map (
-            cpu_clk    => cpu_clk,
-            cpu_rst    => cpu_rst,
-            pix_clk    => pix_clk,
-            pix_rst    => pix_rst,
-            uart_tx    => uart_rx_out,
-            uart_rx    => uart_tx_in,
-            ps2_clk_i  => ps2_clk_i,
-            ps2_clk_o  => ps2_clk_o,
-            ps2_data_i => ps2_data_i,
-            ps2_data_o => ps2_data_o,
-            pal_ntsc   => pal_ntsc,
-            vga_vs     => vga_vs,
-            vga_hs     => vga_hs,
-            vga_de     => vga_de,
-            vga_r      => vga_r,
-            vga_g      => vga_g,
-            vga_b      => vga_b
+            cpu_clk            => cpu_clk,
+            cpu_rst            => cpu_rst,
+            pix_clk            => pix_clk,
+            pix_rst            => pix_rst,
+            uart_tx            => uart_rx_out,
+            uart_rx            => uart_tx_in,
+            ps2_clk_i          => ps2_clk_i,
+            ps2_clk_o          => ps2_clk_o,
+            ps2_data_i         => ps2_data_i,
+            ps2_data_o         => ps2_data_o,
+            pal_ntsc           => pal_ntsc,
+            vga_vs             => vga_vs,
+            vga_hs             => vga_hs,
+            vga_de             => vga_de,
+            vga_r              => vga_r,
+            vga_g              => vga_g,
+            vga_b              => vga_b,
+            debug(7 downto 0)  => ja,
+            debug(15 downto 8) => jb
         );
 
     ps2_clk <= '0' when ps2_clk_o = '0' else 'Z';

@@ -30,8 +30,8 @@ package ps2_to_usbhid_pkg is
             ps2_stb  : in  std_logic;                    -- PS/2 code strobe
             ps2_data : in  std_logic_vector(7 downto 0); -- PS/2 code data
             hid_stb  : out std_logic;                    -- USB HID code strobe
-            hid_data : out std_logic_vector(7 downto 0); -- USB HID code data
-            hid_make : out std_logic                     -- USB HID make (1) or break (0)
+            hid_make : out std_logic;                    -- USB HID make (1) or break (0)
+            hid_code : out std_logic_vector(7 downto 0)  -- USB HID code
         );
     end component ps2_to_usbhid;
 
@@ -56,8 +56,8 @@ entity ps2_to_usbhid is
         ps2_stb  : in  std_logic;                    -- PS/2 code strobe
         ps2_data : in  std_logic_vector(7 downto 0); -- PS/2 code data
         hid_stb  : out std_logic;                    -- USB HID code strobe
-        hid_data : out std_logic_vector(7 downto 0); -- USB HID code data
-        hid_make : out std_logic                     -- USB HID make (1) or break (0)
+        hid_make : out std_logic;                    -- USB HID make (1) or break (0)
+        hid_code : out std_logic_vector(7 downto 0)  -- USB HID code
     );
 end entity ps2_to_usbhid;
 
@@ -88,8 +88,7 @@ architecture synth of ps2_to_usbhid is
     alias tbl_prefix : std_logic is tbl_data(8);
     alias tbl_code   : std_logic_vector(7 downto 0) is tbl_data(7 downto 0);
 
-
-    signal hid_code  : std_logic_vector(7 downto 0);
+    signal this_code : std_logic_vector(7 downto 0);
     signal prefix    : slv_7_0_t(0 to 6);
 
     type state_t is (
@@ -112,15 +111,15 @@ begin
             tbl_data <= tbl(tbl_addr); -- synchronous ROM
             hid_stb <= '0';
             if rst = '1' then
-                state <= IDLE;
-                tbl_addr <= 0;
-                last <= '0';
-                len <= 0;
-                i <= 0;
-                hid_code <= (others => '0');
-                ps2_code <= (others => '0');
-                hid_data <= (others => '0');
-                hid_make <= '0';
+                state     <= IDLE;
+                tbl_addr  <= 0;
+                last      <= '0';
+                len       <= 0;
+                i         <= 0;
+                this_code <= (others => '0');
+                ps2_code  <= (others => '0');
+                hid_make  <= '0';
+                hid_code  <= (others => '0');
             else
                 tbl_addr <= tbl_addr+1; -- address advances unless held
                 case state is
@@ -135,7 +134,7 @@ begin
 
                     when NEXT_CODE => -- get HID code for next entry
                         if last = '0' then
-                            hid_code <= tbl_code;
+                            this_code <= tbl_code;
                             last <= tbl_last;
                             if len = 0 then
                                 state <= MAKE_MATCH;
@@ -174,7 +173,7 @@ begin
                                 last <= '0';
                                 len <= 0;
                                 hid_stb <= '1';
-                                hid_data <= hid_code;
+                                hid_code <= this_code;
                                 hid_make <= '1';
                             else -- prefix match
                                 state <= IDLE;
@@ -229,7 +228,7 @@ begin
                                 last <= '0';
                                 len <= 0;
                                 hid_stb <= '1';
-                                hid_data <= hid_code;
+                                hid_code <= this_code;
                                 hid_make <= '0';
                             else -- prefix match
                                 state <= IDLE;
