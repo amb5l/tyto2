@@ -176,7 +176,7 @@ begin
                 held_s      <= '0';
                 held_c1     <= (others => '0');
                 held_s1     <= '0';
-                count_flash <= (others => '0');
+                count_flash <= (others => '1');
                 flash_state <= '1';
             elsif chr_clken = '1' then
                 chr_clk_pha <= not chr_clk_pha;
