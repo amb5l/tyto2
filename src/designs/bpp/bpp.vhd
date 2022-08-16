@@ -201,8 +201,8 @@ architecture synth of bpp is
 
     signal ttx_oe                : std_logic;                                  -- teletext: overscan pixel enable
     signal ttx_pe                : std_logic;                                  -- teletext: pixel enable
-    signal ttx_pu                : std_logic_vector(2 downto 0);               -- teletext: pixel (3 bit BGR) (12 pixels per character) (upper line)
-    signal ttx_pl                : std_logic_vector(2 downto 0);               -- teletext: pixel (3 bit BGR) (12 pixels per character) (lower line)
+    signal ttx_p1                : std_logic_vector(2 downto 0);               -- teletext: pixel (3 bit BGR) (12 pixels per character) (upper line)
+    signal ttx_p2                : std_logic_vector(2 downto 0);               -- teletext: pixel (3 bit BGR) (12 pixels per character) (lower line)
 
     signal vidproc_reg_cs        : std_logic;
     signal vidproc_ttx_i         : std_logic;                                  -- VIDPROC: teletext mode
@@ -437,8 +437,8 @@ begin
             pix_rst   => sys_rst_48m,
             pix_gp    => ttx_oe,
             pix_de    => ttx_pe,
-            pix_du    => ttx_pu,
-            pix_dl    => ttx_pl
+            pix_d1    => ttx_p1,
+            pix_d2    => ttx_p2
         );
 
     --------------------------------------------------------------------------------
@@ -472,8 +472,8 @@ begin
             ttx_en          => vidproc_ttx_i,
             ttx_oe          => ttx_oe,
             ttx_pe          => ttx_pe,
-            ttx_pu          => ttx_pu,
-            ttx_pl          => ttx_pl,
+            ttx_p1          => ttx_p1,
+            ttx_p2          => ttx_p2,
             out_clken       => vidproc_clken,
             out_pe          => vidproc_pe,
             out_p           => vidproc_p,

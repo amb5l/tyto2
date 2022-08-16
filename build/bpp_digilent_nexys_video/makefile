@@ -38,7 +38,8 @@ VIVADO_PROJ=fpga
 VIVADO_LANG=VHDL
 
 VIVADO_DSN_TOP=$(DESIGN)_$(BOARD)
-VIVADO_SIM_TOP=tb_$(DESIGN)_$(BOARD)
+#VIVADO_SIM_TOP=tb_$(DESIGN)_$(BOARD)
+VIVADO_SIM_TOP=tb_bpp_ttx_hdtv
 
 VIVADO_DSN_VHDL=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd \
@@ -66,19 +67,17 @@ VIVADO_DSN_VHDL=\
 	$(SRC)/designs/$(DESIGN)/bpp_sysvia.vhd \
 	$(SRC)/common/retro/r6522/r6522.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_kbd_ps2.vhd \
+	$(SRC)/designs/$(DESIGN)/bpp_kbd_bbc_pkg.vhd \
 	$(SRC)/common/ps2/ps2_host.vhd \
 	$(SRC)/common/ps2/ps2_to_usbhid.vhd \
 	$(SRC)/common/ps2/ps2set2_to_usbhid_pkg.vhd \
 	$(SRC)/common/usb/usb_hid_codes_pkg.vhd \
-	$(SRC)/designs/$(DESIGN)/bpp_kbd_bbc_usbhid.vhd \
-	$(SRC)/designs/$(DESIGN)/bpp_kbd_bbc_pkg.vhd \
 	$(SRC)/common/video_out/$(VENDOR_FAMILY)/video_out_clock.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_hdtv.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_overscan.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_genlock.vhd \
 	$(SRC)/common/video_out/video_mode.vhd \
 	$(SRC)/common/video_out/video_out_timing.vhd \
-	$(SRC)/designs/$(DESIGN)/bpp_hdtv_upscale.vhd \
 	$(SRC)/common/basic/$(VENDOR)/ram_tdp_ar.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_resample.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_hdtv_pcm_to_hdmi.vhd \
@@ -92,13 +91,14 @@ VIVADO_DSN_XDC_IMPL=\
 
 VIVADO_SIM_OUT=simulate.log
 VIVADO_SIM_VHDL=\
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/tb_$(VIVADO_DSN_TOP).vhd \
 	$(SRC)/designs/$(DESIGN)/test/tb_$(DESIGN).vhd \
+	$(SRC)/designs/$(DESIGN)/test/tb_bpp_ttx_hdtv.vhd \
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/basic/model_clk_src.vhd \
 	$(SRC)/common/video_out/model_hdmi_decoder.vhd \
 	$(SRC)/common/video_out/model_tmds_cdr_des.vhd \
 	$(SRC)/common/video_out/model_vga_sink.vhd
+VIVADO_SIM_GENERICS=filename=$(abspath $(VIDEO_BIN))
 
 include $(XILINX_MK)/xilinx.mk
 

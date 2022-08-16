@@ -54,8 +54,8 @@ package bpp_vidproc_pkg is
             ttx_en           : out std_logic;                    -- teletext: enable
             ttx_oe           : in  std_logic;                    -- teletext: overscan pixel enable
             ttx_pe           : in  std_logic;                    -- teletext: pixel enable
-            ttx_pu           : in  std_logic_vector(2 downto 0); -- teletext: pixel data (upper line)
-            ttx_pl           : in  std_logic_vector(2 downto 0); -- teletext: pixel data (lower line)
+            ttx_p1           : in  std_logic_vector(2 downto 0); -- teletext: pixel data (upper line)
+            ttx_p2           : in  std_logic_vector(2 downto 0); -- teletext: pixel data (lower line)
 
             out_clken        : out std_logic;
             out_pe           : out std_logic;
@@ -110,8 +110,8 @@ entity bpp_vidproc is
         ttx_en           : out std_logic;                    -- teletext: enable
         ttx_oe           : in  std_logic;                    -- teletext: overscan pixel enable
         ttx_pe           : in  std_logic;                    -- teletext: pixel enable
-        ttx_pu           : in  std_logic_vector(2 downto 0); -- teletext: pixel data (upper line)
-        ttx_pl           : in  std_logic_vector(2 downto 0); -- teletext: pixel data (lower line)
+        ttx_p1           : in  std_logic_vector(2 downto 0); -- teletext: pixel data (upper line)
+        ttx_p2           : in  std_logic_vector(2 downto 0); -- teletext: pixel data (lower line)
 
         out_clken        : out std_logic;
         out_pe           : out std_logic;
@@ -244,11 +244,12 @@ begin
     out_clken <= clken_48m_12m when reg_ctrl_ttx = '1' else clken_48m_16m;
     out_pe <= ttx_oe when reg_ctrl_ttx = '1' else crtc_pe;
     out_p <=
-        ttx_pu when reg_ctrl_ttx = '1' and ttx_pe = '1' else
+        ttx_p1 when reg_ctrl_ttx = '1' and ttx_pe = '1' else
         crtc_p when reg_ctrl_ttx = '0' and crtc_pe = '1' else
         (others => '0');
     out_p2 <=
-        ttx_pl when reg_ctrl_ttx = '1' and ttx_pe = '1' else
+        ttx_p2 when reg_ctrl_ttx = '1' and ttx_pe = '1' else
+        crtc_p when reg_ctrl_ttx = '0' and crtc_pe = '1' else
         (others => '0');
 
 end architecture synth;

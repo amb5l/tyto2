@@ -54,11 +54,13 @@ end package bpp_kbd_ps2_pkg;
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 library work;
 use work.ps2_host_pkg.all;
 use work.ps2_to_usbhid_pkg.all;
-use work.bpp_kbd_bbc_usbhid_pkg.all;
+use work.bpp_kbd_bbc_pkg.all;
+use work.usb_hid_codes_pkg.all;
 
 entity bpp_kbd_ps2 is
     port (
@@ -166,10 +168,10 @@ begin
     --------------------------------------------------------------------------------
     -- maintain HID key states by tracking make/break on each code
 
-    process(hid_clk)
+    process(clk)
     begin
-        if rising_edge(hid_clk) then
-            if hid_rst = '1' then
+        if rising_edge(clk) then
+            if rst = '1' then
                 khid <= (others => '0');
             else
                 if hid_stb = '1' then

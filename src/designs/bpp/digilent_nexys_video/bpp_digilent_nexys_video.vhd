@@ -202,7 +202,7 @@ architecture synth of bpp_digilent_nexys_video is
     signal kbd_col        : std_logic_vector(3 downto 0);
     signal kbd_press      : std_logic;
     signal kbd_colact     : std_logic;
-    
+
     signal crtc_clken     : std_logic;
     signal crtc_clksel    : std_logic;
     signal crtc_rst       : std_logic;
@@ -211,7 +211,7 @@ architecture synth of bpp_digilent_nexys_video is
     signal crtc_hs        : std_logic;
     signal crtc_de        : std_logic;
     signal crtc_oe        : std_logic;
-    
+
     signal vidproc_clken  : std_logic;
     signal vidproc_rst    : std_logic;
     signal vidproc_clksel : std_logic;
@@ -219,12 +219,12 @@ architecture synth of bpp_digilent_nexys_video is
     signal vidproc_pe     : std_logic;
     signal vidproc_p      : std_logic_vector(2 downto 0);
     signal vidproc_p2     : std_logic_vector(2 downto 0);
-    
+
     signal lp_stb         : std_logic;
-    
+
     signal paddle_btn     : std_logic_vector(1 downto 0);
     signal paddle_eoc     : std_logic;
-    
+
     signal sg_clken       : std_logic;
     signal sg_pcm         : std_logic_vector(1 downto 0);
 
@@ -252,7 +252,7 @@ architecture synth of bpp_digilent_nexys_video is
 
     signal hdtv_mode        : std_logic_vector(2 downto 0);
     signal hdtv_mode_clksel : std_logic_vector(1 downto 0);
-    signal hdtv_mode_vic    : std_logic_vector(7 downto 0); 
+    signal hdtv_mode_vic    : std_logic_vector(7 downto 0);
     signal hdtv_mode_pixrep : std_logic;
     signal hdtv_mode_aspect : std_logic_vector(1 downto 0);
     signal hdtv_mode_vs_pol : std_logic;
@@ -264,6 +264,8 @@ architecture synth of bpp_digilent_nexys_video is
     signal hdtv_r      : std_logic_vector(7 downto 0);  -- HDTV red
     signal hdtv_g      : std_logic_vector(7 downto 0);  -- HDTV green
     signal hdtv_b      : std_logic_vector(7 downto 0);  -- HDTV blue
+
+    signal hdtv_lock   : std_logic;
 
     signal pcm_rst     : std_logic;                     -- audio clock domain reset
     signal pcm_clk     : std_logic;                     -- audio clock (12.288 MHz)
@@ -296,11 +298,11 @@ begin
     opt_dfs_nfs <= '1';   -- DFS
 
     with sw(2 downto 0) select hdtv_mode <=
-        HDTV_MODE_1080p50   when "100",
-        HDTV_MODE_1080i50   when "011",
-        HDTV_MODE_720p50    when "010",
-        HDTV_MODE_576p50    when "001",
-        HDTV_MODE_576i50    when others;
+        HDTV_MODE_1080p when "100",
+        HDTV_MODE_1080i when "011",
+        HDTV_MODE_720p  when "010",
+        HDTV_MODE_576p  when "001",
+        HDTV_MODE_576i  when others;
 
     --------------------------------------------------------------------------------
     -- main system
@@ -425,6 +427,7 @@ begin
             crtc_clk         => sys_clk_8m,
             crtc_clken       => crtc_clken,
             crtc_rst         => crtc_rst,
+            crtc_clksel      => crtc_clksel,
             crtc_f           => crtc_f,
             crtc_vs          => crtc_vs,
             crtc_hs          => crtc_hs,
@@ -433,13 +436,12 @@ begin
             vidproc_clk      => sys_clk_48m,
             vidproc_clken    => vidproc_clken,
             vidproc_rst      => vidproc_rst,
-            vidproc_clksel   => vidproc_clksel,
             vidproc_ttx      => vidproc_ttx,
             vidproc_pe       => vidproc_pe,
             vidproc_p        => vidproc_p,
             vidproc_p2       => vidproc_p2,
             hdtv_mode        => hdtv_mode,
-            hdtv_mode_clksel => hdtv_mode_clksel, 
+            hdtv_mode_clksel => hdtv_mode_clksel,
             hdtv_mode_vic    => hdtv_mode_vic,
             hdtv_mode_pixrep => hdtv_mode_pixrep,
             hdtv_mode_aspect => hdtv_mode_aspect,
@@ -452,7 +454,8 @@ begin
             hdtv_de          => hdtv_de,
             hdtv_r           => hdtv_r,
             hdtv_g           => hdtv_g,
-            hdtv_b           => hdtv_b
+            hdtv_b           => hdtv_b,
+            hdtv_lock        => hdtv_lock
         );
 
     --------------------------------------------------------------------------------

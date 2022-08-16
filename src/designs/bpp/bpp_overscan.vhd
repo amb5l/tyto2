@@ -68,13 +68,17 @@ architecture synth of bpp_overscan is
 
     constant v_bp         : integer := 38;  -- vertical back porch (video lines, odd field)
     constant v_act        : integer := 256; -- vertical active period (video lines)
-    constant h_bp_gfx     : integer := 22;  -- horizontal back porch (characters @ 2MHz, non-teletext)
-    constant h_bp_ttx     : integer := 18;  -- horizontal back porch (characters @ 2MHz, teletext)
-    constant h_act        : integer := 80;  -- horizontal active period (characters @ 2MHz)
+    constant h_bp_gfx     : integer := 11;  -- horizontal back porch (characters @ 1MHz, non-teletext)
+    constant h_bp_ttx     : integer := 9;   -- horizontal back porch (characters @ 1MHz, teletext)
+    constant h_act        : integer := 40;  -- horizontal active period (characters @ 1MHz)
     constant count_v_max  : integer := 511;
     constant count_h_wrap : integer := 127;
 
-    signal h_ovra  : integer;                        -- h_ovr adjusted for clk speed (1 or 2 MHz)
+    signal h_ovr_a    : integer;            -- adjusted for clk speed (1 or 2 MHz)
+    signal h_bp_gfx_a : integer;
+    signal h_bp_ttx_a : integer;
+    signal h_act_a    : integer;
+    
     signal count_v : integer range 0 to count_v_max;
     signal vs_1    : std_logic;
     signal en_v    : std_logic;
@@ -85,8 +89,12 @@ architecture synth of bpp_overscan is
 
 begin
 
-    h_ovra <= 2*h_ovr when clksel = '1' else h_ovr;
-    h_bp <= h_bp_ttx when ttx = '1' else h_bp_gfx;
+    h_ovr_a    <= 2*h_ovr    when clksel = '1' else h_ovr;
+    h_bp_gfx_a <= 2*h_bp_gfx when clksel = '1' else h_bp_gfx;
+    h_bp_ttx_a <= 2*h_bp_ttx when clksel = '1' else h_bp_ttx;
+    h_act_a    <= 2*h_act    when clksel = '1' else h_act;
+
+    h_bp <= h_bp_ttx_a when ttx = '1' else h_bp_gfx_a;
 
     process(clk)
     begin
@@ -121,9 +129,9 @@ begin
                 count_v <= (count_v+1) mod (count_v_max+1);
                 count_h <= 1;
             end if;
-            if count_h = h_bp-h_ovra-1 then
+            if count_h = h_bp-h_ovr_a-1 then
                 en_h <= '1';
-            elsif count_h = h_bp+h_act+h_ovra-1 then
+            elsif count_h = h_bp+h_act_a+h_ovr_a-1 then
                 en_h <= '0';
             end if;
 
