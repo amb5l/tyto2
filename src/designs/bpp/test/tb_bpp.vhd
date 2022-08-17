@@ -69,41 +69,41 @@ begin
     CLK_SRC_5: component model_clk_src generic map ( pn =>   2, pd =>  297            ) port map ( clk => vga_clk     );
     CLK_SRC_6: component model_clk_src generic map ( pn => 125, pd => 1536            ) port map ( clk => pcm_clk     );
 
-    SYS: component bpp
-        port map (
-            sys_rst     => sys_rst,
-            sys_clk_96m => sys_clk_96m,
-            sys_clk_48m => sys_clk_48m,
-            sys_clk_32m => sys_clk_32m,
-            sys_clk_8m  => sys_clk_8m,
-            vga_rst     => vga_rst,
-            vga_clk     => vga_clk,
-            vga_vs      => vga_vs,
-            vga_hs      => vga_hs,
-            vga_de      => vga_de,
-            vga_r       => vga_r,
-            vga_g       => vga_g,
-            vga_b       => vga_b,
-            pcm_rst     => pcm_rst,
-            pcm_clk     => pcm_clk,
-            pcm_clken   => pcm_clken,
-            pcm_l       => pcm_l,
-            pcm_r       => pcm_r
-        );
+    -- SYS: component bpp
+        -- port map (
+            -- sys_rst     => sys_rst,
+            -- sys_clk_96m => sys_clk_96m,
+            -- sys_clk_48m => sys_clk_48m,
+            -- sys_clk_32m => sys_clk_32m,
+            -- sys_clk_8m  => sys_clk_8m,
+            -- vga_rst     => vga_rst,
+            -- vga_clk     => vga_clk,
+            -- vga_vs      => vga_vs,
+            -- vga_hs      => vga_hs,
+            -- vga_de      => vga_de,
+            -- vga_r       => vga_r,
+            -- vga_g       => vga_g,
+            -- vga_b       => vga_b,
+            -- pcm_rst     => pcm_rst,
+            -- pcm_clk     => pcm_clk,
+            -- pcm_clken   => pcm_clken,
+            -- pcm_l       => pcm_l,
+            -- pcm_r       => pcm_r
+        -- );
 
-    CAPTURE: component model_vga_sink
-        port map (
-            vga_rst  => vga_rst,
-            vga_clk  => vga_clk,
-            vga_vs   => vga_vs,
-            vga_hs   => vga_hs,
-            vga_de   => vga_de,
-            vga_r    => vga_r,
-            vga_g    => vga_g,
-            vga_b    => vga_b,
-            cap_rst  => cap_rst,
-            cap_stb  => cap_stb,
-            cap_name => "tb_bpp"
-        );
+    -- CAPTURE: component model_vga_sink
+        -- port map (
+            -- vga_rst  => vga_rst,
+            -- vga_clk  => vga_clk,
+            -- vga_vs   => vga_vs,
+            -- vga_hs   => vga_hs,
+            -- vga_de   => vga_de,
+            -- vga_r    => vga_r,
+            -- vga_g    => vga_g,
+            -- vga_b    => vga_b,
+            -- cap_rst  => cap_rst,
+            -- cap_stb  => cap_stb,
+            -- cap_name => "tb_bpp"
+        -- );
 
 end architecture sim;

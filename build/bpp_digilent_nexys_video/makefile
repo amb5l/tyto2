@@ -22,7 +22,8 @@ RAM_INIT_VHD=$(MAKE_DIR)/$(BUILD_VHDL_DIR)/np6532_ram_init_$(RAM_SIZE)k_pkg.vhd
 BUILD_6502_DIR=6502
 CA65=ca65
 LD65=ld65
-VIDEO_BIN=$(SRC)/common/retro/saa5050/test/engtest.bin
+MODE7_BIN=$(SRC)/common/retro/saa5050/test/engtest.bin
+MODE2_BIN=$(SRC)/designs/$(DESIGN)/test/snapper.bin
 INIT=init_test
 INIT_BIN=$(BUILD_6502_DIR)/$(INIT).bin
 INIT_SRC=$(SRC)/designs/$(DESIGN)/6502/$(INIT).a65
@@ -39,7 +40,7 @@ VIVADO_LANG=VHDL
 
 VIVADO_DSN_TOP=$(DESIGN)_$(BOARD)
 #VIVADO_SIM_TOP=tb_$(DESIGN)_$(BOARD)
-VIVADO_SIM_TOP=tb_bpp_ttx_hdtv
+VIVADO_SIM_TOP=tb_bpp_hdtv
 
 VIVADO_DSN_VHDL=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd \
@@ -92,13 +93,15 @@ VIVADO_DSN_XDC_IMPL=\
 VIVADO_SIM_OUT=simulate.log
 VIVADO_SIM_VHDL=\
 	$(SRC)/designs/$(DESIGN)/test/tb_$(DESIGN).vhd \
-	$(SRC)/designs/$(DESIGN)/test/tb_bpp_ttx_hdtv.vhd \
+	$(SRC)/designs/$(DESIGN)/test/tb_bpp_hdtv.vhd \
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/basic/model_clk_src.vhd \
 	$(SRC)/common/video_out/model_hdmi_decoder.vhd \
 	$(SRC)/common/video_out/model_tmds_cdr_des.vhd \
 	$(SRC)/common/video_out/model_vga_sink.vhd
-VIVADO_SIM_GENERICS=filename=$(abspath $(VIDEO_BIN))
+VIVADO_SIM_GENERICS=\
+	mode7_binfile=$(abspath $(MODE7_BIN)) \
+	mode2_binfile=$(abspath $(MODE2_BIN))
 
 include $(XILINX_MK)/xilinx.mk
 
@@ -107,8 +110,8 @@ $(DECODER_VHD): $(DECODER_CSV) | $(BUILD_VHDL_DIR)
 	$(PYTHON) $(DECODER_PY) $< $(@D)/
 
 raminit: $(RAM_INIT_VHD)
-$(RAM_INIT_VHD): $(VIDEO_BIN) $(TEST_BIN) $(INIT_BIN) | $(BUILD_VHDL_DIR)
-	$(PYTHON) $(RAM_INIT_PY) $(RAM_SIZE) 7C00 $(VIDEO_BIN) C000 $(TEST_BIN) FC00 $(INIT_BIN) > $@
+$(RAM_INIT_VHD): $(MODE7_BIN) $(TEST_BIN) $(INIT_BIN) | $(BUILD_VHDL_DIR)
+	$(PYTHON) $(RAM_INIT_PY) $(RAM_SIZE) 7C00 $(MODE7_BIN) C000 $(TEST_BIN) FC00 $(INIT_BIN) > $@
 
 $(BUILD_VHDL_DIR):
 	mkdir $(BUILD_VHDL_DIR)
