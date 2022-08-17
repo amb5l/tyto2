@@ -136,9 +136,6 @@ begin
         );
 
     CAPTURE: component model_vga_sink
-        generic map (
-            name        => "tb_mb_cb_digilent_nexys_video"
-        )
         port map (
             vga_rst  => '0',
             vga_clk  => vga_clk,
@@ -149,7 +146,8 @@ begin
             vga_g    => vga_g,
             vga_b    => vga_b,
             cap_rst  => '0',
-            cap_stb  => cap_stb
+            cap_stb  => cap_stb,
+            cap_name => "tb_mb_cb_digilent_nexys_video"
         );
 
 end architecture sim;

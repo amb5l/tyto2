@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- tb_hdmi_tpg_qmtech_wukong.vhd                                              --
--- Simulation testbench for hdmi_tpg_qmtech_wukong.vhd.                       --
+-- tb_bpp_qmtech_wukong.vhd                                                   --
+-- Simulation testbench for bpp_qmtech_wukong.vhd.                            --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -24,70 +24,51 @@ use std.env.all;
 
 library work;
 use work.tyto_types_pkg.all;
+use work.tyto_sim_pkg.all;
+use work.model_clk_src_pkg.all;
+use work.model_hdmi_decoder_pkg.all;
+use work.model_vga_sink_pkg.all;
 
-entity tb_hdmi_tpg_qmtech_wukong is
-end entity tb_hdmi_tpg_qmtech_wukong;
+entity tb_bpp_qmtech_wukong is
+end entity tb_bpp_qmtech_wukong;
 
-architecture sim of tb_hdmi_tpg_qmtech_wukong is
+architecture sim of tb_bpp_qmtech_wukong is
 
-    signal clki_50m     : std_logic;
-    signal key_n        : std_logic_vector(1 downto 0);
-    signal led_n        : std_logic_vector(1 downto 0);
+    signal clki_50m   : std_logic;
+    signal key_n      : std_logic_vector(1 downto 0);
+    signal led_n      : std_logic_vector(1 downto 0);
 
-    signal hdmi_clk_p   : std_logic;
-    signal hdmi_clk_n   : std_logic;
-    signal hdmi_d_p     : std_logic_vector(0 to 2);
-    signal hdmi_d_n     : std_logic_vector(0 to 2);
+    signal hdmi_clk_p : std_logic;
+    signal hdmi_clk_n : std_logic;
+    signal hdmi_d_p   : std_logic_vector(0 to 2);
+    signal hdmi_d_n   : std_logic_vector(0 to 2);
 
-    signal data_pstb        : std_logic;
-    signal data_hb          : slv_7_0_t(0 to 3);
-    signal data_hb_ok       : std_logic;
-    signal data_sb          : slv_7_0_2d_t(0 to 3,0 to 7);
-    signal data_sb_ok       : std_logic_vector(0 to 3);
+    signal data_pstb  : std_logic;
+    signal data_hb    : slv_7_0_t(0 to 3);
+    signal data_hb_ok : std_logic;
+    signal data_sb    : slv_7_0_2d_t(0 to 3,0 to 7);
+    signal data_sb_ok : std_logic_vector(0 to 3);
 
-    signal vga_rst          : std_logic;
-    signal vga_clk          : std_logic;
-    signal vga_vs           : std_logic;
-    signal vga_hs           : std_logic;
-    signal vga_de           : std_logic;
-    signal vga_r            : std_logic_vector(7 downto 0);
-    signal vga_g            : std_logic_vector(7 downto 0);
-    signal vga_b            : std_logic_vector(7 downto 0);
+    signal vga_rst    : std_logic;
+    signal vga_clk    : std_logic;
+    signal vga_vs     : std_logic;
+    signal vga_hs     : std_logic;
+    signal vga_de     : std_logic;
+    signal vga_r      : std_logic_vector(7 downto 0);
+    signal vga_g      : std_logic_vector(7 downto 0);
+    signal vga_b      : std_logic_vector(7 downto 0);
 
-    signal cap_rst          : std_logic;
-    signal cap_stb          : std_logic;
+    signal cap_rst    : std_logic;
+    signal cap_stb    : std_logic;
 
 begin
 
-    clki_50m <=
-        '1' after 10ns when clki_50m = '0' else
-        '0' after 10ns when clki_50m = '1' else
-        '0';
+    stim_reset(key_n(0), '0', 100 ns);
+    stim_reset(cap_rst, '1', 100 ns);
 
-    process
-        variable mode : integer;
-    begin
-        mode := 0;
-        key_n(0) <= '0';
-        key_n(1) <= '1';
-        cap_rst <= '1';
-        wait for 20ns;
-        key_n(0) <= '1';
-        cap_rst <= '0';
-        loop
-            wait until rising_edge(cap_stb);
-            mode := mode + 1;
-            if mode = 15 then
-                exit;
-            end if;
-            key_n(1) <= '0';
-            wait for 100ns;
-            key_n(1) <= '1';
-            wait for 100ns;
-        end loop;
-    end process;
+    CLK_SRC: component model_clk_src generic map ( pn => 1, pd => 50 ) port map ( clk => clki_50m );
 
-    UUT: entity work.hdmi_tpg_qmtech_wukong
+    UUT: entity work.bpp_qmtech_wukong
         port map (
             clki_50m    => clki_50m,
             led_n       => led_n,
@@ -135,7 +116,7 @@ begin
             vga_b    => vga_b,
             cap_rst  => cap_rst,
             cap_stb  => cap_stb,
-            cap_name => "tb_hdmi_tpg_qmtech_wukong"
+            cap_name => "tb_bpp_qmtech_wukong"
         );
 
 end architecture sim;

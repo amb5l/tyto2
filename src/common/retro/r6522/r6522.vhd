@@ -35,6 +35,7 @@ package r6522_pkg is
 
             io_clk     : in  std_logic;                    -- I/O clock        } typically
             io_clken   : in  std_logic;                    -- I/O clock enable }  1MHz
+            io_rst     : in  std_logic;                    -- I/O reset
             io_pa_i    : in  std_logic_vector(7 downto 0); -- I/O port A inputs
             io_pa_o    : out std_logic_vector(7 downto 0); -- I/O port A outputs
             io_pa_dir  : out std_logic_vector(7 downto 0); -- I/O port A directions (1 = out)
@@ -63,6 +64,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library work;
+use work.tyto_utils_pkg.all;
+
 entity r6522 is
     port (
 
@@ -78,6 +82,7 @@ entity r6522 is
 
         io_clk     : in  std_logic;                    -- I/O clock        } typically
         io_clken   : in  std_logic;                    -- I/O clock enable }  1MHz
+        io_rst     : in  std_logic;                    -- I/O reset
         io_pa_i    : in  std_logic_vector(7 downto 0); -- I/O port A inputs
         io_pa_o    : out std_logic_vector(7 downto 0); -- I/O port A outputs
         io_pa_dir  : out std_logic_vector(7 downto 0); -- I/O port A directions (1 = out)
@@ -139,7 +144,7 @@ architecture behavioural of r6522 is
     signal t2c        : std_logic_vector(15 downto 0);
     alias  t2c_h      : std_logic_vector(7 downto 0) is t2c(15 downto 8);
     alias  t2c_l      : std_logic_vector(7 downto 0) is t2c(7 downto 0);
-    signal t2l        : std_logic_vector(7 downto 0);
+    signal t2l_l      : std_logic_vector(7 downto 0);
     signal sr         : std_logic_vector(7 downto 0);
     signal acr        : std_logic_vector(7 downto 0);
     signal pcr        : std_logic_vector(7 downto 0);
@@ -165,6 +170,11 @@ architecture behavioural of r6522 is
     alias irq_t2      : std_logic is ifr(5);
     alias irq_t1      : std_logic is ifr(6);
 
+    signal ora_access : std_logic;
+    signal orb_access : std_logic;
+
+    signal t1c_l_read : std_logic;
+
 begin
 
     --------------------------------------------------------------------------------
@@ -178,15 +188,16 @@ begin
     --------------------------------------------------------------------------------
     -- port A and B input registers with latching
 
-    process(reg_rst,ca1_i)
+    process(reg_rst,io_ca1)
+    begin
         if reg_rst = '1' then
             ira_lr <= (others => '0');
-        elsif rising_edge(ca1_i) then
-            ira_lr <= io_pa_i
+        elsif rising_edge(io_ca1) then
+            ira_lr <= io_pa_i;
         end if;
         if reg_rst = '1' then
             ira_lf <= (others => '0');
-        elsif falling_edge(ca1_i) then
+        elsif falling_edge(io_ca1) then
             ira_lf <= io_pa_i;
         end if;
     end process;
@@ -196,11 +207,11 @@ begin
         ira_lf when acr(0) = '1' and pcr(0) = '0' else
         io_pa_i;
 
-    process(reg_rst,cb1_i)
+    process(reg_rst,io_cb1_i)
     begin
         if reg_rst = '1' then
             irb_lr <= (others => '0');
-        elsif rising_edge(cb1_i) then
+        elsif rising_edge(io_cb1_i) then
             for i in 0 to 7 loop
                 if ddrb(i) = '1' then
                     irb_lr(i) <= orb(i);
@@ -211,7 +222,7 @@ begin
         end if;
         if reg_rst = '1' then
             irb_lf <= (others => '0');
-        elsif falling_edge(cb1_i) then
+        elsif falling_edge(io_cb1_i) then
             for i in 0 to 7 loop
                 if ddrb(i) = '1' then
                     irb_lf(i) <= orb(i);
@@ -245,7 +256,7 @@ begin
         elsif falling_edge(io_ca1) then
             irq_ca1_f <= '1';
         end if;
-    end process
+    end process;
 
     irq_ca1 <= irq_ca1_f when pcr(0) = '0' else irq_ca1_r;
 
@@ -264,7 +275,7 @@ begin
         elsif falling_edge(io_ca2_i) and pcr(3) = '0' then
             irq_ca2_f <= '1';
         end if;
-    end process
+    end process;
 
     irq_ca2 <=
         irq_ca2_f when pcr(3 downto 2) = "00" else
@@ -273,8 +284,8 @@ begin
 
     io_ca2_dir <= pcr(3);
     io_ca2_o <=
-        handshake when pcr(3 downto 1) = "100" else
-        pulse when pcr(3 downto 1) = "101" else
+        '0' when pcr(3 downto 1) = "100" else -- TODO handshake
+        '1' when pcr(3 downto 1) = "101" else -- TODO pulse
         '0' when pcr(3 downto 1) = "110" else
         '1' when pcr(3 downto 1) = "111" else
         '0';
@@ -282,49 +293,46 @@ begin
     --------------------------------------------------------------------------------
     -- CB1
 
-    process(cb1,clr(4),orb_access)
+    process(io_cb1_i,clr(4),orb_access)
     begin
         if clr(4) = '1' or orb_access = '1' then
             irq_cb1_r <= '0';
-        elsif rising_edge(cb1) then
+        elsif rising_edge(io_cb1_i) then
             irq_cb1_r <= '1';
         end if;
         if clr(4) = '1' or orb_access = '1' then
             irq_cb1_f <= '0';
-        elsif falling_edge(cb1) then
+        elsif falling_edge(io_cb1_i) then
             irq_cb1_f <= '1';
         end if;
-    end process
+    end process;
 
     irq_cb1 <= irq_cb1_f when pcr(4) = '0' else irq_cb1_r;
 
-
-
     io_cb1_o <=
-        t2_reload   when sr_mode = "001" or sr_mode = "100" or sr_mode = "101" else
-        ...
+        --t2_reload   when sr_mode = "001" or sr_mode = "100" or sr_mode = "101" else
+        '0'; -- TODO sort this
 
     io_cb1_dir <= '1' when
-        sr_mode /= "001" or
-        ...
+        sr_mode /= "001" -- TODO
         else '0';
 
    --------------------------------------------------------------------------------
     -- CB2
 
-    process(cb2_i,clr(3),orb_access)
+    process(io_cb2_i,clr(3),orb_access)
     begin
         if clr(3) = '1' or (orb_access = '1' and pcr(7) = '0' and pcr(5) = '1') then
             irq_cb2_r <= '0';
-        elsif rising_edge(cb2_i) and pcr(7) = '0' then
+        elsif rising_edge(io_cb2_i) and pcr(7) = '0' then
             irq_cb2_r <= '1';
         end if;
         if clr(3) = '1' or (orb_access = '1' and pcr(7) = '0' and pcr(5) = '1') then
             irq_cb2_f <= '0';
-        elsif falling_edge(cb2_i) and pcr(7) = '0' then
+        elsif falling_edge(io_cb2_i) and pcr(7) = '0' then
             irq_cb2_f <= '1';
         end if;
-    end process
+    end process;
 
     irq_cb2 <=
         irq_cb2_f when pcr(7 downto 6) = "00" else
@@ -333,77 +341,71 @@ begin
 
     io_cb2_dir <= pcr(7);
     io_cb2_o <=
-        handshake when pcr(7 downto 5) = "100" else
-        pulse when pcr(7 downto 5) = "101" else
+        '0' when pcr(7 downto 5) = "100" else -- TODO handshake
+        '1' when pcr(7 downto 5) = "101" else -- TODO pulse
         '0' when pcr(7 downto 5) = "110" else
         '1' when pcr(7 downto 5) = "111" else
         '0';
 
-    io_cb2_o <=
-        sr(7) when sr_mode(2) = '1' else
-        ...
+    io_cb2_o <= -- TODO
+            '0';
+--        sr(7) when sr_mode(2) = '1' else
+--        ...
 
-    io_cb2_dir <= '1' when
-        sr_mode(2) = '1' or
-        ...
-        else '0';
+    io_cb2_dir <= '0'; -- TODO
+--        sr_mode(2) = '1' or
+--        ...
+--        else '0';
 
     --------------------------------------------------------------------------------
 
+--    sr_clk <=
+--        not_clk when sr_mode = "000" else
+--        cb1_i   when sr_mode(1 downto 0) = "11" else
+--        cb1_o;
 
+--    with sr_mode select sr_clk <=
+--        not clk     when "000", -- disabled, CPU register access only
+--        cb1_o       when "001", -- shift in, clock driven out on CB1 from T2
+--        cb1_o       when "010", -- shift in, clock derived from sys clk
+--        cb1_i       when "011", -- shift in, CB1 = clock input
+--        cb1_o       when "100", -- shift out, free running, clock driven out on CB1 from T2
+--        cb1_o       when "101", -- shift out, clock driven out on CB1 from T2
+--        cb1_o       when "110", -- shift out, clock out on CB1 derived from sys clk
+--        cb1_i       when "111";
 
+--    process(sr_mode,sr_clk)
+--    begin
+--        if rising_edge(sr_clk) then
+--            case sr_mode is
+--                when "000" =>
+--                    if cs_1 = '1' and we_1 = '1' and rs_1 = RA_SR then
+--                        sr <= dw_1;
+--                    end if;
+--                when "001" =>
+--                    sr
+--                    sr_count <= std_logic_vector(unsigned(sr_count)+1);
+--                    if sr_count = "111" then
+--                        irq_sr <= '1';
+--                    end if;
+--                when "010" =>
+--                    -- generate clk/2
 
+--                when "011" => -- data in on CB2
 
+--            end case;
+--        end if;
+--        if sr_mode = "000" then
+--            irq_sr <= '0';
+--        end if;
 
-
-
-    sr_clk <=
-        not_clk when sr_mode = "000" else
-        cb1_i   when sr_mode(1 downto 0) = "11" else
-        cb1_o;
-
-    with sr_mode select sr_clk <=
-        not clk     when "000", -- disabled, CPU register access only
-        cb1_o       when "001", -- shift in, clock driven out on CB1 from T2
-        cb1_o       when "010", -- shift in, clock derived from sys clk
-        cb1_i       when "011", -- shift in, CB1 = clock input
-        cb1_o       when "100", -- shift out, free running, clock driven out on CB1 from T2
-        cb1_o       when "101", -- shift out, clock driven out on CB1 from T2
-        cb1_o       when "110", -- shift out, clock out on CB1 derived from sys clk
-        cb1_i       when "111";
-
-    process(sr_mode,sr_clk)
-    begin
-        if rising_edge(sr_clk) then
-            case sr_mode is
-                when "000" =>
-                    if cs_1 = '1' and we_1 = '1' and rs_1 = RA_SR then
-                        sr <= dw_1;
-                    end if;
-                when "001" =>
-                    sr
-                    sr_count <= std_logic_vector(unsigned(sr_count)+1);
-                    if sr_count = "111" then
-                        irq_sr <= '1';
-                    end if;
-                when "010" =>
-                    -- generate clk/2
-
-                when "011" => -- data in on CB2
-
-            end case;
-        end if;
-        if sr_mode = "000" then
-            irq_sr <= '0';
-        end if;
-
-    end process;
+--    end process;
 
 
     --------------------------------------------------------------------------------
 
-    irq_sr <=
-        '0' when sr_mode = "000" else
+--    irq_sr <=
+--        '0' when sr_mode = "000" else
 
 
 
@@ -418,14 +420,14 @@ begin
         ifr(7) <= irq;
     end process;
 
-    irq <= ifr(7);
+    reg_irq <= ifr(7);
 
     --------------------------------------------------------------------------------
     -- timer
 
     process(io_clk)
     begin
-        if rising_edge(io_clk)
+        if rising_edge(io_clk) then
             if io_rst = '1' then
                 t1c <= (others => '0');
             elsif io_clken = '1' then                
@@ -435,6 +437,7 @@ begin
                     t1c <= std_logic_vector(unsigned(t1c)-1);
                 end if;
             end if;
+        end if;
     end process;
 
     --------------------------------------------------------------------------------
@@ -454,28 +457,29 @@ begin
                 clr  <= (others => '0');
                 ier  <= (others => '0');
             else
-                orb_access <= bool2sl(rs=RA_ORB);
-                ora_access <= bool2sl(rs=RA_ORA);
-                t1c_l_read <= bool2sl(rs=RA_T1C_L and reg_we = '0');
+                orb_access <= bool2sl(reg_rs=RA_ORB);
+                ora_access <= bool2sl(reg_rs=RA_ORA);
+                t1c_l_read <= bool2sl(reg_rs=RA_T1C_L and reg_we = '0');
                 clr <= (others => '0');
                 if reg_we = '1' then
                     case reg_rs is
-                        when RA_ORB     => orb   <= reg_dw;
-                        when RA_ORA_H   => ora   <= reg_dw;
-                        when RA_DDRB    => ddrb  <= reg_dw;
-                        when RA_DDRA    => ddra  <= reg_dw;
-                        when RA_T1L_L   => t1l_l <= reg_dw;
-                        when RA_T1C_H   => t1l_h <= reg_dw; t1c_h <= reg_dw; t1c_l <= t1l;
-                        when RA_T1L_L   => t1l_l <= reg_dw;
-                        when RA_T1L_H   => t1l_h <= reg_dw;
-                        when RA_T2L_L   => t2l   <= reg_dw;
-                        when RA_T2C_H   => t2c_h <= reg_dw; t2c_l <= t2l_l;
-                        when RA_SR      => null; -- handled separately
-                        when RA_ACR     => acr   <= reg_dw;
-                        when RA_PCR     => pcr   <= reg_dw;
-                        when RA_IFR     => clr   <= reg_dw;
-                        when RA_IER     => ier   <= reg_dw;
-                        when RA_ORA_NH  => ora   <= reg_dw;
+                        when RA_ORB   => orb   <= reg_dw;
+                        when RA_ORA   => ora   <= reg_dw;
+                        when RA_DDRB  => ddrb  <= reg_dw;
+                        when RA_DDRA  => ddra  <= reg_dw;
+                        when RA_T1C_L => t1l_l <= reg_dw;
+                        when RA_T1C_H => t1l_h <= reg_dw; t1c_h <= reg_dw; t1c_l <= t1l_l;
+                        when RA_T1L_L => t1l_l <= reg_dw;
+                        when RA_T1L_H => t1l_h <= reg_dw;
+                        when RA_T2C_L => t2l_l <= reg_dw;
+                        when RA_T2C_H => t2c_h <= reg_dw; t2c_l <= t2l_l;
+                        when RA_SR    => null; -- handled separately
+                        when RA_ACR   => acr   <= reg_dw;
+                        when RA_PCR   => pcr   <= reg_dw;
+                        when RA_IFR   => clr   <= reg_dw;
+                        when RA_IER   => ier   <= reg_dw;
+                        when RA_ORA_N => ora   <= reg_dw;
+                        when others => null;
                     end case;
                 end if;
             end if;
@@ -487,7 +491,7 @@ begin
 
     with reg_rs select reg_dr <=
         irb   when RA_ORB,
-        ira   when RA_ORA_H,
+        ira   when RA_ORA,
         ddrb  when RA_DDRB,
         ddra  when RA_DDRA,
         t1c_l when RA_T1C_L,
@@ -501,7 +505,7 @@ begin
         pcr   when RA_PCR,
         ifr   when RA_IFR,
         ier   when RA_IER,
-        ora   when RA_ORA_NH,
+        ora   when RA_ORA_N,
         x"00" when others;
 
     --------------------------------------------------------------------------------

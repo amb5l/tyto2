@@ -61,8 +61,8 @@ architecture sim of tb_saa5050d is
     signal crt_de    : std_logic;                     -- CRTC display enable
 
     signal ttx_chr   : std_logic_vector(7 downto 0);  -- character code (0..127)
-    signal ttx_pixu  : std_logic_vector(2 downto 0);  -- pixel (3 bit BGR) (12 pixels per character) (upper line)
-    signal ttx_pixl  : std_logic_vector(2 downto 0);  -- pixel (3 bit BGR) (12 pixels per character) (lower line)
+    signal ttx_pix1  : std_logic_vector(2 downto 0);  -- pixel (3 bit BGR) (12 pixels per character) (upper line)
+    signal ttx_pix2  : std_logic_vector(2 downto 0);  -- pixel (3 bit BGR) (12 pixels per character) (lower line)
     signal ttx_pixen : std_logic;                     -- pixel enable
 
     signal crt_hs_1  : std_logic;                     -- CRTC horizontal sync, delayed by 1 clock
@@ -195,12 +195,12 @@ begin
                 end if;
                 if ttx_pixen = '1' then
                     for j in 0 to 2 loop
-                        if ttx_pixu(j) = '1' then
+                        if ttx_pix1(j) = '1' then
                             bmp(x,y)(j) <= 255;
                         else
                             bmp(x,y)(j) <= 0;
                         end if;
-                        if ttx_pixl(j) = '1' then
+                        if ttx_pix2(j) = '1' then
                             bmp(x,y+1)(j) <= 255;
                         else
                             bmp(x,y+1)(j) <= 0;
@@ -236,8 +236,8 @@ begin
             pix_clk   => pix_clk,
             pix_clken => '1',
             pix_rst   => pix_rst,
-            pix_du    => ttx_pixu,
-            pix_dl    => ttx_pixl,
+            pix_d1    => ttx_pix1,
+            pix_d2    => ttx_pix2,
             pix_gp    => open,
             pix_de    => ttx_pixen
         );

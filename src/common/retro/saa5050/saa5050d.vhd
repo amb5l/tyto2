@@ -38,8 +38,8 @@ package saa5050d_pkg is
             pix_rst   : in  std_logic;                    -- pixel clock synchronous reset
             pix_gp    : out std_logic;                    -- pixel general purpose
             pix_de    : out std_logic;                    -- pixel enable
-            pix_du    : out std_logic_vector(2 downto 0); -- pixel data (3 bit BGR) - 1st/odd/upper line
-            pix_dl    : out std_logic_vector(2 downto 0)  -- pixel data (3 bit BGR) - 2nd/even/lower line
+            pix_d1    : out std_logic_vector(2 downto 0); -- pixel data (3 bit BGR) - 1st/odd/upper line
+            pix_d2    : out std_logic_vector(2 downto 0)  -- pixel data (3 bit BGR) - 2nd/even/lower line
         );
     end component saa5050d;
 
@@ -72,8 +72,8 @@ entity saa5050d is
         pix_rst   : in  std_logic;                    -- pixel clock synchronous reset
         pix_gp    : out std_logic;                    -- pixel general purpose
         pix_de    : out std_logic;                    -- pixel enable
-        pix_du    : out std_logic_vector(2 downto 0); -- pixel data (3 bit BGR) - 1st/odd/upper line
-        pix_dl    : out std_logic_vector(2 downto 0)  -- pixel data (3 bit BGR) - 2nd/even/lower line
+        pix_d1    : out std_logic_vector(2 downto 0); -- pixel data (3 bit BGR) - 1st/odd/upper line
+        pix_d2    : out std_logic_vector(2 downto 0)  -- pixel data (3 bit BGR) - 2nd/even/lower line
     );
 end entity saa5050d;
 
@@ -176,7 +176,7 @@ begin
                 held_s      <= '0';
                 held_c1     <= (others => '0');
                 held_s1     <= '0';
-                count_flash <= (others => '0');
+                count_flash <= (others => '1');
                 flash_state <= '1';
             elsif chr_clken = '1' then
                 chr_clk_pha <= not chr_clk_pha;
@@ -356,13 +356,13 @@ begin
                 pix_sr_below <= (others => '0');
                 pix_gp       <= '0';
                 pix_de       <= '0';
-                pix_du       <= (others => '0');
-                pix_dl       <= (others => '0');
+                pix_d1       <= (others => '0');
+                pix_d2       <= (others => '0');
             elsif pix_clken = '1' then
                 pix_gp <= chr_gp1;
                 pix_de <= '0';
-                pix_du <= (others => '0');
-                pix_dl <= (others => '0');
+                pix_d1 <= (others => '0');
+                pix_d2 <= (others => '0');
                 col_hd <= (col_hd+1) mod 12;
                 chr_clk_phb <= chr_clk_pha;
                 if chr_clk_pha /= chr_clk_phb then
@@ -370,11 +370,11 @@ begin
                 end if;
                 if chr_de1 = '1' then
                     pix_de <= '1';
-                    pix_du <= attr_bgcol1;
-                    pix_dl <= attr_bgcol1;
+                    pix_d1 <= attr_bgcol1;
+                    pix_d2 <= attr_bgcol1;
                     if debug = '1' and chr_d1(6 downto 5) = "00" then
-                        pix_du <= (others => '0');
-                        pix_dl <= (others => '0');
+                        pix_d1 <= (others => '0');
+                        pix_d2 <= (others => '0');
                     end if;
                     if col_hd = 0 then -- first pixel of 12
                         pix_sr_cur   <= (others => '0');
@@ -393,8 +393,8 @@ begin
                             pix_sr_above <= '0' & gfx_data;
                             pix_sr_below <= '0' & gfx_data;
                             if gfx_data(5) = '1' then
-                                pix_du <= attr_fgcol1;
-                                pix_dl <= attr_fgcol1;
+                                pix_d1 <= attr_fgcol1;
+                                pix_d2 <= attr_fgcol1;
                             end if;
                         else
                             if debug = '1' or chr_di1 >= 32 then
@@ -409,11 +409,11 @@ begin
                         end if;
                     else
                         if pix_sr_cur(5) = '1' then -- filled pixel
-                            pix_du <= attr_fgcol1;
-                            pix_dl <= attr_fgcol1;
+                            pix_d1 <= attr_fgcol1;
+                            pix_d2 <= attr_fgcol1;
                             if debug = '1' and chr_d1(6 downto 5) = "00" then
-                                pix_du <= (others => '1');
-                                pix_dl <= (others => '1');
+                                pix_d1 <= (others => '1');
+                                pix_d2 <= (others => '1');
                             end if;
                         else -- empty pixel -> look at character rounding...                            
                             if attr_dbl = '0' then -- normal height
@@ -426,7 +426,7 @@ begin
                                     nn_h := pix_sr_cur(4);
                                 end if;
                                 if nn_d = '0' and nn_v = '1' and nn_h = '1' then -- rounding required
-                                    pix_du <= attr_fgcol1;
+                                    pix_d1 <= attr_fgcol1;
                                 end if;                            
                                 nn_v := pix_sr_below(5); -- lower row
                                 if col_hd(0) = '0' then -- left half pixel
@@ -437,7 +437,7 @@ begin
                                     nn_h := pix_sr_cur(4);
                                 end if;
                                 if nn_d = '0' and nn_v = '1' and nn_h = '1' then -- rounding required
-                                    pix_dl <= attr_fgcol1;
+                                    pix_d2 <= attr_fgcol1;
                                 end if;
                             else -- double height
                                 if row_hd(0) = '0' then
@@ -460,13 +460,13 @@ begin
                                     end if;                                    
                                 end if;
                                 if nn_d = '0' and nn_v = '1' and nn_h = '1' then -- rounding required
-                                    pix_du <= attr_fgcol1;
-                                    pix_dl <= attr_fgcol1;
+                                    pix_d1 <= attr_fgcol1;
+                                    pix_d2 <= attr_fgcol1;
                                 end if;                            
                             end if;
                             if debug = '1' and chr_d1(6 downto 5) = "00" then
-                                pix_du <= (others => '0');
-                                pix_dl <= (others => '0');
+                                pix_d1 <= (others => '0');
+                                pix_d2 <= (others => '0');
                             end if;
                         end if;
                         if col_hd(0) = '1' then

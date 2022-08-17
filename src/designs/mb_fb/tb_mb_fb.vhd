@@ -145,20 +145,18 @@ begin
         );
 
     CAPTURE: entity work.model_vga_sink
-        generic map (
-            name    => "tb_mb_fb"
-        )
         port map (
-            vga_rst => vga_rst,
-            vga_clk => vga_clk,
-            vga_vs  => vga_vs,
-            vga_hs  => vga_hs,
-            vga_de  => vga_de,
-            vga_r   => vga_r,
-            vga_g   => vga_g,
-            vga_b   => vga_b,
-            cap_rst => cap_rst,
-            cap_stb => cap_stb
+            vga_rst  => vga_rst,
+            vga_clk  => vga_clk,
+            vga_vs   => vga_vs,
+            vga_hs   => vga_hs,
+            vga_de   => vga_de,
+            vga_r    => vga_r,
+            vga_g    => vga_g,
+            vga_b    => vga_b,
+            cap_rst  => cap_rst,
+            cap_stb  => cap_stb,
+            cap_name => "tb_mb_fb"
         );
 
 end architecture sim;

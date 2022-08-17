@@ -62,7 +62,7 @@ architecture sim of tb_mb_cb_ps2 is
 
     signal cap_stb    : std_logic;
 
-    signal debug      : std_logic_vector(15 downto 0); 
+    signal debug      : std_logic_vector(15 downto 0);
     signal hid_code   : std_logic_vector(7 downto 0);
     signal last       : std_logic;
     signal pass       : integer;
@@ -241,9 +241,6 @@ begin
         );
 
     CAPTURE: component model_vga_sink
-        generic map (
-            name        => "tb_mb_cb_ps2"
-        )
         port map (
             vga_rst  => '0',
             vga_clk  => pix_clk,
@@ -253,8 +250,9 @@ begin
             vga_r    => vga_r,
             vga_g    => vga_g,
             vga_b    => vga_b,
-            cap_rst => '0',
-            cap_stb => cap_stb
+            cap_rst  => '0',
+            cap_stb  => cap_stb,
+            cap_name => "tb_mb_cb_ps2"
         );
 
 end architecture sim;

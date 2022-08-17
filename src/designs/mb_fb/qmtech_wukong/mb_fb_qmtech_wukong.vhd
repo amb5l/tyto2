@@ -63,7 +63,7 @@ entity mb_fb_qmtech_wukong is
 --      eth_mdio        : inout std_logic;
 
         -- DDR3
-        ddr3_reset_n    : out   std_logic;
+        ddr3_rst_n      : out   std_logic;
         ddr3_ck_p       : out   std_logic_vector(0 downto 0);
         ddr3_ck_n       : out   std_logic_vector(0 downto 0);
         ddr3_cke        : out   std_logic_vector(0 downto 0);
@@ -234,7 +234,7 @@ begin
             app_zq_req          => '0',
             app_zq_ack          => open,
 
-            ddr3_reset_n        => ddr3_reset_n,
+            ddr3_reset_n        => ddr3_rst_n,
             ddr3_ck_p           => ddr3_ck_p,
             ddr3_ck_n           => ddr3_ck_n,
             ddr3_cke            => ddr3_cke,
