@@ -195,13 +195,14 @@ architecture synth of bpp_digilent_nexys_video is
     signal led_capslock   : std_logic;
     signal led_shiftlock  : std_logic;
     signal led_motor      : std_logic;
+    signal kbd_clken      : std_logic;
     signal kbd_rst        : std_logic;
     signal kbd_break      : std_logic;
-    signal kbd_en         : std_logic;
+    signal kbd_load       : std_logic;
     signal kbd_row        : std_logic_vector(2 downto 0);
     signal kbd_col        : std_logic_vector(3 downto 0);
     signal kbd_press      : std_logic;
-    signal kbd_colact     : std_logic;
+    signal kbd_irq        : std_logic;
 
     signal crtc_clken     : std_logic;
     signal crtc_clksel    : std_logic;
@@ -336,13 +337,14 @@ begin
             led_capslock  => led_capslock,
             led_shiftlock => led_shiftlock,
             led_motor     => led_motor,
+            kbd_clken     => kbd_clken,
             kbd_rst       => kbd_rst,
             kbd_break     => kbd_break,
-            kbd_en        => kbd_en,
+            kbd_load      => kbd_load,
             kbd_row       => kbd_row,
             kbd_col       => kbd_col,
             kbd_press     => kbd_press,
-            kbd_colact    => kbd_colact,
+            kbd_irq       => kbd_irq,
             crtc_clken    => crtc_clken,
             crtc_clksel   => crtc_clksel,
             crtc_rst      => crtc_rst,
@@ -374,23 +376,27 @@ begin
 
     PS2: component bpp_kbd_ps2
         port map (
-            clk         => sys_clk_32m,
-            rst         => kbd_rst,
-            ps2_clk_i   => ps2_clk_i,
-            ps2_clk_o   => ps2_clk_o,
-            ps2_data_i  => ps2_data_i,
-            ps2_data_o  => ps2_data_o,
-            opt_mode    => opt_mode,
-            opt_boot    => opt_boot,
-            opt_disc    => opt_disc,
-            opt_spare   => opt_spare,
-            opt_dfs_nfs => opt_dfs_nfs,
-            kbd_break   => kbd_break,
-            kbd_en      => kbd_en,
-            kbd_row     => kbd_row,
-            kbd_col     => kbd_col,
-            kbd_press   => kbd_press,
-            kbd_colact  => kbd_colact
+            clk           => sys_clk_8m,
+            clken         => kbd_clken,
+            rst           => kbd_rst,
+            ps2_clk_i     => ps2_clk_i,
+            ps2_clk_o     => ps2_clk_o,
+            ps2_data_i    => ps2_data_i,
+            ps2_data_o    => ps2_data_o,
+            opt_mode      => opt_mode,
+            opt_boot      => opt_boot,
+            opt_disc      => opt_disc,
+            opt_spare     => opt_spare,
+            opt_dfs_nfs   => opt_dfs_nfs,
+            led_capslock  => led_capslock,
+            led_shiftlock => led_shiftlock,
+            led_motor     => led_motor,
+            kbd_break     => kbd_break,
+            kbd_load      => kbd_load,
+            kbd_row       => kbd_row,
+            kbd_col       => kbd_col,
+            kbd_press     => kbd_press,
+            kbd_irq       => kbd_irq
         );
 
     ps2_clk <= '0' when ps2_clk_o = '0' else 'Z';

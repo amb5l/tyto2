@@ -33,13 +33,14 @@ package bpp_pkg is
             led_shiftlock : out std_logic;
             led_motor     : out std_logic;
 
-            kbd_rst       : out std_logic;                    -- keyboard: reset
-            kbd_break     : in  std_logic;                    -- keyboard: BREAK pressed
-            kbd_en        : out std_logic;                    -- keyboard: enable
-            kbd_row       : out std_logic_vector(2 downto 0); -- keyboard: row (0-7)
-            kbd_col       : out std_logic_vector(3 downto 0); -- keyboard: column (0-9)
-            kbd_press     : in  std_logic;                    -- keyboard: open/broken (1) or closed/made (0)
-            kbd_colact    : in  std_logic;                    -- keyboard: column active
+            kbd_clken     : out std_logic;
+            kbd_rst       : out std_logic;
+            kbd_break     : in  std_logic;                    -- BBC micro keyboard: BREAK pressed
+            kbd_load      : out std_logic;                    -- BBC micro keyboard: load/count
+            kbd_row       : out std_logic_vector(2 downto 0); -- BBC micro keyboard: row (0-7)
+            kbd_col       : out std_logic_vector(3 downto 0); -- BBC micro keyboard: column (0-9)
+            kbd_press     : in  std_logic;                    -- BBC micro keyboard: key press
+            kbd_irq       : in  std_logic;                    -- BBC micro keyboard: key press in column
 
             crtc_clksel   : out std_logic;                    -- CRTC: clock select (1 = 2 MHz, 0 = 1 MHz)
             crtc_clken    : out std_logic;                    -- CRTC: clock enable (w.r.t. sys_clk_8m)
@@ -98,13 +99,14 @@ entity bpp is
         led_shiftlock : out std_logic;
         led_motor     : out std_logic;
 
-        kbd_rst       : out std_logic;                    -- keyboard: reset
-        kbd_break     : in  std_logic;                    -- keyboard: BREAK pressed
-        kbd_en        : out std_logic;                    -- keyboard: enable
-        kbd_row       : out std_logic_vector(2 downto 0); -- keyboard: row (0-7)
-        kbd_col       : out std_logic_vector(3 downto 0); -- keyboard: column (0-9)
-        kbd_press     : in  std_logic;                    -- keyboard: open/broken (1) or closed/made (0)
-        kbd_colact    : in  std_logic;                    -- keyboard: column active
+        kbd_clken     : out std_logic;
+        kbd_rst       : out std_logic;
+        kbd_break     : in  std_logic;                    -- BBC micro keyboard: BREAK pressed
+        kbd_load      : out std_logic;                    -- BBC micro keyboard: load/count
+        kbd_row       : out std_logic_vector(2 downto 0); -- BBC micro keyboard: row (0-7)
+        kbd_col       : out std_logic_vector(3 downto 0); -- BBC micro keyboard: column (0-9)
+        kbd_press     : in  std_logic;                    -- BBC micro keyboard: key press
+        kbd_irq       : in  std_logic;                    -- BBC micro keyboard: key press in column
 
         crtc_clksel   : out std_logic;                    -- CRTC: clock select (1 = 2 MHz, 0 = 1 MHz)
         crtc_rst      : out std_logic;                    -- CRTC: reset
@@ -483,7 +485,7 @@ begin
     vidproc_ttx   <= vidproc_ttx_i;
 
     --------------------------------------------------------------------------------
-    -- VIA A: system VIA
+    -- VIA A: system VIA and associated circuitry
 
     VIA_A: component bpp_sysvia
         port map (
@@ -498,11 +500,11 @@ begin
             reg_dw      => core_ls_dwx,
             reg_dr      => viaa_dr,
             reg_irq     => viaa_irq,
-            kbd_en      => kbd_en,
+            kbd_load    => kbd_load,
             kbd_col     => kbd_col,
             kbd_row     => kbd_row,
             kbd_press   => kbd_press,
-            kbd_colact  => kbd_colact,
+            kbd_irq     => kbd_irq,
             kbd_led_c   => led_capslock,
             kbd_led_s   => led_shiftlock,
             crtc_sa     => crtc_sa,
@@ -520,6 +522,9 @@ begin
             sp_rdy      => sp_rdy
         );
 
+    kbd_clken <= sys_clken_8m_1m_0;
+    kbd_rst <= sys_rst_32m;
+
     --------------------------------------------------------------------------------
     -- sound generator
 
@@ -527,14 +532,9 @@ begin
 
     --------------------------------------------------------------------------------
     -- speech processor
-    
+
     sp_dr <= x"00";
     sp_int <= '0';
-
-    --------------------------------------------------------------------------------
-    -- misc
-
-    kbd_rst <= sys_rst_32m;
 
     --------------------------------------------------------------------------------
 

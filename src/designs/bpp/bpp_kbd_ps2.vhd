@@ -24,26 +24,31 @@ package bpp_kbd_ps2_pkg is
     component bpp_kbd_ps2 is
         port (
 
-                clk         : in  std_logic;                    -- clock
-                rst         : in  std_logic;                    -- reset
+                clk           : in  std_logic;                    -- clock
+                clken         : in  std_logic;                    -- clock enable
+                rst           : in  std_logic;                    -- reset
 
-                ps2_clk_i   : in  std_logic;                    -- PS/2 serial clock in
-                ps2_clk_o   : out std_logic;                    -- PS/2 serial clock out
-                ps2_data_i  : in  std_logic;                    -- PS/2 serial data in
-                ps2_data_o  : out std_logic;                    -- PS/2 serial data out
+                ps2_clk_i     : in  std_logic;                    -- PS/2 serial clock in
+                ps2_clk_o     : out std_logic;                    -- PS/2 serial clock out
+                ps2_data_i    : in  std_logic;                    -- PS/2 serial data in
+                ps2_data_o    : out std_logic;                    -- PS/2 serial data out
 
-                opt_mode    : in  std_logic_vector(2 downto 0); -- startup options: video mode (0-7)
-                opt_boot    : in  std_logic;                    -- startup options: 1 = boot on BREAK, 0 = boot on SHIFT BREAK
-                opt_disc    : in  std_logic_vector(1 downto 0); -- startup options: disc timing
-                opt_spare   : in  std_logic;                    -- startup options: spare
-                opt_dfs_nfs : in  std_logic;                    -- startup options: 1 = DFS, 0 = NFS
+                opt_mode      : in  std_logic_vector(2 downto 0); -- startup options: video mode (0-7)
+                opt_boot      : in  std_logic;                    -- startup options: 1 = boot on BREAK, 0 = boot on SHIFT BREAK
+                opt_disc      : in  std_logic_vector(1 downto 0); -- startup options: disc timing
+                opt_spare     : in  std_logic;                    -- startup options: spare
+                opt_dfs_nfs   : in  std_logic;                    -- startup options: 1 = DFS, 0 = NFS
 
-                kbd_break   : out std_logic;                    -- BBC micro keyboard: BREAK pressed
-                kbd_en      : in  std_logic;                    -- BBC micro keyboard: BREAK pressed
-                kbd_row     : in  std_logic_vector(2 downto 0); -- BBC micro keyboard: row (0-7)
-                kbd_col     : in  std_logic_vector(3 downto 0); -- BBC micro keyboard: column (0-9)
-                kbd_press   : out std_logic;                    -- BBC micro keyboard: keyswitch state (1 = pressed)
-                kbd_colact  : out std_logic                     -- BBC micro keyboard: column active
+                led_capslock  : in  std_logic;                    -- } LED states
+                led_shiftlock : in  std_logic;                    -- }
+                led_motor     : in  std_logic;                    -- }
+
+                kbd_break     : out std_logic;                    -- BBC micro keyboard: BREAK pressed
+                kbd_load      : in  std_logic;                    -- BBC micro keyboard: load
+                kbd_row       : in  std_logic_vector(2 downto 0); -- BBC micro keyboard: row (0-7)
+                kbd_col       : in  std_logic_vector(3 downto 0); -- BBC micro keyboard: column (0-9)
+                kbd_press     : out std_logic;                    -- BBC micro keyboard: key press
+                kbd_irq       : out std_logic                     -- BBC micro keyboard: key press in column
 
         );
     end component bpp_kbd_ps2;
@@ -66,49 +71,53 @@ entity bpp_kbd_ps2 is
     port (
 
             clk           : in  std_logic;                    -- clock
+            clken         : in  std_logic;                    -- clock enable
             rst           : in  std_logic;                    -- reset
-                          
+
             ps2_clk_i     : in  std_logic;                    -- PS/2 serial clock in
             ps2_clk_o     : out std_logic;                    -- PS/2 serial clock out
             ps2_data_i    : in  std_logic;                    -- PS/2 serial data in
             ps2_data_o    : out std_logic;                    -- PS/2 serial data out
-                          
+
             opt_mode      : in  std_logic_vector(2 downto 0); -- startup options: video mode (0-7)
             opt_boot      : in  std_logic;                    -- startup options: 1 = boot on BREAK, 0 = boot on SHIFT BREAK
             opt_disc      : in  std_logic_vector(1 downto 0); -- startup options: disc timing
             opt_spare     : in  std_logic;                    -- startup options: spare
             opt_dfs_nfs   : in  std_logic;                    -- startup options: 1 = DFS, 0 = NFS
 
-            led_capslock  : in  std_logic;                    -- } LED states 
+            led_capslock  : in  std_logic;                    -- } LED states
             led_shiftlock : in  std_logic;                    -- }
             led_motor     : in  std_logic;                    -- }
 
             kbd_break     : out std_logic;                    -- BBC micro keyboard: BREAK pressed
-            kbd_en        : in  std_logic;                    -- BBC micro keyboard: enable
+            kbd_load      : in  std_logic;                    -- BBC micro keyboard: load
             kbd_row       : in  std_logic_vector(2 downto 0); -- BBC micro keyboard: row (0-7)
             kbd_col       : in  std_logic_vector(3 downto 0); -- BBC micro keyboard: column (0-9)
-            kbd_press     : out std_logic;                    -- BBC micro keyboard: keyswitch state (1 = pressed)
-            kbd_colact    : out std_logic                     -- BBC micro keyboard: column active
+            kbd_press     : out std_logic;                    -- BBC micro keyboard: key press
+            kbd_irq       : out std_logic                     -- BBC micro keyboard: key press in column
 
     );
 end entity bpp_kbd_ps2;
 
 architecture synth of bpp_kbd_ps2 is
 
-    signal d2h_stb     : std_logic;
-    signal d2h_data    : std_logic_vector(7 downto 0);
+    signal d2h_stb  : std_logic;
+    signal d2h_data : std_logic_vector(7 downto 0);
 
-    signal h2d_req     : std_logic;
-    signal h2d_ack     : std_logic;
-    signal h2d_nack    : std_logic;
-    signal h2d_data    : std_logic_vector(7 downto 0);
+    signal h2d_req  : std_logic;
+    signal h2d_ack  : std_logic;
+    signal h2d_nack : std_logic;
+    signal h2d_data : std_logic_vector(7 downto 0);
 
-    signal hid_stb     : std_logic;
-    signal hid_make    : std_logic;
-    signal hid_code    : std_logic_vector(7 downto 0);
+    signal hid_stb  : std_logic;
+    signal hid_make : std_logic;
+    signal hid_code : std_logic_vector(7 downto 0);
 
-    signal khid: std_logic_vector(0 to 127); -- USB HID key states } 1 = made/closed
-    signal kbbc: std_logic_vector(0 to 79);  -- BBC key states     } 0 = broken/open
+    signal khid     : std_logic_vector(0 to 127);   -- USB HID key states } 1 = made/closed
+    signal kbbc     : std_logic_vector(0 to 79);    -- BBC key states     } 0 = broken/open
+
+    signal c        : integer range 0 to 15;        -- current column
+    signal r        : integer range 0 to 7;         -- current row
 
     --------------------------------------------------------------------------------
     -- functions to tidy mapping and contract HID key code range from 256 to 128 codes
@@ -131,6 +140,9 @@ architecture synth of bpp_kbd_ps2 is
     --------------------------------------------------------------------------------
 
 begin
+
+    --------------------------------------------------------------------------------
+    -- PS/2 IP cores
 
     PS2: component ps2_host
         generic map (
@@ -164,6 +176,10 @@ begin
             hid_make => hid_make,
             hid_code => hid_code
         );
+
+    -- host to device not used
+    h2d_req <= '0';
+    h2d_data <= (others => '0');
 
     --------------------------------------------------------------------------------
     -- maintain HID key states by tracking make/break on each code
@@ -264,21 +280,38 @@ begin
 
     kbbc(i7( BBC_Space                        )) <= khid(i8to7( KEY_Space                        ))                                       ;
 
-    kbbc(i7( BBC_SW2_1                        )) <= opt_dfs_nfs                                                                           ;
-    kbbc(i7( BBC_SW2_2                        )) <= opt_spare                                                                             ;
-    kbbc(i7( BBC_SW2_3                        )) <= opt_disc(1)                                                                           ;
-    kbbc(i7( BBC_SW2_4                        )) <= opt_disc(0)                                                                           ;
-    kbbc(i7( BBC_SW2_5                        )) <= opt_boot                                                                              ;
-    kbbc(i7( BBC_SW2_6                        )) <= opt_mode(2)                                                                           ;
-    kbbc(i7( BBC_SW2_7                        )) <= opt_mode(1)                                                                           ;
-    kbbc(i7( BBC_SW2_8                        )) <= opt_mode(0)                                                                           ;
+    kbbc(i7( BBC_Opt_1                        )) <= opt_dfs_nfs                                                                           ;
+    kbbc(i7( BBC_Opt_2                        )) <= opt_spare                                                                             ;
+    kbbc(i7( BBC_Opt_3                        )) <= opt_disc(1)                                                                           ;
+    kbbc(i7( BBC_Opt_4                        )) <= opt_disc(0)                                                                           ;
+    kbbc(i7( BBC_Opt_5                        )) <= opt_boot                                                                              ;
+    kbbc(i7( BBC_Opt_6                        )) <= opt_mode(2)                                                                           ;
+    kbbc(i7( BBC_Opt_7                        )) <= opt_mode(1)                                                                           ;
+    kbbc(i7( BBC_Opt_8                        )) <= opt_mode(0)                                                                           ;
 
     --------------------------------------------------------------------------------
     -- key readout
 
+    DO_74LS163: process(clk)
+    begin
+        if rising_edge(clk) then
+            if rst = '1' then
+                c <= 0;
+            elsif clken = '1' then
+                if kbd_load = '1' then
+                    c <= to_integer(unsigned(kbd_col));
+                else
+                    c <= (c+1) mod 16;
+                end if;
+            end if;
+        end if;
+    end process DO_74LS163;
+
+    r <= to_integer(unsigned(kbd_row));
+
     kbd_break <= khid(i8to7( KEY_F12 ));
-    kbd_press <= kbbc((8*to_integer(unsigned(kbd_col)))+to_integer(unsigned(kbd_row)));
-    kbd_colact <= '1' when kbbc(7+(8*to_integer(unsigned(kbd_col))) downto 8*to_integer(unsigned(kbd_col))) /= x"00" else '0';
+    kbd_press <= kbbc((8*c)+r);
+    kbd_irq <= '1' when kbbc(7+(8*c) downto 1+(8*c)) /= x"00" else '0';
 
     --------------------------------------------------------------------------------
 

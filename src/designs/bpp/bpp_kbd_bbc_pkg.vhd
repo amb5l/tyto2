@@ -38,7 +38,7 @@ package bpp_kbd_bbc_pkg is
     constant BBC_S                            : std_logic_vector(6 downto 0) := "0001101";
     constant BBC_Z                            : std_logic_vector(6 downto 0) := "0001110";
     constant BBC_F1                           : std_logic_vector(6 downto 0) := "0001111";
-    constant BBC_SW2_8                        : std_logic_vector(6 downto 0) := "0010000";
+    constant BBC_Opt_8                        : std_logic_vector(6 downto 0) := "0010000";
     constant BBC_4_Dollar                     : std_logic_vector(6 downto 0) := "0010001";
     constant BBC_E                            : std_logic_vector(6 downto 0) := "0010010";
     constant BBC_D                            : std_logic_vector(6 downto 0) := "0010011";
@@ -46,7 +46,7 @@ package bpp_kbd_bbc_pkg is
     constant BBC_C                            : std_logic_vector(6 downto 0) := "0010101";
     constant BBC_Space                        : std_logic_vector(6 downto 0) := "0010110";
     constant BBC_F2                           : std_logic_vector(6 downto 0) := "0010111";
-    constant BBC_SW2_7                        : std_logic_vector(6 downto 0) := "0011000";
+    constant BBC_Opt_7                        : std_logic_vector(6 downto 0) := "0011000";
     constant BBC_5_Percent                    : std_logic_vector(6 downto 0) := "0011001";
     constant BBC_T                            : std_logic_vector(6 downto 0) := "0011010";
     constant BBC_R                            : std_logic_vector(6 downto 0) := "0011011";
@@ -54,7 +54,7 @@ package bpp_kbd_bbc_pkg is
     constant BBC_G                            : std_logic_vector(6 downto 0) := "0011101";
     constant BBC_V                            : std_logic_vector(6 downto 0) := "0011110";
     constant BBC_F3                           : std_logic_vector(6 downto 0) := "0011111";
-    constant BBC_SW2_6                        : std_logic_vector(6 downto 0) := "0100000";
+    constant BBC_Opt_6                        : std_logic_vector(6 downto 0) := "0100000";
     constant BBC_F4                           : std_logic_vector(6 downto 0) := "0100001";
     constant BBC_7_Apostrophe                 : std_logic_vector(6 downto 0) := "0100010";
     constant BBC_6_Ampersand                  : std_logic_vector(6 downto 0) := "0100011";
@@ -62,7 +62,7 @@ package bpp_kbd_bbc_pkg is
     constant BBC_H                            : std_logic_vector(6 downto 0) := "0100101";
     constant BBC_B                            : std_logic_vector(6 downto 0) := "0100110";
     constant BBC_F5                           : std_logic_vector(6 downto 0) := "0100111";
-    constant BBC_SW2_5                        : std_logic_vector(6 downto 0) := "0101000";
+    constant BBC_Opt_5                        : std_logic_vector(6 downto 0) := "0101000";
     constant BBC_8_LRoundBracket              : std_logic_vector(6 downto 0) := "0101001";
     constant BBC_I                            : std_logic_vector(6 downto 0) := "0101010";
     constant BBC_U                            : std_logic_vector(6 downto 0) := "0101011";
@@ -70,7 +70,7 @@ package bpp_kbd_bbc_pkg is
     constant BBC_N                            : std_logic_vector(6 downto 0) := "0101101";
     constant BBC_M                            : std_logic_vector(6 downto 0) := "0101110";
     constant BBC_F6                           : std_logic_vector(6 downto 0) := "0101111";
-    constant BBC_SW2_4                        : std_logic_vector(6 downto 0) := "0110000";
+    constant BBC_Opt_4                        : std_logic_vector(6 downto 0) := "0110000";
     constant BBC_F7                           : std_logic_vector(6 downto 0) := "0110001";
     constant BBC_9_RRoundBracket              : std_logic_vector(6 downto 0) := "0110010";
     constant BBC_O                            : std_logic_vector(6 downto 0) := "0110011";
@@ -78,7 +78,7 @@ package bpp_kbd_bbc_pkg is
     constant BBC_L                            : std_logic_vector(6 downto 0) := "0110101";
     constant BBC_Comma_LessThan               : std_logic_vector(6 downto 0) := "0110110";
     constant BBC_F8                           : std_logic_vector(6 downto 0) := "0110111";
-    constant BBC_SW2_3                        : std_logic_vector(6 downto 0) := "0111000";
+    constant BBC_Opt_3                        : std_logic_vector(6 downto 0) := "0111000";
     constant BBC_Minus_Equal                  : std_logic_vector(6 downto 0) := "0111001";
     constant BBC_0                            : std_logic_vector(6 downto 0) := "0111010";
     constant BBC_P                            : std_logic_vector(6 downto 0) := "0111011";
@@ -86,7 +86,7 @@ package bpp_kbd_bbc_pkg is
     constant BBC_SemiColon_Plus               : std_logic_vector(6 downto 0) := "0111101";
     constant BBC_Period_GreaterThan           : std_logic_vector(6 downto 0) := "0111110";
     constant BBC_F9                           : std_logic_vector(6 downto 0) := "0111111";
-    constant BBC_SW2_2                        : std_logic_vector(6 downto 0) := "1000000";
+    constant BBC_Opt_2                        : std_logic_vector(6 downto 0) := "1000000";
     constant BBC_Caret_Tilde                  : std_logic_vector(6 downto 0) := "1000001";
     constant BBC_Underscore_Pound             : std_logic_vector(6 downto 0) := "1000010";
     constant BBC_LSquareBracket_LCurlyBracket : std_logic_vector(6 downto 0) := "1000011";
@@ -94,7 +94,7 @@ package bpp_kbd_bbc_pkg is
     constant BBC_RSquareBracket_RCurlyBracket : std_logic_vector(6 downto 0) := "1000101";
     constant BBC_Slash_QuestionMark           : std_logic_vector(6 downto 0) := "1000110";
     constant BBC_BackSlash_BrokenBar          : std_logic_vector(6 downto 0) := "1000111";
-    constant BBC_SW2_1                        : std_logic_vector(6 downto 0) := "1001000";
+    constant BBC_Opt_1                        : std_logic_vector(6 downto 0) := "1001000";
     constant BBC_LeftArrow                    : std_logic_vector(6 downto 0) := "1001001";
     constant BBC_DownArrow                    : std_logic_vector(6 downto 0) := "1001010";
     constant BBC_UpArrow                      : std_logic_vector(6 downto 0) := "1001011";

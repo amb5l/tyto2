@@ -36,11 +36,11 @@ package bpp_sysvia_pkg is
             reg_dr      : out std_logic_vector(7 downto 0); -- register interface: read data
             reg_irq     : out std_logic;                    -- register interface: interrupt request
 
-            kbd_en      : out std_logic;                    -- keyboard: write enable
+            kbd_load    : out std_logic;                    -- keyboard: write enable
             kbd_col     : out std_logic_vector(3 downto 0); -- keyboard: column
             kbd_row     : out std_logic_vector(2 downto 0); -- keyboard: row
             kbd_press   : in  std_logic;                    -- keyboard: keyswitch pressed
-            kbd_colact  : in  std_logic;                    -- keyboard: column active
+            kbd_irq     : in  std_logic;                    -- keyboard: column active
             kbd_led_c   : out std_logic;                    -- keyboard: caps lock LED
             kbd_led_s   : out std_logic;                    -- keyboard: shift lock LED
 
@@ -51,7 +51,7 @@ package bpp_sysvia_pkg is
 
             paddle_eoc  : in  std_logic;                    -- ADC: end of conversion
             paddle_btn  : in  std_logic_vector(1 downto 0); -- paddle: button input 0
-    
+
             sg_we       : out std_logic;                    -- sound generator: write enable
             sg_dw       : out std_logic_vector(7 downto 0); -- sound generator: write data
 
@@ -92,14 +92,14 @@ entity bpp_sysvia is
         reg_dr      : out std_logic_vector(7 downto 0); -- register interface: read data
         reg_irq     : out std_logic;                    -- register interface: interrupt request
 
-        kbd_en      : out std_logic;                    -- keyboard: write enable
+        kbd_load    : out std_logic;                    -- keyboard: write enable
         kbd_col     : out std_logic_vector(3 downto 0); -- keyboard: column
         kbd_row     : out std_logic_vector(2 downto 0); -- keyboard: row
         kbd_press   : in  std_logic;                    -- keyboard: keyswitch pressed
-        kbd_colact  : in  std_logic;                    -- keyboard: column active
+        kbd_irq     : in  std_logic;                    -- keyboard: column active
         kbd_led_c   : out std_logic;                    -- keyboard: caps lock LED
         kbd_led_s   : out std_logic;                    -- keyboard: shift lock LED
-    
+
         crtc_sa     : out std_logic_vector(1 downto 0); -- CRTC: start address
         crtc_vs     : in  std_logic;                    -- CRTC: vertical sync
 
@@ -203,11 +203,11 @@ begin
     end process;
 
     -- keyboard - see also via_pa_i(7)
-    kbd_en <= not alat(3); -- active low in original hardware
+    kbd_load <= not alat(3); -- active low in original hardware
     kbd_col <= via_pa_o(3 downto 0);
     kbd_row <= via_pa_o(6 downto 4);
 
-    via_ca2_i <= kbd_colact;
+    via_ca2_i <= kbd_irq;
     kbd_led_c <= not alat(6); -- active low in original hardware
     kbd_led_s <= not alat(7); -- active low in original hardware
 
