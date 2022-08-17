@@ -114,19 +114,18 @@ begin
         );
 
     CAPTURE: component model_vga_sink
-        generic map (
-            name        => "tb_mb_cb_qmtech_wukong"
-        )
         port map (
-            rst         => '0',
-            clk         => vga_clk,
-            vs          => vga_vs,
-            hs          => vga_hs,
-            de          => vga_de,
-            r           => vga_r,
-            g           => vga_g,
-            b           => vga_b,
-            stb         => cap_stb
+             rst         => '0',
+             clk         => vga_clk,
+             vs          => vga_vs,
+             hs          => vga_hs,
+             de          => vga_de,
+             r           => vga_r,
+             g           => vga_g,
+             b           => vga_b,
+             stb         => cap_stb,
+             cap_name    => "tb_mb_cb_qmtech_wukong"
         );
+
 
 end architecture sim;

@@ -64,7 +64,7 @@ architecture sim of tb_bpp_qmtech_wukong is
 begin
 
     stim_reset(key_n(0), '0', 100 ns);
-    stim_reset(cap_rst, '1', 100 ns);    
+    stim_reset(cap_rst, '1', 100 ns);
 
     CLK_SRC: component model_clk_src generic map ( pn => 1, pd => 50 ) port map ( clk => clki_50m );
 
@@ -105,20 +105,18 @@ begin
         );
 
     CAPTURE: entity work.model_vga_sink
-        generic map (
-            name        => "tb_bpp_qmtech_wukong"
-        )
         port map (
-            vga_rst => vga_rst,
-            vga_clk => vga_clk,
-            vga_vs  => vga_vs,
-            vga_hs  => vga_hs,
-            vga_de  => vga_de,
-            vga_r   => vga_r,
-            vga_g   => vga_g,
-            vga_b   => vga_b,
-            cap_rst => cap_rst,
-            cap_stb => cap_stb
+            vga_rst  => vga_rst,
+            vga_clk  => vga_clk,
+            vga_vs   => vga_vs,
+            vga_hs   => vga_hs,
+            vga_de   => vga_de,
+            vga_r    => vga_r,
+            vga_g    => vga_g,
+            vga_b    => vga_b,
+            cap_rst  => cap_rst,
+            cap_stb  => cap_stb,
+            cap_name => "tb_bpp_qmtech_wukong"
         );
 
 end architecture sim;

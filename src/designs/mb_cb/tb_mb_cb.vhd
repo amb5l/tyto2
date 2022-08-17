@@ -82,9 +82,6 @@ begin
         );
 
     CAPTURE: component model_vga_sink
-        generic map (
-            name        => "tb_mb_cb"
-        )
         port map (
             vga_rst  => '0',
             vga_clk  => pix_clk,
@@ -94,8 +91,9 @@ begin
             vga_r    => vga_r,
             vga_g    => vga_g,
             vga_b    => vga_b,
-            cap_rst => '0',
-            cap_stb => cap_stb
+            cap_rst  => '0',
+            cap_stb  => cap_stb,
+            cap_name => "tb_mb_cb"
         );
 
 end architecture sim;

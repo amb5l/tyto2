@@ -21,21 +21,19 @@ use ieee.std_logic_1164.all;
 package model_vga_sink_pkg is
 
     component model_vga_sink is
-        generic (
-            name    : string                            -- BMP filename prefix
-        );
         port
         (
-            vga_rst : in  std_logic;                    -- pixel clock synchronous reset
-            vga_clk : in  std_logic;                    -- pixel clock
-            vga_vs  : in  std_logic;                    -- vertical sync
-            vga_hs  : in  std_logic;                    -- horizontal sync
-            vga_de  : in  std_logic;                    -- pixel data enable
-            vga_r   : in  std_logic_vector(7 downto 0); -- red
-            vga_g   : in  std_logic_vector(7 downto 0); -- green
-            vga_b   : in  std_logic_vector(7 downto 0); -- blue
-            cap_rst : in  std_logic;                    -- capture reset
-            cap_stb : out std_logic                     -- capture strobe
+            vga_rst  : in  std_logic;                    -- pixel clock synchronous reset
+            vga_clk  : in  std_logic;                    -- pixel clock
+            vga_vs   : in  std_logic;                    -- vertical sync
+            vga_hs   : in  std_logic;                    -- horizontal sync
+            vga_de   : in  std_logic;                    -- pixel data enable
+            vga_r    : in  std_logic_vector(7 downto 0); -- red
+            vga_g    : in  std_logic_vector(7 downto 0); -- green
+            vga_b    : in  std_logic_vector(7 downto 0); -- blue
+            cap_rst  : in  std_logic;                    -- capture reset
+            cap_stb  : out std_logic;                    -- capture strobe
+            cap_name : in  string                        -- BMP filename prefix
         );
     end component model_vga_sink;
 
@@ -52,21 +50,19 @@ use work.tyto_types_pkg.all;
 use work.tyto_sim_pkg.all;
 
 entity model_vga_sink is
-    generic (
-        name    : string                            -- BMP filename prefix
-    );
     port
     (
-        vga_rst : in  std_logic;                    -- pixel clock synchronous reset
-        vga_clk : in  std_logic;                    -- pixel clock
-        vga_vs  : in  std_logic;                    -- vertical sync
-        vga_hs  : in  std_logic;                    -- horizontal sync
-        vga_de  : in  std_logic;                    -- pixel data enable
-        vga_r   : in  std_logic_vector(7 downto 0); -- red
-        vga_g   : in  std_logic_vector(7 downto 0); -- green
-        vga_b   : in  std_logic_vector(7 downto 0); -- blue
-        cap_rst : in  std_logic;                    -- capture reset
-        cap_stb : out std_logic                     -- capture strobe
+        vga_rst  : in  std_logic;                    -- pixel clock synchronous reset
+        vga_clk  : in  std_logic;                    -- pixel clock
+        vga_vs   : in  std_logic;                    -- vertical sync
+        vga_hs   : in  std_logic;                    -- horizontal sync
+        vga_de   : in  std_logic;                    -- pixel data enable
+        vga_r    : in  std_logic_vector(7 downto 0); -- red
+        vga_g    : in  std_logic_vector(7 downto 0); -- green
+        vga_b    : in  std_logic_vector(7 downto 0); -- blue
+        cap_rst  : in  std_logic;                    -- capture reset
+        cap_stb  : out std_logic;                    -- capture strobe
+        cap_name : in  string                        -- BMP filename prefix
     );
 end entity model_vga_sink;
 
@@ -105,7 +101,7 @@ begin
 
             if capturing and vga_vs'event then
                 if vga_hs'event then
-                    write_bmp(name,bmp,bmp_count,width,hieght,interlaced);
+                    write_bmp(cap_name,bmp,bmp_count,width,hieght,interlaced);
                     bmp_count  <= bmp_count + 1;
                     ax         <= 0;
                     ay         <= 0;
