@@ -560,12 +560,13 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 <div class="sect1">
 <h2 id="truebuild-and-simulation-tools"><a class="anchor" href="#truebuild-and-simulation-tools"></a>Build and Simulation Tools</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>Part of the motivation for this new repo was a move to a makefile driven build process - so <a href="https://www.gnu.org/software/make/">GNU make</a> is required, along with <a href="https://git-scm.com/">git</a> and assorted utilities that are usually present on Linux systems. <a href="doc/msys2.html">MSYS2</a> is a quick and easy way to get GNU tools (as well as <a href="http://ghdl.free.fr/">GHDL</a>) running on Windows. Some builds also require <a href="https://www.python.org/downloads/">Python 3</a>.</p>
-</div>
-<div class="paragraph">
-<p>The build process produces projects that can be opened and worked on in the relevant IDE:</p>
-</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="https://www.gnu.org/software/make/">GNU make</a> is required, along with <a href="https://git-scm.com/">git</a> and assorted utilities that are usually present on Linux systems. <a href="doc/msys2.html">MSYS2</a> is a quick and easy way to get GNU tools (as well as the <a href="http://ghdl.free.fr/">GHDL</a> simulator) running on Windows.</p>
+</li>
+<li>
+<p>The build process depends on vendor tools, and produces projects that can be opened and worked on in the vendor IDE:</p>
 <div class="ulist">
 <ul>
 <li>
@@ -575,6 +576,15 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 <p>For Intel/Altera FPGAs, <strong>Quartus Prime</strong> is required - the free <strong>Lite</strong> edition is sufficient. Version <strong>21.1</strong> is supported. This may be obtained from <a href="https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html">here</a>.</p>
 </li>
 </ul>
+</div>
+</li>
+<li>
+<p>Some builds include <a href="https://www.python.org/downloads/">Python 3</a> scripts.</p>
+</li>
+<li>
+<p>Projects including a 6502 or compatible CPU require the the <strong>ca65</strong> assembler and <strong>ld65</strong> linker from the <a href="https://cc65.github.io/">cc65</a> toolchain.</p>
+</li>
+</ol>
 </div>
 </div>
 </div>
@@ -595,7 +605,7 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-11 12:18:38 +0100
+Last updated 2022-08-18 09:41:06 +0100
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">
