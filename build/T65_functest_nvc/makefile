@@ -45,7 +45,8 @@ $(REF_DIR):
 
 # NVC simulator and options for analysis, elaboration and runtime
 NVC=nvc
-NVCAFLAGS=--std=08
+NVCGFLAGS=--std=08
+NVCAFLAGS=--relaxed
 NVCEFLAGS=-gbin_file="$(FUNCTEST_BIN)" -gref_file="$(REF_FILE)" -gstart_address=1024
 NVCRFLAGS=
 
@@ -74,17 +75,17 @@ SIM_DLL=$(SIM_WORK)/$(shell echo _$(SIM_WORK).$(SIM_TOP) | tr a-z A-Z).elab.dll
 
 run: $(SIM_DLL) $(REF_FILE) $(FUNCTEST_BIN)
 	$(info $(shell date))
-	$(NVC) -r $(SIM_TOP) $(NVCRFLAGS)
+	$(NVC) $(NVCGFLAGS) -r $(SIM_TOP) $(NVCRFLAGS)
 
 elaborate: $(SIM_DLL)
 
 $(SIM_DLL): $(SIM_IR)
-	$(NVC) -e $(SIM_TOP) $(NVCEFLAGS)
+	$(NVC) $(NVCGFLAGS) -e $(SIM_TOP) $(NVCEFLAGS)
 
 analyse: $(SIM_IR)
 
 $(SIM_IR): $(SIM_VHDL)
-	$(NVC) $(NVCAFLAGS) -a $?
+	$(NVC) $(NVCGFLAGS) -a $? $(NVCAFLAGS)
 
 #------------------------------------------------------------------------------
 # cleanup
