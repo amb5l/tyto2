@@ -371,6 +371,8 @@ begin
                     dma_en <= '1';
                 end if;
             end if;
+        else 
+            dma_en <= '0';
         end if;
     end process;
 
