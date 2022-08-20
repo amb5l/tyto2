@@ -43,7 +43,7 @@ $(REF_DIR):
 #------------------------------------------------------------------------------
 # simulation
 
-# NVC simulator and options for analysis, elaboration and runtime
+# NVC simulator and option flags (global, analysis, elaboration and runtime)
 NVC=nvc
 NVCGFLAGS=--std=08
 NVCAFLAGS=--relaxed
@@ -64,18 +64,16 @@ SIM_VHDL=\
 	$(SUBMODULES)/T65/T65.vhd \
 	$(SRC)/designs/T65_functest/T65_functest.vhd
 
-# elaboration depends on intermediate files produced by analysis
-# can normally derive from source file names but may need to specify manually
-SIM_IR=$(addprefix $(SIM_WORK)/,$(shell echo $(addprefix $(SIM_WORK).,$(basename $(notdir $(SIM_VHDL)))) | tr a-z A-Z))
-
 # runtime DLL filename - derive from top entity name (or specify manually)
 SIM_DLL=$(SIM_WORK)/$(shell echo _$(SIM_WORK).$(SIM_TOP) | tr a-z A-Z).elab.dll
-
-# rules
 
 run: $(SIM_DLL) $(REF_FILE) $(FUNCTEST_BIN)
 	$(info $(shell date))
 	$(NVC) $(NVCGFLAGS) -r $(SIM_TOP) $(NVCRFLAGS)
+
+# elaboration output depends on intermediate files produced by analysis
+# can normally derive from source file names but may need to specify manually
+SIM_IR=$(addprefix $(SIM_WORK)/,$(shell echo $(addprefix $(SIM_WORK).,$(basename $(notdir $(SIM_VHDL)))) | tr a-z A-Z))
 
 elaborate: $(SIM_DLL)
 
@@ -84,8 +82,16 @@ $(SIM_DLL): $(SIM_IR)
 
 analyse: $(SIM_IR)
 
-$(SIM_IR): $(SIM_VHDL)
-	$(NVC) $(NVCGFLAGS) -a $? $(NVCAFLAGS)
+# analysis output (intermediate files) depend on sources
+# can normally auto-generate rules/dependencies but may need to specify manually
+# each rule normally takes the form
+# INTERMEDIATE_FILE: source_file
+#     $(NVC) $(NVCGFLAGS) -a source_file $(NVCAFLAGS)
+define RR_ANALYSE
+$(SIM_WORK)/$(shell echo $(addprefix $(SIM_WORK).,$(basename $(notdir $(1)))) | tr a-z A-Z): $(1)
+	$(NVC) $(NVCGFLAGS) -a $(1) $(NVCAFLAGS)
+endef
+$(foreach X,$(SIM_VHDL),$(eval $(call RR_ANALYSE,$X)))
 
 #------------------------------------------------------------------------------
 # cleanup

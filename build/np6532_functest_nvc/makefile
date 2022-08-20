@@ -119,17 +119,20 @@ $(BUILD_VHDL_DIR):
 #------------------------------------------------------------------------------
 # simulation
 
-# NVC simulator and options for analysis, elaboration and runtime
+# NVC simulator and option flags (global, analysis, elaboration and runtime)
 NVC=nvc
-NVCGFLAGS=--std=08 -M 32m --map=UNISIM:D:/devtools/msys64/mingw64/lib/nvc/unisim.08
+NVCGFLAGS=--std=08 -M 32m
 NVCAFLAGS=--relaxed
 NVCEFLAGS=-gvector_init=64512 -gbin_file="$(FUNCTEST_BIN)" -gref_file="$(REF_FILE)" -gstart_address=1024
 NVCRFLAGS=
 
+# simulation work library (and directory) name
 SIM_WORK=work
 
-SIM_WORK=work
+# top entity name
 SIM_TOP=$(DESIGN)
+
+# VHDL source files
 SIM_VHDL=\
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/basic/$(VENDOR)/ram_sdp_a_32.vhd \
@@ -144,22 +147,34 @@ SIM_VHDL=\
 	$(SUBMODULES)/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd
 
-SIM_OBJ=$(addprefix $(SIM_WORK)/,$(shell echo $(addprefix $(SIM_WORK).,$(basename $(notdir $(SIM_VHDL)))) | tr a-z A-Z))
+# runtime DLL filename - derive from top entity name (or specify manually)
 SIM_DLL=$(SIM_WORK)/$(shell echo _$(SIM_WORK).$(SIM_TOP) | tr a-z A-Z).elab.dll
 
 run: $(SIM_DLL) $(REF_FILE) $(FUNCTEST_BIN)
 	$(info $(shell date))
 	$(NVC) $(NVCGFLAGS) -r $(SIM_TOP) $(NVCRFLAGS)
 
+# elaboration output depends on intermediate files produced by analysis
+# can normally derive from source file names but may need to specify manually
+SIM_IR=$(addprefix $(SIM_WORK)/,$(shell echo $(addprefix $(SIM_WORK).,$(basename $(notdir $(SIM_VHDL)))) | tr a-z A-Z))
+
 elaborate: $(SIM_DLL)
 
-$(SIM_DLL): $(SIM_OBJ)
+$(SIM_DLL): $(SIM_IR)
 	$(NVC) $(NVCGFLAGS) -e $(SIM_TOP) $(NVCEFLAGS)
 
-analyse: $(SIM_OBJ)
+analyse: $(SIM_IR)
 
-$(SIM_OBJ): $(SIM_VHDL)
-	$(NVC) $(NVCGFLAGS) -a $? $(NVCAFLAGS)
+# analysis output (intermediate files) depend on sources
+# can normally auto-generate rules/dependencies but may need to specify manually
+# each rule normally takes the form
+# INTERMEDIATE_FILE: source_file
+#     $(NVC) $(NVCGFLAGS) -a source_file $(NVCAFLAGS)
+define RR_ANALYSE
+$(SIM_WORK)/$(shell echo $(addprefix $(SIM_WORK).,$(basename $(notdir $(1)))) | tr a-z A-Z): $(1)
+	$(NVC) $(NVCGFLAGS) -a $(1) $(NVCAFLAGS)
+endef
+$(foreach X,$(SIM_VHDL),$(eval $(call RR_ANALYSE,$X)))
 
 #------------------------------------------------------------------------------
 # cleanup
