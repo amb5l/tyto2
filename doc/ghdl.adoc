@@ -1,0 +1,33 @@
+= GHDL
+
+GHDL is a very well established free and open source simulator for VHDL. For more information, visit the http://ghdl.free.fr/[GHDL home page].
+
+The easiest way for Windows users to get GHDL running is to install it via MSYS2:
+
+. Install MSYS2 if required by following <<msys2.adoc#,these steps>>.
+
+. Install GHDL by entering the following command in an *MSYS2 MSYS* shell:
+
+  pacman -S mingw-w64-x86_64-ghdl-llvm
+
+. Check the GHDL version by entering the following command in an *MSYS2 MinGW x64* shell:
+
+  ghdl --version
++
+You should see something like this:
++
+----
+user@MACHINE MINGW64 ~
+$ ghdl --version
+GHDL 3.0.0-dev (2.0.0.r394.g4afeced94) [Dunoon edition]
+ Compiled with GNAT Version: 12.1.0
+ llvm code generator
+Written by Tristan Gingold.
+
+Copyright (C) 2003 - 2022 Tristan Gingold.
+GHDL is free software, covered by the GNU General Public License.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+user@MACHINE MINGW64 ~
+$
+----

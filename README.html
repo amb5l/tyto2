@@ -458,7 +458,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p><code>src</code> contains source code for designs as well as common IP.</p>
 </li>
 <li>
-<p><code>build</code> contains makefiles for designs on supported targets. The subdirectory name consists of the design name followed by the target name. For simulation only cases, the target name indicates the simulator: <code>xsim</code> for Xilinx Vivado, <code>ghdl</code> for <a href="http://ghdl.free.fr/">GHDL</a> and <code>sim</code> for Questa, ModelSim etc.</p>
+<p><code>build</code> contains makefiles for designs on supported targets. The subdirectory name consists of the design name followed by the target name. For simulations, the target name indicates the simulator: <code>xsim</code> for Xilinx Vivado, <code>nvc</code> for <a href="doc/nvc.html">NVC</a>, <code>ghdl</code> for <a href="doc/ghdl.html">GHDL</a> and <code>sim</code> for Questa, ModelSim etc.</p>
 </li>
 <li>
 <p><code>doc</code> contains documentation.</p>
@@ -484,11 +484,8 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 </div>
 </div>
 <div class="sect1">
-<h2 id="truedesigns"><a class="anchor" href="#truedesigns"></a>Designs</h2>
+<h2 id="truefpga-designs"><a class="anchor" href="#truefpga-designs"></a>FPGA Designs</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>Click on the design <strong>Name</strong> link to see further details.</p>
-</div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 10%;">
@@ -533,50 +530,74 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 <td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong, Altera Cyclone V Dev Kit, Terasic DE10-Nano</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A proof-of-concept demonstration of the <a href="doc/common/retro/np65/np65.html">np65</a> 6502 compatible CPU core clocked at 32MHz. Runs <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a> in a loop.</p></td>
 </tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="truesimulation-designs"><a class="anchor" href="#truesimulation-designs"></a>Simulation Designs</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 10%;">
+<col style="width: 20%;">
+<col style="width: 70%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Supported Simulators</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/np6532_functest/np6532_functest.html">np6532_functest</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">(simulation only)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Simulates an <a href="doc/common/retro/np65/np65.html">np65</a> CPU core unning <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, NVC</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A <a href="doc/common/retro/np65/np65.html">np65</a> CPU core running <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_saa5050/tb_saa5050.html">tb_saa5050</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">(simulation only)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Simulates an <a href="https://en.wikipedia.org/wiki/Mullard_SAA5050">SAA5050</a> teletext character generator.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A <a href="https://en.wikipedia.org/wiki/Mullard_SAA5050">SAA5050</a> teletext character generator.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_saa5050d/tb_saa5050d.html">tb_saa5050d</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">(simulation only)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Progressive scan (scan doubling) equivalent of <a href="doc/designs/tb_saa5050/tb_saa5050.html">tb_saa5050</a>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/T65_functest/T65_functest.html">T65_functest</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">(simulation only)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Simulates a T65 CPU core running <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, NVC, GHDL, Questa/ModelSim</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A <a href="https://github.com/mist-devel/T65">T65 6502 compatible core</a> running <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 <div class="sect1">
-<h2 id="truebuild-and-simulation-tools"><a class="anchor" href="#truebuild-and-simulation-tools"></a>Build and Simulation Tools</h2>
+<h2 id="truetools"><a class="anchor" href="#truetools"></a>Tools</h2>
 <div class="sectionbody">
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><a href="https://www.gnu.org/software/make/">GNU make</a> is required, along with <a href="https://git-scm.com/">git</a> and assorted utilities that are usually present on Linux systems. <a href="doc/msys2.html">MSYS2</a> is a quick and easy way to get GNU tools (as well as the <a href="http://ghdl.free.fr/">GHDL</a> simulator) running on Windows.</p>
+<p><a href="https://www.gnu.org/software/make/">GNU make</a> is required, along with <a href="https://git-scm.com/">git</a> and assorted utilities that are usually present on Linux systems. <a href="doc/msys2.html">MSYS2</a> is a quick and easy way to get these tools running on Windows.</p>
 </li>
 <li>
-<p>The build process depends on vendor tools, and produces projects that can be opened and worked on in the vendor IDE:</p>
+<p>Building an FPGA design requires vendor tools, and produces projects that can be opened and worked on in the vendor IDE:</p>
 <div class="ulist">
 <ul>
 <li>
 <p>For AMD/Xilinx FPGAs, <strong>Vivado</strong> is required - the free <strong>Standard Edition</strong> is sufficient. Versions <strong>2022.1</strong> and <strong>2021.2</strong> are supported. Note that designs including a <a href="https://en.wikipedia.org/wiki/MicroBlaze">Microblaze soft CPU</a> also require <strong>Vitis</strong>. These tools may be obtained from <a href="https://www.xilinx.com/support/download.html">here</a>.</p>
 </li>
 <li>
-<p>For Intel/Altera FPGAs, <strong>Quartus Prime</strong> is required - the free <strong>Lite</strong> edition is sufficient. Version <strong>21.1</strong> is supported. This may be obtained from <a href="https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html">here</a>.</p>
+<p>For Intel/Altera FPGAs, <strong>Quartus Prime</strong> is required - the free <strong>Lite</strong> edition is sufficient. This includes a free edition of the <a href="https://en.wikipedia.org/wiki/ModelSim">Questa</a> simulator. Version <strong>21.1</strong> is supported. This may be obtained from <a href="https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html">here</a>.</p>
 </li>
 </ul>
 </div>
+</li>
+<li>
+<p>The free open source <a href="doc/nvc.html">NVC</a> and <a href="doc/ghdl.html">GHDL</a> simulators are supported by some simulations.</p>
 </li>
 <li>
 <p>Some builds include <a href="https://www.python.org/downloads/">Python 3</a> scripts.</p>
@@ -605,7 +626,7 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-18 09:41:06 +0100
+Last updated 2022-08-20 21:28:20 +0100
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

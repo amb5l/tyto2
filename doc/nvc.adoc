@@ -1,0 +1,42 @@
+= NVC
+
+NVC is a potent alternative to GHDL. It offers improved simulation runtimes and simple support for vendor libraries and https://osvvm.org/[OSVVM]. For more information, visit the https://github.com/nickg/nvc[NVC Github repository].
+
+To get the latest version of NVC running on your system, you will need to build it from source. The following instructions are for Windows users:
+
+. Install MSYS2 if required by following <<msys2.adoc#,these steps>>.
+
+. Install packages required by the NVC build process by entering the following command in an *MSYS2 MSYS* shell:
+
+  pacman -S base-devel mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools}
+
+. Open an *MSYS2 MinGW x64* shell.
+
+. Navigate to your chosen working directory. For example:
+
+  cd /c/work
+
+. Clone the NVC repo into your working directory:
+
+  git clone https://github.com/nickg/nvc
+
+. Navigate to the cloned repo and generate the configure script:
+
+  cd nvc
+  ./autogen.sh
+
+. Create a directory for the build and run the remaining steps in it:
+
+  mkdir build && cd build
+  ../configure
+  make
+  make install
+
+. Check the NVC version (should be >=1.8):
+
+  nvc --version
+
+. Build and install the Xilinx Vivado libraries, setting the `XILINX_VIVADO` environment variable correctly for your system:
+
+  export XILINX_VIVADO=/c/Xilinx/Vivado/2022.1/
+  nvc --install vivado

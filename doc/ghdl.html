@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.8.dev">
-<title>T65_functest</title>
+<title>GHDL</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -438,61 +438,62 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
-<h1>T65_functest</h1>
+<h1>GHDL</h1>
 </div>
 <div id="content">
 <div class="paragraph">
-<p>A simulation of a <a href="https://github.com/mist-devel/T65">T65 6502 compatible core</a> running <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>. The execution of the CPU is compared with an execution trace from the <a href="https://github.com/amb5l/mos6502-trace">mos6502-trace</a> utility which is based on <a href="https://github.com/gianlucag/mos6502">Gianluca Ghettini&#8217;s mos6502 emulator</a>.</p>
+<p>GHDL is a very well established free and open source simulator for VHDL. For more information, visit the <a href="http://ghdl.free.fr/">GHDL home page</a>.</p>
 </div>
 <div class="paragraph">
-<p>Run <code>make</code> in the build directory corresponding to your chosen simulator.</p>
+<p>The easiest way for Windows users to get GHDL running is to install it via MSYS2:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Install MSYS2 if required by following <a href="msys2.html">these steps</a>.</p>
+</li>
+<li>
+<p>Install GHDL by entering the following command in an <strong>MSYS2 MSYS</strong> shell:</p>
+<div class="literalblock">
+<div class="content">
+<pre>pacman -S mingw-w64-x86_64-ghdl-llvm</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Check the GHDL version by entering the following command in an <strong>MSYS2 MinGW x64</strong> shell:</p>
+<div class="literalblock">
+<div class="content">
+<pre>ghdl --version</pre>
+</div>
 </div>
 <div class="paragraph">
-<p>The CPU executes 30648050 instructions, taking 96247426 clocks cycles - giving an <a href="https://en.wikipedia.org/wiki/Instructions_per_cycle">IPC</a> of just under 0.32.</p>
+<p>You should see something like this:</p>
 </div>
-<div class="paragraph">
-<p>Simulation run times on a Windows 11 PC with a 3.5GHz AMD Ryzen 2950X CPU and 32GB RAM are as follows:</p>
+<div class="listingblock">
+<div class="content">
+<pre>user@MACHINE MINGW64 ~
+$ ghdl --version
+GHDL 3.0.0-dev (2.0.0.r394.g4afeced94) [Dunoon edition]
+ Compiled with GNAT Version: 12.1.0
+ llvm code generator
+Written by Tristan Gingold.
+
+Copyright (C) 2003 - 2022 Tristan Gingold.
+GHDL is free software, covered by the GNU General Public License.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+user@MACHINE MINGW64 ~
+$</pre>
 </div>
-<table class="tableblock frame-all grid-all fit-content">
-<colgroup>
-<col>
-<col>
-<col>
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Simulator</th>
-<th class="tableblock halign-left valign-top">Time (s)</th>
-<th class="tableblock halign-left valign-top">Relative Time</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado 2022.1</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">930</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>1.0</strong></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">NVC 1.7.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1038</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>1.12</strong></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">GHDL 2.0.0-dev (1.0.0.r964.g70f3c162b) [Dunoon edition] (llvm code generator)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2354</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>2.53</strong></p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Questa Intel Starter FPGA Edition-64 2021.2 Rev 2021.04</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">9646</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>10.37</strong></p></td>
-</tr>
-</tbody>
-</table>
+</div>
+</li>
+</ol>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-20 21:31:21 +0100
+Last updated 2022-08-20 21:27:00 +0100
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

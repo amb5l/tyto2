@@ -8,7 +8,7 @@ A simpler directory structure is used:
 
 * `src` contains source code for designs as well as common IP.
 
-* `build` contains makefiles for designs on supported targets. The subdirectory name consists of the design name followed by the target name. For simulation only cases, the target name indicates the simulator: `xsim` for Xilinx Vivado, `ghdl` for http://ghdl.free.fr/[GHDL] and `sim` for Questa, ModelSim etc.
+* `build` contains makefiles for designs on supported targets. The subdirectory name consists of the design name followed by the target name. For simulations, the target name indicates the simulator: `xsim` for Xilinx Vivado, `nvc` for <<doc/nvc.adoc#,NVC>>, `ghdl` for <<doc/ghdl.adoc#,GHDL>> and `sim` for Questa, ModelSim etc.
 
 * `doc` contains documentation.
 
@@ -18,9 +18,7 @@ NOTE: ALL designs have submodule dependencies. Please remember to initialise sub
 
 '''
 
-== Designs
-
-Click on the design *Name* link to see further details.
+== FPGA Designs
 
 [cols="10,20,70"]
 |===
@@ -50,37 +48,47 @@ Click on the design *Name* link to see further details.
 |Digilent Nexys Video, QMTech Wukong, Altera Cyclone V Dev Kit, Terasic DE10-Nano
 |A proof-of-concept demonstration of the <<doc/common/retro/np65/np65.adoc#,np65>> 6502 compatible CPU core clocked at 32MHz. Runs https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test] in a loop.
 
+|===
+
+== Simulation Designs
+
+[cols="10,20,70"]
+|===
+|Name|Supported Simulators|Description
+
 |<<doc/designs/np6532_functest/np6532_functest.adoc#,np6532_functest>>
-|(simulation only)
-|Simulates an <<doc/common/retro/np65/np65.adoc#,np65>> CPU core unning https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test].
+|Vivado, NVC
+|A <<doc/common/retro/np65/np65.adoc#,np65>> CPU core running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test].
 
 |<<doc/designs/tb_saa5050/tb_saa5050.adoc#,tb_saa5050>>
-|(simulation only)
-|Simulates an https://en.wikipedia.org/wiki/Mullard_SAA5050[SAA5050] teletext character generator. 
+|Vivado
+|A https://en.wikipedia.org/wiki/Mullard_SAA5050[SAA5050] teletext character generator. 
 
 |<<doc/designs/tb_saa5050d/tb_saa5050d.adoc#,tb_saa5050d>>
-|(simulation only)
+|Vivado
 |Progressive scan (scan doubling) equivalent of <<doc/designs/tb_saa5050/tb_saa5050.adoc#,tb_saa5050>>.
 
 |<<doc/designs/T65_functest/T65_functest.adoc#,T65_functest>>
-|(simulation only)
-|Simulates a T65 CPU core running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test].
+|Vivado, NVC, GHDL, Questa/ModelSim
+|A https://github.com/mist-devel/T65[T65 6502 compatible core] running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test].
 
 |=== 
 
-== Build and Simulation Tools
+== Tools
 
-1. https://www.gnu.org/software/make/[GNU make] is required, along with https://git-scm.com/[git] and assorted utilities that are usually present on Linux systems. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get GNU tools (as well as the http://ghdl.free.fr/[GHDL] simulator) running on Windows.
+1. https://www.gnu.org/software/make/[GNU make] is required, along with https://git-scm.com/[git] and assorted utilities that are usually present on Linux systems. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get these tools running on Windows.
 
-2. The build process depends on vendor tools, and produces projects that can be opened and worked on in the vendor IDE:
+2. Building an FPGA design requires vendor tools, and produces projects that can be opened and worked on in the vendor IDE:
 
 * For AMD/Xilinx FPGAs, *Vivado* is required - the free *Standard Edition* is sufficient. Versions *2022.1* and *2021.2* are supported. Note that designs including a https://en.wikipedia.org/wiki/MicroBlaze[Microblaze soft CPU] also require *Vitis*. These tools may be obtained from https://www.xilinx.com/support/download.html[here].
 
-* For Intel/Altera FPGAs, *Quartus Prime* is required - the free *Lite* edition is sufficient. Version *21.1* is supported. This may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
+* For Intel/Altera FPGAs, *Quartus Prime* is required - the free *Lite* edition is sufficient. This includes a free edition of the https://en.wikipedia.org/wiki/ModelSim[Questa] simulator. Version *21.1* is supported. This may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
 
-3. Some builds include https://www.python.org/downloads/[Python 3] scripts.
+3. The free open source <<doc/nvc.adoc#,NVC>> and <<doc/ghdl.adoc#,GHDL>> simulators are supported by some simulations.
 
-4. Projects including a 6502 or compatible CPU require the the *ca65* assembler and *ld65* linker from the https://cc65.github.io/[cc65] toolchain.
+4. Some builds include https://www.python.org/downloads/[Python 3] scripts.
+
+5. Projects including a 6502 or compatible CPU require the the *ca65* assembler and *ld65* linker from the https://cc65.github.io/[cc65] toolchain.
 
 == License
 
