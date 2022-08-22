@@ -17,6 +17,9 @@ BUILD_6502_DIR=6502
 CA65=ca65
 LD65=ld65
 
+$(BUILD_6502_DIR):
+	mkdir $(BUILD_6502_DIR)
+
 # functional test
 
 FUNCTEST=6502_functional_test
@@ -73,9 +76,6 @@ $(IRQ_BIN): $(BUILD_6502_DIR)/$(IRQ).o $(IRQ_CFG)
 $(BUILD_6502_DIR)/$(IRQ).o: $(IRQ_SRC) | $(BUILD_6502_DIR)
 	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(IRQ).lst
 
-$(BUILD_6502_DIR):
-	mkdir $(BUILD_6502_DIR)
-
 #------------------------------------------------------------------------------
 # reference execution trace
 
@@ -83,18 +83,21 @@ REF_DIR=ref
 REF_FILE=$(abspath $(REF_DIR)/$(FUNCTEST).txt)
 MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace
 
+$(REF_DIR):
+	mkdir $(REF_DIR)
+
 ref: $(REF_FILE)
 $(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
 	$(MOS6502_TRACE) $< 0400 FD 34 > $@
-
-$(REF_DIR):
-	mkdir $(REF_DIR)
 
 #------------------------------------------------------------------------------
 # Python scripts to build VHDL
 
 BUILD_VHDL_DIR=vhdl
 PYTHON=python
+
+$(BUILD_VHDL_DIR):
+	mkdir $(BUILD_VHDL_DIR)
 
 # decoder
 DECODER_PY=$(SRC)/common/retro/np65/$(VENDOR)/np65_decoder.py
@@ -113,9 +116,6 @@ raminit: $(RAM_INIT_VHD)
 $(RAM_INIT_VHD): $(FUNCTEST_BIN) $(NMI_BIN) $(IRQ_BIN) $(INIT_BIN) | $(BUILD_VHDL_DIR)
 	$(PYTHON) $(RAM_INIT_PY) $(RAM_SIZE) 0 $(FUNCTEST_BIN) F000 $(NMI_BIN) F100 $(IRQ_BIN) FC00 $(INIT_BIN) > $@
 
-$(BUILD_VHDL_DIR):
-	mkdir $(BUILD_VHDL_DIR)
-
 #------------------------------------------------------------------------------
 # simulation
 
@@ -123,7 +123,7 @@ $(BUILD_VHDL_DIR):
 NVC=nvc
 NVCGFLAGS=--std=08 -M 32m
 NVCAFLAGS=--relaxed
-NVCEFLAGS=-gvector_init=64512 -gbin_file="$(FUNCTEST_BIN)" -gref_file="$(REF_FILE)" -gstart_address=1024
+NVCEFLAGS=-gvector_init=64512 -gref_file="$(REF_FILE)" -gstart_address=1024
 NVCRFLAGS=
 
 # simulation work library (and directory) name
@@ -169,7 +169,7 @@ analyse: $(SIM_IR)
 # can normally auto-generate rules/dependencies but may need to specify manually
 # each rule normally takes the form
 # INTERMEDIATE_FILE: source_file
-#     $(NVC) $(NVCGFLAGS) -a source_file $(NVCAFLAGS)
+#	  $(NVC) $(NVCGFLAGS) -a source_file $(NVCAFLAGS)
 define RR_ANALYSE
 $(SIM_WORK)/$(shell echo $(addprefix $(SIM_WORK).,$(basename $(notdir $(1)))) | tr a-z A-Z): $(1)
 	$(NVC) $(NVCGFLAGS) -a $(1) $(NVCAFLAGS)
