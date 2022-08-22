@@ -13,6 +13,8 @@ XILINX_MK=$(SUBMODULES)/xilinx-mk
 
 all: bit
 
+.NOTPARALLEL:
+
 #------------------------------------------------------------------------------
 # 6502 binaries from assembler source
 
@@ -140,7 +142,7 @@ NVCRFLAGS=
 # simulation work library (and directory) name
 NVC_WORK=work
 NVC_WORK_DIR=$(NVC_WORK)
-NVC_WORK_NAME=$(shell echo $(NVC_WORK) | tr a-z A-Z)
+NVC_WORK_NAME=$(shell echo $(NVC_WORK)| tr a-z A-Z)
 
 # top entity name
 NVC_TOP=$(VIVADO_SIM_TOP)
@@ -149,7 +151,7 @@ NVC_TOP=$(VIVADO_SIM_TOP)
 NVC_VHDL=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
 
 # intermediate files
-NVC_IR=\
+NVC_IR_UNITS=\
 	TYTO_TYPES_PKG \
 	RAM_TDP_S \
 	RAM_SDP_A_32 \
@@ -164,12 +166,12 @@ NVC_IR=\
 	MMCM \
 	NP6532_POC_DIGILENT_NEXYS_VIDEO \
     TB_NP6532_POC_DIGILENT_NEXYS_VIDEO
-NVC_IR_FILES=$(addprefix $(NVC_WORK_DIR)/$(NVC_WORK_NAME).,$(NVC_IR))
+NVC_IR_FILES=$(addprefix $(NVC_WORK_DIR)/$(NVC_WORK_NAME).,$(NVC_IR_UNITS))
 zip=$(1)&$(2)
 NVC_IR_DEPS:=$(call pairmap,zip,$(NVC_IR_FILES),$(NVC_VHDL))
 
 # runtime DLL filename - derive from top entity name (or specify manually)
-NVC_DLL=$(NVC_WORK)/$(shell echo _$(NVC_WORK).$(NVC_TOP) | tr a-z A-Z).elab.dll
+NVC_DLL=$(NVC_WORK_DIR)/$(shell echo _$(NVC_WORK_NAME).$(NVC_TOP)| tr a-z A-Z).elab.dll
 
 nvc_run: $(NVC_DLL)
 	$(info $(shell date))
