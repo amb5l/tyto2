@@ -18,9 +18,13 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+library std;
+use std.env.finish;
+
 entity tb_np6532_poc_128k_digilent_nexys_video is
     generic (
-        success_addr  : integer
+        success_addr  : integer;
+        passes        : integer := 3
     );
 end entity tb_np6532_poc_128k_digilent_nexys_video;
 
@@ -38,10 +42,23 @@ begin
         '0';
 
     process
+        variable pass : integer;
     begin
+        pass := 1;
         btn_rst_n <= '0';
         wait for 20ns;
         btn_rst_n <= '1';
+        loop
+            wait until led(0)'event;
+            if led(1) = '0' then
+                report "failed at end of pass " & integer'image(pass) severity FAILURE;
+            end if;
+            report "success at end of pass " & integer'image(pass);
+            if pass = passes then
+                finish;
+            end if;
+            pass := pass+1;
+        end loop;
         wait;
     end process;
 
