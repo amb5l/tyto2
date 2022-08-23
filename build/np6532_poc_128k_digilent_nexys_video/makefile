@@ -13,12 +13,10 @@ XILINX_MK=$(SUBMODULES)/xilinx-mk
 
 all: bit
 
-.NOTPARALLEL:
-
 #------------------------------------------------------------------------------
 # 6502 binaries from assembler source
 
-BUILD_6502_DIR=6502
+BUILD_6502_DIR=6502/
 CA65=ca65
 LD65=ld65
 
@@ -58,7 +56,7 @@ $(BUILD_6502_DIR)/$(INIT).o: $(INIT_SRC) | $(BUILD_6502_DIR)
 #------------------------------------------------------------------------------
 # VHDL source from data files
 
-BUILD_VHDL_DIR=vhdl
+BUILD_VHDL_DIR=vhdl/
 PYTHON=python
 
 $(BUILD_VHDL_DIR):
@@ -141,7 +139,7 @@ NVCRFLAGS=
 
 # simulation work library (and directory) name
 NVC_WORK=work
-NVC_WORK_DIR=$(NVC_WORK)
+NVC_WORK_DIR=$(NVC_WORK)/
 NVC_WORK_NAME=$(shell echo $(NVC_WORK)| tr a-z A-Z)
 
 # top entity name
@@ -150,8 +148,8 @@ NVC_TOP=$(VIVADO_SIM_TOP)
 # VHDL source files
 NVC_VHDL=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
 
-# intermediate files
-NVC_IR_UNITS=\
+# design units in same order as VHDL files
+NVC_UNIT=\
 	TYTO_TYPES_PKG \
 	RAM_TDP_S \
 	RAM_SDP_A_32 \
@@ -162,13 +160,17 @@ NVC_IR_UNITS=\
 	NP65_DECODER \
 	NP6532_CORE \
 	NP6532 \
-	NP6532_POC \
+	$(shell echo $(DESIGN)| tr a-z A-Z) \
 	MMCM \
-	NP6532_POC_DIGILENT_NEXYS_VIDEO \
-    TB_NP6532_POC_DIGILENT_NEXYS_VIDEO
-NVC_IR_FILES=$(addprefix $(NVC_WORK_DIR)/$(NVC_WORK_NAME).,$(NVC_IR_UNITS))
+	$(shell echo $(VIVADO_DSN_TOP)| tr a-z A-Z) \
+	$(shell echo $(VIVADO_SIM_TOP)| tr a-z A-Z)
+
+# intermediate files
+NVC_IR=$(addprefix $(NVC_WORK_DIR)/$(NVC_WORK_NAME).,$(NVC_UNIT))
+
+# intermediate file dependancies
 zip=$(1)&$(2)
-NVC_IR_DEPS:=$(call pairmap,zip,$(NVC_IR_FILES),$(NVC_VHDL))
+NVC_IR_DEP:=$(call pairmap,zip,$(NVC_IR),$(NVC_VHDL))
 
 # runtime DLL filename - derive from top entity name (or specify manually)
 NVC_DLL=$(NVC_WORK_DIR)/$(shell echo _$(NVC_WORK_NAME).$(NVC_TOP)| tr a-z A-Z).elab.dll
@@ -179,16 +181,16 @@ nvc_run: $(NVC_DLL)
 
 nvc_elaborate: $(NVC_DLL)
 
-$(NVC_DLL): $(NVC_IR_FILES)
+$(NVC_DLL): $(NVC_IR)
 	$(NVC) $(NVCGFLAGS) -e $(NVC_TOP) $(NVCEFLAGS)
 
-nvc_analyse: $(NVC_IR_FILES)
+nvc_analyse: $(NVC_IR)
 
 define RR_ANALYSE
 $(word 1,$(subst &, ,$(1))): $(word 2,$(subst &, ,$(1)))
 	$(NVC) $(NVCGFLAGS) -a $(word 2,$(subst &, ,$(1))) $(NVCAFLAGS)
 endef
-$(foreach X,$(NVC_IR_DEPS),$(eval $(call RR_ANALYSE,$X)))
+$(foreach X,$(NVC_IR_DEP),$(eval $(call RR_ANALYSE,$X)))
 
 #------------------------------------------------------------------------------
 # cleanup
