@@ -13,7 +13,7 @@ all: run
 #------------------------------------------------------------------------------
 # 6502 binaries
 
-BUILD_6502_DIR=6502
+BUILD_6502_DIR=6502/
 CA65=ca65
 LD65=ld65
 
@@ -79,7 +79,7 @@ $(BUILD_6502_DIR)/$(IRQ).o: $(IRQ_SRC) | $(BUILD_6502_DIR)
 #------------------------------------------------------------------------------
 # reference execution trace
 
-REF_DIR=ref
+REF_DIR=ref/
 REF_FILE=$(abspath $(REF_DIR)/$(FUNCTEST).txt)
 MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace
 
@@ -87,13 +87,14 @@ $(REF_DIR):
 	mkdir $(REF_DIR)
 
 ref: $(REF_FILE)
+
 $(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
 	$(MOS6502_TRACE) $< 0400 FD 34 > $@
 
 #------------------------------------------------------------------------------
 # Python scripts to build VHDL
 
-BUILD_VHDL_DIR=vhdl
+BUILD_VHDL_DIR=vhdl/
 PYTHON=python
 
 $(BUILD_VHDL_DIR):
@@ -119,6 +120,8 @@ $(RAM_INIT_VHD): $(FUNCTEST_BIN) $(NMI_BIN) $(IRQ_BIN) $(INIT_BIN) | $(BUILD_VHD
 #------------------------------------------------------------------------------
 # simulation
 
+include ../gmsl
+
 # NVC simulator and option flags (global, analysis, elaboration and runtime)
 NVC=nvc
 NVCGFLAGS=--std=08 -M 32m
@@ -127,13 +130,15 @@ NVCEFLAGS=-gvector_init=64512 -gref_file="$(REF_FILE)" -gstart_address=1024
 NVCRFLAGS=
 
 # simulation work library (and directory) name
-SIM_WORK=work
+NVC_WORK=work
+NVC_WORK_DIR=$(NVC_WORK)/
+NVC_WORK_NAME=$(shell echo $(NVC_WORK)| tr a-z A-Z)
 
 # top entity name
-SIM_TOP=$(DESIGN)
+NVC_TOP=$(DESIGN)
 
 # VHDL source files
-SIM_VHDL=\
+NVC_VHDL=\
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/basic/$(VENDOR)/ram_sdp_a_32.vhd \
 	$(SRC)/common/basic/ram_tdp_s.vhd \
@@ -147,40 +152,53 @@ SIM_VHDL=\
 	$(SUBMODULES)/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd
 
+# design units (match order of VHDL files)
+NVC_UNIT=\
+	TYTO_TYPES_PKG \
+	RAM_SDP_A_32 \
+	RAM_TDP_S \
+	LDCE_BUS \
+	NP6532_RAM_INIT_PKG \
+	NP6532_RAM \
+	NP6532_CACHE \
+	NP65_DECODER \
+	NP6532_CORE \
+	NP6532 \
+	RNG_XOSHIRO128PLUSPLUS \
+	$(shell echo $(DESIGN)| tr a-z A-Z)
+
+# intermediate files
+NVC_IR=$(addprefix $(NVC_WORK_DIR)/$(NVC_WORK_NAME).,$(NVC_UNIT))
+
+# intermediate file dependancies
+zip=$(1)&$(2)
+NVC_IR_DEP:=$(call pairmap,zip,$(NVC_IR),$(NVC_VHDL))
+
 # runtime DLL filename - derive from top entity name (or specify manually)
-SIM_DLL=$(SIM_WORK)/$(shell echo _$(SIM_WORK).$(SIM_TOP) | tr a-z A-Z).elab.dll
+NVC_DLL=$(NVC_WORK_DIR)/$(shell echo _$(NVC_WORK_NAME).$(NVC_TOP)| tr a-z A-Z).elab.dll
 
-run: $(SIM_DLL) $(REF_FILE) $(FUNCTEST_BIN)
+run: $(NVC_DLL) $(REF_FILE)
 	$(info $(shell date))
-	$(NVC) $(NVCGFLAGS) -r $(SIM_TOP) $(NVCRFLAGS)
+	$(NVC) $(NVCGFLAGS) -r $(NVC_TOP) $(NVCRFLAGS)
 
-# elaboration output depends on intermediate files produced by analysis
-# can normally derive from source file names but may need to specify manually
-SIM_IR=$(addprefix $(SIM_WORK)/,$(shell echo $(addprefix $(SIM_WORK).,$(basename $(notdir $(SIM_VHDL)))) | tr a-z A-Z))
+elaborate: $(NVC_DLL)
 
-elaborate: $(SIM_DLL)
+$(NVC_DLL): $(NVC_IR)
+	$(NVC) $(NVCGFLAGS) -e $(NVC_TOP) $(NVCEFLAGS)
 
-$(SIM_DLL): $(SIM_IR)
-	$(NVC) $(NVCGFLAGS) -e $(SIM_TOP) $(NVCEFLAGS)
+analyse: $(NVC_IR)
 
-analyse: $(SIM_IR)
-
-# analysis output (intermediate files) depend on sources
-# can normally auto-generate rules/dependencies but may need to specify manually
-# each rule normally takes the form
-# INTERMEDIATE_FILE: source_file
-#	  $(NVC) $(NVCGFLAGS) -a source_file $(NVCAFLAGS)
 define RR_ANALYSE
-$(SIM_WORK)/$(shell echo $(addprefix $(SIM_WORK).,$(basename $(notdir $(1)))) | tr a-z A-Z): $(1)
-	$(NVC) $(NVCGFLAGS) -a $(1) $(NVCAFLAGS)
+$(word 1,$(subst &, ,$(1))): $(word 2,$(subst &, ,$(1)))
+	$(NVC) $(NVCGFLAGS) -a $(word 2,$(subst &, ,$(1))) $(NVCAFLAGS)
 endef
-$(foreach X,$(SIM_VHDL),$(eval $(call RR_ANALYSE,$X)))
+$(foreach X,$(NVC_IR_DEP),$(eval $(call RR_ANALYSE,$X)))
 
 #------------------------------------------------------------------------------
 # cleanup
 
-clean::
-	rm -rf $(SIM_WORK)
+clean:
+	rm -rf $(NVC_WORK)
 	rm -rf $(BUILD_VHDL_DIR)
 	rm -rf $(BUILD_6502_DIR)
 	rm -rf $(REF_DIR)
