@@ -13,7 +13,10 @@ REF_DIR=ref
 REF_FILE=$(REF_DIR)/$(FUNCTEST).txt
 MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace.exe
 
-all: $(REF_FILE) $(FUNCTEST_BIN)
+all: sim
+	$(info $(shell date))
+
+sim: $(REF_FILE) $(FUNCTEST_BIN)
 	vcom -work work -2002 -explicit -vopt -stats=none $(SUBMODULES)/T65/T65_Pack.vhd
 	vcom -work work -2002 -explicit -vopt -stats=none $(SUBMODULES)/T65/T65_MCode.vhd
 	vcom -work work -2002 -explicit -vopt -stats=none $(SUBMODULES)/T65/T65_ALU.vhd

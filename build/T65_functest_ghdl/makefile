@@ -18,9 +18,11 @@ GHDLFLAGS=--std=08 -fsynopsys -fexplicit
 GHDLRUNFLAGS=--unbuffered -gbin_file=$(FUNCTEST_BIN) -gref_file=$(REF_FILE) -gstart_address=1024
 
 all: run
+	$(info $(shell date))
 
 run: t65_functest $(REF_FILE) $(FUNCTEST_BIN)
-		$(GHDL) -r t65_functest $(GHDLRUNFLAGS)
+	$(info $(shell date))
+	$(GHDL) -r t65_functest $(GHDLRUNFLAGS)
 
 build: t65_functest
 

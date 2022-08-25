@@ -14,7 +14,11 @@ REF_DIR=ref
 REF_FILE=$(REF_DIR)/$(FUNCTEST).txt
 MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace.exe
 
-all: sim
+all: start
+	$(info $(shell date))
+
+start: sim
+	$(info $(shell date))
 
 VIVADO_PROJ=fpga
 VIVADO_LANG=VHDL
