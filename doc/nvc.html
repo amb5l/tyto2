@@ -442,7 +442,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="content">
 <div class="paragraph">
-<p>NVC is a potent alternative to GHDL. It offers improved simulation runtimes and simple support for vendor libraries and <a href="https://osvvm.org/">OSVVM</a>. For more information, visit the <a href="https://github.com/nickg/nvc">NVC Github repository</a>.</p>
+<p>NVC is a potent alternative to GHDL. It offers improved simulation run times and simple support for vendor libraries and <a href="https://osvvm.org/">OSVVM</a>. For more information, visit the <a href="https://github.com/nickg/nvc">NVC Github repository</a>.</p>
 </div>
 <div class="paragraph">
 <p>To get the latest version of NVC running on your system, you will need to build it from source. The following instructions are for Windows users:</p>
@@ -453,10 +453,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Install MSYS2 if required by following <a href="msys2.html">these steps</a>.</p>
 </li>
 <li>
-<p>Install packages required by the NVC build process by entering the following command in an <strong>MSYS2 MSYS</strong> shell:</p>
+<p>Install the packages required by NVC by entering the following command in an <strong>MSYS2 MSYS</strong> shell:</p>
 <div class="literalblock">
 <div class="content">
-<pre>pacman -S base-devel mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools}</pre>
+<pre>pacman -S base-devel mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools,ruby}</pre>
 </div>
 </div>
 </li>
@@ -508,11 +508,27 @@ make install</pre>
 </div>
 </li>
 <li>
-<p>Build and install the Xilinx Vivado libraries, setting the <code>XILINX_VIVADO</code> environment variable correctly for your system:</p>
+<p><strong>Optional</strong>: build and install the Vivado libraries, setting the <code>XILINX_VIVADO</code> environment variable correctly for your system:</p>
 <div class="literalblock">
 <div class="content">
 <pre>export XILINX_VIVADO=/c/Xilinx/Vivado/2022.1/
 nvc --install vivado</pre>
+</div>
+</div>
+</li>
+<li>
+<p><strong>Optional</strong>: build and install the Quartus libraries:</p>
+<div class="literalblock">
+<div class="content">
+<pre>nvc --install quartus</pre>
+</div>
+</div>
+</li>
+<li>
+<p><strong>Optional</strong>: build and install the OSVVM libraries:</p>
+<div class="literalblock">
+<div class="content">
+<pre>nvc --install osvvm</pre>
 </div>
 </div>
 </li>
@@ -521,7 +537,7 @@ nvc --install vivado</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-20 21:28:50 +0100
+Last updated 2022-08-25 09:57:41 +0100
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

@@ -1,14 +1,14 @@
 = NVC
 
-NVC is a potent alternative to GHDL. It offers improved simulation runtimes and simple support for vendor libraries and https://osvvm.org/[OSVVM]. For more information, visit the https://github.com/nickg/nvc[NVC Github repository].
+NVC is a potent alternative to GHDL. It offers improved simulation run times and simple support for vendor libraries and https://osvvm.org/[OSVVM]. For more information, visit the https://github.com/nickg/nvc[NVC Github repository].
 
 To get the latest version of NVC running on your system, you will need to build it from source. The following instructions are for Windows users:
 
 . Install MSYS2 if required by following <<msys2.adoc#,these steps>>.
 
-. Install packages required by the NVC build process by entering the following command in an *MSYS2 MSYS* shell:
+. Install the packages required by NVC by entering the following command in an *MSYS2 MSYS* shell:
 
-  pacman -S base-devel mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools}
+  pacman -S base-devel mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools,ruby}
 
 . Open an *MSYS2 MinGW x64* shell.
 
@@ -36,7 +36,15 @@ To get the latest version of NVC running on your system, you will need to build 
 
   nvc --version
 
-. Build and install the Xilinx Vivado libraries, setting the `XILINX_VIVADO` environment variable correctly for your system:
+. **Optional**: build and install the Vivado libraries, setting the `XILINX_VIVADO` environment variable correctly for your system:
 
   export XILINX_VIVADO=/c/Xilinx/Vivado/2022.1/
   nvc --install vivado
+
+. **Optional**: build and install the Quartus libraries:
+
+  nvc --install quartus
+
+. **Optional**: build and install the OSVVM libraries:
+
+  nvc --install osvvm
