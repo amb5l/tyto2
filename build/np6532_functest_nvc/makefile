@@ -140,65 +140,41 @@ NVC_WORK=work
 NVC_WORK_DIR=$(NVC_WORK)/
 NVC_WORK_NAME=$(shell echo $(NVC_WORK)| tr a-z A-Z)
 
-# top entity name
-NVC_TOP=$(DESIGN)
+# analysis dependancies and rules
+define ANA
+NVC_TOP=$(strip $(1))
+NVC_IR=$(NVC_IR) $(NVC_WORK_DIR)$(NVC_WORK_NAME).$(strip $(1))
+$(NVC_WORK_DIR)$(NVC_WORK_NAME).$(strip $(1)): $(strip $(2))
+	$(NVC) $(NVCGFLAGS) -a $$< $(NVCAFLAGS)
+endef
+$(eval $(call ANA, TYTO_TYPES_PKG                      , $(SRC)/common/tyto_types_pkg.vhd                        ))
+$(eval $(call ANA, RAM_SDP_A_32                        , $(SRC)/common/basic/$(VENDOR)/ram_sdp_a_32.vhd          ))
+$(eval $(call ANA, RAM_TDP_S                           , $(SRC)/common/basic/ram_tdp_s.vhd                       ))
+$(eval $(call ANA, LDCE_BUS                            , $(SRC)/common/basic/$(VENDOR)/ldce_bus.vhd              ))
+$(eval $(call ANA, NP6532_RAM_INIT_PKG                 , $(RAM_INIT_VHD)                                         ))
+$(eval $(call ANA, NP6532_RAM                          , $(SRC)/common/retro/np65/np6532_ram.vhd                 ))
+$(eval $(call ANA, NP6532_CACHE                        , $(SRC)/common/retro/np65/np6532_cache.vhd               ))
+$(eval $(call ANA, NP65_DECODER                        , $(DECODER_VHD)                                          ))
+$(eval $(call ANA, NP6532_CORE                         , $(SRC)/common/retro/np65/np6532_core.vhd                ))
+$(eval $(call ANA, NP6532                              , $(SRC)/common/retro/np65/np6532.vhd                     ))
+$(eval $(call ANA, RNG_XOSHIRO128PLUSPLUS              , $(SUBMODULES)/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl ))
+$(eval $(call ANA, $(shell echo $(DESIGN)| tr a-z A-Z) , $(SRC)/designs/$(DESIGN)/$(DESIGN).vhd                  ))
 
-# VHDL source files
-NVC_VHDL=\
-	$(SRC)/common/tyto_types_pkg.vhd \
-	$(SRC)/common/basic/$(VENDOR)/ram_sdp_a_32.vhd \
-	$(SRC)/common/basic/ram_tdp_s.vhd \
-	$(SRC)/common/basic/$(VENDOR)/ldce_bus.vhd \
-	$(RAM_INIT_VHD) \
-	$(SRC)/common/retro/np65/np6532_ram.vhd \
-	$(SRC)/common/retro/np65/np6532_cache.vhd \
-	$(DECODER_VHD) \
-	$(SRC)/common/retro/np65/np6532_core.vhd \
-	$(SRC)/common/retro/np65/np6532.vhd \
-	$(SUBMODULES)/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl \
-	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd
-
-# design units (match order of VHDL files)
-NVC_UNIT=\
-	TYTO_TYPES_PKG \
-	RAM_SDP_A_32 \
-	RAM_TDP_S \
-	LDCE_BUS \
-	NP6532_RAM_INIT_PKG \
-	NP6532_RAM \
-	NP6532_CACHE \
-	NP65_DECODER \
-	NP6532_CORE \
-	NP6532 \
-	RNG_XOSHIRO128PLUSPLUS \
-	$(shell echo $(DESIGN)| tr a-z A-Z)
-
-# intermediate files
-NVC_IR=$(addprefix $(NVC_WORK_DIR)/$(NVC_WORK_NAME).,$(NVC_UNIT))
-
-# intermediate file dependancies
-zip=$(1)&$(2)
-NVC_IR_DEP:=$(call pairmap,zip,$(NVC_IR),$(NVC_VHDL))
+analyse: $(NVR_IR)
 
 # runtime DLL filename - derive from top entity name (or specify manually)
 NVC_DLL=$(NVC_WORK_DIR)/$(shell echo _$(NVC_WORK_NAME).$(NVC_TOP)| tr a-z A-Z).elab.dll
 
-run: $(NVC_DLL) $(REF_FILE)
-	$(info $(shell date))
-	$(NVC) $(NVCGFLAGS) -r $(NVC_TOP) $(NVCRFLAGS)
-
+# elaborate
 elaborate: $(NVC_DLL)
 
 $(NVC_DLL): $(NVC_IR)
 	$(NVC) $(NVCGFLAGS) -e $(NVC_TOP) $(NVCEFLAGS)
 
-analyse: $(NVC_IR)
-
-define RR_ANALYSE
-$(word 1,$(subst &, ,$(1))): $(word 2,$(subst &, ,$(1)))
-	$(NVC) $(NVCGFLAGS) -a $(word 2,$(subst &, ,$(1))) $(NVCAFLAGS)
-endef
-$(foreach X,$(NVC_IR_DEP),$(eval $(call RR_ANALYSE,$X)))
+# run
+run: $(NVC_DLL) $(REF_FILE) $(FUNCTEST_BIN)
+	$(info $(shell date))
+	$(NVC) $(NVCGFLAGS) -r $(NVC_TOP) $(NVCRFLAGS)
 
 #------------------------------------------------------------------------------
 # cleanup
