@@ -126,8 +126,6 @@ $(RAM_INIT_VHD): $(FUNCTEST_BIN) $(NMI_BIN) $(IRQ_BIN) $(INIT_BIN) | $(BUILD_VHD
 #------------------------------------------------------------------------------
 # simulation
 
-include ../gmsl
-
 # NVC simulator and option flags (global, analysis, elaboration and runtime)
 NVC=nvc
 NVCGFLAGS=--std=08 -M 32m
@@ -144,7 +142,7 @@ NVC_WORK_NAME=$(shell echo $(NVC_WORK)| tr a-z A-Z)
 define ANA
 NVC_TOP=$(strip $(1))
 NVC_IR=$(NVC_IR) $(NVC_WORK_DIR)$(NVC_WORK_NAME).$(strip $(1))
-$(NVC_WORK_DIR)$(NVC_WORK_NAME).$(strip $(1)): $(strip $(2))
+$(NVC_WORK_DIR)$(NVC_WORK_NAME).$(strip $(1)): $(2)
 	$(NVC) $(NVCGFLAGS) -a $$< $(NVCAFLAGS)
 endef
 $(eval $(call ANA, TYTO_TYPES_PKG                      , $(SRC)/common/tyto_types_pkg.vhd                        ))
