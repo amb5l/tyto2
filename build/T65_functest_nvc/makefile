@@ -59,16 +59,16 @@ NVC_WORK_NAME=$(shell echo $(NVC_WORK)| tr a-z A-Z)
 
 # analysis dependancies and rules
 define ANA
-NVC_TOP=$(1)
-NVC_IR=$(NVC_IR) $(NVC_WORK_DIR)$(NVC_WORK_NAME).$(1)
-$(NVC_WORK_DIR)$(NVC_WORK_NAME).$(1): $(2)
+NVC_TOP=$(strip $(1))
+NVC_IR=$(NVC_IR) $(NVC_WORK_DIR)$(NVC_WORK_NAME).$(strip $(1))
+$(NVC_WORK_DIR)$(NVC_WORK_NAME).$(strip $(1)): $(strip $(2))
 	$(NVC) $(NVCGFLAGS) -a $$< $(NVCAFLAGS)
 endef
-$(eval $(call ANA,T65_PACK,     $(SUBMODULES)/T65/T65_Pack.vhd))
-$(eval $(call ANA,T65_MCODE,    $(SUBMODULES)/T65/T65_MCode.vhd))
-$(eval $(call ANA,T65_ALU,      $(SUBMODULES)/T65/T65_ALU.vhd))
-$(eval $(call ANA,T65,          $(SUBMODULES)/T65/T65.vhd))
-$(eval $(call ANA,T65_FUNCTEST, $(SRC)/designs/T65_functest/T65_functest.vhd))
+$(eval $(call ANA, T65_PACK     , $(SUBMODULES)/T65/T65_Pack.vhd               ))
+$(eval $(call ANA, T65_MCODE    , $(SUBMODULES)/T65/T65_MCode.vhd              ))
+$(eval $(call ANA, T65_ALU      , $(SUBMODULES)/T65/T65_ALU.vhd                ))
+$(eval $(call ANA, T65          , $(SUBMODULES)/T65/T65.vhd                    ))
+$(eval $(call ANA, T65_FUNCTEST , $(SRC)/designs/T65_functest/T65_functest.vhd ))
 
 analyse: $(NVR_IR)
 
