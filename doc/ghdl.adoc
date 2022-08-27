@@ -31,3 +31,31 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 user@MACHINE MINGW64 ~
 $
 ----
+
+If you would like to build and install the latest version, instructions for MSYS2 are as follows:
+
+. Open an *MSYS2 MinGW x64* shell.
+
+. Ensure that the required build tools are installed:
+
+  pacman -S base-devel mingw-w64-x86_64-{gcc,gnatcoll,llvm}
+
+. Navigate to an appropriate working directory, and clone the GHDL repository:
+
+  cd ~
+  git clone https://github.com/libgit2/libgit2
+
+. Navigate into the cloned repository, create a build subdirectory and navigate into that:
+
+  cd ghdl
+  mkdir build
+  cd build
+
+. Configure the build, specifying where to install it:
+
+   ../configure --with-llvm-config --prefix=/mingw64/
+ 
+ . Build and install GHDL:
+ 
+   make
+   make install

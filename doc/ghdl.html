@@ -490,10 +490,64 @@ $</pre>
 </li>
 </ol>
 </div>
+<div class="paragraph">
+<p>If you would like to build and install the latest version, instructions for MSYS2 are as follows:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Open an <strong>MSYS2 MinGW x64</strong> shell.</p>
+</li>
+<li>
+<p>Ensure that the required build tools are installed:</p>
+<div class="literalblock">
+<div class="content">
+<pre>pacman -S base-devel mingw-w64-x86_64-{gcc,gnatcoll,llvm}</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Navigate to an appropriate working directory, and clone the GHDL repository:</p>
+<div class="literalblock">
+<div class="content">
+<pre>cd ~
+git clone https://github.com/libgit2/libgit2</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Navigate into the cloned repository, create a build subdirectory and navigate into that:</p>
+<div class="literalblock">
+<div class="content">
+<pre>cd ghdl
+mkdir build
+cd build</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Configure the build, specifying where to install it:</p>
+<div class="literalblock">
+<div class="content">
+<pre>../configure --with-llvm-config --prefix=/mingw64/</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Build and install GHDL:</p>
+<div class="literalblock">
+<div class="content">
+<pre>make
+make install</pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-20 21:27:00 +0100
+Last updated 2022-08-27 17:49:36 +0100
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">
