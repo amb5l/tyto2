@@ -2,15 +2,19 @@
 
 GHDL is a very well established free and open source simulator for VHDL. For more information, visit the http://ghdl.free.fr/[GHDL home page].
 
+== Installation on Windows
+
 The easiest way for Windows users to get GHDL running is to install it via MSYS2:
 
 . Install MSYS2 if required by following <<msys2.adoc#,these steps>>.
 
-. Install GHDL by entering the following command in an *MSYS2 MSYS* shell:
+. Open an *MSYS2 MinGW x64* shell.
+
+. Enter the following command to install GHDL:
 
   pacman -S mingw-w64-x86_64-ghdl-llvm
 
-. Check the GHDL version by entering the following command in an *MSYS2 MinGW x64* shell:
+. To check the GHDL version, enter the following command:
 
   ghdl --version
 +
@@ -32,7 +36,67 @@ user@MACHINE MINGW64 ~
 $
 ----
 
-If you would like to build and install the latest version, instructions for MSYS2 are as follows:
+=== AMD/Xilinx Vivado Libraries
+
+To build the Vivado libraries:
+
+. Open an *MSYS2 MinGW x64* shell.
+
+. Navigate to the GHDL vendor library directory:
+
+  cd /mingw64/lib/ghdl/vendors
+
+. Edit the `Xilinx_Vivado_Settings` section of `config.sh` there to match your Vivado installation path, for example:
+
+  declare -A Xilinx_Vivado_Settings=(
+  	["InstallationDirectory"]="/c/Xilinx/Vivado/2022.1"
+  	["SourceDirectory"]="data/vhdl/src"
+  	["DestinationDirectory"]="xilinx-vivado"
+  )
+
+. Run the build script, specifying all libraries, for VHDL 1993 and 2008:
+
+  ./compile-xilinx-vivado.sh -a --vhdl93
+  ./compile-xilinx-vivado.sh -a --vhdl2008
+
+**Note:** the process takes many minutes to complete. Some script warnings may be produced (the script was written to run on Linux systems).
+
+When running GHDL analysis or elaboration, specify the path to these libraries with the following command line option:
+
+  -P/mingw64/lib/ghdl/vendors/xilinx-vivado
+
+=== Intel/Altera Quartus Libraries
+
+To build the Quartus libraries:
+
+. Open an *MSYS2 MinGW x64* shell.
+
+. Navigate to the GHDL vendor library directory:
+
+  cd /mingw64/lib/ghdl/vendors
+
+. Edit the `Intel_Quartus_Settings` section of `config.sh` there to match your Quartus installation path, for example:
+
+  declare -A Intel_Quartus_Settings=(
+  	["InstallationDirectory"]="/c/intelFPGA_lite/21.1/quartus"
+  	["SourceDirectory"]="eda/sim_lib"
+  	["DestinationDirectory"]="intel"
+  )
+
+. Run the build script, specifying all libraries, for VHDL 1993 and 2008:
+
+  ./compile-intel.sh -a --vhdl93
+  ./compile-intel.sh -a --vhdl2008
+
+**Note:** the process takes many minutes to complete. Some script warnings may be produced (the script was written to run on Linux systems).
+
+When running GHDL analysis or elaboration, specify the path to these libraries with the following command line option:
+
+  -P/mingw64/lib/ghdl/vendors/intel
+
+=== Building GHDL from source
+
+To build and install the latest version of GHDL from source:
 
 . Open an *MSYS2 MinGW x64* shell.
 
@@ -40,7 +104,7 @@ If you would like to build and install the latest version, instructions for MSYS
 
   pacman -S base-devel mingw-w64-x86_64-{gcc,gnatcoll,llvm}
 
-. Navigate to an appropriate working directory, and clone the GHDL repository:
+. Navigate to an appropriate working directory, and clone the GHDL repository there:
 
   cd ~
   git clone https://github.com/libgit2/libgit2
@@ -53,7 +117,7 @@ If you would like to build and install the latest version, instructions for MSYS
 
 . Configure the build, specifying where to install it:
 
-   ../configure --with-llvm-config --prefix=/mingw64/
+   ../configure --with-llvm-config --prefix=/mingw64
  
  . Build and install GHDL:
  
