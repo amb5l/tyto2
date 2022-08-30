@@ -30,9 +30,7 @@ use work.hd6845_pkg.all;
 
 entity tb_saa5050d is
     generic (
-        filename_0 : string;
-        filename_1 : string;
-        filename_2 : string
+        filename : string
     );
 end entity tb_saa5050d;
 
@@ -72,14 +70,14 @@ architecture sim of tb_saa5050d is
     signal y         : integer;                       -- bitmap Y position
     signal act       : boolean;                       -- video active region
 
-    signal ttx_data, ttx_data_0, ttx_data_1, ttx_data_2 : uint8_array_t(0 to 1023);
+    signal ttx_data  : uint8_array_t(0 to 1023);
 
 begin
 
     -- base clock (~12MHz)
     clk <=
-        '1' after 41666ps when clk = '0' else
-        '0' after 41666ps when clk = '1' else
+        '1' after 41666 ps when clk = '0' else
+        '0' after 41666 ps when clk = '1' else
         '0';
 
     process(clk)
@@ -129,9 +127,7 @@ begin
             wdata <= x"00";
         end procedure crtc_poke_reg;
     begin
-        ttx_data_0 <= read_bin(filename_0, 1024);
-        ttx_data_1 <= read_bin(filename_1, 1024);
-        ttx_data_2 <= read_bin(filename_2, 1024);
+        ttx_data <= read_bin(filename, 1024);
         reg_rst <= '1';
         crt_rst <= '1';
         pix_rst <= '1';
@@ -164,10 +160,6 @@ begin
     end process;
 
     -- teletext test data
-    ttx_data <= 
-        ttx_data_0 when frame = 0 else
-        ttx_data_1 when frame = 1 else
-        ttx_data_2;
     ttx_chr <= std_logic_vector(to_unsigned(ttx_data(to_integer(unsigned(crt_ma(9 downto 0)))),8));
 
     -- bitmap capture
@@ -208,7 +200,7 @@ begin
                     end loop;
                     if x = 479 and y = 498 then
                         write_bmp("tb_saa5050d", bmp, frame, 480, 500, false);
-                        if frame = 2 then
+                        if frame = 0 then
                             report "*** DONE ***";
                             finish;
                         end if;

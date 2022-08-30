@@ -1,30 +1,23 @@
 DESIGN=tb_saa5050d
 VIVADO_PART=xc7a200tsbg484-1
-VENDOR=xilinx
-VENDOR_FAMILY=xilinx_7series
 
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
-MAKE_DIR=$(REPO_ROOT)/$(shell git rev-parse --show-prefix)
 SRC=$(REPO_ROOT)/src
 SUBMODULES=$(REPO_ROOT)/submodules
 XILINX_MK=$(SUBMODULES)/xilinx-mk
 
-BINFILE_0=$(SRC)/common/retro/saa5050/test/engtest.bin
-BINFILE_1=$(SRC)/common/retro/saa5050/test/scarybeasts.bin
-BINFILE_2=$(SRC)/common/retro/saa5050/test/parrot.bin
+all: compare
 
-all: check
+# tests to run are listed here
+TESTS=engtest scarybeasts parrot
 
-check: sim
-	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_0.bmp ../../src/common/retro/saa5050/test/$(DESIGN)_0.bmp
-	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_1.bmp ../../src/common/retro/saa5050/test/tb_saa5050_1.bmp
-	diff --binary $(VIVADO_SIM_PATH)/$(DESIGN)_2.bmp ../../src/common/retro/saa5050/test/tb_saa5050_2.bmp
+# reference binaries and bitmaps directory is specified here
+REF_DIR=$(SRC)/common/retro/saa5050/test
 
 VIVADO_PROJ=fpga
 VIVADO_LANG=VHDL
 
 VIVADO_SIM_TOP=$(DESIGN)
-VIVADO_SIM_OUT=$(DESIGN)_2.bmp
 VIVADO_SIM_VHDL=\
 	$(SRC)/common/retro/saa5050/test/$(DESIGN).vhd \
 	$(SRC)/common/tyto_types_pkg.vhd \
@@ -32,13 +25,19 @@ VIVADO_SIM_VHDL=\
 	$(SRC)/common/retro/saa5050/saa5050d.vhd \
 	$(SRC)/common/retro/saa5050/saa5050_rom_data.vhd \
 	$(SRC)/common/retro/hd6845/hd6845.vhd
-VIVADO_SIM_GENERICS=\
-	filename_0=$(abspath $(BINFILE_0)) \
-	filename_1=$(abspath $(BINFILE_1)) \
-	filename_2=$(abspath $(BINFILE_2))
-VIVADO_SIM_IN=\
-	$(BINFILE_0) \
-	$(BINFILE_1) \
-	$(BINFILE_2)
 
 include $(XILINX_MK)/xilinx.mk
+
+# runtime rule/recipe for bitmap dependancies
+define RR_BMP
+$(VIVADO_SIM_PATH)/$(1).bmp: $(REF_DIR)/$(1).bin $(VIVADO_PROJ_FILE)
+	$(VIVADO_MK) simulate gen: filename=$$<
+	mv $(VIVADO_SIM_PATH)/$(VIVADO_SIM_TOP)_0.bmp $(VIVADO_SIM_PATH)/$(1).bmp
+$(REF_DIR)/$(1)_d.bmp: $(VIVADO_SIM_PATH)/$(1).bmp
+	diff --binary $$@ $$<
+	touch $$@
+endef
+
+$(foreach TEST,$(TESTS),$(eval $(call RR_BMP,$(TEST))))
+
+compare: $(addsuffix _d.bmp,$(addprefix $(REF_DIR)/,$(TESTS)))
