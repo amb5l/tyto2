@@ -61,11 +61,11 @@ NOTE: ALL designs have submodule dependencies. Please remember to initialise sub
 |A <<doc/common/retro/np65/np65.adoc#,np65>> CPU core running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test].
 
 |<<doc/designs/tb_saa5050/tb_saa5050.adoc#,tb_saa5050>>
-|Vivado
+|Vivado, GHDL
 |A https://en.wikipedia.org/wiki/Mullard_SAA5050[SAA5050] teletext character generator. 
 
 |<<doc/designs/tb_saa5050d/tb_saa5050d.adoc#,tb_saa5050d>>
-|Vivado
+|Vivado, GHDL
 |Progressive scan (scan doubling) equivalent of <<doc/designs/tb_saa5050/tb_saa5050.adoc#,tb_saa5050>>.
 
 |<<doc/designs/T65_functest/T65_functest.adoc#,T65_functest>>
