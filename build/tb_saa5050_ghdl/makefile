@@ -62,4 +62,4 @@ $(foreach TEST,$(TESTS),$(eval $(call RR_BMP,$(TEST))))
 compare: $(addsuffix $(VARIANT).bmp,$(addprefix $(REF_DIR)/,$(TESTS)))
 
 clean:
-	rm -f *.bmp *.exe *.cf *.o *.lst
+	rm -f *.bmp $(GHDL_EXE) *.cf *.o *.lst

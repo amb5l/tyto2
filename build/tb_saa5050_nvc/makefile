@@ -33,8 +33,6 @@ $(eval $(call RR_DEP, HD6845			   , $(SRC)/common/retro/hd6845/hd6845.vhd			   )
 $(eval $(call RR_DEP, TYTO_SIM_PKG		   , $(SRC)/common/tyto_sim_pkg.vhd $(NVC_WORK_DIR)$(NVC_WORK_NAME).TYTO_TYPES_PKG ))
 $(eval $(call RR_DEP, TB_SAA5050$(VARIANT) , $(SRC)/common/retro/saa5050/test/tb_saa5050$(VARIANT).vhd $(NVC_WORK_DIR)$(NVC_WORK_NAME).TYTO_SIM_PKG $(NVC_WORK_DIR)$(NVC_WORK_NAME).TYTO_TYPES_PKG ))
 
-$(info $(NVC_IR))
-
 # tests to run are listed here
 TESTS=engtest scarybeasts parrot
 
