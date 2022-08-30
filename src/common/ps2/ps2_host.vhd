@@ -220,12 +220,13 @@ begin
                         end if;
 
                     when S1 =>
-                        timer <= timer+1;
                         if timer=COUNT_100uS-1 then -- wait for 100us (spec)
                             h2d_state <= S2;
                             timer <= 0;
                             h2d_act <= '1';         -- assert h2d_act (hold off d2h)
                             h2d_start <= '1';       -- pull data down (start bit) and enable shift reg load
+                        else
+                            timer <= timer+1;
                         end if;
 
                     when S2 =>
