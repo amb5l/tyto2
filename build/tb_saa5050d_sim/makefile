@@ -22,11 +22,11 @@ $(strip $(1)).$(VCOM_LOG_EXT): $(2)
 endef
 
 # design unit dependancies are declared here
-$(eval $(call RR_DEP, tyto_types_pkg       , $(SRC)/common/tyto_types_pkg.vhd                  ))
-$(eval $(call RR_DEP, saa5050_rom_data     , $(SRC)/common/retro/saa5050/saa5050_rom_data.vhd  ))
-$(eval $(call RR_DEP, saa5050$(VARIANT)    , $(SRC)/common/retro/saa5050/saa5050$(VARIANT).vhd ))
-$(eval $(call RR_DEP, hd6845               , $(SRC)/common/retro/hd6845/hd6845.vhd             ))
-$(eval $(call RR_DEP, tyto_sim_pkg         , $(SRC)/common/tyto_sim_pkg.vhd tyto_types_pkg.$(VCOM_LOG_EXT) ))
+$(eval $(call RR_DEP, tyto_types_pkg	   , $(SRC)/common/tyto_types_pkg.vhd				   ))
+$(eval $(call RR_DEP, saa5050_rom_data	   , $(SRC)/common/retro/saa5050/saa5050_rom_data.vhd  ))
+$(eval $(call RR_DEP, saa5050$(VARIANT)	   , $(SRC)/common/retro/saa5050/saa5050$(VARIANT).vhd ))
+$(eval $(call RR_DEP, hd6845			   , $(SRC)/common/retro/hd6845/hd6845.vhd			   ))
+$(eval $(call RR_DEP, tyto_sim_pkg		   , $(SRC)/common/tyto_sim_pkg.vhd tyto_types_pkg.$(VCOM_LOG_EXT) ))
 $(eval $(call RR_DEP, tb_saa5050$(VARIANT) , $(SRC)/common/retro/saa5050/test/tb_saa5050$(VARIANT).vhd tyto_sim_pkg.$(VCOM_LOG_EXT) tyto_types_pkg.$(VCOM_LOG_EXT) ))
 
 # tests to run are listed here
@@ -52,4 +52,6 @@ $(foreach TEST,$(TESTS),$(eval $(call RR_BMP,$(TEST))))
 compare: $(addsuffix $(VARIANT).bmp,$(addprefix $(REF_DIR)/,$(TESTS)))
 
 clean:
-	rm -rf *.bmp *.log transcript work
+	rm -f *.bmp
+	rm -f *.log modelsim.ini transcript
+	rm -rf work	  

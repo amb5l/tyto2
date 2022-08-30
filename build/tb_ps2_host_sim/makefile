@@ -31,4 +31,5 @@ run: $(VCOM_LOG)
 	$(VSIM) $(VSIMOPTS) $(SIM_TOP)
 
 clean:
-	rm -f $(GHDL_EXE) *.cf *.o *.lst
+	rm -f *.log modelsim.ini transcript
+	rm -rf work

@@ -42,8 +42,6 @@ $(REF_DIR):
 	mkdir $(REF_DIR)
 
 clean:
+	rm -rf $(BUILD_6502_DIR) $(REF_DIR)
+	rm -f *.log modelsim.ini transcript
 	rm -rf work
-	rm -f modelsim.ini
-	rm -f transcript
-	rm -rd $(BUILD_6502_DIR)
-	rm -rf $(REF_DIR)
