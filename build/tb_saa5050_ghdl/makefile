@@ -8,7 +8,7 @@ SRC=$(REPO_ROOT)/src
 GHDL=ghdl
 GHDLAOPTS=--std=08 -frelaxed -fsynopsys
 GHDLEOPTS=--std=08 -frelaxed
-GHDLROPTS=--ieee-asserts=disable --unbuffered $(addprefix -g,$(GHDL_GENERICS))
+GHDLROPTS=--ieee-asserts=disable --unbuffered
 
 # runtime rule/recipe for analysis dependancies
 define RR_DEP
