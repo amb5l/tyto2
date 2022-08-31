@@ -102,67 +102,67 @@ begin
 
     process
         procedure ps2_d2h(
-            signal   ps2_clk  : out std_logic;
-            signal   ps2_data : out std_logic;
-            constant d2h_data : in std_logic_vector(7 downto 0);
-            constant period   : in time;
-            constant corrupt  : in std_logic_vector(10 downto 0) := (others => '0')
+            signal   s_clk   : out std_logic;
+            signal   s_data  : out std_logic;
+            constant p_data  : in std_logic_vector(7 downto 0);
+            constant period  : in time;
+            constant corrupt : in std_logic_vector(10 downto 0) := (others => '0')
         ) is
         begin
             -- start
             wait for period/2;
-            ps2_clk <= oco('0');
-            ps2_data <= oco(corrupt(0));
+            s_clk <= oco('0');
+            s_data <= oco(corrupt(0));
             wait for period/2;
-            ps2_clk <= oco('1');
+            s_clk <= oco('1');
             -- data
             for i in 0 to 7 loop
                 wait for period/2;
-                ps2_clk <= oco('0');
-                ps2_data <= oco(d2h_data(i) xor corrupt(1+i));
+                s_clk <= oco('0');
+                s_data <= oco(p_data(i) xor corrupt(1+i));
                 wait for period/2;
-                ps2_clk <= oco('1');
+                s_clk <= oco('1');
             end loop;
             -- parity
             wait for period/2;
-            ps2_clk <= oco('0');
-            ps2_data <= oco(parity_odd(d2h_data) xor corrupt(9));
+            s_clk <= oco('0');
+            s_data <= oco(parity_odd(p_data) xor corrupt(9));
             wait for period/2;
-            ps2_clk <= oco('1');
+            s_clk <= oco('1');
             -- stop
             wait for period/2;
-            ps2_clk <= oco('0');
-            ps2_data <= oco(not corrupt(10));
+            s_clk <= oco('0');
+            s_data <= oco(not corrupt(10));
             wait for period/2;
-            ps2_clk <= oco('1');
-            ps2_data <= oco('1');
+            s_clk <= oco('1');
+            s_data <= oco('1');
         end procedure ps2_d2h;
         procedure ps2_h2d(
-            signal   ps2_clk  : inout std_logic;
-            signal   ps2_data : inout std_logic;
-            signal   h2d_data : out std_logic_vector(7 downto 0);
-            signal   h2d_perr : out boolean;
-            constant period   : in time
+            signal   s_clk  : inout std_logic;
+            signal   s_data : inout std_logic;
+            signal   p_data : out std_logic_vector(7 downto 0);
+            signal   p_perr : out boolean;
+            constant period : in time
         ) is
             variable sr : std_logic_vector(10 downto 0);
         begin
-            wait until oci(ps2_clk) = '0';
-            wait until oci(ps2_data) = '0';
-            wait until oci(ps2_clk) = '1';
+            wait until oci(s_clk) = '0';
+            wait until oci(s_data) = '0';
+            wait until oci(s_clk) = '1';
             for i in 0 to 10 loop
                 wait for period/2;
-                ps2_clk <= oco('0');
-                ps2_data <= oco('1');
+                s_clk <= oco('0');
+                s_data <= oco('1');
                 if i = 10 then
-                    ps2_data <= oco('0');
+                    s_data <= oco('0');
                 end if;
                 wait for period/2;
-                ps2_clk <= oco('1');
-                sr(i) := oci(ps2_data);
+                s_clk <= oco('1');
+                sr(i) := oci(s_data);
             end loop;
-            ps2_data <= oco('1');
-            h2d_data <= sr(7 downto 0);
-            h2d_perr <= sr(8) /= parity_odd(sr(7 downto 0));
+            s_data <= oco('1');
+            p_data <= sr(7 downto 0);
+            p_perr <= sr(8) /= parity_odd(sr(7 downto 0));
         end procedure ps2_h2d;
     begin
         h2d_req <= '0';
