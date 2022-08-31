@@ -172,7 +172,7 @@ begin
             else
                 pass <= pass+1;
             end if;
-            wait for 200us;
+            wait for 200 us;
             -- break code(s) (if they exist)
             if tbl(i+1) /= "000000000" then
                 while true loop
@@ -186,7 +186,7 @@ begin
                 else
                     pass <= pass+1;
                 end if;
-                wait for 200us;
+                wait for 200 us;
             else
                 report "no break code";
                 i := i+1;

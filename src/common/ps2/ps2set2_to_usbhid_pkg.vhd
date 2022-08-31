@@ -30,11 +30,11 @@ end package ps2set_to_usbhid_pkg;
 
 package body ps2set_to_usbhid_pkg is
 
-    constant N     : std_logic_vector(0 downto 0) := "0";             -- not last
-    constant L     : std_logic_vector(0 downto 0) := "1";             -- last
-    constant C     : std_logic_vector(0 downto 0) := "0";             -- code
-    constant P     : std_logic_vector(0 downto 0) := "1";             -- prefix
-    constant EMPTY : std_logic_vector(8 downto 0) := C & x"00";       -- empty break
+    constant N     : std_logic := '0';                          -- not last
+    constant L     : std_logic := '1';                          -- last
+    constant C     : std_logic := '0';                          -- code
+    constant P     : std_logic := '1';                          -- prefix
+    constant EMPTY : std_logic_vector(8 downto 0) := C & x"00"; -- empty break
 
     function ps2set_to_usbhid(constant nonUS : boolean := true) return slv_8_0_t is
         constant tbl: slv_8_0_t := (
