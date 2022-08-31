@@ -1,0 +1,3 @@
+= tb_ps2_host
+
+A simulation testbench for the PS/2 host IP. Cycles through all 256 codes in both device-to-host and host-to-device directions, verifying that the IP correctly performs the conversion between serial and parallel protocols.

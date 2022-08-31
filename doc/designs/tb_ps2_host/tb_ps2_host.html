@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.8.dev">
-<title>The Tyto Project (Version 2)</title>
+<title>tb_ps2_host</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -438,208 +438,16 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="article">
 <div id="header">
-<h1>The Tyto Project (Version 2)</h1>
+<h1>tb_ps2_host</h1>
 </div>
 <div id="content">
-<div id="preamble">
-<div class="sectionbody">
 <div class="paragraph">
-<p>The Tyto Project is a collection of open source FPGA designs and IP for retro computing and embedded systems, with an emphasis on VHDL and support for both AMD/Xilinx and Intel/Altera targets.</p>
-</div>
-<div class="paragraph">
-<p>This repository is incomplete. Work to port all the designs and IP from the <a href="https://github.com/amb5l/tyto_project">previous version</a> is ongoing.</p>
-</div>
-<div class="paragraph">
-<p>A simpler directory structure is used:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>src</code> contains source code for designs as well as common IP.</p>
-</li>
-<li>
-<p><code>build</code> contains makefiles for designs on supported targets. The subdirectory name consists of the design name followed by the target name. For simulations, the target name indicates the simulator: <code>xsim</code> for Xilinx Vivado, <code>nvc</code> for <a href="doc/nvc.html">NVC</a>, <code>ghdl</code> for <a href="doc/ghdl.html">GHDL</a> and <code>sim</code> for Questa, ModelSim etc.</p>
-</li>
-<li>
-<p><code>doc</code> contains documentation.</p>
-</li>
-<li>
-<p><code>submodules</code> contains git submodules.</p>
-</li>
-</ul>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-ALL designs have submodule dependencies. Please remember to initialise submodules when cloning this repo!
-</td>
-</tr>
-</table>
-</div>
-<hr>
-</div>
-</div>
-<div class="sect1">
-<h2 id="truefpga-designs"><a class="anchor" href="#truefpga-designs"></a>FPGA Designs</h2>
-<div class="sectionbody">
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 20%;">
-<col style="width: 70%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Name</th>
-<th class="tableblock halign-left valign-top">Supported Boards</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/ddr3_test/ddr3_test.html">ddr3_test </a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A simple DDR3 SDRAM tester based on <a href="https://github.com/jorisvr/vhdl_prng">Joris van Rantwijk&#8217;s Pseudo Random Number Generator</a>. Hacks the generated HDL to generate the 200MHz IODELAYCTRL reference clock in the DDR3 IP core MMCM.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/hdmi_tpg/hdmi_tpg.html">hdmi_tpg</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">HDMI test pattern generator. Displays a test pattern on an HDMI monitor at various SD and HD TV resolutions. Includes test audio output.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/mb_cb/mb_cb.html">mb_cb</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A MicroBlaze CPU with a character buffer display, supporting 480i60 and 576i50 resolutions.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/mb_cb_ps2/mb_cb_ps2.html">mb_cb_ps2</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The <a href="./doc/designs/mb_cb/mb_cb.html">mb_cb</a> design with an added PS/2 keyboard interface.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/mb_fb/mb_fb.html">mb_fb</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on <a href="https://github.com/tuupola/hagl">Mike Tuupola&#8217;s hagl graphics library</a>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/np6532_poc/np6532_poc.html">np6532_poc</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong, Altera Cyclone V Dev Kit, Terasic DE10-Nano</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A proof-of-concept demonstration of the <a href="doc/common/retro/np65/np65.html">np65</a> 6502 compatible CPU core clocked at 32MHz. Runs <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a> in a loop.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="sect1">
-<h2 id="truesimulation-designs"><a class="anchor" href="#truesimulation-designs"></a>Simulation Designs</h2>
-<div class="sectionbody">
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 10%;">
-<col style="width: 20%;">
-<col style="width: 70%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Name</th>
-<th class="tableblock halign-left valign-top">Supported Simulators</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/np6532_functest/np6532_functest.html">np6532_functest</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, NVC</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A <a href="doc/common/retro/np65/np65.html">np65</a> CPU core running <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_saa5050/tb_saa5050.html">tb_saa5050</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, GHDL</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A <a href="https://en.wikipedia.org/wiki/Mullard_SAA5050">SAA5050</a> teletext character generator.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_saa5050d/tb_saa5050d.html">tb_saa5050d</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, GHDL</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Progressive scan (scan doubling) equivalent of <a href="doc/designs/tb_saa5050/tb_saa5050.html">tb_saa5050</a>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_ps2_host/tb_ps2_host.html">tb_ps2_host</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, multisim</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Testbench for PS/2 host IP.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_ps2_to_usbhid/tb_ps2_to_usbhid.html">tb_ps2_to_usbhid</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, multisim</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Testbench for PS/2 host to USB HID IP.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/T65_functest/T65_functest.html">T65_functest</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, NVC, GHDL, Questa/ModelSim</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A <a href="https://github.com/mist-devel/T65">T65 6502 compatible core</a> running <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>.</p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>Note: <strong>multisim</strong> signifies multiple simulator support (GHDL, NVC and Questa/ModelSim).</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="truetools"><a class="anchor" href="#truetools"></a>Tools</h2>
-<div class="sectionbody">
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p><a href="https://www.gnu.org/software/make/">GNU make</a> is required, along with <a href="https://git-scm.com/">git</a> and assorted utilities that are usually present on Linux systems. <a href="doc/msys2.html">MSYS2</a> is a quick and easy way to get these tools running on Windows.</p>
-</li>
-<li>
-<p>Building an FPGA design requires vendor tools, and produces projects that can be opened and worked on in the vendor IDE:</p>
-<div class="ulist">
-<ul>
-<li>
-<p>For AMD/Xilinx FPGAs, <strong>Vivado</strong> is required - the free <strong>Standard Edition</strong> is sufficient. Versions <strong>2022.1</strong> and <strong>2021.2</strong> are supported. Note that designs including a <a href="https://en.wikipedia.org/wiki/MicroBlaze">Microblaze soft CPU</a> also require <strong>Vitis</strong>. These tools may be obtained from <a href="https://www.xilinx.com/support/download.html">here</a>.</p>
-</li>
-<li>
-<p>For Intel/Altera FPGAs, <strong>Quartus Prime</strong> is required - the free <strong>Lite</strong> edition is sufficient. This includes a free edition of the <a href="https://en.wikipedia.org/wiki/ModelSim">Questa</a> simulator. Version <strong>21.1</strong> is supported. This may be obtained from <a href="https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html">here</a>.</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>The free open source <a href="doc/nvc.html">NVC</a> and <a href="doc/ghdl.html">GHDL</a> simulators are supported by some simulations.</p>
-</li>
-<li>
-<p>Some builds include <a href="https://www.python.org/downloads/">Python 3</a> scripts.</p>
-</li>
-<li>
-<p>Projects including a 6502 or compatible CPU require the the <strong>ca65</strong> assembler and <strong>ld65</strong> linker from the <a href="https://cc65.github.io/">cc65</a> toolchain.</p>
-</li>
-</ol>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="truelicense"><a class="anchor" href="#truelicense"></a>License</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>This file is part of The Tyto Project. The Tyto Project is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.</p>
-</div>
-<div class="paragraph">
-<p>The Tyto Project is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.</p>
-</div>
-<div class="paragraph">
-<p>You should have received a copy of the GNU Lesser General Public License along with The Tyto Project. If not, see <a href="https://www.gnu.org/licenses/" class="bare">https://www.gnu.org/licenses/</a>.</p>
-</div>
-</div>
+<p>A simulation testbench for the PS/2 host IP. Cycles through all 256 codes in both device-to-host and host-to-device directions, verifying that the IP correctly performs the conversion between serial and parallel protocols.</p>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-31 16:27:48 +0100
+Last updated 2022-08-31 16:26:58 +0100
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

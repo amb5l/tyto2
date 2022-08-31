@@ -68,11 +68,20 @@ NOTE: ALL designs have submodule dependencies. Please remember to initialise sub
 |Vivado, GHDL
 |Progressive scan (scan doubling) equivalent of <<doc/designs/tb_saa5050/tb_saa5050.adoc#,tb_saa5050>>.
 
+|<<doc/designs/tb_ps2_host/tb_ps2_host.adoc#,tb_ps2_host>>
+|Vivado, multisim
+|Testbench for PS/2 host IP.
+
+|<<doc/designs/tb_ps2_to_usbhid/tb_ps2_to_usbhid.adoc#,tb_ps2_to_usbhid>>
+|Vivado, multisim
+|Testbench for PS/2 host to USB HID IP.
+
 |<<doc/designs/T65_functest/T65_functest.adoc#,T65_functest>>
 |Vivado, NVC, GHDL, Questa/ModelSim
 |A https://github.com/mist-devel/T65[T65 6502 compatible core] running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test].
 
 |=== 
+Note: *multisim* signifies multiple simulator support (GHDL, NVC and Questa/ModelSim).
 
 == Tools
 

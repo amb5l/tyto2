@@ -1,0 +1,3 @@
+= tb_ps2_to_usbhid
+
+A simulation testbench for the PS/2 host to USB HID IP. Verifies that the IP correctly translates the PS/2 serial protocol through to a USB HID key code for all supported PS/2 make and break sequences.
