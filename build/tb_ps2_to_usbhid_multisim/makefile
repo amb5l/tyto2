@@ -37,8 +37,6 @@ include $(MULTISIM_MK)/multisim_pre.mk
 #
 # ensure units appear in the correct compilation order
 
-# example:
-
 SRC=$(REPO_ROOT)/src
 
 $(eval $(call UNIT, tyto_types_pkg        , $(SRC)/common/tyto_types_pkg.vhd            , ))
