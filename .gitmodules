@@ -19,3 +19,6 @@
 [submodule "submodules/vhdl_prng"]
 	path = submodules/vhdl_prng
 	url = https://github.com/amb5l/vhdl_prng.git
+[submodule "submodules/multisim-mk"]
+	path = submodules/multisim-mk
+	url = https://github.com/amb5l/multisim-mk.git
