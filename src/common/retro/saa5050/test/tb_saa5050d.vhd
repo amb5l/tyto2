@@ -199,7 +199,7 @@ begin
                         end if;
                     end loop;
                     if x = 479 and y = 498 then
-                        write_bmp("tb_saa5050d", bmp, frame, 480, 500, false);
+                        write_bmp("tb_saa5050d_"&integer'image(frame), bmp, 480, 500, false);
                         if frame = 0 then
                             report "*** DONE ***";
                             finish;

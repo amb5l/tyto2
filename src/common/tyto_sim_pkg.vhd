@@ -32,7 +32,6 @@ package tyto_sim_pkg is
     procedure write_bmp(
        name : in string;
        img : in bmp_t;
-       count : in integer;
        width : in integer;
        hieght : in integer;
        interlaced : in boolean
@@ -68,7 +67,6 @@ package body tyto_sim_pkg is
     procedure write_bmp(
        name : in string;
        img : in bmp_t;
-       count : in integer;
        width : in integer;
        hieght : in integer;
        interlaced : in boolean
@@ -92,7 +90,7 @@ package body tyto_sim_pkg is
         );
         variable y : integer;
     begin
-        file_open(f, name&"_"&integer'image(count)&".bmp",WRITE_MODE);
+        file_open(f, name&".bmp",WRITE_MODE);
         for i in 0 to bmp_header'length-1 loop
             write(f, character'val(to_integer(bmp_header(i))));
         end loop;

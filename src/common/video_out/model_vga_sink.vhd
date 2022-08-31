@@ -101,7 +101,7 @@ begin
 
             if capturing and vga_vs'event then
                 if vga_hs'event then
-                    write_bmp(cap_name,bmp,bmp_count,width,hieght,interlaced);
+                    write_bmp(cap_name&"_"&integer'image(bmp_count),bmp,width,hieght,interlaced);
                     bmp_count  <= bmp_count + 1;
                     ax         <= 0;
                     ay         <= 0;
