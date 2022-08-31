@@ -114,8 +114,8 @@ begin
 
     process
         procedure ps2_d2h(
-            signal   ps2_clk  : out std_logic;
-            signal   ps2_data : out std_logic;
+            signal   sclk     : out std_logic;
+            signal   sdata    : out std_logic;
             constant d2h_data : in std_logic_vector(7 downto 0);
             constant period   : in time;
             constant corrupt  : in std_logic_vector(10 downto 0) := (others => '0')
@@ -123,31 +123,31 @@ begin
         begin
             -- start
             wait for period/2;
-            ps2_clk <= oco('0');
-            ps2_data <= oco(corrupt(0));
+            sclk <= oco('0');
+            sdata <= oco(corrupt(0));
             wait for period/2;
-            ps2_clk <= oco('1');
-            -- data
+            sclk <= oco('1');
+            -- sdata
             for i in 0 to 7 loop
                 wait for period/2;
-                ps2_clk <= oco('0');
-                ps2_data <= oco(d2h_data(i) xor corrupt(1+i));
+                sclk <= oco('0');
+                sdata <= oco(d2h_data(i) xor corrupt(1+i));
                 wait for period/2;
-                ps2_clk <= oco('1');
+                sclk <= oco('1');
             end loop;
             -- parity
             wait for period/2;
-            ps2_clk <= oco('0');
-            ps2_data <= oco(parity_odd(d2h_data) xor corrupt(9));
+            sclk <= oco('0');
+            sdata <= oco(parity_odd(d2h_data) xor corrupt(9));
             wait for period/2;
-            ps2_clk <= oco('1');
+            sclk <= oco('1');
             -- stop
             wait for period/2;
-            ps2_clk <= oco('0');
-            ps2_data <= oco(not corrupt(10));
+            sclk <= oco('0');
+            sdata <= oco(not corrupt(10));
             wait for period/2;
-            ps2_clk <= oco('1');
-            ps2_data <= oco('1');
+            sclk <= oco('1');
+            sdata <= oco('1');
         end procedure ps2_d2h;
         constant tbl : slv_8_0_t := ps2set_to_usbhid(true);
         variable i : integer;

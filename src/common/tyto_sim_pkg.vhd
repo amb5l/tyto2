@@ -37,7 +37,7 @@ package tyto_sim_pkg is
        hieght : in integer;
        interlaced : in boolean
     );
-    function read_bin(filename : string; size : integer) return uint8_array_t;
+    impure function read_bin(filename : string; size : integer) return uint8_array_t;
 
 end package tyto_sim_pkg;
 
@@ -113,7 +113,7 @@ package body tyto_sim_pkg is
         end loop;
     end procedure write_bmp;
 
-    function read_bin(filename : string; size : integer) return uint8_array_t is
+    impure function read_bin(filename : string; size : integer) return uint8_array_t is
         variable r : uint8_array_t(0 to size-1);
         file f : file_char_t open read_mode is filename;
         variable c : character;

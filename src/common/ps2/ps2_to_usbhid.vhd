@@ -65,12 +65,12 @@ architecture synth of ps2_to_usbhid is
 
     constant tbl_size : integer := 512;
     constant tbl_init_data : slv_8_0_t := ps2set_to_usbhid(nonUS);
-    function tbl_init(tbl_size : integer; tbl_init_data : slv_8_0_t) return slv_8_0_t is
-        variable r : slv_8_0_t(0 to tbl_size-1);
+    function tbl_init(tsz : integer; data : slv_8_0_t) return slv_8_0_t is
+        variable r : slv_8_0_t(0 to tsz-1);
     begin
         r := (others => (others => '0'));
-        for i in 0 to tbl_init_data'length-1 loop
-            r(i) := tbl_init_data(i);
+        for i in 0 to data'length-1 loop
+            r(i) := data(i);
         end loop;
         return r;
     end function tbl_init;
