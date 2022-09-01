@@ -458,7 +458,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p><code>src</code> contains source code for designs as well as common IP.</p>
 </li>
 <li>
-<p><code>build</code> contains makefiles for designs on supported targets. The subdirectory name consists of the design name followed by the target name. For simulations, the target name indicates the simulator: <code>xsim</code> for Xilinx Vivado, <code>nvc</code> for <a href="doc/nvc.html">NVC</a>, <code>ghdl</code> for <a href="doc/ghdl.html">GHDL</a> and <code>sim</code> for Questa, ModelSim etc.</p>
+<p><code>build</code> contains makefiles for designs on supported targets. Hardware designs are located in <code>build\design_name\board_specific_variant</code>, and simulation designs are located in <code>build\design_name</code>.</p>
 </li>
 <li>
 <p><code>doc</code> contains documentation.</p>
@@ -532,6 +532,9 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 </tr>
 </tbody>
 </table>
+<div class="paragraph">
+<p>To build an FPGA design, navigate to its subdirectory under <code>build/</code> and run the <strong>make</strong> command.</p>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -539,52 +542,44 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 <div class="sectionbody">
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 10%;">
 <col style="width: 20%;">
-<col style="width: 70%;">
+<col style="width: 80%;">
 </colgroup>
 <thead>
 <tr>
 <th class="tableblock halign-left valign-top">Name</th>
-<th class="tableblock halign-left valign-top">Supported Simulators</th>
 <th class="tableblock halign-left valign-top">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/np6532_functest/np6532_functest.html">np6532_functest</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, NVC</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A <a href="doc/common/retro/np65/np65.html">np65</a> CPU core running <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_saa5050/tb_saa5050.html">tb_saa5050</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, GHDL</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A <a href="https://en.wikipedia.org/wiki/Mullard_SAA5050">SAA5050</a> teletext character generator.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_saa5050d/tb_saa5050d.html">tb_saa5050d</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, GHDL</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Progressive scan (scan doubling) equivalent of <a href="doc/designs/tb_saa5050/tb_saa5050.html">tb_saa5050</a>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_ps2_host/tb_ps2_host.html">tb_ps2_host</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, multisim</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Testbench for PS/2 host IP.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/tb_ps2_to_usbhid/tb_ps2_to_usbhid.html">tb_ps2_to_usbhid</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, multisim</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Testbench for PS/2 host to USB HID IP.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/T65_functest/T65_functest.html">T65_functest</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Vivado, NVC, GHDL, Questa/ModelSim</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A <a href="https://github.com/mist-devel/T65">T65 6502 compatible core</a> running <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a>.</p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Note: <strong>multisim</strong> signifies multiple simulator support (GHDL, NVC and Questa/ModelSim).</p>
+<p>Simulations will normally run on any supported simulator (GHDL, NVC, ModelSim/Questa, Vivado). To run a simulation, navigate to its subdirectory under <code>build/</code> and run the <strong>make</strong> command.</p>
 </div>
 </div>
 </div>
@@ -610,7 +605,7 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 </div>
 </li>
 <li>
-<p>The free open source <a href="doc/nvc.html">NVC</a> and <a href="doc/ghdl.html">GHDL</a> simulators are supported by some simulations.</p>
+<p>The free open source <a href="doc/nvc.html">NVC</a> and <a href="doc/ghdl.html">GHDL</a> simulators are supported by most simulation designs.</p>
 </li>
 <li>
 <p>Some builds include <a href="https://www.python.org/downloads/">Python 3</a> scripts.</p>
@@ -639,7 +634,7 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-31 16:27:48 +0100
+Last updated 2022-09-01 16:00:27 +0100
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

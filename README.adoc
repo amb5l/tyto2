@@ -8,7 +8,7 @@ A simpler directory structure is used:
 
 * `src` contains source code for designs as well as common IP.
 
-* `build` contains makefiles for designs on supported targets. The subdirectory name consists of the design name followed by the target name. For simulations, the target name indicates the simulator: `xsim` for Xilinx Vivado, `nvc` for <<doc/nvc.adoc#,NVC>>, `ghdl` for <<doc/ghdl.adoc#,GHDL>> and `sim` for Questa, ModelSim etc.
+* `build` contains makefiles for designs on supported targets. Hardware designs are located in `build\design_name\board_specific_variant`, and simulation designs are located in `build\design_name`.
 
 * `doc` contains documentation.
 
@@ -50,38 +50,35 @@ NOTE: ALL designs have submodule dependencies. Please remember to initialise sub
 
 |===
 
+To build an FPGA design, navigate to its subdirectory under `build/` and run the *make* command.
+
 == Simulation Designs
 
-[cols="10,20,70"]
+[cols="20,80"]
 |===
-|Name|Supported Simulators|Description
+|Name|Description
 
 |<<doc/designs/np6532_functest/np6532_functest.adoc#,np6532_functest>>
-|Vivado, NVC
 |A <<doc/common/retro/np65/np65.adoc#,np65>> CPU core running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test].
 
 |<<doc/designs/tb_saa5050/tb_saa5050.adoc#,tb_saa5050>>
-|Vivado, GHDL
 |A https://en.wikipedia.org/wiki/Mullard_SAA5050[SAA5050] teletext character generator. 
 
 |<<doc/designs/tb_saa5050d/tb_saa5050d.adoc#,tb_saa5050d>>
-|Vivado, GHDL
 |Progressive scan (scan doubling) equivalent of <<doc/designs/tb_saa5050/tb_saa5050.adoc#,tb_saa5050>>.
 
 |<<doc/designs/tb_ps2_host/tb_ps2_host.adoc#,tb_ps2_host>>
-|Vivado, multisim
 |Testbench for PS/2 host IP.
 
 |<<doc/designs/tb_ps2_to_usbhid/tb_ps2_to_usbhid.adoc#,tb_ps2_to_usbhid>>
-|Vivado, multisim
 |Testbench for PS/2 host to USB HID IP.
 
 |<<doc/designs/T65_functest/T65_functest.adoc#,T65_functest>>
-|Vivado, NVC, GHDL, Questa/ModelSim
 |A https://github.com/mist-devel/T65[T65 6502 compatible core] running https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test].
 
 |=== 
-Note: *multisim* signifies multiple simulator support (GHDL, NVC and Questa/ModelSim).
+
+Simulations will normally run on any supported simulator (GHDL, NVC, ModelSim/Questa, Vivado). To run a simulation, navigate to its subdirectory under `build/` and run the *make* command.
 
 == Tools
 
@@ -93,7 +90,7 @@ Note: *multisim* signifies multiple simulator support (GHDL, NVC and Questa/Mode
 
 * For Intel/Altera FPGAs, *Quartus Prime* is required - the free *Lite* edition is sufficient. This includes a free edition of the https://en.wikipedia.org/wiki/ModelSim[Questa] simulator. Version *21.1* is supported. This may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
 
-3. The free open source <<doc/nvc.adoc#,NVC>> and <<doc/ghdl.adoc#,GHDL>> simulators are supported by some simulations.
+3. The free open source <<doc/nvc.adoc#,NVC>> and <<doc/ghdl.adoc#,GHDL>> simulators are supported by most simulation designs.
 
 4. Some builds include https://www.python.org/downloads/[Python 3] scripts.
 
