@@ -104,24 +104,24 @@ begin
         procedure crtc_poke_reg(
             constant a     : in  std_logic_vector(7 downto 0);
             constant d     : in  std_logic_vector(7 downto 0);
-            signal   clk   : in  std_logic;
+            signal   ck    : in  std_logic;
             signal   we    : out std_logic;
             signal   rs    : out std_logic;
             signal   wdata : out std_logic_vector(7 downto 0)
         ) is
         begin
-            if clk = '1' then
-                wait until falling_edge(clk);
+            if ck = '1' then
+                wait until falling_edge(ck);
             end if;
             we <= '1';
             rs <= '0';
             wdata <= a;
-            wait until rising_edge(clk);
-            wait until falling_edge(clk);
+            wait until rising_edge(ck);
+            wait until falling_edge(ck);
             rs <= '1';
             wdata <= d;
-            wait until rising_edge(clk);
-            wait until falling_edge(clk);
+            wait until rising_edge(ck);
+            wait until falling_edge(ck);
             we <= '0';
             rs <= '0';
             wdata <= x"00";
