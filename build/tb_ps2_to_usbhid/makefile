@@ -1,4 +1,4 @@
-# makefile for tb_ps2_to_usbhid_multisim
+# makefile for tb_ps2_to_usbhid
 
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
 SUBMODULES=$(REPO_ROOT)/submodules

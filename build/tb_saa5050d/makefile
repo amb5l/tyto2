@@ -1,4 +1,4 @@
-# makefile for tb_saa5050d_multisim
+# makefile for tb_saa5050d
 
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
 SUBMODULES=$(REPO_ROOT)/submodules

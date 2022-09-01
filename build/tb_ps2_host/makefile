@@ -1,4 +1,4 @@
-# makefile for tb_ps2_host_multisim
+# makefile for tb_ps2_host
 
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
 SUBMODULES=$(REPO_ROOT)/submodules

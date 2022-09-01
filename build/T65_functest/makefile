@@ -1,4 +1,4 @@
-# makefile for T65_functest_multisim
+# makefile for T65_functest
 
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
 SUBMODULES=$(REPO_ROOT)/submodules
