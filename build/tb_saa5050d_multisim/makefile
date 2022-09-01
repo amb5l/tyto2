@@ -3,6 +3,7 @@
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
 SUBMODULES=$(REPO_ROOT)/submodules
 MULTISIM_MK=$(SUBMODULES)/multisim-mk
+MAKE_DIR=$(REPO_ROOT)/$(shell git rev-parse --show-prefix)
 
 VHDL_STANDARD=2008
 VHDL_RELAXED=TRUE
@@ -24,7 +25,7 @@ include $(MULTISIM_MK)/multisim_post.mk
 TESTS=engtest scarybeasts parrot
 DATA_DIR=$(SRC)/common/retro/saa5050/test
 INFILES=$(addprefix $(DATA_DIR)/,$(addsuffix .bin,$(TESTS)))
-OUTFILES=$(addsuffix $(VARIANT).bmp,$(TESTS))
+OUTFILES=$(addprefix $(MAKE_DIR)/,$(addsuffix $(VARIANT).bmp,$(TESTS)))
 CMPFILES=$(addprefix $(DATA_DIR)/,$(addsuffix $(VARIANT).bmp,$(TESTS)))
 define RR_OUTFILE
 $1: $2 $(RUN_DEP)
@@ -41,4 +42,4 @@ $(foreach CMPFILE,$(CMPFILES),$(eval $(call RR_CMPFILE,$(CMPFILE),$(call LOOKUP,
 run: $(CMPFILES)
 
 clean::
-	rm -f *.bmp
+	rm -f $(wildcard *.bmp)
