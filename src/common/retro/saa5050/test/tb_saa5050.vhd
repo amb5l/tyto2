@@ -30,7 +30,7 @@ use work.hd6845_pkg.all;
 
 entity tb_saa5050 is
     generic (
-        filename : string
+        infile, outfile : string
     );
 end entity tb_saa5050;
 
@@ -126,7 +126,7 @@ begin
             wdata <= x"00";
         end procedure crtc_poke_reg;
     begin
-        ttx_data <= read_bin(filename, 1024);
+        ttx_data <= read_bin(infile, 1024);
         reg_rst <= '1';
         crt_rst <= '1';
         pix_rst <= '1';
@@ -197,7 +197,7 @@ begin
                         end if;
                     end loop;
                     if x = 479 and y = 499 then
-                        write_bmp("tb_saa5050_"&integer'image(frame), bmp, 480, 500, false);
+                        write_bmp(outfile, bmp, 480, 500, false);
                         if frame = 0 then
                             report "*** DONE ***";
                             finish;
