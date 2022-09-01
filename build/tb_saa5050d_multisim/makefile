@@ -28,7 +28,7 @@ OUTFILES=$(addsuffix $(VARIANT).bmp,$(TESTS))
 CMPFILES=$(addprefix $(DATA_DIR)/,$(addsuffix $(VARIANT).bmp,$(TESTS)))
 define RR_OUTFILE
 $1: $2 $(RUN_DEP)
-	$(call RUN_GEN,infile=$2;outfile=$(basename $1))
+	$(call RUN_CMD,infile=$2;outfile=$(basename $1))
 endef
 $(foreach OUTFILE,$(OUTFILES),$(eval $(call RR_OUTFILE,$(OUTFILE),$(call LOOKUP,$(OUTFILE),$(OUTFILES),$(INFILES)))))
 define RR_CMPFILE
