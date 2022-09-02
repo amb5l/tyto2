@@ -1,4 +1,4 @@
-    # makefile for np6532_functest
+# makefile for np6532_functest
 
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
 SUBMODULES=$(REPO_ROOT)/submodules
@@ -9,6 +9,15 @@ DESIGN=np6532_functest
 RAM_SIZE=128
 VENDOR=xilinx
 SRC=$(REPO_ROOT)/src
+
+################################################################################
+# simulation setup
+
+VHDL_STANDARD=2008
+VHDL_RELAXED=TRUE
+VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
+
+include $(MULTISIM_MK)/multisim_pre.mk
 
 ################################################################################
 # 6502 binaries
@@ -85,7 +94,7 @@ $(BUILD_6502_DIR)/$(IRQ).o: $(IRQ_SRC) | $(BUILD_6502_DIR)
 
 REF_DIR=ref
 REF_FILE=$(abspath $(REF_DIR)/$(FUNCTEST).txt)
-MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace
+MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace$(DOT_EXE)
 
 $(REF_DIR):
 	mkdir $(REF_DIR)
@@ -99,7 +108,7 @@ $(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
 # Python scripts to build VHDL
 
 BUILD_VHDL_DIR=vhdl
-PYTHON=python
+PYTHON=python3
 
 $(BUILD_VHDL_DIR):
 	mkdir $(BUILD_VHDL_DIR)
@@ -125,12 +134,6 @@ $(RAM_INIT_VHD): $(FUNCTEST_BIN) $(NMI_BIN) $(IRQ_BIN) $(INIT_BIN) | $(BUILD_VHD
     
 ################################################################################
 # simulation
-
-VHDL_STANDARD=2008
-VHDL_RELAXED=TRUE
-VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
-
-include $(MULTISIM_MK)/multisim_pre.mk
 
 # larger heap size needed for NVC
 NVC_GOPTS:=-M 32m $(NVC_GOPTS)
