@@ -43,7 +43,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 library work;
-use work.tyto_types_pkg.all;
 use work.ps2set_to_usbhid_pkg.all; -- PS/2 set specific data
 
 entity ps2_to_usbhid is
@@ -64,9 +63,9 @@ end entity ps2_to_usbhid;
 architecture synth of ps2_to_usbhid is
 
     constant tbl_size : integer := 512;
-    constant tbl_init_data : slv_8_0_t := ps2set_to_usbhid(nonUS);
-    function tbl_init(tsz : integer; data : slv_8_0_t) return slv_8_0_t is
-        variable r : slv_8_0_t(0 to tsz-1);
+    constant tbl_init_data : t_ps2set_to_usbhid := ps2set_to_usbhid(nonUS);
+    function tbl_init(tsz : integer; data : t_ps2set_to_usbhid) return t_ps2set_to_usbhid is
+        variable r : t_ps2set_to_usbhid(0 to tsz-1);
     begin
         r := (others => (others => '0'));
         for i in 0 to data'length-1 loop
@@ -74,9 +73,9 @@ architecture synth of ps2_to_usbhid is
         end loop;
         return r;
     end function tbl_init;
-    constant tbl : slv_8_0_t(0 to 511) := tbl_init(tbl_size,tbl_init_data);
+    constant tbl : t_ps2set_to_usbhid(0 to 511) := tbl_init(tbl_size,tbl_init_data);
 
-    signal ps2_code : std_logic_vector(7 downto 0); -- latches ps2_data
+    signal ps2_code  : std_logic_vector(7 downto 0); -- latches ps2_data
 
     signal len       : integer range 0 to 7; -- PS/2 sequence length so far
     signal i         : integer range 0 to 7; -- index into a PS/2 sequence during search
@@ -89,7 +88,9 @@ architecture synth of ps2_to_usbhid is
     alias tbl_code   : std_logic_vector(7 downto 0) is tbl_data(7 downto 0);
 
     signal this_code : std_logic_vector(7 downto 0);
-    signal prefix    : slv_7_0_t(0 to 6);
+
+    type t_prefix is array(0 to 6) of std_logic_vector(7 downto 0);
+    signal prefix    : t_prefix;
 
     type state_t is (
             IDLE,

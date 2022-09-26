@@ -23,7 +23,6 @@ library std;
 use std.env.finish;
 
 library work;
-use work.tyto_sim_pkg.all;
 use work.ps2_host_pkg.all;
 
 entity tb_ps2_host is
@@ -92,8 +91,6 @@ architecture sim of tb_ps2_host is
     end function parity_odd;
 
 begin
-
-    stim_reset(rst, '1', 2 us);
 
     clk <=
         '1' after tclk/2 when clk = '0' else
@@ -166,6 +163,9 @@ begin
         end procedure ps2_h2d;
     begin
         h2d_req <= '0';
+        rst <= '1';
+        wait for 2 us;
+        rst <= '0';
         wait for tps2;
         for i in 0 to 255 loop
             d2h_data_tx <= std_logic_vector(to_unsigned(i,8));

@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- ps2set_to_usbhid_pkg.vhd                                                   --
+-- ps2set2_to_usbhid_pkg.vhd                                                  --
 -- PS/2 set 2 support for ps2_to_usbhid.vhd.                                  --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
@@ -19,12 +19,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 library work;
-use work.tyto_types_pkg.all;
 use work.usb_hid_codes_pkg.all;
 
 package ps2set_to_usbhid_pkg is
 
-    function ps2set_to_usbhid(constant nonUS : boolean := true) return slv_8_0_t;
+    type t_ps2set_to_usbhid is array(natural range <>) of std_logic_vector(8 downto 0);
+    function ps2set_to_usbhid(constant nonUS : boolean := true) return t_ps2set_to_usbhid;
 
 end package ps2set_to_usbhid_pkg;
 
@@ -36,8 +36,8 @@ package body ps2set_to_usbhid_pkg is
     constant P     : std_logic := '1';                          -- prefix
     constant EMPTY : std_logic_vector(8 downto 0) := C & x"00"; -- empty break
 
-    function ps2set_to_usbhid(constant nonUS : boolean := true) return slv_8_0_t is
-        constant tbl: slv_8_0_t := (
+    function ps2set_to_usbhid(constant nonUS : boolean := true) return t_ps2set_to_usbhid is
+        constant tbl: t_ps2set_to_usbhid := (
 --          USB HID keycode                      PS/2 MAKE         PS/2 BREAK
             N&KEY_Backslash_Pipe_US,             C&x"5D",          P&x"F0",C&x"5D",
             N&KEY_Backslash_Pipe_UK,             C&x"61",          P&x"F0",C&x"61",
@@ -146,7 +146,7 @@ package body ps2set_to_usbhid_pkg is
             N&KEY_Pause_Break,                   P&x"E1",P&x"14",P&x"77",P&x"E1",P&x"F0",P&x"14",P&x"F0",C&x"77", EMPTY,
             L&KEY_Pause_Break,                   P&x"E0",P&x"7E",P&x"E0",P&x"F0",C&x"7E", EMPTY
         );
-        variable r : slv_8_0_t(tbl'range) := tbl;
+        variable r : t_ps2set_to_usbhid(tbl'range) := tbl;
     begin
         -- PS/2 code 5D (first table entry) varies
         if nonUS then

@@ -23,8 +23,6 @@ library std;
 use std.env.finish;
 
 library work;
-use work.tyto_types_pkg.all;
-use work.tyto_sim_pkg.all;
 use work.ps2_to_usbhid_pkg.all;
 use work.ps2set_to_usbhid_pkg.all;
 use work.ps2_host_pkg.all;
@@ -105,8 +103,6 @@ architecture sim of tb_ps2_to_usbhid is
 
 begin
 
-    stim_reset(rst, '1', 2 us);
-
     clk <=
         '1' after tclk/2 when clk = '0' else
         '0' after tclk/2 when clk = '1' else
@@ -149,12 +145,15 @@ begin
             sclk <= oco('1');
             sdata <= oco('1');
         end procedure ps2_d2h;
-        constant tbl : slv_8_0_t := ps2set_to_usbhid(true);
+        constant tbl : t_ps2set_to_usbhid := ps2set_to_usbhid(true);
         variable i : integer;
     begin
         h2d_req <= '0';
         pass <= 0;
         fail <= 0;
+        rst <= '1';
+        wait for 2 us;
+        rst <= '0';
         wait for tps2;
         i := 0;
         while true loop
