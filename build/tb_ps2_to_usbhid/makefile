@@ -1,24 +1,30 @@
 # makefile for tb_ps2_to_usbhid
 
+# path to multisim.mk include
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
 SUBMODULES=$(REPO_ROOT)/submodules
 MULTISIM_MK=$(SUBMODULES)/multisim-mk
 
-VHDL_STANDARD=2008
-VHDL_RELAXED=TRUE
-VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
-
-include $(MULTISIM_MK)/multisim_pre.mk
-
+# source files in compilation order
 SRC=$(REPO_ROOT)/src
-$(eval $(call UNIT, tyto_types_pkg        , $(SRC)/common/tyto_types_pkg.vhd            , ))
-$(eval $(call UNIT, tyto_sim_pkg          , $(SRC)/common/tyto_sim_pkg.vhd              , tyto_types_pkg ))
-$(eval $(call UNIT, usb_hid_codes_pkg     , $(SRC)/common/usb/usb_hid_codes_pkg.vhd     , ))
-$(eval $(call UNIT, ps2_host              , $(SRC)/common/ps2/ps2_host.vhd              , ))
-$(eval $(call UNIT, ps2set_to_usbhid_pkg  , $(SRC)/common/ps2/ps2set2_to_usbhid_pkg.vhd , usb_hid_codes_pkg ))
-$(eval $(call UNIT, ps2_to_usbhid         , $(SRC)/common/ps2/ps2_to_usbhid.vhd         , ps2set_to_usbhid_pkg tyto_types_pkg ))
-$(eval $(call UNIT, tb_ps2_to_usbhid      , $(SRC)/common/ps2/tb_ps2_to_usbhid.vhd      , ps2_host ps2set_to_usbhid_pkg ps2_to_usbhid tyto_sim_pkg tyto_types_pkg ))
+SOURCES=\
+	$(SRC)/common/usb/usb_hid_codes_pkg.vhd     \
+	$(SRC)/common/ps2/ps2_host.vhd              \
+	$(SRC)/common/ps2/ps2set2_to_usbhid_pkg.vhd \
+	$(SRC)/common/ps2/ps2_to_usbhid.vhd         \
+	$(SRC)/common/ps2/tb_ps2_to_usbhid.vhd
 
-include $(MULTISIM_MK)/multisim_post.mk
+# top unit name
+TOP=tb_ps2_to_usbhid
 
-$(eval $(call RUN))
+# VHDL standard
+VHDL_STANDARD=2008
+
+# relaxed VHDL rules e.g. impure behaviour by pure functions
+VHDL_RELAXED=TRUE
+
+# suppress IEEE assertions e.g. metavalues in to_integer
+#VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
+
+# include multisim.mk here
+include $(MULTISIM_MK)/multisim.mk

@@ -1,45 +1,57 @@
 # makefile for tb_saa5050
 
+# path to root of this repository
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
-SUBMODULES=$(REPO_ROOT)/submodules
-MULTISIM_MK=$(SUBMODULES)/multisim-mk
-MAKE_DIR=$(REPO_ROOT)/$(shell git rev-parse --show-prefix)
 
+# path to this repository's submodules
+SUBMODULES=$(REPO_ROOT)/submodules
+
+# path to multisim.mk include
+MULTISIM_MK=$(SUBMODULES)/multisim-mk
+
+# this repository's source directory
+SRC=$(REPO_ROOT)/src
+
+# saa5050 variant suffix (blank or d)
+VARIANT=
+
+# source files in compilation order
+SOURCES=\
+	$(SRC)/common/tyto_types_pkg.vhd                          \
+	$(SRC)/common/retro/saa5050/saa5050_rom_data.vhd          \
+	$(SRC)/common/retro/saa5050/saa5050$(VARIANT).vhd         \
+	$(SRC)/common/retro/hd6845/hd6845.vhd                     \
+	$(SRC)/common/tyto_sim_pkg.vhd                            \
+	$(SRC)/common/retro/saa5050/test/tb_saa5050$(VARIANT).vhd
+
+# tests and associated generics
+TESTS=engtest scarybeasts parrot
+MAKE_DIR=$(REPO_ROOT)/$(shell git rev-parse --show-prefix)
+DATA_DIR=$(SRC)/common/retro/saa5050/test
+GENERICS=$(foreach TEST,$(TESTS),infile=$(DATA_DIR)/$(TEST).bin;outfile=$(basename $(MAKE_DIR)/$(TEST)$(VARIANT).bmp))
+
+# top unit name
+TOP=tb_saa5050$(VARIANT)
+
+# VHDL standard
 VHDL_STANDARD=2008
+
+# relaxed VHDL rules e.g. impure behaviour by pure functions
 VHDL_RELAXED=TRUE
+
+# suppress IEEE assertions e.g. metavalues in to_integer
 VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
 
-include $(MULTISIM_MK)/multisim_pre.mk
+# include multisim.mk here
+include $(MULTISIM_MK)/multisim.mk
 
-SRC=$(REPO_ROOT)/src
-VARIANT=
-$(eval $(call UNIT, tyto_types_pkg       , $(SRC)/common/tyto_types_pkg.vhd                          ,                             ))
-$(eval $(call UNIT, saa5050_rom_data     , $(SRC)/common/retro/saa5050/saa5050_rom_data.vhd          ,                             ))
-$(eval $(call UNIT, saa5050$(VARIANT)    , $(SRC)/common/retro/saa5050/saa5050$(VARIANT).vhd         ,                             ))
-$(eval $(call UNIT, hd6845               , $(SRC)/common/retro/hd6845/hd6845.vhd                     ,                             ))
-$(eval $(call UNIT, tyto_sim_pkg         , $(SRC)/common/tyto_sim_pkg.vhd                            , tyto_types_pkg              ))
-$(eval $(call UNIT, tb_saa5050$(VARIANT) , $(SRC)/common/retro/saa5050/test/tb_saa5050$(VARIANT).vhd , tyto_sim_pkg tyto_types_pkg ))
-
-include $(MULTISIM_MK)/multisim_post.mk
-
-TESTS=engtest scarybeasts parrot
-DATA_DIR=$(SRC)/common/retro/saa5050/test
-INFILES=$(addprefix $(DATA_DIR)/,$(addsuffix .bin,$(TESTS)))
-OUTFILES=$(addprefix $(MAKE_DIR)/,$(addsuffix $(VARIANT).bmp,$(TESTS)))
-CMPFILES=$(addprefix $(DATA_DIR)/,$(addsuffix $(VARIANT).bmp,$(TESTS)))
-define RR_OUTFILE
-$1: $2 $(RUN_DEP)
-	$(call RUN_CMD,infile=$2;outfile=$(basename $1))
+# post simulation recipes
+define RR_DIFF
+sim::
+	diff --binary $1 $2
 endef
-$(foreach OUTFILE,$(OUTFILES),$(eval $(call RR_OUTFILE,$(OUTFILE),$(call LOOKUP,$(OUTFILE),$(OUTFILES),$(INFILES)))))
-define RR_CMPFILE
-$1: $2
-	diff --binary $$@ $$<
-	touch $$@
-endef
-$(foreach CMPFILE,$(CMPFILES),$(eval $(call RR_CMPFILE,$(CMPFILE),$(call LOOKUP,$(CMPFILE),$(CMPFILES),$(OUTFILES)))))
+$(foreach TEST,$(TESTS),$(eval $(call RR_DIFF,$(MAKE_DIR)/$(TEST)$(VARIANT).bmp,$(DATA_DIR)/$(TEST)$(VARIANT).bmp)))
 
-run: $(CMPFILES)
-
+# custom cleanup
 clean::
 	rm -f $(wildcard *.bmp)

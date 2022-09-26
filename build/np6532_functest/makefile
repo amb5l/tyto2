@@ -1,23 +1,26 @@
 # makefile for np6532_functest
 
+# path to root of this repository
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
+
+# path to this repository's submodules
 SUBMODULES=$(REPO_ROOT)/submodules
+
+# path to multisim.mk include
 MULTISIM_MK=$(SUBMODULES)/multisim-mk
+
+# this repository's source directory
+SRC=$(REPO_ROOT)/src
+
+# make directory
 MAKE_DIR=$(REPO_ROOT)/$(shell git rev-parse --show-prefix)
+
+################################################################################
+# design definitions
 
 DESIGN=np6532_functest
 RAM_SIZE=128
 VENDOR=xilinx
-SRC=$(REPO_ROOT)/src
-
-################################################################################
-# simulation setup
-
-VHDL_STANDARD=2008
-VHDL_RELAXED=TRUE
-VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
-
-include $(MULTISIM_MK)/multisim_pre.mk
 
 ################################################################################
 # 6502 binaries
@@ -99,7 +102,7 @@ MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace$(DOT_EXE)
 $(REF_DIR):
 	mkdir $(REF_DIR)
 
-ref: $(REF_FILE)
+ref_file: $(REF_FILE)
 
 $(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
 	$(MOS6502_TRACE) $< 0400 FD 34 > $@
@@ -131,30 +134,37 @@ raminit: $(RAM_INIT_VHD)
 
 $(RAM_INIT_VHD): $(FUNCTEST_BIN) $(NMI_BIN) $(IRQ_BIN) $(INIT_BIN) | $(BUILD_VHDL_DIR)
 	$(PYTHON) $(RAM_INIT_PY) $(RAM_SIZE) 0 $(FUNCTEST_BIN) F000 $(NMI_BIN) F100 $(IRQ_BIN) FC00 $(INIT_BIN) > $@
-    
+
 ################################################################################
 # simulation
+
+SOURCES=\
+	$(SRC)/common/tyto_types_pkg.vhd                        \
+	$(SRC)/common/basic/$(VENDOR)/ram_sdp_a_32.vhd          \
+	$(SRC)/common/basic/ram_tdp_s.vhd                       \
+	$(SRC)/common/basic/$(VENDOR)/ldce_bus.vhd              \
+	$(RAM_INIT_VHD)                                         \
+	$(SRC)/common/retro/np65/np6532_ram.vhd                 \
+	$(SRC)/common/retro/np65/np6532_cache.vhd               \
+	$(DECODER_VHD)                                          \
+	$(SRC)/common/retro/np65/np6532_core.vhd                \
+	$(SRC)/common/retro/np65/np6532.vhd                     \
+	$(SUBMODULES)/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl \
+	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd
+GENERICS=vector_init=64512;ref_file=$(REF_FILE);start_address=1024
+TOP=$(DESIGN)
+VHDL_STANDARD=2008
+VHDL_RELAXED=TRUE
+VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
+SIM_DEPS=$(FUNCTEST_BIN) $(REF_FILE)
+
+# GHDL libraries
+GHDL_LIBS=xilinx-vivado
 
 # larger heap size needed for NVC
 NVC_GOPTS:=-M 32m $(NVC_GOPTS)
 
-$(eval $(call UNIT, tyto_types_pkg         , $(SRC)/common/tyto_types_pkg.vhd                        ,                                                               ))
-$(eval $(call UNIT, ram_sdp_a_32           , $(SRC)/common/basic/$(VENDOR)/ram_sdp_a_32.vhd          ,                                                               ))
-$(eval $(call UNIT, ram_tdp_s              , $(SRC)/common/basic/ram_tdp_s.vhd                       ,                                                               ))
-$(eval $(call UNIT, ldce_bus               , $(SRC)/common/basic/$(VENDOR)/ldce_bus.vhd              ,                                                               ))
-$(eval $(call UNIT, np6532_ram_init_pkg    , $(RAM_INIT_VHD)                                         ,                                                               ))
-$(eval $(call UNIT, np6532_ram             , $(SRC)/common/retro/np65/np6532_ram.vhd                 , ldce_bus_pkg ram_tdp_s_pkg np6532_ram_init_pkg tyto_types_pkg ))
-$(eval $(call UNIT, np6532_cache           , $(SRC)/common/retro/np65/np6532_cache.vhd               , ram_sdp_a_32_pkg tyto_types_pkg                               ))
-$(eval $(call UNIT, np65_decoder           , $(DECODER_VHD)                                          ,                                                               ))
-$(eval $(call UNIT, np6532_core            , $(SRC)/common/retro/np65/np6532_core.vhd                , np65_decoder_pkg                                              ))
-$(eval $(call UNIT, np6532                 , $(SRC)/common/retro/np65/np6532.vhd                     , np6532_core_pkg np6532_ram_pkg np6532_cache_pkg               ))
-$(eval $(call UNIT, rng_xoshiro128plusplus , $(SUBMODULES)/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl ,                                                               ))
-$(eval $(call UNIT, $(DESIGN)              , $(SRC)/designs/$(DESIGN)/$(DESIGN).vhd                  , np6532_pkg np65_decoder_pkg                                   ))
-
-include $(MULTISIM_MK)/multisim_post.mk
-
-run: $(REF_FILE) $(RUN_DEP) 
-	$(call RUN_CMD,vector_init=64512;ref_file=$(REF_FILE);start_address=1024)
+include $(MULTISIM_MK)/multisim.mk
 
 ################################################################################
 # cleanup

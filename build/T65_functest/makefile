@@ -1,18 +1,16 @@
 # makefile for T65_functest
 
+# path to root of this repository
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
+
+# path to this repository's submodules
 SUBMODULES=$(REPO_ROOT)/submodules
+
+# path to multisim.mk include
 MULTISIM_MK=$(SUBMODULES)/multisim-mk
 
+# this repository's source directory
 SRC=$(REPO_ROOT)/src
-################################################################################
-# simulation setup
-
-VHDL_STANDARD=2008
-VHDL_RELAXED=TRUE
-VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
-
-include $(MULTISIM_MK)/multisim_pre.mk
 
 ################################################################################
 # 6502 binary
@@ -55,16 +53,21 @@ $(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
 ################################################################################
 # simulation
 
-$(eval $(call UNIT, T65_Pack     , $(SUBMODULES)/T65/T65_Pack.vhd               ,          ))
-$(eval $(call UNIT, T65_MCode    , $(SUBMODULES)/T65/T65_MCode.vhd              , T65_Pack ))
-$(eval $(call UNIT, T65_ALU      , $(SUBMODULES)/T65/T65_ALU.vhd                , T65_Pack ))
-$(eval $(call UNIT, T65          , $(SUBMODULES)/T65/T65.vhd                    , T65_Pack ))
-$(eval $(call UNIT, T65_functest , $(SRC)/designs/T65_functest/T65_functest.vhd , T65_Pack ))
+SIM_DEPS=$(FUNCTEST_BIN) $(REF_FILE)
+SRC=$(REPO_ROOT)/src
+SOURCES=\
+	$(SUBMODULES)/T65/T65_Pack.vhd               \
+	$(SUBMODULES)/T65/T65_MCode.vhd              \
+	$(SUBMODULES)/T65/T65_ALU.vhd                \
+	$(SUBMODULES)/T65/T65.vhd                    \
+	$(SRC)/designs/T65_functest/T65_functest.vhd
+GENERICS=start_address=1024;bin_file=$(FUNCTEST_BIN);ref_file=$(REF_FILE)
+TOP=T65_functest
+VHDL_STANDARD=2008
+VHDL_RELAXED=TRUE
+VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
 
-include $(MULTISIM_MK)/multisim_post.mk
-
-run: $(FUNCTEST_BIN) $(REF_FILE) $(RUN_DEP) 
-	$(call RUN_CMD,bin_file=$(FUNCTEST_BIN);ref_file=$(REF_FILE);start_address=1024)
+include $(MULTISIM_MK)/multisim.mk
 
 ################################################################################
 # cleanup
