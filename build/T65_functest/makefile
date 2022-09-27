@@ -53,8 +53,6 @@ $(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
 ################################################################################
 # simulation
 
-SIM_DEPS=$(FUNCTEST_BIN) $(REF_FILE)
-SRC=$(REPO_ROOT)/src
 SOURCES=\
 	$(SUBMODULES)/T65/T65_Pack.vhd               \
 	$(SUBMODULES)/T65/T65_MCode.vhd              \
@@ -66,6 +64,7 @@ TOP=T65_functest
 VHDL_STANDARD=2008
 VHDL_RELAXED=TRUE
 VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
+SIM_DEPS=$(FUNCTEST_BIN) $(REF_FILE)
 
 include $(MULTISIM_MK)/multisim.mk
 

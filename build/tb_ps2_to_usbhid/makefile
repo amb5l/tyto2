@@ -1,12 +1,18 @@
 # makefile for tb_ps2_to_usbhid
 
-# path to multisim.mk include
+# path to root of this repository
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
+
+# path to this repository's submodules
 SUBMODULES=$(REPO_ROOT)/submodules
+
+# path to multisim.mk include
 MULTISIM_MK=$(SUBMODULES)/multisim-mk
 
-# source files in compilation order
+# this repository's source directory
 SRC=$(REPO_ROOT)/src
+
+# source files in compilation order
 SOURCES=\
 	$(SRC)/common/usb/usb_hid_codes_pkg.vhd     \
 	$(SRC)/common/ps2/ps2_host.vhd              \
