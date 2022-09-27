@@ -66,9 +66,10 @@ begin
     begin
         if sample'event then
             shift_reg <= serial & shift_reg(9 downto 1);
-            count <= count+1;
             if count = 9 then
                 count <= 0;
+            else
+                count <= count+1;
             end if;
             if (shift_reg = "1101010100")
             or (shift_reg = "0010101011")
