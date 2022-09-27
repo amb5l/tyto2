@@ -99,22 +99,6 @@ begin
 
         else
 
-            if capturing and vga_vs'event then
-                if vga_hs'event then
-                    write_bmp(cap_name&"_"&integer'image(bmp_count),bmp,width,hieght,interlaced);
-                    bmp_count  <= bmp_count + 1;
-                    ax         <= 0;
-                    ay         <= 0;
-                    width      <= 0;
-                    hieght     <= 0;
-                    capturing  <= false;
-                    interlaced <= false;
-                    cap_stb    <= '1';
-                else
-                    interlaced <= true;
-                end if;
-            end if;
-
             if rising_edge(vga_de) then
                 if not capturing then
                     ax <= 0;
@@ -142,6 +126,22 @@ begin
                     bmp(ax,ay)(1) <= to_integer(unsigned(vga_g));
                     bmp(ax,ay)(2) <= to_integer(unsigned(vga_b));
                     ax <= ax+1;
+                end if;
+            end if;
+
+            if capturing and vga_vs'event then
+                if vga_hs'event then
+                    write_bmp(cap_name&"_"&integer'image(bmp_count),bmp,width,hieght,interlaced);
+                    bmp_count  <= bmp_count + 1;
+                    ax         <= 0;
+                    ay         <= 0;
+                    width      <= 0;
+                    hieght     <= 0;
+                    capturing  <= false;
+                    interlaced <= false;
+                    cap_stb    <= '1';
+                else
+                    interlaced <= true;
                 end if;
             end if;
 
