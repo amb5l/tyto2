@@ -31,8 +31,8 @@ end entity model_tmds_cdr_des;
 
 architecture model of model_tmds_cdr_des is
 
-    signal refclk_prev : time := 0ps;
-    signal tr          : time := 0ps;
+    signal refclk_prev : time := 0 ps;
+    signal tr          : time := 0 ps;
     signal refclk_d    : std_logic_vector(1 to 4);
     signal sample      : std_logic := '0'; -- DDR sample clock
     signal count       : integer range 0 to 9 := 0;
@@ -47,10 +47,10 @@ begin
     begin
         if rising_edge(refclk) then
             t := now-refclk_prev;
-            if t < 40ns and t > 6.7ns then -- between 25 and 148.5 MHz
+            if t < 40 ns and t > 6.7 ns then -- between 25 and 148.5 MHz
                 tr <= now-refclk_prev;
             else
-                tr <= 0ps;
+                tr <= 0 ps;
             end if;
             refclk_prev <= now;
         end if;

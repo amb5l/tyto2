@@ -87,8 +87,8 @@ end entity model_hdmi_decoder;
 architecture model of model_hdmi_decoder is
 
     signal hdmi_clk_lock  : std_logic := '0';
-    signal hdmi_clk_prev  : time := 0ps;                 -- time of last event (since hdmi_clk'last_event always returns 0ps)
-    signal hdmi_clk_hp    : time := 0ps;                 -- half clock period
+    signal hdmi_clk_prev  : time := 0 ps;                -- time of last event (since hdmi_clk'last_event always returns 0ps)
+    signal hdmi_clk_hp    : time := 0 ps;                -- half clock period
     signal hdmi_clk_count : integer := 0;
 
     signal data_pstb_i    : std_logic;                   -- internal copy
@@ -137,28 +137,28 @@ begin
     begin
         if rst = '1' then
             hdmi_clk_lock <= '0';
-            hdmi_clk_hp <= 0ps;
+            hdmi_clk_hp <= 0 ps;
             hdmi_clk_count <= 0;
         elsif hdmi_clk'event then
             if hdmi_clk_lock = '1' then
                 if hdmi_clk /= '0' and hdmi_clk /= '1' then
                     hdmi_clk_lock <= '0';
-                    hdmi_clk_hp <= 0ps;
+                    hdmi_clk_hp <= 0 ps;
                     hdmi_clk_count <= 0;
                 else
-                    if abs(hdmi_clk_hp-(now-hdmi_clk_prev)) > 5ps then -- reject >5ps jitter
+                    if abs(hdmi_clk_hp-(now-hdmi_clk_prev)) > 5 ps then -- reject >5ps jitter
                         hdmi_clk_lock <= '0';
-                        hdmi_clk_hp <= 0ps;
+                        hdmi_clk_hp <= 0 ps;
                         hdmi_clk_count <= 0;
                     end if;
                 end if;
             else
-                if hdmi_clk_hp = 0ps then
+                if hdmi_clk_hp = 0 ps then
                     hdmi_clk_hp <= now-hdmi_clk_prev;
                 else
-                    if abs(hdmi_clk_hp-(now-hdmi_clk_prev)) > 5ps then -- reject >5ps jitter
+                    if abs(hdmi_clk_hp-(now-hdmi_clk_prev)) > 5 ps then -- reject >5ps jitter
                         hdmi_clk_lock <= '0';
-                        hdmi_clk_hp <= 0ps;
+                        hdmi_clk_hp <= 0 ps;
                         hdmi_clk_count <= 0;
                     else
                         if hdmi_clk_count = 4 then
