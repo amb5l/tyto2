@@ -37,6 +37,8 @@ end entity tb_hdmi_tpg;
 
 architecture sim of tb_hdmi_tpg is
 
+  constant ts_interval : integer := 10; -- timestamp interval (us)
+
   constant fclk : real := 100.0; -- 100 MHz
   constant tclk : time := integer(1000.0/fclk) * 1 ns;
 
@@ -70,6 +72,8 @@ architecture sim of tb_hdmi_tpg is
   signal cap_rst    : std_logic;
   signal cap_stb    : std_logic;
 
+  signal ts_stb     : std_logic := '0'; -- timestamp strobe
+
 begin
 
   clk <=
@@ -80,20 +84,28 @@ begin
   rst <= '1', '0' after 20 ns;
   cap_rst <= rst;
 
+  ts_stb <= not ts_stb after ts_interval * 1 us;
+
   process
+    variable timestamp : integer := ts_interval;
   begin
     mode_step <= '0';
     wait for 5*tclk;
     loop
-      wait until rising_edge(cap_stb);
-      mode_step <= '1';
-      wait until mode'event;
-      mode_step <= '0';
-      if to_integer(unsigned(mode)) = modes then
-        exit;
+      wait on ts_stb, cap_stb;
+      if rising_edge(cap_stb) then
+        mode_step <= '1';
+        wait until mode'event;
+        mode_step <= '0';
+        if to_integer(unsigned(mode)) = modes then
+          finish;
+        end if;
+      end if;
+      if ts_stb'event then
+          report "MODE: "&integer'image(to_integer(unsigned(mode)))&"  TIMESTAMP: "&integer'image(timestamp)&" us";
+          timestamp := timestamp + ts_interval;
       end if;
     end loop;
-    finish;
   end process;
 
   DUT: component hdmi_tpg
