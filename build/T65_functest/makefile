@@ -64,7 +64,9 @@ TOP=T65_functest
 VHDL_STANDARD=2008
 VHDL_RELAXED=TRUE
 VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
-SIM_DEPS=$(FUNCTEST_BIN) $(REF_FILE)
+
+# simulation prerequisites
+sim:: $(FUNCTEST_BIN) $(REF_FILE)
 
 include $(MULTISIM_MK)/multisim.mk
 
