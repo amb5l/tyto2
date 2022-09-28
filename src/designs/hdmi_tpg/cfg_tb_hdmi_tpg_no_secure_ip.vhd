@@ -11,19 +11,23 @@ configuration cfg_oserdese2 of serialiser_10to1_selectio is
   end for;
 end configuration cfg_oserdese2;
 
+configuration cfg_hdmi_tpg of hdmi_tpg is
+  for synth
+    for HDMI_CLK: serialiser_10to1_selectio
+      use configuration work.cfg_oserdese2;
+    end for;
+    for GEN_HDMI_DATA
+        for HDMI_DATA: serialiser_10to1_selectio
+          use configuration work.cfg_oserdese2;
+        end for;
+    end for;
+  end for;
+end configuration cfg_hdmi_tpg;
+
 configuration cfg_tb_hdmi_tpg of tb_hdmi_tpg is
   for sim
     for DUT: hdmi_tpg
-      for synth
-        for HDMI_CLK: serialiser_10to1_selectio
-          use configuration work.cfg_oserdese2;
-        end for;
-        for GEN_HDMI_DATA
-            for HDMI_DATA: serialiser_10to1_selectio
-              use configuration work.cfg_oserdese2;
-            end for;       
-        end for;
-      end for;
+      use configuration work.cfg_hdmi_tpg;
     end for;
   end for;
 end configuration cfg_tb_hdmi_tpg;

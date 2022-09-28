@@ -94,8 +94,6 @@ begin
   clki <= clk xor to_stdulogic(is_clk_inverted);
   clkdivi <= clkdiv xor to_stdulogic(is_clkdiv_inverted);
 
-
-
   -- output shift reg
   GEN_SR_DDR: if data_rate_oq="DDR" generate -- shift 2 bits per clock
     process(rst,clki,clkdivi)

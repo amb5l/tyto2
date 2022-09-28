@@ -1,22 +1,16 @@
 # makefile for tb_hdmi_tpg
 
-# path to root of this repository
+# basic definitions
 REPO_ROOT=$(shell git rev-parse --show-toplevel)
-
-# path to this repository's submodules
 SUBMODULES=$(REPO_ROOT)/submodules
-
-# path to multisim.mk include
 MULTISIM_MK=$(SUBMODULES)/multisim-mk
-
-# this repository's source directory
 SRC=$(REPO_ROOT)/src
 
 # number of video modes to test (1..15)
-MODES=1
+MODES=15
 
-# option: use simulation model instead of encrypted vendor model
-NO_SECURE_IP=TRUE
+# list of simulators that do not have access to encrypted Xilinx primitives
+NO_SECURE_IP=ghdl nvc modelsim questa
 
 # source files in compilation order
 SOURCES:=\
@@ -37,10 +31,12 @@ SOURCES:=\
 	$(SRC)/common/video_out/model_tmds_cdr_des.vhd                   \
 	$(SRC)/common/video_out/model_hdmi_decoder.vhd                   \
 	$(SRC)/common/video_out/model_vga_sink.vhd                       \
-	$(SRC)/common/basic/xilinx_7series/secureip.vhd                  \
+	$(SRC)/common/basic/xilinx_7series/model_secureip.vhd            \
 	$(SRC)/designs/hdmi_tpg/tb_hdmi_tpg.vhd
 
-ifneq ($(NO_SECURE_IP),)
+# choose configuration depending on encrypted primitive support
+SIM:=$(word 1,$(MAKECMDGOALS))
+ifneq ($(filter $(SIM),$(NO_SECURE_IP)),)
 SOURCES:=$(SOURCES) $(SRC)/designs/hdmi_tpg/cfg_tb_hdmi_tpg_no_secure_ip.vhd
 else
 SOURCES:=$(SOURCES) $(SRC)/designs/hdmi_tpg/cfg_tb_hdmi_tpg_secure_ip.vhd
@@ -51,13 +47,9 @@ GENERICS=modes=$(MODES)
 # top unit name
 TOP=cfg_tb_hdmi_tpg
 
-# VHDL standard
+# VHDL options
 VHDL_STANDARD=2008
-
-# relaxed VHDL rules e.g. impure behaviour by pure functions
 VHDL_RELAXED=TRUE
-
-# suppress IEEE assertions e.g. metavalues in to_integer
 VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
 
 # GHDL libraries
