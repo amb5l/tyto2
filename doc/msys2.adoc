@@ -20,4 +20,4 @@ The update will conclude by closing the shell.
 
   pacman -S --needed make git
 
-. **RECOMMENDED**: Add the `usr\bin` and `mingw64\bin` subdirectory of the MSYS2 install to your Windows path to allow use use of MSYS2 tools from the Windows Command Prompt.
+. **RECOMMENDED**: Create a Environment Variable named `MSYS2` set to the install location of MSYS2, and add MSYS2 and MinGW64 binaries to your Windows path (`%MSYS2%/usr/bin` and `%MSYS2/mingw64/bin`).
