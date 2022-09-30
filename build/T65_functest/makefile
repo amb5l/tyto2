@@ -27,6 +27,7 @@ FUNCTEST_BIN=$(BUILD_6502_DIR)/$(FUNCTEST).bin
 FUNCTEST_SRC=$(SUBMODULES)/6502_65C02_functional_tests/ca65/$(FUNCTEST).ca65
 FUNCTEST_CFG=$(SUBMODULES)/6502_65C02_functional_tests/ca65/example.cfg
 
+.PHONY: functest
 functest: $(FUNCTEST_BIN)
 
 $(FUNCTEST_BIN): $(BUILD_6502_DIR)/$(FUNCTEST).o $(FUNCTEST_CFG)
@@ -38,13 +39,14 @@ $(BUILD_6502_DIR)/$(FUNCTEST).o: $(FUNCTEST_SRC) | $(BUILD_6502_DIR)
 ################################################################################
 # reference execution trace
 
-REF_DIR=ref
-REF_FILE=$(abspath $(REF_DIR)/$(FUNCTEST).txt)
+REF_DIR=reftrace
+REF_FILE=$(REF_DIR)/$(FUNCTEST).txt
 MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace$(DOT_EXE)
 
 $(REF_DIR):
 	mkdir $(REF_DIR)
 
+.PHONY: ref
 ref: $(REF_FILE)
 
 $(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
@@ -59,7 +61,7 @@ SOURCES=\
 	$(SUBMODULES)/T65/T65_ALU.vhd                \
 	$(SUBMODULES)/T65/T65.vhd                    \
 	$(SRC)/designs/T65_functest/T65_functest.vhd
-GENERICS=start_address=1024;bin_file=$(FUNCTEST_BIN);ref_file=$(REF_FILE)
+GENERICS=start_address=1024;bin_file=$(abspath $(FUNCTEST_BIN));ref_file=$(abspath $(REF_FILE))
 TOP=T65_functest
 VHDL_STANDARD=2008
 VHDL_RELAXED=TRUE
