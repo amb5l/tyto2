@@ -61,7 +61,7 @@ SOURCES=\
 	$(SUBMODULES)/T65/T65_ALU.vhd                \
 	$(SUBMODULES)/T65/T65.vhd                    \
 	$(SRC)/designs/T65_functest/T65_functest.vhd
-GENERICS=start_address=1024;bin_file=$(abspath $(FUNCTEST_BIN));ref_file=$(abspath $(REF_FILE))
+GENERICS=start_address=1024;bin_file=$(shell cygpath -m -a $(FUNCTEST_BIN));ref_file=$(shell cygpath -m -a $(REF_FILE))
 TOP=T65_functest
 VHDL_STANDARD=2008
 VHDL_RELAXED=TRUE
