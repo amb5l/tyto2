@@ -10,7 +10,7 @@ SRC=$(REPO_ROOT)/src
 MODES=15
 
 # list of simulators that do not have access to encrypted Xilinx primitives
-NO_SECURE_IP=ghdl nvc modelsim questa
+NO_SECURE_IP=ghdl nvc vsim
 
 # source files in compilation order
 SOURCES:=\
