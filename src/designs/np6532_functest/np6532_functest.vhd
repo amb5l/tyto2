@@ -33,7 +33,8 @@ entity np6532_functest is
     generic (
         vector_init : integer;
         start_address : integer;
-        ref_file : string
+        ref_file : string;
+        progress_interval : integer := 100000
     );
 end entity np6532_functest;
 
@@ -153,7 +154,7 @@ begin
                 count_c <= count_c + 1;
             end if;
             if trace_stb = '1' and trace_nmi = '0' and trace_irq = '0' then
-                if count_i > 0 and count_i mod 100000 = 0 then
+                if count_i > 0 and count_i mod progress_interval = 0 then
                     report "instruction count: " & integer'image(count_i) & "  cycle count: " & integer'image(count_c);
                 end if;
                 if trace_pc_prev /= "UUUUUUUUUUUUUUUU" and trace_pc_prev = trace_pc then
