@@ -39,6 +39,7 @@ FUNCTEST_BIN=$(BUILD_6502_DIR)/$(FUNCTEST).bin
 FUNCTEST_SRC=$(SUBMODULES)/6502_65C02_functional_tests/ca65/$(FUNCTEST).ca65
 FUNCTEST_CFG=$(SUBMODULES)/6502_65C02_functional_tests/ca65/example.cfg
 
+.PHONY: functest
 functest: $(FUNCTEST_BIN)
 
 $(FUNCTEST_BIN): $(BUILD_6502_DIR)/$(FUNCTEST).o $(FUNCTEST_CFG)
@@ -54,6 +55,7 @@ INIT_BIN=$(BUILD_6502_DIR)/$(INIT).bin
 INIT_SRC=$(SRC)/designs/$(DESIGN)/6502/$(INIT).a65
 INIT_CFG=$(SRC)/designs/$(DESIGN)/6502/$(INIT).cfg
 
+.PHONY: init
 init: $(INIT_BIN)
 
 $(INIT_BIN): $(BUILD_6502_DIR)/$(INIT).o $(INIT_CFG)
@@ -69,6 +71,7 @@ NMI_BIN=$(BUILD_6502_DIR)/$(NMI).bin
 NMI_SRC=$(SRC)/designs/$(DESIGN)/6502/$(NMI).a65
 NMI_CFG=$(SRC)/designs/$(DESIGN)/6502/$(NMI).cfg
 
+.PHONY: nmi
 nmi: $(NMI_BIN)
 
 $(NMI_BIN): $(BUILD_6502_DIR)/$(NMI).o $(NMI_CFG)
@@ -84,6 +87,7 @@ IRQ_BIN=$(BUILD_6502_DIR)/$(IRQ).bin
 IRQ_SRC=$(SRC)/designs/$(DESIGN)/6502/$(IRQ).a65
 IRQ_CFG=$(SRC)/designs/$(DESIGN)/6502/$(IRQ).cfg
 
+.PHONY: irq
 irq: $(IRQ_BIN)
 
 $(IRQ_BIN): $(BUILD_6502_DIR)/$(IRQ).o $(IRQ_CFG)
@@ -95,14 +99,15 @@ $(BUILD_6502_DIR)/$(IRQ).o: $(IRQ_SRC) | $(BUILD_6502_DIR)
 ################################################################################
 # reference execution trace
 
-REF_DIR=ref
-REF_FILE=$(abspath $(REF_DIR)/$(FUNCTEST).txt)
+REF_DIR=reftrace
+REF_FILE=$(REF_DIR)/$(FUNCTEST).txt
 MOS6502_TRACE=$(SUBMODULES)/mos6502-trace/trace$(DOT_EXE)
 
 $(REF_DIR):
 	mkdir $(REF_DIR)
 
-ref_file: $(REF_FILE)
+.PHONY: ref
+ref: $(REF_FILE)
 
 $(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
 	$(MOS6502_TRACE) $< 0400 FD 34 > $@
@@ -125,11 +130,13 @@ DECODER_VHD=$(MAKE_DIR)/$(BUILD_VHDL_DIR)/np65_decoder.vhd
 RAM_INIT_PY=$(SRC)/common/retro/np65/np6532_ram_init.py
 RAM_INIT_VHD=$(MAKE_DIR)/$(BUILD_VHDL_DIR)/np6532_ram_init_$(RAM_SIZE)k_pkg.vhd
 
+.PHONY: decoder
 decoder: $(DECODER_VHD)
 
 $(DECODER_VHD): $(DECODER_CSV) | $(BUILD_VHDL_DIR)
 	$(PYTHON) $(DECODER_PY) $< $(@D)/
 
+.PHONY: raminit
 raminit: $(RAM_INIT_VHD)
 
 $(RAM_INIT_VHD): $(FUNCTEST_BIN) $(NMI_BIN) $(IRQ_BIN) $(INIT_BIN) | $(BUILD_VHDL_DIR)
@@ -151,14 +158,14 @@ SOURCES=\
 	$(SRC)/common/retro/np65/np6532.vhd                     \
 	$(SUBMODULES)/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd
-GENERICS=vector_init=64512;ref_file=$(REF_FILE);start_address=1024
+GENERICS=vector_init=64512;start_address=1024;ref_file=$(shell cygpath -m -a $(REF_FILE));progress_interval=1000
 TOP=$(DESIGN)
 VHDL_STANDARD=2008
 VHDL_RELAXED=TRUE
 VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
 
 # simulation prerequisites
-sim:: $(FUNCTEST_BIN) $(REF_FILE)
+sim:: $(RAM_INIT_VHD) $(DECODER_VHD) $(FUNCTEST_BIN) $(REF_FILE)
 
 # GHDL libraries
 GHDL_LIBS=xilinx-vivado
@@ -173,4 +180,5 @@ include $(MULTISIM_MK)/multisim.mk
 
 clean::
 	rm -rf $(BUILD_6502_DIR)
+	rm -rf $(BUILD_VHDL_DIR)
 	rm -rf $(REF_DIR)
