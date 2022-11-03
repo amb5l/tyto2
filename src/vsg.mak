@@ -39,6 +39,7 @@ SOURCES:=$(filter-out $(EXCLUSIONS),$(SOURCES))
 all: $(addsuffix .vsg,$(SOURCES))
 find: $(addsuffix .vsg,$(SOURCES))
 fix: $(addsuffix .vsg,$(SOURCES))
+fixall: $(addsuffix .vsg,$(SOURCES))
 
 DOLLAR_QUERY:=$$$$?
 
@@ -58,3 +59,6 @@ endif
 endef
 
 $(foreach SOURCE,$(SOURCES),$(eval $(call RR_VSG,$(SOURCE))))
+
+clean:
+	find . -name "*.vsg" -type f -delete

@@ -218,7 +218,6 @@ begin
         crt_cur_r  <= '0';
         crt_vphase <= NORMAL;
         crt_lpma   <= (others => '0');
-
         crt_de_1   <= '0';
         crt_de_2   <= '0';
         crt_cur_1  <= '0';
@@ -230,7 +229,6 @@ begin
         crt_de_2  <= crt_de_1;
         crt_cur_1 <= crt_cur_i;
         crt_cur_2 <= crt_cur_1;
-
         count_h   <= count_h+1;
         count_ma  <= count_ma+1;
 

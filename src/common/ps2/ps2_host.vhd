@@ -153,10 +153,10 @@ begin
     end if;
   end process D2H_H;
 
-  d2h_par    <= not (
-                     d2h_sr(1) xor d2h_sr(2) xor d2h_sr(3) xor d2h_sr(4) xor
-                     d2h_sr(5) xor d2h_sr(6) xor d2h_sr(7) xor d2h_sr(8)
-                   );
+  d2h_par <= not (
+                  d2h_sr(1) xor d2h_sr(2) xor d2h_sr(3) xor d2h_sr(4) xor
+                  d2h_sr(5) xor d2h_sr(6) xor d2h_sr(7) xor d2h_sr(8)
+                );
 
   --------------------------------------------------------------------------------
   -- host to device
@@ -271,10 +271,10 @@ begin
     end if;
   end process H2D_H;
 
-  h2d_par    <= not (
-                     h2d_data(0) xor h2d_data(1) xor h2d_data(2) xor h2d_data(3) xor
-                     h2d_data(4) xor h2d_data(5) xor h2d_data(6) xor h2d_data(7)
-                   );
+  h2d_par <= not (
+                  h2d_data(0) xor h2d_data(1) xor h2d_data(2) xor h2d_data(3) xor
+                  h2d_data(4) xor h2d_data(5) xor h2d_data(6) xor h2d_data(7)
+                );
 
   ps2_data_o <= '0' when h2d_start = '1' or (h2d_doe = '1' and h2d_sr(0) = '0') else '1';
 

@@ -203,8 +203,9 @@ begin
         mig_rdata  <= (others => 'X');
         mig_raddr  <= (others => 'X');
 
-        addr       := -1;
-        r_w        := '0';
+        addr := -1;
+        r_w  := '0';
+
       else
         if to_integer(unsigned(mig_addr)) = addr+1 and to_bit(mig_r_w) = r_w then -- consecutive cycle
           latency := 0;

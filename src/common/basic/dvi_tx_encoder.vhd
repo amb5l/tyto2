@@ -88,9 +88,8 @@ begin
                            );
   n0q_m           <= to_unsigned(nv(q_m(7 downto 0), '0'), 4);
   n1q_m           <= to_unsigned(nv(q_m(7 downto 0), '1'), 4);
-  -- difference between # of 1s and 0s always even so drop LSB from count
-  diff01_5        <= signed(resize(n0q_m, 5)) - signed(resize(n1q_m, 5));
-  diff10_5        <= signed(resize(n1q_m, 5)) - signed(resize(n0q_m, 5));
+  diff01_5        <= signed(resize(n0q_m, 5)) - signed(resize(n1q_m, 5)); -- difference between # of 1s and 0s
+  diff10_5        <= signed(resize(n1q_m, 5)) - signed(resize(n0q_m, 5)); -- always even so drop LSB from count
 
   MAIN: process (clk) is
   begin

@@ -245,11 +245,10 @@ begin
       vga_hs      <= 'X';
       vga_de      <= '0';
       vga_p       <= (others => (others => '0'));
-
       data        <= (others => (others => (others => '0')));
       data_pstb_i <= '0';
 
-      period      := UNKNOWN;
+      period := UNKNOWN;
 
     elsif rising_edge(vga_clk_i) then
 

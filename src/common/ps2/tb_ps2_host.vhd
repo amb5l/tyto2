@@ -240,7 +240,6 @@ begin
   ps2_clk    <= 'H';
   ps2_clk    <= oco(ps2_clk_o);
   ps2_clk_i  <= oci(ps2_clk);
-
   ps2_data   <= 'H';
   ps2_data   <= oco(ps2_data_o);
   ps2_data_i <= oci(ps2_data);
