@@ -1,0 +1,200 @@
+rule:
+  global:
+    indent_style: 'spaces'
+    indent_size: 2
+    blank_line_ends_group: false
+    comment_line_ends_group: false
+  # whitespace - either side of operator
+  whitespace_011:
+    disable: true
+  # overall line length (characters)
+  length_001:
+    length : 256
+  # overall file length (lines)
+  length_002:
+    length : 4096
+  # max process length (lines)
+  length_003:
+    length : 1024
+  # entity - generics and ports - colons
+  entity_017:
+    separate_generic_port_alignment: false
+  # entity - generics and ports - inline comments
+  entity_020:
+    separate_generic_port_alignment: false
+  # blank line after opening parenthesis at start of port declaration
+  port_022:
+    disable: true
+  # blank line before closing parenthesis at end of port declaration
+  port_024:
+    disable: true
+  # signal - default assignment
+  signal_007:
+    disable: true
+  # function - blank line above
+  function_006:
+    disable: true
+  # component declaration - generic and port alignment
+  component_017:
+    separate_generic_port_alignment: false
+  # component label - space before colon
+  instantiation_003:
+    disable: true
+  # component label - case
+  instantiation_008:
+    case: upper
+  # component instance - alignment of =>
+  instantiation_010:
+    separate_generic_port_alignment: false
+  # component - instance port/generic comments
+  instantiation_023:
+    disable: true
+  # component - disallow entity
+  instantiation_034:
+    disable: true
+  # subprogram is - line below
+  subprogram_body_201:
+    disable: true
+  # subprogram begin - line above
+  subprogram_body_202:
+    disable: true
+  # subprogram begin - line below
+  subprogram_body_203:
+    disable: true
+  # subprogram end - line above
+  subprogram_body_204:
+    disable: true
+  # type - line above
+  type_010:
+    disable: true
+  # type - line below
+  type_011:
+    disable: true
+  # generate - space before colon
+  generate_002:
+    disable: true
+  # process label - lowercase
+  process_017:
+    case: upper
+  # end process label - lowercase
+  process_019:
+    disable: true
+  # process begin - line below
+  process_022:
+    disable: true
+  # end process - line above
+  process_023:
+    disable: true
+  # process label - space before colon
+  process_024:
+    disable: true
+  # process - line above 1st declarative line
+  process_026:
+    disable: true
+  # process - line above begin
+  process_027:
+    disable: true
+  # process - alignment of <= and := over multiple assignments
+  process_400:
+    blank_line_ends_group: true
+    comment_line_ends_group: true
+  # variable - default value
+  variable_007:
+    disable: true
+  # loop statement - blank line above
+  loop_statement_200:
+    disable: true
+  # loop statement - blank line below
+  loop_statement_201:
+    disable: true
+  # loop statement end - blank line above
+  loop_statement_202:
+    disable: true
+  # loop statement end - blank line below
+  loop_statement_203:
+    disable: true
+  # concurrent signal assignment - alignment of <=
+  concurrent_006:
+    blank_line_ends_group: true
+    comment_line_ends_group: true
+  # concurrent signal assignment - code after else
+  concurrent_007:
+    disable: true
+  # concurrent signal assignment - newline after <=
+  concurrent_011:
+    disable: true
+  # concurrent signal assignment - array multiline
+  concurrent_012:
+    disable: true
+  # code after a sequential assignment (after semicolon)
+  sequential_007:
+    disable: true
+  # no newline after <=
+  sequential_008:
+    disable: true
+  # if - parenthesis around condition
+  if_002:
+    disable: true
+  # if - remove blank line below then
+  if_006:
+    disable: true
+  # if - remove blank line before elsif
+  if_007:
+    disable: true
+  # if - remove blank line before end if
+  if_008:
+    disable: true
+  # if - remove blank line before else
+  if_010:
+    disable: true
+  # if - remove blank line after else
+  if_011:
+    disable: true
+  # if - end if on own line
+  if_020:
+    disable: true
+  # if - code after else
+  if_022:
+    disable: true
+  # if - elsif own line
+  if_023:
+    disable: true
+  # if - code after then
+  if_024:
+    disable: true
+  # end if - line below
+  if_030:
+    disable: true
+  # if - line above
+  if_031:
+    disable: true
+  # if - then on own line
+  if_036:
+    disable: true
+  # case - single space before =>
+  case_005:
+    disable: true
+  # case - blank line or comment above
+  case_007:
+    disable: true
+  # case end - blank line or comment above
+  case_009:
+    disable: true
+  # case end - line below
+  case_010:
+    disable: true
+  # case when - code after =>
+  case_012:
+    disable: true
+  # case when - line below =>
+  case_200:
+    disable: true
+  # case when - line above
+  case_201:
+    disable: true
+  # with - rewrite with process
+  with_001:
+    disable: true
+  # report - severity on own line
+  report_statement_002:
+    disable: true
