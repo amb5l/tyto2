@@ -16,52 +16,52 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 entity tb_np6532_poc_128k_qmtech_wukong is
-    generic (
-        success_addr  : integer
-    );
+  generic (
+    success_addr : integer
+  );
 end entity tb_np6532_poc_128k_qmtech_wukong;
 
 architecture sim of tb_np6532_poc_128k_qmtech_wukong is
 
-    signal clki_50m : std_logic;
-    signal key_n    : std_logic_vector(1 downto 0);
-    signal led_n    : std_logic_vector(1 downto 0);
+  signal clki_50m : std_logic;
+  signal key_n    : std_logic_vector(1 downto 0);
+  signal led_n    : std_logic_vector(1 downto 0);
 
 begin
 
-    clki_50m <=
-        '1' after 10ns when clki_100m = '0' else
-        '0' after 10ns when clki_100m = '1' else
-        '0';
+  clki_50m <=
+              '1' after 10ns when clki_100m = '0' else
+              '0' after 10ns when clki_100m = '1' else
+              '0';
 
-    process
-    begin
-        key_n(0) <= '0';
-        wait for 20ns;
-        key_n(0) <= '1';
-        wait;
-    end process;
+  TEST: process is
+  begin
+    key_n(0) <= '0';
+    wait for 20ns;
+    key_n(0) <= '1';
+    wait;
+  end process TEST;
 
-    UUT: entity work.np6532_poc_128k_qmtech_wukong
-        generic map (
-            success_addr => success_addr
-        )
-        port map (
-            clki_50m   => clki_50m,
-            led_n      => led_n,
-            key_n      => key_n,
-            ser_tx     => open,
-            ser_rx     => '1',
-            hdmi_scl   => open,
-            hdmi_sda   => open,
-            eth_rst_n  => open,
-            ddr3_rst_n => open,
-            j10        => (others => '0'),
-            j11        => (others => '0'),
-            jp2        => open
-        );
+  DUT: entity work.np6532_poc_128k_qmtech_wukong
+    generic map (
+      success_addr => success_addr
+    )
+    port map (
+      clki_50m     => clki_50m,
+      led_n        => led_n,
+      key_n        => key_n,
+      ser_tx       => open,
+      ser_rx       => '1',
+      hdmi_scl     => open,
+      hdmi_sda     => open,
+      eth_rst_n    => open,
+      ddr3_rst_n   => open,
+      j10          => (others => '0'),
+      j11          => (others => '0'),
+      jp2          => open
+    );
 
 end architecture sim;

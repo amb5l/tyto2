@@ -16,87 +16,107 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
+
+package model_tmds_cdr_des_pkg is
+
+  component model_tmds_cdr_des is
+    port (
+      refclk   : in    std_logic;
+      serial   : in    std_logic;
+      parallel : out   std_logic_vector(9 downto 0);
+      clk      : out   std_logic;
+      locked   : out   std_logic
+    );
+  end component model_tmds_cdr_des;
+
+end package model_tmds_cdr_des_pkg;
+
+--------------------------------------------------------------------------------
+
+library ieee;
+  use ieee.std_logic_1164.all;
 
 entity model_tmds_cdr_des is
-    port
-    (
-        refclk   : in  std_logic;
-        serial   : in  std_logic;
-        parallel : out std_logic_vector(9 downto 0);
-        clk      : out std_logic;
-        locked   : out std_logic
-    );
+  port (
+    refclk   : in    std_logic;
+    serial   : in    std_logic;
+    parallel : out   std_logic_vector(9 downto 0);
+    clk      : out   std_logic;
+    locked   : out   std_logic
+  );
 end entity model_tmds_cdr_des;
 
 architecture model of model_tmds_cdr_des is
 
-    signal refclk_prev : time := 0 ps;
-    signal tr          : time := 0 ps;
-    signal refclk_d    : std_logic_vector(1 to 4);
-    signal sample      : std_logic := '0'; -- DDR sample clock
-    signal count       : integer range 0 to 9 := 0;
-    signal shift_reg   : std_logic_vector(9 downto 0);
-    signal locked_i    : std_logic;
+  signal refclk_prev : time := 0 ps;
+  signal tr          : time := 0 ps;
+  signal refclk_d    : std_logic_vector(1 to 4);
+  signal sample      : std_logic := '0'; -- DDR sample clock
+  signal count       : integer range 0 to 9 := 0;
+  signal shift_reg   : std_logic_vector(9 downto 0);
+  signal locked_i    : std_logic;
 
 begin
 
-    -- lazy assumption: refclk edges align with serial edges
-    process(refclk)
-        variable t : time;
-    begin
-        if rising_edge(refclk) then
-            t := now-refclk_prev;
-            if t < 40 ns and t > 6.7 ns then -- between 25 and 148.5 MHz
-                tr <= now-refclk_prev;
-            else
-                tr <= 0 ps;
-            end if;
-            refclk_prev <= now;
-        end if;
-    end process;
-    refclk_d(1) <= refclk after tr/10;
-    refclk_d(2) <= refclk after (2*tr)/10;
-    refclk_d(3) <= refclk after (3*tr)/10;
-    refclk_d(4) <= refclk after (4*tr)/10;
-    sample <= refclk xor refclk_d(1) xor refclk_d(2) xor refclk_d(3) xor refclk_d(4) after tr/20;
+  -- lazy assumption: refclk edges align with serial edges
+  DO_REFCLK: process (refclk) is
+    variable t : time;
+  begin
+    if rising_edge(refclk) then
+      t := now-refclk_prev;
+      if t < 40 ns and t > 6.7 ns then -- between 25 and 148.5 MHz
+        tr <= now-refclk_prev;
+      else
+        tr <= 0 ps;
+      end if;
+      refclk_prev <= now;
+    end if;
+  end process DO_REFCLK;
 
-    -- serial to parallel
-    process(locked_i,sample)
-    begin
-        if sample'event then
-            shift_reg <= serial & shift_reg(9 downto 1);
-            if count = 9 then
-                count <= 0;
-            else
-                count <= count+1;
-            end if;
-            if (shift_reg = "1101010100")
-            or (shift_reg = "0010101011")
-            or (shift_reg = "0101010100")
-            or (shift_reg = "1010101011")
-            then -- control symbol
-                if locked_i = '0' then
-                    locked_i <= '1';
-                    count <= 0;
-                elsif count /= 9 then
-                    locked_i <= '0';
-                    count <= 0;
-                end if;
-            end if;
-            if locked_i = '1' then
-                if count = 9 then
-                    parallel <= shift_reg;
-                    clk <= '0';
-                elsif count = 4 then
-                    clk <= '1';
-                end if;
-            else
-                parallel <= (others => 'X');
-                clk <= '0';
-            end if;
+  refclk_d(1) <= refclk after tr/10;
+  refclk_d(2) <= refclk after (2*tr)/10;
+  refclk_d(3) <= refclk after (3*tr)/10;
+  refclk_d(4) <= refclk after (4*tr)/10;
+  sample      <= refclk xor refclk_d(1) xor refclk_d(2) xor refclk_d(3) xor refclk_d(4) after tr/20;
+
+  -- serial to parallel
+  DESER: process (locked_i, sample) is
+  begin
+    if sample'event then
+      shift_reg <= serial & shift_reg(9 downto 1);
+      if count = 9 then
+        count <= 0;
+      else
+        count <= count+1;
+      end if;
+      if (shift_reg = "1101010100")
+         or (shift_reg = "0010101011")
+         or (shift_reg = "0101010100")
+         or (shift_reg = "1010101011")
+         then -- control symbol
+        if locked_i = '0' then
+          locked_i <= '1';
+          count    <= 0;
+        elsif count /= 9 then
+          locked_i <= '0';
+          count    <= 0;
         end if;
-    end process;
-    locked <= locked_i;
+      end if;
+      if locked_i = '1' then
+        if count = 9 then
+          parallel <= shift_reg;
+          clk      <= '0';
+        elsif count = 4 then
+          clk <= '1';
+        end if;
+      else
+        parallel <= (others => 'X');
+        clk      <= '0';
+      end if;
+    end if;
+  end process DESER;
+
+  locked <= locked_i;
 
 end architecture model;

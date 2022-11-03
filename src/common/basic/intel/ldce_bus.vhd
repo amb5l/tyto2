@@ -17,56 +17,57 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 package ldce_bus_pkg is
 
-    component ldce_bus is
-        generic (
-            width : integer
-        );
-        port (
-            clr : in  std_logic;
-            g   : in  std_logic;
-            ge  : in  std_logic;            
-            d   : in  std_logic_vector(width-1 downto 0);
-            q   : out std_logic_vector(width-1 downto 0)
-        );
-    end component ldce_bus;
+  component ldce_bus is
+    generic (
+      width : integer
+    );
+    port (
+      clr   : in    std_logic;
+      g     : in    std_logic;
+      ge    : in    std_logic;
+      d     : in    std_logic_vector(width - 1 downto 0);
+      q     : out   std_logic_vector(width - 1 downto 0)
+    );
+  end component ldce_bus;
 
 end package ldce_bus_pkg;
 
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 library altera;
-use altera.altera_primitives_components.all;
+  use altera.altera_primitives_components.all;
 
 entity ldce_bus is
-    generic (
-        width : integer
-    );
-    port (
-        clr : in  std_logic;
-        g   : in  std_logic;
-        ge  : in  std_logic;        
-        d   : in  std_logic_vector(width-1 downto 0);
-        q   : out std_logic_vector(width-1 downto 0)
-    );
+  generic (
+    width : integer
+  );
+  port (
+    clr   : in    std_logic;
+    g     : in    std_logic;
+    ge    : in    std_logic;
+    d     : in    std_logic_vector(width - 1 downto 0);
+    q     : out   std_logic_vector(width - 1 downto 0)
+  );
 end entity ldce_bus;
 
 architecture struct of ldce_bus is
+
 begin
 
-    process(clr,g,ge,d)
-    begin
-        if clr = '1' then
-            q <= (others => '0');
-        elsif g = '1' and ge = '1' then
-            q <= d;
-        end if;        
-    end process;
+  MAIN: process (clr, g, ge, d) is
+  begin
+    if clr = '1' then
+      q <= (others => '0');
+    elsif g = '1' and ge = '1' then
+      q <= d;
+    end if;
+  end process MAIN;
 
 end architecture struct;

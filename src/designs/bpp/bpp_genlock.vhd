@@ -16,71 +16,71 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 package bpp_genlock_pkg is
 
-    component bpp_genlock is
-        port (
-            clk     : in  std_logic; -- CRTC: clock
-            clken   : in  std_logic; -- CRTC: 2MHz clock enable
-            rst     : in  std_logic; -- CRTC: reset
-            f       : in  std_logic; -- CRTC: field ID
-            vs      : in  std_logic; -- CRTC: vertical sync
-            hs      : in  std_logic; -- CRTC: horizontal sync
-            oe      : in  std_logic; -- CRTC: overscan display enable
-            genlock : out std_logic  -- output pulse 
-        );
-    end component bpp_genlock;
+  component bpp_genlock is
+    port (
+      clk     : in    std_logic;
+      clken   : in    std_logic;
+      rst     : in    std_logic;
+      f       : in    std_logic;
+      vs      : in    std_logic;
+      hs      : in    std_logic;
+      oe      : in    std_logic;
+      genlock : out   std_logic
+    );
+  end component bpp_genlock;
 
 end package bpp_genlock_pkg;
 
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 entity bpp_genlock is
-    port (
-        clk     : in  std_logic; -- CRTC: clock
-        clken   : in  std_logic; -- CRTC: 2MHz clock enable
-        rst     : in  std_logic; -- CRTC: reset
-        f       : in  std_logic; -- CRTC: field ID
-        vs      : in  std_logic; -- CRTC: vertical sync
-        hs      : in  std_logic; -- CRTC: horizontal sync
-        oe      : in  std_logic; -- CRTC: overscan display enable
-        genlock : out std_logic  -- output pulse
-    );
+  port (
+    clk     : in    std_logic; -- CRTC: clock
+    clken   : in    std_logic; -- CRTC: 2MHz clock enable
+    rst     : in    std_logic; -- CRTC: reset
+    f       : in    std_logic; -- CRTC: field ID
+    vs      : in    std_logic; -- CRTC: vertical sync
+    hs      : in    std_logic; -- CRTC: horizontal sync
+    oe      : in    std_logic; -- CRTC: overscan display enable
+    genlock : out   std_logic  -- output pulse
+  );
 end entity bpp_genlock;
 
 architecture synth of bpp_genlock is
 
-    signal hs_1   : std_logic;
-    signal enable : std_logic;
-    signal done   : std_logic;
+  signal hs_1   : std_logic;
+  signal enable : std_logic;
+  signal done   : std_logic;
 
 begin
 
-    process(clk)
-    begin
-        if rising_edge(clk) then
-            if rst = '1' or vs = '1' then
-                hs_1    <= '0';
-                enable  <= '0';
-                done    <= '0';
-                genlock <= '0';
-            else
-                hs_1 <= hs;
-                if oe = '1' then
-                    enable <= '1';
-                end if;
-                if hs = '0' and hs_1 = '1' then -- trailing edge of hsync
-                    done <= enable;
-                end if;
-                genlock <= f and hs and enable and not done; -- start of 1st/odd/upper field
-            end if;
+  MAIN: process (clk) is
+  begin
+    if rising_edge(clk) then
+      if rst = '1' or vs = '1' then
+        hs_1    <= '0';
+        enable  <= '0';
+        done    <= '0';
+        genlock <= '0';
+      else
+        hs_1 <= hs;
+        if oe = '1' then
+          enable <= '1';
         end if;
-    end process;
+        if hs = '0' and hs_1 = '1' then              -- trailing edge of hsync
+          done <= enable;
+        end if;
+        genlock <= f and hs and enable and not done; -- start of 1st/odd/upper field
+      end if;
+    end if;
+  end process MAIN;
 
 end architecture synth;

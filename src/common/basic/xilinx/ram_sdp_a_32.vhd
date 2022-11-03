@@ -17,75 +17,78 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 package ram_sdp_a_32_pkg is
 
-    component ram_sdp_a_32 is
-        generic (
-            width : integer
-        );
-        port (
-            clk : in  std_logic;        
-            ce  : in  std_logic;
-            we  : in  std_logic;
-            wa  : in  std_logic_vector(4 downto 0);
-            wd  : in  std_logic_vector(width-1 downto 0);
-            ra  : in  std_logic_vector(4 downto 0);
-            rd  : out std_logic_vector(width-1 downto 0)
-        );
-    end component ram_sdp_a_32;
+  component ram_sdp_a_32 is
+    generic (
+      width : integer
+    );
+    port (
+      clk   : in    std_logic;
+      ce    : in    std_logic;
+      we    : in    std_logic;
+      wa    : in    std_logic_vector(4 downto 0);
+      wd    : in    std_logic_vector(width-1 downto 0);
+      ra    : in    std_logic_vector(4 downto 0);
+      rd    : out   std_logic_vector(width-1 downto 0)
+    );
+  end component ram_sdp_a_32;
 
 end package ram_sdp_a_32_pkg;
 
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 library unisim;
-use unisim.vcomponents.all;
+  use unisim.vcomponents.all;
 
 entity ram_sdp_a_32 is
-    generic (
-        width : integer
-    );
-    port (
-        clk : in  std_logic;        
-        ce  : in  std_logic;
-        we  : in  std_logic;
-        wa  : in  std_logic_vector(4 downto 0);
-        wd  : in  std_logic_vector(width-1 downto 0);
-        ra  : in  std_logic_vector(4 downto 0);
-        rd  : out std_logic_vector(width-1 downto 0)
-    );
+  generic (
+    width : integer
+  );
+  port (
+    clk   : in    std_logic;
+    ce    : in    std_logic;
+    we    : in    std_logic;
+    wa    : in    std_logic_vector(4 downto 0);
+    wd    : in    std_logic_vector(width-1 downto 0);
+    ra    : in    std_logic_vector(4 downto 0);
+    rd    : out   std_logic_vector(width-1 downto 0)
+  );
 end entity ram_sdp_a_32;
-    
+
 architecture struct of ram_sdp_a_32 is
+
 begin
 
-    GEN_BIT: for i in 0 to width-1 generate
-        RAM : component ram64x1d
-            port map (
-                wclk  => clk,
-                a0    => wa(0),
-                a1    => wa(1),
-                a2    => wa(2),
-                a3    => wa(3),
-                a4    => wa(4),
-                a5    => ce,
-                we    => we,
-                d     => wd(i),
-                spo   => open,
-                dpra0 => ra(0),
-                dpra1 => ra(1),
-                dpra2 => ra(2),
-                dpra3 => ra(3),
-                dpra4 => ra(4),
-                dpra5 => '1',
-                dpo   => rd(i)
-            );    
-    end generate GEN_BIT;
+  gen_bit: for i in 0 to width-1 generate
+
+    RAM : component ram64x1d
+      port map (
+        wclk  => clk,
+        a0    => wa(0),
+        a1    => wa(1),
+        a2    => wa(2),
+        a3    => wa(3),
+        a4    => wa(4),
+        a5    => ce,
+        we    => we,
+        d     => wd(i),
+        spo   => open,
+        dpra0 => ra(0),
+        dpra1 => ra(1),
+        dpra2 => ra(2),
+        dpra3 => ra(3),
+        dpra4 => ra(4),
+        dpra5 => '1',
+        dpo   => rd(i)
+      );
+
+  end generate gen_bit;
 
 end architecture struct;

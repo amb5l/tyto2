@@ -24,49 +24,49 @@ package np6532_core_pkg is
 
     component np6532_core is
         generic (
-            jmp_rst : std_logic_vector(15 downto 0);            -- reset jump address
-            vec_nmi : std_logic_vector(15 downto 0) := x"FFFA"; -- NMI vector address
-            vec_irq : std_logic_vector(15 downto 0) := x"FFFE"; -- IRQ vector address
-            vec_brk : std_logic_vector(15 downto 0) := x"FFFE"  -- BRK vector address
+            jmp_rst : std_logic_vector(15 downto 0);
+            vec_nmi : std_logic_vector(15 downto 0) := x"FFFA";
+            vec_irq : std_logic_vector(15 downto 0) := x"FFFE";
+            vec_brk : std_logic_vector(15 downto 0) := x"FFFE"
         );
         port (
 
-            clk       : in  std_logic;                     -- clock
+            clk       : in    std_logic;
 
-            rst       : in  std_logic;                     -- reset
-            hold      : in  std_logic;                     -- pause execution on this cycle
-            nmi       : in  std_logic;                     -- NMI
-            irq       : in  std_logic;                     -- IRQ
+            rst       : in    std_logic;
+            hold      : in    std_logic;
+            nmi       : in    std_logic;
+            irq       : in    std_logic;
 
-            if_a      : out std_logic_vector(15 downto 0); -- instruction fetch address (byte aligned!)
-            if_en     : out std_logic;                     -- instruction fetch enable
-            if_brk    : out std_logic;                     -- instruction fetch force BRK
-            if_d      : in  std_logic_vector(31 downto 0); -- instruction fetch data
+            if_a      : out   std_logic_vector(15 downto 0);
+            if_en     : out   std_logic;
+            if_brk    : out   std_logic;
+            if_d      : in    std_logic_vector(31 downto 0);
 
-            ls_a      : out std_logic_vector(15 downto 0); -- load/store address (byte aligned!)
-            ls_en     : out std_logic;                     -- load/store enable
-            ls_re     : out std_logic;                     -- load/store read enable
-            ls_we     : out std_logic;                     -- load/store write enable
-            ls_sz     : out std_logic_vector(1 downto 0);  -- load/store transfer size (bytes) = 1+ls_sz
-            ls_dw     : out std_logic_vector(31 downto 0); -- load/store write data
-            ls_dr     : in  std_logic_vector(31 downto 0); -- load/store read data
+            ls_a      : out   std_logic_vector(15 downto 0);
+            ls_en     : out   std_logic;
+            ls_re     : out   std_logic;
+            ls_we     : out   std_logic;
+            ls_sz     : out   std_logic_vector(1 downto 0);
+            ls_dw     : out   std_logic_vector(31 downto 0);
+            ls_dr     : in    std_logic_vector(31 downto 0);
 
-            cz_a      : out std_logic_vector(7 downto 0);  -- zero page cache read address
-            cz_d      : in  std_logic_vector(31 downto 0); -- zero page cache read data
+            cz_a      : out   std_logic_vector(7 downto 0);
+            cz_d      : in    std_logic_vector(31 downto 0);
 
-            cs_a      : out std_logic_vector(7 downto 0);  -- stack cache read address
-            cs_d      : in  std_logic_vector(31 downto 0); -- stack cache read data
+            cs_a      : out   std_logic_vector(7 downto 0);
+            cs_d      : in    std_logic_vector(31 downto 0);
 
-            trace_stb : out std_logic;                     -- trace: instruction strobe (complete)
-            trace_nmi : out std_logic;                     -- trace: in NMI handler
-            trace_irq : out std_logic;                     -- trace: in IRQ handler
-            trace_op  : out std_logic_vector(23 downto 0); -- trace opcode and operand
-            trace_pc  : out std_logic_vector(15 downto 0); -- trace register PC
-            trace_s   : out std_logic_vector(7 downto 0);  -- trace register S
-            trace_p   : out std_logic_vector(7 downto 0);  -- trace register P
-            trace_a   : out std_logic_vector(7 downto 0);  -- trace register A
-            trace_x   : out std_logic_vector(7 downto 0);  -- trace register X
-            trace_y   : out std_logic_vector(7 downto 0)   -- trace register Y
+            trace_stb : out   std_logic;
+            trace_nmi : out   std_logic;
+            trace_irq : out   std_logic;
+            trace_op  : out   std_logic_vector(23 downto 0);
+            trace_pc  : out   std_logic_vector(15 downto 0);
+            trace_s   : out   std_logic_vector(7 downto 0);
+            trace_p   : out   std_logic_vector(7 downto 0);
+            trace_a   : out   std_logic_vector(7 downto 0);
+            trace_x   : out   std_logic_vector(7 downto 0);
+            trace_y   : out   std_logic_vector(7 downto 0)
 
         );
     end component np6532_core;
@@ -80,6 +80,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library work;
+use work.tyto_utils_pkg.all;
 use work.np65_decoder_pkg.all;
 
 entity np6532_core is
@@ -91,42 +92,42 @@ entity np6532_core is
     );
     port (
 
-        clk       : in  std_logic;                     -- clock
+        clk       : in    std_logic;                     -- clock
 
-        rst       : in  std_logic;                     -- reset
-        hold      : in  std_logic;                     -- pause execution on this cycle
-        nmi       : in  std_logic;                     -- NMI
-        irq       : in  std_logic;                     -- IRQ
+        rst       : in    std_logic;                     -- reset
+        hold      : in    std_logic;                     -- pause execution on this cycle
+        nmi       : in    std_logic;                     -- NMI
+        irq       : in    std_logic;                     -- IRQ
 
-        if_a      : out std_logic_vector(15 downto 0); -- instruction fetch address (byte aligned!)
-        if_en     : out std_logic;                     -- instruction fetch enable
-        if_brk    : out std_logic;                     -- instruction fetch force BRK
-        if_d      : in  std_logic_vector(31 downto 0); -- instruction fetch data
+        if_a      : out   std_logic_vector(15 downto 0); -- instruction fetch address (byte aligned!)
+        if_en     : out   std_logic;                     -- instruction fetch enable
+        if_brk    : out   std_logic;                     -- instruction fetch force BRK
+        if_d      : in    std_logic_vector(31 downto 0); -- instruction fetch data
 
-        ls_a      : out std_logic_vector(15 downto 0); -- load/store address (byte aligned!)
-        ls_en     : out std_logic;                     -- load/store enable
-        ls_re     : out std_logic;                     -- load/store read enable
-        ls_we     : out std_logic;                     -- load/store write enable
-        ls_sz     : out std_logic_vector(1 downto 0);  -- load/store transfer size (bytes) = 1+ls_sz
-        ls_dw     : out std_logic_vector(31 downto 0); -- load/store write data
-        ls_dr     : in  std_logic_vector(31 downto 0); -- load/store read data
+        ls_a      : out   std_logic_vector(15 downto 0); -- load/store address (byte aligned!)
+        ls_en     : out   std_logic;                     -- load/store enable
+        ls_re     : out   std_logic;                     -- load/store read enable
+        ls_we     : out   std_logic;                     -- load/store write enable
+        ls_sz     : out   std_logic_vector(1 downto 0);  -- load/store transfer size (bytes) = 1+ls_sz
+        ls_dw     : out   std_logic_vector(31 downto 0); -- load/store write data
+        ls_dr     : in    std_logic_vector(31 downto 0); -- load/store read data
 
-        cz_a      : out std_logic_vector(7 downto 0);  -- zero page cache read address
-        cz_d      : in  std_logic_vector(31 downto 0); -- zero page cache read data
+        cz_a      : out   std_logic_vector(7 downto 0);  -- zero page cache read address
+        cz_d      : in    std_logic_vector(31 downto 0); -- zero page cache read data
 
-        cs_a      : out std_logic_vector(7 downto 0);  -- stack cache read address
-        cs_d      : in  std_logic_vector(31 downto 0); -- stack cache read data
+        cs_a      : out   std_logic_vector(7 downto 0);  -- stack cache read address
+        cs_d      : in    std_logic_vector(31 downto 0); -- stack cache read data
 
-        trace_stb : out std_logic;                     -- trace: instruction strobe (complete)
-        trace_nmi : out std_logic;                     -- trace: in NMI handler
-        trace_irq : out std_logic;                     -- trace: in IRQ handler
-        trace_op  : out std_logic_vector(23 downto 0); -- trace opcode and operand
-        trace_pc  : out std_logic_vector(15 downto 0); -- trace register PC
-        trace_s   : out std_logic_vector(7 downto 0);  -- trace register S
-        trace_p   : out std_logic_vector(7 downto 0);  -- trace register P
-        trace_a   : out std_logic_vector(7 downto 0);  -- trace register A
-        trace_x   : out std_logic_vector(7 downto 0);  -- trace register X
-        trace_y   : out std_logic_vector(7 downto 0)   -- trace register Y
+        trace_stb : out   std_logic;                     -- trace: instruction strobe (complete)
+        trace_nmi : out   std_logic;                     -- trace: in NMI handler
+        trace_irq : out   std_logic;                     -- trace: in IRQ handler
+        trace_op  : out   std_logic_vector(23 downto 0); -- trace opcode and operand
+        trace_pc  : out   std_logic_vector(15 downto 0); -- trace register PC
+        trace_s   : out   std_logic_vector(7 downto 0);  -- trace register S
+        trace_p   : out   std_logic_vector(7 downto 0);  -- trace register P
+        trace_a   : out   std_logic_vector(7 downto 0);  -- trace register A
+        trace_x   : out   std_logic_vector(7 downto 0);  -- trace register X
+        trace_y   : out   std_logic_vector(7 downto 0)   -- trace register Y
 
     );
 end entity np6532_core;
@@ -386,7 +387,7 @@ architecture synth of np6532_core is
     -- functions
 
     -- convert std_logic to 1-bit unsigned, useful in ALU
-    function s2u(b : std_logic) return unsigned is
+    function s2u (b : std_logic) return unsigned is
     begin
         if b = '1' then
             return "1";
@@ -428,7 +429,7 @@ begin
 
     -- misc outputs
 
-    if_en  <= (run and s1_id_valid and (s1_id_fast or cycle) and not hold) or fif;   
+    if_en  <= (run and s1_id_valid and (s1_id_fast or cycle) and not hold) or fif;
     if_brk <= s1_force_brk;
     if_a   <= s0_if_a;
     ls_a   <= s1_ls_a;
@@ -437,7 +438,7 @@ begin
     ls_we  <= s1_ls_we;
     ls_sz  <= s1_id_dsize;
     ls_dw  <= s1_ls_dw;
-    cz_a   <= std_logic_vector(unsigned(s1_operand_8) + unsigned(s2_reg_x)) when s1_id_zpx = '1' else s1_operand_8;
+    cz_a   <= s1_operand_8+s2_reg_x when s1_id_zpx = '1' else s1_operand_8;
     cs_a   <= s2_reg_s1;
 
     -- trace: conditions at start of instruction
@@ -496,19 +497,12 @@ begin
     advex <= run and s1_id_valid and (s1_id_fast or cycle) and not hold and not smack;
 
     -- I flag will be cleared by this instruction (CLI, RTI or PLP)
-    s1_flag_i_clr <= '1' when
-        (s1_id_flag_i = ID_FLAG_I_CLR) or
-        (s1_id_reg_p = '1' and cs_d(2) = '0')
-        else '0';
+    s1_flag_i_clr <= (s1_id_flag_i = ID_FLAG_I_CLR) or (s1_id_reg_p and not cs_d(2));
 
     -- I flag will be set by this instruction (SEI or BRK or PLP)
-    s1_flag_i_set <= '1' when
-        (s1_id_flag_i = ID_FLAG_I_SET) or
-        (s1_id_flag_i = ID_FLAG_I_BRK) or
-        (s1_id_reg_p = '1' and cs_d(2) = '1')
-        else '0';
+    s1_flag_i_set <= (s1_id_flag_i = ID_FLAG_I_SET) or (s1_id_flag_i = ID_FLAG_I_BRK) or (s1_id_reg_p and cs_d(2));
 
-    process(clk)
+    MAIN: process (clk) is
     begin
         if rising_edge(clk) then
 
@@ -573,7 +567,6 @@ begin
                 s2_reg_x_next   <= s2_reg_x;
                 s2_reg_y_next   <= s2_reg_y;
 
-
                 if fif = '0' and run = '0' and hold = '0' then
                     fif <= '1';
                 elsif fif = '1' and hold = '0' then
@@ -583,8 +576,8 @@ begin
 
                 if s1_ls_we = '1' and (
                     (s1_ls_a = s0_if_a) or
-                    (s1_ls_a = std_logic_vector(unsigned(s0_if_a)+1)) or
-                    (s1_ls_a = std_logic_vector(unsigned(s0_if_a)+2))
+                    (s1_ls_a = s0_if_a+1) or
+                    (s1_ls_a = s0_if_a+2)
                 ) then -- self modifying code - write collision with instruction fetch
                     smack <= '1';
                 end if;
@@ -610,7 +603,7 @@ begin
                     elsif irq = '1' and (s1_flag_i_clr = '1' or (s2_flag_i = '0' and s1_flag_i_set = '0')) and s1_irq = '0' then
                         s1_irq <= '1';
                         s1_int <= '1';
-                        s1_force_brk <= '1';                        
+                        s1_force_brk <= '1';
                     end if;
 
                     s2_id_addsub    <= s1_id_addsub;
@@ -618,12 +611,7 @@ begin
                     s2_operand_16   <= s1_operand_16;
                     s2_rmw_z        <= s1_rmw_z;
                     s2_rmw_n        <= s1_rmw_w(7);
-                    if s1_id_daddr = ID_DADDR_IMM then
-                        s2_imm <= '1';
-                    else
-                        s2_imm <= '0';
-                    end if;
-
+                    s2_imm          <= s1_id_daddr = ID_DADDR_IMM;
                     s2_bcd <= s2_flag_d and not s1_id_cmp;
 
                     -- synchronous selects drive asynchronous muxes
@@ -650,8 +638,8 @@ begin
                     s2_sel_reg_x <= SEL_REG_X_NOP;
                     if    s1_id_reg_x = ID_REG_X_IMM then s2_reg_x_next <= s1_operand_8;
                     elsif s1_id_reg_x = ID_REG_X_MEM then s2_sel_reg_x <= SEL_REG_X_MEM;
-                    elsif s1_id_reg_x = ID_REG_X_INX then s2_reg_x_next <= std_logic_vector(unsigned(s2_reg_x)+1);
-                    elsif s1_id_reg_x = ID_REG_X_DEX then s2_reg_x_next <= std_logic_vector(unsigned(s2_reg_x)-1);
+                    elsif s1_id_reg_x = ID_REG_X_INX then s2_reg_x_next <= s2_reg_x+1;
+                    elsif s1_id_reg_x = ID_REG_X_DEX then s2_reg_x_next <= s2_reg_x-1;
                     elsif s1_id_reg_x = ID_REG_X_TAX then s2_reg_x_next <= s2_reg_a;
                     elsif s1_id_reg_x = ID_REG_X_TSX then s2_reg_x_next <= s2_reg_s;
                     else
@@ -660,8 +648,8 @@ begin
                     s2_sel_reg_y <= SEL_REG_Y_NOP;
                     if    s1_id_reg_y = ID_REG_Y_IMM then s2_reg_y_next <= s1_operand_8;
                     elsif s1_id_reg_y = ID_REG_Y_MEM then s2_sel_reg_y <= SEL_REG_Y_MEM;
-                    elsif s1_id_reg_y = ID_REG_Y_INY then s2_reg_y_next <= std_logic_vector(unsigned(s2_reg_y)+1);
-                    elsif s1_id_reg_y = ID_REG_Y_DEY then s2_reg_y_next <= std_logic_vector(unsigned(s2_reg_y)-1);
+                    elsif s1_id_reg_y = ID_REG_Y_INY then s2_reg_y_next <= s2_reg_y+1;
+                    elsif s1_id_reg_y = ID_REG_Y_DEY then s2_reg_y_next <= s2_reg_y-1;
                     elsif s1_id_reg_y = ID_REG_Y_TAY then s2_reg_y_next <= s2_reg_a;
                     end if;
 
@@ -735,80 +723,64 @@ begin
                 end if; -- advex
             end if; -- rst = '1'
         end if; -- rising_edge(clk)
-    end process;
+    end process MAIN;
 
     -- instruction fetch address generation
 
-    s1_if_bxx <= '1' when
-        (s1_id_bfsel = ID_BFSEL_C and s1_id_bfval = s2_flag_c) or
-        (s1_id_bfsel = ID_BFSEL_Z and s1_id_bfval = s2_flag_z) or
-        (s1_id_bfsel = ID_BFSEL_V and s1_id_bfval = s2_flag_v) or
-        (s1_id_bfsel = ID_BFSEL_N and s1_id_bfval = s2_flag_n)
-        else '0';
+    s1_if_bxx <= ((s1_id_bfsel = ID_BFSEL_C) and (s1_id_bfval = s2_flag_c)) or
+                 ((s1_id_bfsel = ID_BFSEL_Z) and (s1_id_bfval = s2_flag_z)) or
+                 ((s1_id_bfsel = ID_BFSEL_V) and (s1_id_bfval = s2_flag_v)) or
+                 ((s1_id_bfsel = ID_BFSEL_N) and (s1_id_bfval = s2_flag_n));
 
     s0_if_a_bxx <= s1_reg_pc2 when s1_if_bxx = '0' else
         std_logic_vector(unsigned(s1_reg_pc2)+unsigned(resize(signed(s1_operand_8), 16)));
 
-    s0_if_a_brk <=
-        jmp_rst when fif = '1' else
-        vc_nmi when s1_nmi = '1' else
-        vc_irq when s1_irq = '1' else
-        vc_brk;
+    s0_if_a_brk <= jmp_rst when fif = '1' else
+                   vc_nmi when s1_nmi = '1' else
+                   vc_irq when s1_irq = '1' else
+                   vc_brk;
 
-    s0_if_a_next <=
-       std_logic_vector(unsigned(s1_reg_pc)+unsigned(s1_id_isize)+1) when smack = '0'
-       else s1_reg_pc;
+    s0_if_a_next <= s1_reg_pc+s1_id_isize+1 when smack = '0' else s1_reg_pc;
 
-    s0_if_a_rts <= std_logic_vector(unsigned(cs_d(15 downto 0))+1);
+    s0_if_a_rts <= cs_d(15 downto 0)+1;
 
-    s0_if_a <=
-        s1_reg_pc         when advex = '0' else
-        s0_if_a_brk       when s1_id_iaddr = ID_IADDR_BRK else -- reset, IRQ, BRK, NMI
-        s0_if_a_next      when s1_id_iaddr = ID_IADDR_NXT else -- next instruction
-        s0_if_a_bxx       when s1_id_iaddr = ID_IADDR_BRX else -- branch
-        s1_operand_16     when s1_id_iaddr = ID_IADDR_JMP else -- JMP/JSR absolute
-        s0_if_a_rts       when s1_id_iaddr = ID_IADDR_RTS else -- RTS
-        cs_d(23 downto 8) when s1_id_iaddr = ID_IADDR_RTI else -- RTI
-        s2_ls_dr_16       when s1_id_iaddr = ID_IADDR_IND else -- JMP indirect
-        x"0000";         
+    s0_if_a <= s1_reg_pc         when advex = '0'                else
+               s0_if_a_brk       when s1_id_iaddr = ID_IADDR_BRK else -- reset, IRQ, BRK, NMI
+               s0_if_a_next      when s1_id_iaddr = ID_IADDR_NXT else -- next instruction
+               s0_if_a_bxx       when s1_id_iaddr = ID_IADDR_BRX else -- branch
+               s1_operand_16     when s1_id_iaddr = ID_IADDR_JMP else -- JMP/JSR absolute
+               s0_if_a_rts       when s1_id_iaddr = ID_IADDR_RTS else -- RTS
+               cs_d(23 downto 8) when s1_id_iaddr = ID_IADDR_RTI else -- RTI
+               s2_ls_dr_16       when s1_id_iaddr = ID_IADDR_IND else -- JMP indirect
+               x"0000";
 
     -- load/store address generation
 
     with s1_id_daddr select s1_ls_a <=
-        x"01" & s2_reg_s1                                                   when ID_DADDR_PULL,  -- stack pull (not needed because of stack cache)
-        x"01" & s2_reg_s                                                    when ID_DADDR_PUSH1, -- stack push 1 byte (PHA, PHP)
-        x"01" & std_logic_vector(unsigned(s2_reg_s)-1)                      when ID_DADDR_PUSH2, -- stack push 2 bytes (JSR)
-        x"01" & std_logic_vector(unsigned(s2_reg_s)-2)                      when ID_DADDR_PUSH3, -- stack push 3 bytes (BRK/IRQ/NMI)
-        x"00" & s1_operand_8                                                when ID_DADDR_ZP,    -- ZP
-        x"00" & std_logic_vector(unsigned(s1_operand_8)+unsigned(s2_reg_x)) when ID_DADDR_ZP_X,  -- ZP,X
-        x"00" & std_logic_vector(unsigned(s1_operand_8)+unsigned(s2_reg_y)) when ID_DADDR_ZP_Y,  -- ZP,Y
-        s1_operand_16                                                       when ID_DADDR_ABS,   -- absolute
-        std_logic_vector(unsigned(s1_operand_16)+unsigned(s2_reg_x))        when ID_DADDR_ABS_X, -- absolute,X
-        std_logic_vector(unsigned(s1_operand_16)+unsigned(s2_reg_y))        when ID_DADDR_ABS_Y, -- absolute,Y
-        cz_d(15 downto 0)                                                   when ID_DADDR_IIX,   -- (ZP,X)
-        std_logic_vector(unsigned(cz_d(15 downto 0))+unsigned(s2_reg_y))    when ID_DADDR_IIY,   -- (ZP),Y
-        x"0000"                                                             when others;
+        x"01" & s2_reg_s1               when ID_DADDR_PULL,  -- stack pull (not needed because of stack cache)
+        x"01" & s2_reg_s                when ID_DADDR_PUSH1, -- stack push 1 byte (PHA, PHP)
+        x"01" & (s2_reg_s-1)            when ID_DADDR_PUSH2, -- stack push 2 bytes (JSR)
+        x"01" & (s2_reg_s-2)            when ID_DADDR_PUSH3, -- stack push 3 bytes (BRK/IRQ/NMI)
+        x"00" & s1_operand_8            when ID_DADDR_ZP,    -- ZP
+        x"00" & (s1_operand_8+s2_reg_x) when ID_DADDR_ZP_X,  -- ZP,X
+        x"00" & (s1_operand_8+s2_reg_y) when ID_DADDR_ZP_Y,  -- ZP,Y
+        s1_operand_16                   when ID_DADDR_ABS,   -- absolute
+        s1_operand_16+s2_reg_x          when ID_DADDR_ABS_X, -- absolute,X
+        s1_operand_16+s2_reg_y          when ID_DADDR_ABS_Y, -- absolute,Y
+        cz_d(15 downto 0)               when ID_DADDR_IIX,   -- (ZP,X)
+        cz_d(15 downto 0)+s2_reg_y      when ID_DADDR_IIY,   -- (ZP),Y
+        x"0000"                         when others;
 
-    -- load/store strobes and byte write enables
+    -- load/store strobes
 
-    s1_ls_en <=
-        '0' when (run = '0') or (hold = '1') else
-        '1' when (s1_id_dop /= ID_DOP_NOP) else
-        '0';
-
-    s1_ls_re <=
-        '0' when (run = '0') or (hold = '1') else
-        '1' when (s1_id_dop = ID_DOP_R) or ((s1_id_dop = ID_DOP_RMW) and cycle = '0') else
-        '0';
-
-    s1_ls_we <=
-        '0' when (run = '0') or (hold = '1') else
-        '1' when (s1_id_dop = ID_DOP_W) or ((s1_id_dop = ID_DOP_RMW) and cycle = '1') else
-        '0';
+    s1_ls_en <= run and not hold and (s1_id_dop /= ID_DOP_NOP);
+    s1_ls_re <= run and not hold and ((s1_id_dop = ID_DOP_R) or ((s1_id_dop = ID_DOP_RMW) and cycle = '0'));
+    s1_ls_we <= run and not hold and ((s1_id_dop = ID_DOP_W) or ((s1_id_dop = ID_DOP_RMW) and cycle = '1'));
 
     -- store (write) data
 
-    with s1_id_wdata select s1_ls_dw(7 downto 0) <=
+    with s1_id_wdata select
+      s1_ls_dw(7 downto 0) <=
         s1_rmw_w                                                 when ID_WDATA_RMW, -- RMW
         s2_reg_a                                                 when ID_WDATA_A,   -- STA, PHA
         s2_reg_x                                                 when ID_WDATA_X,   -- STX
@@ -819,15 +791,15 @@ begin
         x"00"                                                    when others;
 
     s1_ls_dw(15 downto 8) <=
-        s1_reg_pc2(15 downto 8) when s1_id_wdata = ID_WDATA_JSR else                  -- JSR
-        s1_reg_pc(7 downto 0)   when s1_id_wdata = ID_WDATA_BRK and s1_int = '1' else -- IRQ/NMI
-        s1_reg_pc2(7 downto 0)  when s1_id_wdata = ID_WDATA_BRK else                  -- BRK
-        x"00";
+      s1_reg_pc2(15 downto 8) when s1_id_wdata = ID_WDATA_JSR else                  -- JSR
+      s1_reg_pc(7 downto 0)   when s1_id_wdata = ID_WDATA_BRK and s1_int = '1' else -- IRQ/NMI
+      s1_reg_pc2(7 downto 0)  when s1_id_wdata = ID_WDATA_BRK else                  -- BRK
+      x"00";
 
     s1_ls_dw(23 downto 16) <=
-        s1_reg_pc(15 downto 8)  when s1_id_wdata = ID_WDATA_BRK and s1_int = '1' else -- IRQ/NMI
-        s1_reg_pc2(15 downto 8) when s1_id_wdata = ID_WDATA_BRK else                  -- BRK
-        x"00";
+      s1_reg_pc(15 downto 8)  when s1_id_wdata = ID_WDATA_BRK and s1_int = '1' else -- IRQ/NMI
+      s1_reg_pc2(15 downto 8) when s1_id_wdata = ID_WDATA_BRK else                  -- BRK
+      x"00";
 
     s1_ls_dw(31 downto 24) <= (others => '0');
 
@@ -841,10 +813,10 @@ begin
         x"00";
 
     s2_adder_t1 <= std_logic_vector(
-        unsigned('0' & s2_adder_i0(3 downto 0)) +
-        unsigned('0' & s2_adder_i1(3 downto 0)) +
-        s2u(s2_adder_ci)
-        );
+                                    unsigned('0' & s2_adder_i0(3 downto 0)) +
+                                    unsigned('0' & s2_adder_i1(3 downto 0)) +
+                                    s2u(s2_adder_ci)
+                                    );
     s2_adder_bc3 <= s2_adder_t1(4);
     s2_adder_bs(3 downto 0) <= s2_adder_t1(3 downto 0);
 
@@ -853,8 +825,8 @@ begin
     s2_adder_hc <= s2_adder_bc3 or (s2_bcd and not s2_id_addsub and s2_adder_dc3);
 
     s2_adder_ds(3 downto 0) <=
-        std_logic_vector(unsigned(s2_adder_bs(3 downto 0))+"0110") when s2_bcd = '1' and s2_id_addsub = ID_ADDSUB_ADD and s2_adder_dc3 = '1' else
-        std_logic_vector(unsigned(s2_adder_bs(3 downto 0))+"1010") when s2_bcd = '1' and s2_id_addsub = ID_ADDSUB_SUB and s2_adder_bc3 = '0' else
+        s2_adder_bs(3 downto 0)+"0110" when s2_bcd = '1' and s2_id_addsub = ID_ADDSUB_ADD and s2_adder_dc3 = '1' else
+        s2_adder_bs(3 downto 0)+"1010" when s2_bcd = '1' and s2_id_addsub = ID_ADDSUB_SUB and s2_adder_bc3 = '0' else
         s2_adder_bs(3 downto 0);
 
     s2_adder_t2 <= std_logic_vector(
@@ -878,8 +850,8 @@ begin
     s2_adder_c <= s2_adder_bc7 or (s2_bcd and not s2_id_addsub and s2_adder_dc7);
 
     s2_adder_ds(7 downto 4) <=
-        std_logic_vector(unsigned(s2_adder_bs(7 downto 4))+"0110") when s2_bcd = '1' and s2_id_addsub = ID_ADDSUB_ADD and s2_adder_dc7 = '1' else
-        std_logic_vector(unsigned(s2_adder_bs(7 downto 4))+"1010") when s2_bcd = '1' and s2_id_addsub = ID_ADDSUB_SUB and s2_adder_bc7 = '0' else
+        s2_adder_bs(7 downto 4)+"0110" when s2_bcd = '1' and s2_id_addsub = ID_ADDSUB_ADD and s2_adder_dc7 = '1' else
+        s2_adder_bs(7 downto 4)+"1010" when s2_bcd = '1' and s2_id_addsub = ID_ADDSUB_SUB and s2_adder_bc7 = '0' else
         s2_adder_bs(7 downto 4);
 
     s2_adder_z <= '1' when s2_adder_bs = x"00" else '0';
@@ -917,36 +889,36 @@ begin
     s1_rmw_r <= cz_d(7 downto 0) when s1_id_fast ='1' else s2_ls_dr_8;
 
     s1_rmw_w <=
-        s1_rmw_r(6 downto 0) & '0'             when s1_id_rmw = ID_RMW_SHF and s1_id_shift = ID_SHIFT_ASL  else
-        '0' & s1_rmw_r(7 downto 1)             when s1_id_rmw = ID_RMW_SHF and s1_id_shift = ID_SHIFT_LSR  else
-        s1_rmw_r(6 downto 0) & s2_flag_c       when s1_id_rmw = ID_RMW_SHF and s1_id_shift = ID_SHIFT_ROL  else
-        s2_flag_c & s1_rmw_r(7 downto 1)       when s1_id_rmw = ID_RMW_SHF and s1_id_shift = ID_SHIFT_ROR  else
-        std_logic_vector(unsigned(s1_rmw_r)+1) when s1_id_rmw = ID_RMW_ID and s1_id_incdec = ID_INCDEC_INC else
-        std_logic_vector(unsigned(s1_rmw_r)-1) when s1_id_rmw = ID_RMW_ID and s1_id_incdec = ID_INCDEC_DEC else
+        s1_rmw_r(6 downto 0) & '0'       when s1_id_rmw = ID_RMW_SHF and s1_id_shift = ID_SHIFT_ASL  else
+        '0' & s1_rmw_r(7 downto 1)       when s1_id_rmw = ID_RMW_SHF and s1_id_shift = ID_SHIFT_LSR  else
+        s1_rmw_r(6 downto 0) & s2_flag_c when s1_id_rmw = ID_RMW_SHF and s1_id_shift = ID_SHIFT_ROL  else
+        s2_flag_c & s1_rmw_r(7 downto 1) when s1_id_rmw = ID_RMW_SHF and s1_id_shift = ID_SHIFT_ROR  else
+        s1_rmw_r+1                       when s1_id_rmw = ID_RMW_ID and s1_id_incdec = ID_INCDEC_INC else
+        s1_rmw_r-1                       when s1_id_rmw = ID_RMW_ID and s1_id_incdec = ID_INCDEC_DEC else
         x"00";
 
     s1_rmw_z <= '1' when s1_rmw_w = x"00" else '0';
 
     -- register PC (program counter)
 
-    process(clk)
+    REG_PC: process (clk) is
     begin
         if rising_edge(clk) then
             if rst = '1' then
                 s1_reg_pc <= jmp_rst;
-                s1_reg_pc1 <= std_logic_vector(unsigned(jmp_rst)+1);
-                s1_reg_pc2 <= std_logic_vector(unsigned(jmp_rst)+2);
+                s1_reg_pc1 <= jmp_rst+1;
+                s1_reg_pc2 <= jmp_rst+2;
             elsif advex = '1' or (fif = '1' and hold = '0') then
                 s1_reg_pc <= s0_if_a;
-                s1_reg_pc1 <= std_logic_vector(unsigned(s0_if_a)+1);
-                s1_reg_pc2 <= std_logic_vector(unsigned(s0_if_a)+2);
+                s1_reg_pc1 <= s0_if_a+1;
+                s1_reg_pc2 <= s0_if_a+2;
             end if;
         end if;
-    end process;
+    end process REG_PC;
 
     -- register S (stack pointer)
 
-    process(clk)
+    REG_S: process (clk) is
     begin
         if rising_edge(clk) then
             if rst = '1' then
@@ -955,14 +927,14 @@ begin
             elsif advex = '1' then
                 if s1_id_reg_s = '1' then -- TXS
                     s2_reg_s  <= s2_reg_x;
-                    s2_reg_s1 <= std_logic_vector(unsigned(s2_reg_x)+1);
+                    s2_reg_s1 <= s2_reg_x+1;
                 else
                     s2_reg_s  <= std_logic_vector(unsigned(s2_reg_s)+unsigned(resize(signed(s1_id_sdelta), 8)));
                     s2_reg_s1 <= std_logic_vector(unsigned(s2_reg_s)+unsigned(resize(signed(s1_id_sdelta), 8))+1);
                 end if;
             end if;
         end if;
-    end process;
+    end process REG_S;
 
     -- register P (status flags)
 
@@ -973,13 +945,13 @@ begin
         s2_flag_c_next when others;           -- NOP/clr/set/PLP/RTI
 
     with s2_sel_flag_zn select s2_flag_z <=
-        s2_adder_z     when    SEL_FLAG_ZN_ADD,
-        s2_rmw_z       when    SEL_FLAG_ZN_RMW,
-        s2_reg_a_z     when    SEL_FLAG_ZN_A,
-        s2_reg_x_z     when    SEL_FLAG_ZN_X,
-        s2_reg_y_z     when    SEL_FLAG_ZN_Y,
-        s2_logic_z     when    SEL_FLAG_ZN_BIT,
-        s2_flag_z_next when    others;          -- NOP/PLP/RTI
+        s2_adder_z     when SEL_FLAG_ZN_ADD,
+        s2_rmw_z       when SEL_FLAG_ZN_RMW,
+        s2_reg_a_z     when SEL_FLAG_ZN_A,
+        s2_reg_x_z     when SEL_FLAG_ZN_X,
+        s2_reg_y_z     when SEL_FLAG_ZN_Y,
+        s2_logic_z     when SEL_FLAG_ZN_BIT,
+        s2_flag_z_next when others;          -- NOP/PLP/RTI
 
     s2_flag_i <= s2_flag_i_next;
 
@@ -990,18 +962,18 @@ begin
     s2_flag_x <= s2_flag_x_next;
 
     with s2_sel_flag_v select s2_flag_v <=
-        s2_adder_v     when    SEL_FLAG_V_ADD,
-        s2_ls_dr_8(6)  when    SEL_FLAG_V_BIT,
-        s2_flag_v_next when    others;         -- NOP/clr/PLP/RTI
+        s2_adder_v     when SEL_FLAG_V_ADD,
+        s2_ls_dr_8(6)  when SEL_FLAG_V_BIT,
+        s2_flag_v_next when others;         -- NOP/clr/PLP/RTI
 
     with s2_sel_flag_zn select s2_flag_n <=
-        s2_adder_n     when    SEL_FLAG_ZN_ADD,
-        s2_rmw_n       when    SEL_FLAG_ZN_RMW,
-        s2_reg_a(7)    when    SEL_FLAG_ZN_A,
-        s2_reg_x(7)    when    SEL_FLAG_ZN_X,
-        s2_reg_y(7)    when    SEL_FLAG_ZN_Y,
-        s2_ls_dr_8(7)  when    SEL_FLAG_ZN_BIT,
-        s2_flag_n_next when    others;          -- NOP/clr/set/PLP/RTI
+        s2_adder_n     when SEL_FLAG_ZN_ADD,
+        s2_rmw_n       when SEL_FLAG_ZN_RMW,
+        s2_reg_a(7)    when SEL_FLAG_ZN_A,
+        s2_reg_x(7)    when SEL_FLAG_ZN_X,
+        s2_reg_y(7)    when SEL_FLAG_ZN_Y,
+        s2_ls_dr_8(7)  when SEL_FLAG_ZN_BIT,
+        s2_flag_n_next when others;          -- NOP/clr/set/PLP/RTI
 
     -- register A
 
@@ -1034,7 +1006,7 @@ begin
     -- 1 cycle delayed write timing is OK here because this happens
     -- under controlled circumstances (pre-reset code)
 
-    process(clk)
+    VC: process (clk) is
     begin
         if rising_edge(clk) then
             if rst = '1' then
@@ -1052,34 +1024,22 @@ begin
                 vc_brk_en <= (others => '0');
                 vc_dw <= s1_ls_dw(7 downto 0);
                 vc_we <= s1_ls_we;
-                if s1_ls_a = vec_nmi                               then vc_nmi_en(0) <= '1'; end if;
-                if s1_ls_a = std_logic_vector(unsigned(vec_nmi)+1) then vc_nmi_en(1) <= '1'; end if;
-                if s1_ls_a = vec_irq                               then vc_irq_en(0) <= '1'; end if;
-                if s1_ls_a = std_logic_vector(unsigned(vec_irq)+1) then vc_irq_en(1) <= '1'; end if;
-                if s1_ls_a = vec_brk                               then vc_brk_en(0) <= '1'; end if;
-                if s1_ls_a = std_logic_vector(unsigned(vec_brk)+1) then vc_brk_en(1) <= '1'; end if;
+                if s1_ls_a = vec_nmi   then vc_nmi_en(0) <= '1'; end if;
+                if s1_ls_a = vec_nmi+1 then vc_nmi_en(1) <= '1'; end if;
+                if s1_ls_a = vec_irq   then vc_irq_en(0) <= '1'; end if;
+                if s1_ls_a = vec_irq+1 then vc_irq_en(1) <= '1'; end if;
+                if s1_ls_a = vec_brk   then vc_brk_en(0) <= '1'; end if;
+                if s1_ls_a = vec_brk+1 then vc_brk_en(1) <= '1'; end if;
                 if vc_we = '1' then
-                    if vc_nmi_en(0) = '1' then
-                        vc_nmi(7 downto 0) <= vc_dw;
-                    end if;
-                    if vc_nmi_en(1) = '1' then
-                        vc_nmi(15 downto 8) <= vc_dw;
-                    end if;
-                    if vc_irq_en(0) = '1' then
-                        vc_irq(7 downto 0) <= vc_dw;
-                    end if;
-                    if vc_irq_en(1) = '1' then
-                        vc_irq(15 downto 8) <= vc_dw;
-                    end if;
-                    if vc_brk_en(0) = '1' then
-                        vc_brk(7 downto 0) <= vc_dw;
-                    end if;
-                    if vc_brk_en(1) = '1' then
-                        vc_brk(15 downto 8) <= vc_dw;
-                    end if;
+                    if vc_nmi_en(0) = '1' then vc_nmi(7 downto 0)  <= vc_dw; end if;
+                    if vc_nmi_en(1) = '1' then vc_nmi(15 downto 8) <= vc_dw; end if;
+                    if vc_irq_en(0) = '1' then vc_irq(7 downto 0)  <= vc_dw; end if;
+                    if vc_irq_en(1) = '1' then vc_irq(15 downto 8) <= vc_dw; end if;
+                    if vc_brk_en(0) = '1' then vc_brk(7 downto 0)  <= vc_dw; end if;
+                    if vc_brk_en(1) = '1' then vc_brk(15 downto 8) <= vc_dw; end if;
                 end if;
             end if;
         end if;
-    end process;
+    end process VC;
 
 end architecture synth;
