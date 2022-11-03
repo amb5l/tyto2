@@ -1,7 +1,7 @@
 # makefile for tb_ps2_host
 
 # basic definitions
-REPO_ROOT=$(shell git rev-parse --show-toplevel)
+REPO_ROOT=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 SUBMODULES=$(REPO_ROOT)/submodules
 MULTISIM_MK=$(SUBMODULES)/multisim-mk
 SRC=$(REPO_ROOT)/src

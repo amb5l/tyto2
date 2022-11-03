@@ -2,7 +2,7 @@ DESIGN=ddr3_test
 BOARD=qmtech_wukong
 VIVADO_PART=xc7a100tfgg676-1
 
-REPO_ROOT=$(shell git rev-parse --show-toplevel)
+REPO_ROOT=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 MAKE_DIR=$(REPO_ROOT)/$(shell git rev-parse --show-prefix)
 SRC=$(REPO_ROOT)/src
 SUBMODULES=$(REPO_ROOT)/submodules

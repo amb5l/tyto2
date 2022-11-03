@@ -5,7 +5,7 @@ QUARTUS_PART=5CEFA7F31I7
 VENDOR_FAMILY=intel_cyclone_v
 VENDOR=intel
 
-REPO_ROOT=$(shell git rev-parse --show-toplevel)
+REPO_ROOT=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 MAKE_DIR=$(REPO_ROOT)/$(shell git rev-parse --show-prefix)
 SRC=$(REPO_ROOT)/src
 SUBMODULES=$(REPO_ROOT)/submodules

@@ -2,7 +2,7 @@ DESIGN=ddr3_test
 BOARD=digilent_nexys_video
 VIVADO_PART=xc7a200tsbg484-1
 
-REPO_ROOT=$(shell git rev-parse --show-toplevel)
+REPO_ROOT=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 MAKE_DIR=$(REPO_ROOT)/$(shell git rev-parse --show-prefix)
 SRC=$(REPO_ROOT)/src
 SUBMODULES=$(REPO_ROOT)/submodules

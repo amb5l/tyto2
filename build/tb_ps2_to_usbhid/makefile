@@ -1,7 +1,7 @@
 # makefile for tb_ps2_to_usbhid
 
 # path to root of this repository
-REPO_ROOT=$(shell git rev-parse --show-toplevel)
+REPO_ROOT=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 
 # path to this repository's submodules
 SUBMODULES=$(REPO_ROOT)/submodules

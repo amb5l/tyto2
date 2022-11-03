@@ -1,4 +1,4 @@
-REPO_ROOT=$(shell git rev-parse --show-toplevel)
+REPO_ROOT=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 SRC=$(REPO_ROOT)/src
 
 all: run

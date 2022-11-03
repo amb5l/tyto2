@@ -1,7 +1,7 @@
 # makefile for np6532_functest
 
 # path to root of this repository
-REPO_ROOT=$(shell git rev-parse --show-toplevel)
+REPO_ROOT=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 
 # path to this repository's submodules
 SUBMODULES=$(REPO_ROOT)/submodules
@@ -147,6 +147,7 @@ $(RAM_INIT_VHD): $(FUNCTEST_BIN) $(NMI_BIN) $(IRQ_BIN) $(INIT_BIN) | $(BUILD_VHD
 
 SOURCES=\
 	$(SRC)/common/tyto_types_pkg.vhd                        \
+	$(SRC)/common/tyto_utils_pkg.vhd                        \
 	$(SRC)/common/basic/$(VENDOR)/ram_sdp_a_32.vhd          \
 	$(SRC)/common/basic/ram_tdp_s.vhd                       \
 	$(SRC)/common/basic/$(VENDOR)/ldce_bus.vhd              \
