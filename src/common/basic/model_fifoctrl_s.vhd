@@ -16,85 +16,115 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
-entity model_fifoctrl_s is
+package model_fifoctrl_s_pkg is
+
+  component model_fifoctrl_s is
     generic (
-        size   : integer
+      size   : integer
     );
     port (
-        rst    : in  std_logic;
-        clk    : in  std_logic;
-        wen    : in  std_logic;
-        ren    : in  std_logic;
-        ef     : out std_logic;
-        ff     : out std_logic;
-        wptr   : out integer range 0 to size-1;
-        wcount : out integer range 0 to size;
-        werr   : out std_logic;
-        rptr   : out integer range 0 to size-1;
-        rcount : out integer range 0 to size;
-        rerr   : out std_logic
+      rst    : in    std_logic;
+      clk    : in    std_logic;
+      wen    : in    std_logic;
+      ren    : in    std_logic;
+      ef     : out   std_logic;
+      ff     : out   std_logic;
+      wptr   : out   integer range 0 to size-1;
+      wcount : out   integer range 0 to size;
+      werr   : out   std_logic;
+      rptr   : out   integer range 0 to size-1;
+      rcount : out   integer range 0 to size;
+      rerr   : out   std_logic
     );
+  end component model_fifoctrl_s;
+
+end package model_fifoctrl_s_pkg;
+
+--------------------------------------------------------------------------------
+
+library ieee;
+  use ieee.std_logic_1164.all;
+
+entity model_fifoctrl_s is
+  generic (
+    size   : integer
+  );
+  port (
+    rst    : in    std_logic;
+    clk    : in    std_logic;
+    wen    : in    std_logic;
+    ren    : in    std_logic;
+    ef     : out   std_logic;
+    ff     : out   std_logic;
+    wptr   : out   integer range 0 to size-1;
+    wcount : out   integer range 0 to size;
+    werr   : out   std_logic;
+    rptr   : out   integer range 0 to size-1;
+    rcount : out   integer range 0 to size;
+    rerr   : out   std_logic
+  );
 end entity model_fifoctrl_s;
 
 architecture model of model_fifoctrl_s is
+
 begin
 
-    process(rst,clk)
+  MAIN: process (rst, clk) is
 
-        variable temp_wcount : integer;
-        variable temp_rcount : integer;
+    variable temp_wcount : integer;
+    variable temp_rcount : integer;
 
-    begin
-        if rst = '1' then
+  begin
+    if rst = '1' then
 
-            ef     <= '1';
-            ff     <= '0';
-            wptr   <= 0;
-            wcount <= size;
-            werr   <= '0';
-            rptr   <= 0;
-            rcount <= 0;
-            rerr   <= '0';
+      ef     <= '1';
+      ff     <= '0';
+      wptr   <= 0;
+      wcount <= size;
+      werr   <= '0';
+      rptr   <= 0;
+      rcount <= 0;
+      rerr   <= '0';
 
-        elsif rising_edge(clk) then
+    elsif rising_edge(clk) then
 
-            temp_wcount := wcount;
-            temp_rcount := rcount;
+      temp_wcount := wcount;
+      temp_rcount := rcount;
 
-            if wen = '1' then
-                temp_wcount := temp_wcount-1;
-                temp_rcount := temp_rcount+1;
-                wptr <= (wptr+1) mod size;
-                ef <= '0';
-                werr <= werr or ff;
-            end if;
+      if wen = '1' then
+        temp_wcount := temp_wcount-1;
+        temp_rcount := temp_rcount+1;
+        wptr        <= (wptr+1) mod size;
+        ef          <= '0';
+        werr        <= werr or ff;
+      end if;
 
-            if ren = '1' then
-                temp_wcount := temp_wcount+1;
-                temp_rcount := temp_rcount-1;
-                rptr <= (rptr+1) mod size;
-                rerr <= rerr or ef;
-                ff <= '0';
-                rerr <= rerr or ef;
-            end if;
+      if ren = '1' then
+        temp_wcount := temp_wcount+1;
+        temp_rcount := temp_rcount-1;
+        rptr        <= (rptr+1) mod size;
+        rerr        <= rerr or ef;
+        ff          <= '0';
+        rerr        <= rerr or ef;
+      end if;
 
-            if temp_wcount = 0 then
-                ff <= '1';
-            else
-                ff <= '0';
-            end if;
-            if temp_rcount = 0 then
-                ef <= '1';
-            else
-                ef <= '0';
-            end if;
+      if temp_wcount = 0 then
+        ff <= '1';
+      else
+        ff <= '0';
+      end if;
+      if temp_rcount = 0 then
+        ef <= '1';
+      else
+        ef <= '0';
+      end if;
 
-            wcount <= temp_wcount;
-            rcount <= temp_rcount;
+      wcount <= temp_wcount;
+      rcount <= temp_rcount;
 
-        end if;
-    end process;
+    end if;
+  end process MAIN;
 
 end architecture model;

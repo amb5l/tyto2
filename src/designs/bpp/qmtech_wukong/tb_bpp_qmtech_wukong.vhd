@@ -68,7 +68,7 @@ begin
 
     CLK_SRC: component model_clk_src generic map ( pn => 1, pd => 50 ) port map ( clk => clki_50m );
 
-    UUT: entity work.bpp_qmtech_wukong
+    DUT: entity work.bpp_qmtech_wukong
         port map (
             clki_50m    => clki_50m,
             led_n       => led_n,

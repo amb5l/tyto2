@@ -16,30 +16,32 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 package tyto_types_pkg is
 
-    type sl2d_t is array(natural range <>,natural range <>) of std_logic;
-    type slv_31_0_t is array(natural range <>) of std_logic_vector(31 downto 0);
-    type slv_1_0_t is array(natural range <>) of std_logic_vector(1 downto 0);
-    type slv_3_0_t is array(natural range <>) of std_logic_vector(3 downto 0);
-    type slv_7_0_t is array(natural range <>) of std_logic_vector(7 downto 0);
-    type slv_7_2_t is array(natural range <>) of std_logic_vector(7 downto 2);
-    type slv_7_3_t is array(natural range <>) of std_logic_vector(7 downto 3);
-    type slv_8_0_t is array(natural range <>) of std_logic_vector(8 downto 0);
-    type slv_9_0_t is array(natural range <>) of std_logic_vector(9 downto 0);
-    type slv_7_0_2d_t is array(natural range <>,natural range <>) of std_logic_vector(7 downto 0);
-    type slv_3_0_2d_t is array(natural range <>,natural range <>) of std_logic_vector(3 downto 0);
+  type    sl2d_t is array(natural range <>, natural range <>) of std_logic;
+  type    slv_31_0_t is array(natural range <>) of std_logic_vector(31 downto 0);
+  type    slv_1_0_t is array(natural range <>) of std_logic_vector(1 downto 0);
+  type    slv_3_0_t is array(natural range <>) of std_logic_vector(3 downto 0);
+  type    slv_7_0_t is array(natural range <>) of std_logic_vector(7 downto 0);
+  type    slv_7_2_t is array(natural range <>) of std_logic_vector(7 downto 2);
+  type    slv_7_3_t is array(natural range <>) of std_logic_vector(7 downto 3);
+  type    slv_8_0_t is array(natural range <>) of std_logic_vector(8 downto 0);
+  type    slv_9_0_t is array(natural range <>) of std_logic_vector(9 downto 0);
+  type    slv_7_0_2d_t is array(natural range <>, natural range <>) of std_logic_vector(7 downto 0);
+  type    slv_3_0_2d_t is array(natural range <>, natural range <>) of std_logic_vector(3 downto 0);
 
-    subtype uint8_t is integer range 0 to 255;
-    type uint8_array_t is array(natural range <>) of uint8_t;
-    type int_array_t is array(natural range <>) of integer;
-	type pixel_t is array(0 to 2) of uint8_t;
-	type bmp_t is array(natural range <>,natural range <>) of pixel_t;
+  subtype uint8_t is integer range 0 to 255;
+  type    uint8_array_t is array(natural range <>) of uint8_t;
 
-    type real_array_t is array(natural range <>) of real;
+  type    int_array_t is array(natural range <>) of integer;
 
-    type file_char_t is file of character;
+  type    pixel_t is array(0 to 2) of uint8_t;
+  type    bmp_t is array(natural range <>, natural range <>) of pixel_t;
+
+  type    real_array_t is array(natural range <>) of real;
+
+  type    file_char_t is file of character;
 
 end package tyto_types_pkg;

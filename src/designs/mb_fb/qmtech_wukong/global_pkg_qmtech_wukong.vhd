@@ -16,15 +16,15 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 package global_pkg is
 
-    constant data_width_log2    : integer := 4;     -- 4 => 2^4 => 16 bytes
-    constant addr_width_log2    : integer := 24;    -- 24 => 2^24 * 16 = 256MBytes
-    
-    type mig_addr_t is array(natural range <>) of std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
-    type mig_data_t is array(natural range <>) of std_logic_vector(2**(data_width_log2+3)-1 downto 0);
-    type mig_be_t is array (natural range <>) of std_logic_vector(2**data_width_log2-1 downto 0);
+  constant data_width_log2 : integer := 4;  -- 4 => 2^4 => 16 bytes
+  constant addr_width_log2 : integer := 24; -- 24 => 2^24 * 16 = 256MBytes
+
+  type     mig_addr_t is array(natural range <>) of std_logic_vector(addr_width_log2+data_width_log2-1 downto data_width_log2);
+  type     mig_data_t is array(natural range <>) of std_logic_vector(2**(data_width_log2+3)-1 downto 0);
+  type     mig_be_t is array (natural range <>) of std_logic_vector(2**data_width_log2-1 downto 0);
 
 end package global_pkg;

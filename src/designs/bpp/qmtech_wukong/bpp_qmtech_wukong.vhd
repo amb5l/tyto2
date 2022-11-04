@@ -110,7 +110,7 @@ architecture synth of bpp_qmtech_wukong is
     signal sys_clk_48m    : std_logic;                     -- system clock, 48 MHz
     signal sys_clk_32m    : std_logic;                     -- system clock, 32 MHz
     signal sys_clk_8m     : std_logic;                     -- system clock, 8 MHz
-                          
+
     signal pix_rst_d      : std_logic;                     -- pixel clock synchronous reset, before buffer/register
     signal pix_rst        : std_logic;                     -- pixel clock synchronous reset
     signal pix_clk        : std_logic;                     -- pixel clock (148.5 MHz for 1080p50)
@@ -139,7 +139,7 @@ architecture synth of bpp_qmtech_wukong is
     signal vga_r          : std_logic_vector(7 downto 0);  -- VGA red
     signal vga_g          : std_logic_vector(7 downto 0);  -- VGA green
     signal vga_b          : std_logic_vector(7 downto 0);  -- VGA blue
-                          
+
     signal pcm_rst        : std_logic;                     -- audio clock domain reset
     signal pcm_clk        : std_logic;                     -- audio clock (12.288 MHz)
     signal pcm_clken      : std_logic;                     -- audio clock enable @ 48kHz

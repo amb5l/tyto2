@@ -24,31 +24,31 @@ package bpp_kbd_ps2_pkg is
     component bpp_kbd_ps2 is
         port (
 
-                clk           : in  std_logic;                    -- clock
-                clken         : in  std_logic;                    -- clock enable
-                rst           : in  std_logic;                    -- reset
+                clk           : in  std_logic;
+                clken         : in  std_logic;
+                rst           : in  std_logic;
 
-                ps2_clk_i     : in  std_logic;                    -- PS/2 serial clock in
-                ps2_clk_o     : out std_logic;                    -- PS/2 serial clock out
-                ps2_data_i    : in  std_logic;                    -- PS/2 serial data in
-                ps2_data_o    : out std_logic;                    -- PS/2 serial data out
+                ps2_clk_i     : in  std_logic;
+                ps2_clk_o     : out std_logic;
+                ps2_data_i    : in  std_logic;
+                ps2_data_o    : out std_logic;
 
-                opt_mode      : in  std_logic_vector(2 downto 0); -- startup options: video mode (0-7)
-                opt_boot      : in  std_logic;                    -- startup options: 1 = boot on BREAK, 0 = boot on SHIFT BREAK
-                opt_disc      : in  std_logic_vector(1 downto 0); -- startup options: disc timing
-                opt_spare     : in  std_logic;                    -- startup options: spare
-                opt_dfs_nfs   : in  std_logic;                    -- startup options: 1 = DFS, 0 = NFS
+                opt_mode      : in  std_logic_vector(2 downto 0);
+                opt_boot      : in  std_logic;
+                opt_disc      : in  std_logic_vector(1 downto 0);
+                opt_spare     : in  std_logic;
+                opt_dfs_nfs   : in  std_logic;
 
-                led_capslock  : in  std_logic;                    -- } LED states
-                led_shiftlock : in  std_logic;                    -- }
-                led_motor     : in  std_logic;                    -- }
+                led_capslock  : in  std_logic;
+                led_shiftlock : in  std_logic;
+                led_motor     : in  std_logic;
 
-                kbd_break     : out std_logic;                    -- BBC micro keyboard: BREAK pressed
-                kbd_load      : in  std_logic;                    -- BBC micro keyboard: load
-                kbd_row       : in  std_logic_vector(2 downto 0); -- BBC micro keyboard: row (0-7)
-                kbd_col       : in  std_logic_vector(3 downto 0); -- BBC micro keyboard: column (0-9)
-                kbd_press     : out std_logic;                    -- BBC micro keyboard: key press
-                kbd_irq       : out std_logic                     -- BBC micro keyboard: key press in column
+                kbd_break     : out std_logic;
+                kbd_load      : in  std_logic;
+                kbd_row       : in  std_logic_vector(2 downto 0);
+                kbd_col       : in  std_logic_vector(3 downto 0);
+                kbd_press     : out std_logic;
+                kbd_irq       : out std_logic
 
         );
     end component bpp_kbd_ps2;
@@ -184,7 +184,7 @@ begin
     --------------------------------------------------------------------------------
     -- maintain HID key states by tracking make/break on each code
 
-    process(clk)
+    MAKE_BREAK: process(clk) is
     begin
         if rising_edge(clk) then
             if rst = '1' then
@@ -197,7 +197,7 @@ begin
                 end if;
             end if;
         end if;
-    end process;
+    end process MAKE_BREAK;
 
     --------------------------------------------------------------------------------
     -- map BBC key states from HID key states
@@ -292,7 +292,7 @@ begin
     --------------------------------------------------------------------------------
     -- key readout
 
-    DO_74LS163: process(clk)
+    DO_74LS163: process(clk) is
     begin
         if rising_edge(clk) then
             if rst = '1' then

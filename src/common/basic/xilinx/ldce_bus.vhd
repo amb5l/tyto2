@@ -17,58 +17,61 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 package ldce_bus_pkg is
 
-    component ldce_bus is
-        generic (
-            width : integer
-        );
-        port (
-            clr : in  std_logic;
-            g   : in  std_logic;
-            ge  : in  std_logic;
-            d   : in  std_logic_vector(width-1 downto 0);
-            q   : out std_logic_vector(width-1 downto 0)
-        );
-    end component ldce_bus;
+  component ldce_bus is
+    generic (
+      width : integer
+    );
+    port (
+      clr   : in    std_logic;
+      g     : in    std_logic;
+      ge    : in    std_logic;
+      d     : in    std_logic_vector(width-1 downto 0);
+      q     : out   std_logic_vector(width-1 downto 0)
+    );
+  end component ldce_bus;
 
 end package ldce_bus_pkg;
 
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 library unisim;
-use unisim.vcomponents.all;
+  use unisim.vcomponents.all;
 
 entity ldce_bus is
-    generic (
-        width : integer
-    );
-    port (
-        clr : in  std_logic;
-        g   : in  std_logic;
-        ge  : in  std_logic;
-        d   : in  std_logic_vector(width-1 downto 0);
-        q   : out std_logic_vector(width-1 downto 0)
-    );
+  generic (
+    width : integer
+  );
+  port (
+    clr   : in    std_logic;
+    g     : in    std_logic;
+    ge    : in    std_logic;
+    d     : in    std_logic_vector(width-1 downto 0);
+    q     : out   std_logic_vector(width-1 downto 0)
+  );
 end entity ldce_bus;
 
 architecture struct of ldce_bus is
+
 begin
 
-    GEN: for i in 0 to width-1 generate
-        LATCH: component ldce
-            port map (
-                clr	=> clr,
-                g	=> g,
-                ge	=> ge,
-                d	=> d(i),
-                q	=> q(i)
-            );
-    end generate GEN;
+  gen : for i in 0 to width - 1 generate
+
+    LATCH: component ldce
+      port map (
+        clr => clr,
+        g   => g,
+        ge  => ge,
+        d   => d(i),
+        q   => q(i)
+      );
+
+  end generate gen;
 
 end architecture struct;

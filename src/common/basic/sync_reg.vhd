@@ -16,65 +16,66 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 package sync_reg_pkg is
 
-    component sync_reg is
-        generic (
-            width : integer := 1;
-            depth : integer := 2
-        );
-        port (
-            clk   : in  std_logic;                          -- destination clock
-            d     : in  std_logic_vector(width-1 downto 0); -- input
-            q     : out std_logic_vector(width-1 downto 0)  -- output
-        );
-    end component sync_reg;
+  component sync_reg is
+    generic (
+      width : integer := 1;
+      depth : integer := 2
+    );
+    port (
+      clk   : in    std_logic;
+      d     : in    std_logic_vector(width-1 downto 0);
+      q     : out   std_logic_vector(width-1 downto 0)
+    );
+  end component sync_reg;
 
 end package sync_reg_pkg;
 
 -------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 entity sync_reg is
-    generic (
-        width : integer := 1;
-        depth : integer := 2
-    );
-    port (
-        clk   : in    std_logic;                          -- destination clock
-        d     : in    std_logic_vector(width-1 downto 0); -- input
-        q     : out   std_logic_vector(width-1 downto 0)  -- output
-    );
+  generic (
+    width : integer := 1;
+    depth : integer := 2
+  );
+  port (
+    clk   : in    std_logic;                          -- destination clock
+    d     : in    std_logic_vector(width-1 downto 0); -- input
+    q     : out   std_logic_vector(width-1 downto 0)  -- output
+  );
 end entity sync_reg;
 
 architecture structural of sync_reg is
 
-    subtype reg_level_t is std_logic_vector(width-1 downto 0);
-    type reg_t is array(0 to depth-1) of reg_level_t;
-    signal reg : reg_t;
+  subtype reg_level_t is std_logic_vector(width-1 downto 0);
+  type    reg_t is array(0 to depth-1) of reg_level_t;
 
-    attribute ASYNC_REG : string;
-    attribute ASYNC_REG of reg : signal is "TRUE";
+  signal  reg : reg_t;
+
+  attribute async_reg : string;
+  attribute async_reg of reg : signal is "TRUE";
 
 begin
 
-    process(clk)
-    begin
-        if rising_edge(clk) then
-            for i in 0 to depth-1 loop
-                if i = 0 then
-                    reg(i) <= d;
-                else
-                    reg(i) <= reg(i-1);
-                end if;
-            end loop;
+  MAIN: process (clk) is
+  begin
+    if rising_edge(clk) then
+      for i in 0 to depth-1 loop
+        if i = 0 then
+          reg(i) <= d;
+        else
+          reg(i) <= reg(i-1);
         end if;
-    end process;
+      end loop;
+    end if;
+  end process MAIN;
 
-    q <= reg(depth-1);
+  q <= reg(depth-1);
 
 end architecture structural;

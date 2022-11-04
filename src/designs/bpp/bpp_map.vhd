@@ -22,7 +22,7 @@ package bpp_map_pkg is
 
     component bpp_map is
         generic (
-            ram_size_log2 : integer                                      -- 16 = 64k, 17 = 128k, 18 = 256k
+            ram_size_log2 : integer
         );
         port (
 
@@ -30,17 +30,17 @@ package bpp_map_pkg is
             clken       : in  std_logic;
             rst         : in  std_logic;
 
-            core_if_al  : in  std_logic_vector(15 downto 0);              -- instruction fetch address - logical
-            core_if_ap  : out std_logic_vector(ram_size_log2-1 downto 0); -- instruction fetch address - physical
-            core_if_z   : out std_logic;                                  -- instruction fetch returns zero
-            core_ls_al  : in  std_logic_vector(15 downto 0);              -- load/store address - logical
-            core_ls_ap  : out std_logic_vector(ram_size_log2-1 downto 0); -- load/store address - physical
-            core_ls_we  : in  std_logic;                                  -- store write enable
-            core_ls_z   : out std_logic;                                  -- load returns zero
-            core_ls_wp  : out std_logic;                                  -- store to write protected area of RAM
-            core_ls_ext : out std_logic;                                  -- load/store is external (I/O)
-            core_ls_dwx : in  std_logic_vector(7 downto 0);               -- store (write) data to external device
-            core_ls_drx : out std_logic_vector(7 downto 0);               -- load (read) data from external device
+            core_if_al  : in  std_logic_vector(15 downto 0);
+            core_if_ap  : out std_logic_vector(ram_size_log2-1 downto 0);
+            core_if_z   : out std_logic;
+            core_ls_al  : in  std_logic_vector(15 downto 0);
+            core_ls_ap  : out std_logic_vector(ram_size_log2-1 downto 0);
+            core_ls_we  : in  std_logic;
+            core_ls_z   : out std_logic;
+            core_ls_wp  : out std_logic;
+            core_ls_ext : out std_logic;
+            core_ls_dwx : in  std_logic_vector(7 downto 0);
+            core_ls_drx : out std_logic_vector(7 downto 0);
 
             crtc_cs     : out std_logic;
             crtc_dr     : in  std_logic_vector(7 downto 0);
@@ -70,7 +70,7 @@ package bpp_map_pkg is
             adc_dr      : in  std_logic_vector(7 downto 0);
 
             tube_cs     : out std_logic;
-            tube_dr     : std_logic_vector(7 downto 0)
+            tube_dr     : in std_logic_vector(7 downto 0)
 
         );
     end component bpp_map;
@@ -88,7 +88,7 @@ use work.tyto_utils_pkg.all;
 
 entity bpp_map is
     generic (
-        ram_size_log2 : integer                                      -- 16 = 64k, 17 = 128k, 18 = 256k
+        ram_size_log2 : integer                                       -- 16 = 64k, 17 = 128k, 18 = 256k
     );
     port (
 
@@ -136,7 +136,7 @@ entity bpp_map is
         adc_dr      : in  std_logic_vector(7 downto 0);
 
         tube_cs     : out std_logic;
-        tube_dr     : std_logic_vector(7 downto 0)
+        tube_dr     : in  std_logic_vector(7 downto 0)
 
     );
 end entity bpp_map;
@@ -273,7 +273,7 @@ begin
     process(clk)
     begin
         if rising_edge(clk) then
-            core_if_z <= sw_z and bool2sl(core_ls_al(15 downto 14) = "10");
+            core_if_z <= sw_z and (core_ls_al(15 downto 14) = "10");
         end if;
     end process;
 
@@ -290,9 +290,9 @@ begin
     process(clk)
     begin
         if rising_edge(clk) then
-            core_ls_z <= sw_z and bool2sl(core_ls_al(15 downto 14) = "10");
+            core_ls_z <= sw_z and (core_ls_al(15 downto 14) = "10");
         end if;
-    end process;   
+    end process;
 
     core_ls_wp <=
         '1'   when core_ls_al(15 downto 14) = "11" else

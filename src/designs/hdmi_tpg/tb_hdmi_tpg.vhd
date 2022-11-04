@@ -17,17 +17,17 @@
 -- to do: verify decoded data packets
 
 library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 library std;
-use std.env.all;
+  use std.env.all;
 
 library work;
-use work.tyto_types_pkg.all;
-use work.hdmi_tpg_pkg.all;
-use work.model_hdmi_decoder_pkg.all;
-use work.model_vga_sink_pkg.all;
+  use work.tyto_types_pkg.all;
+  use work.hdmi_tpg_pkg.all;
+  use work.model_hdmi_decoder_pkg.all;
+  use work.model_vga_sink_pkg.all;
 
 entity tb_hdmi_tpg is
   generic (
@@ -37,56 +37,56 @@ end entity tb_hdmi_tpg;
 
 architecture sim of tb_hdmi_tpg is
 
-  constant ts_interval : integer := 10; -- timestamp interval (us)
+  constant ts_interval : integer := 10;    -- timestamp interval (us)
 
-  constant fclk : real := 100.0; -- 100 MHz
-  constant tclk : time := integer(1000.0/fclk) * 1 ns;
+  constant fclk        : real := 100.0;    -- 100 MHz
+  constant tclk        : time := integer(1000.0/fclk) * 1 ns;
 
-  signal rst        : std_logic;
-  signal clk        : std_logic;
-  signal mode_step  : std_logic;
-  signal mode       : std_logic_vector(3 downto 0);
-  signal heartbeat  : std_logic_vector(3 downto 0);
-  signal status     : std_logic_vector(1 downto 0);
+  signal   rst         : std_logic;
+  signal   clk         : std_logic;
+  signal   mode_step   : std_logic;
+  signal   mode        : std_logic_vector(3 downto 0);
+  signal   heartbeat   : std_logic_vector(3 downto 0);
+  signal   status      : std_logic_vector(1 downto 0);
 
-  signal hdmi_clk_p : std_logic;
-  signal hdmi_clk_n : std_logic;
-  signal hdmi_d_p   : std_logic_vector(0 to 2);
-  signal hdmi_d_n   : std_logic_vector(0 to 2);
+  signal   hdmi_clk_p  : std_logic;
+  signal   hdmi_clk_n  : std_logic;
+  signal   hdmi_d_p    : std_logic_vector(0 to 2);
+  signal   hdmi_d_n    : std_logic_vector(0 to 2);
 
-  signal data_pstb  : std_logic;
-  signal data_hb    : slv_7_0_t(0 to 3);
-  signal data_hb_ok : std_logic;
-  signal data_sb    : slv_7_0_2d_t(0 to 3,0 to 7);
-  signal data_sb_ok : std_logic_vector(0 to 3);
+  signal   data_pstb   : std_logic;
+  signal   data_hb     : slv_7_0_t(0 to 3);
+  signal   data_hb_ok  : std_logic;
+  signal   data_sb     : slv_7_0_2d_t(0 to 3, 0 to 7);
+  signal   data_sb_ok  : std_logic_vector(0 to 3);
 
-  signal vga_rst    : std_logic;
-  signal vga_clk    : std_logic;
-  signal vga_vs     : std_logic;
-  signal vga_hs     : std_logic;
-  signal vga_de     : std_logic;
-  signal vga_r      : std_logic_vector(7 downto 0);
-  signal vga_g      : std_logic_vector(7 downto 0);
-  signal vga_b      : std_logic_vector(7 downto 0);
+  signal   vga_rst     : std_logic;
+  signal   vga_clk     : std_logic;
+  signal   vga_vs      : std_logic;
+  signal   vga_hs      : std_logic;
+  signal   vga_de      : std_logic;
+  signal   vga_r       : std_logic_vector(7 downto 0);
+  signal   vga_g       : std_logic_vector(7 downto 0);
+  signal   vga_b       : std_logic_vector(7 downto 0);
 
-  signal cap_rst    : std_logic;
-  signal cap_stb    : std_logic;
+  signal   cap_rst     : std_logic;
+  signal   cap_stb     : std_logic;
 
-  signal ts_stb     : std_logic := '0'; -- timestamp strobe
+  signal   ts_stb      : std_logic := '0'; -- timestamp strobe
 
 begin
 
   clk <=
-    '1' after tclk/2 when clk = '0' else
-    '0' after tclk/2 when clk = '1' else
-    '0';
+         '1' after tclk/2 when clk = '0' else
+         '0' after tclk/2 when clk = '1' else
+         '0';
 
-  rst <= '1', '0' after 20 ns;
+  rst     <= '1', '0' after 20 ns;
   cap_rst <= rst;
 
   ts_stb <= not ts_stb after ts_interval * 1 us;
 
-  process
+  TEST: process is
     variable timestamp : integer := ts_interval;
   begin
     mode_step <= '0';
@@ -102,15 +102,15 @@ begin
         end if;
       end if;
       if ts_stb'event then
-          report "MODE: "&integer'image(to_integer(unsigned(mode)))&"  TIMESTAMP: "&integer'image(timestamp)&" us";
-          timestamp := timestamp + ts_interval;
+        report "MODE: " & integer'image(to_integer(unsigned(mode))) & "  TIMESTAMP: " & integer'image(timestamp) & " us";
+        timestamp := timestamp + ts_interval;
       end if;
     end loop;
-  end process;
+  end process TEST;
 
   DUT: component hdmi_tpg
     generic  map (
-        fclk     => fclk
+      fclk       => fclk
     )
     port map (
       rst        => rst,
@@ -128,22 +128,22 @@ begin
 
   DECODE: component model_hdmi_decoder
     port map (
-      rst         => cap_rst,
-      hdmi_clk    => hdmi_clk_p,
-      hdmi_d      => hdmi_d_p,
-      data_pstb   => data_pstb,
-      data_hb     => data_hb,
-      data_hb_ok  => data_hb_ok,
-      data_sb     => data_sb,
-      data_sb_ok  => data_sb_ok,
-      vga_rst     => vga_rst,
-      vga_clk     => vga_clk,
-      vga_vs      => vga_vs,
-      vga_hs      => vga_hs,
-      vga_de      => vga_de,
-      vga_p(2)    => vga_r,
-      vga_p(1)    => vga_g,
-      vga_p(0)    => vga_b
+      rst        => cap_rst,
+      hdmi_clk   => hdmi_clk_p,
+      hdmi_d     => hdmi_d_p,
+      data_pstb  => data_pstb,
+      data_hb    => data_hb,
+      data_hb_ok => data_hb_ok,
+      data_sb    => data_sb,
+      data_sb_ok => data_sb_ok,
+      vga_rst    => vga_rst,
+      vga_clk    => vga_clk,
+      vga_vs     => vga_vs,
+      vga_hs     => vga_hs,
+      vga_de     => vga_de,
+      vga_p(2)   => vga_r,
+      vga_p(1)   => vga_g,
+      vga_p(0)   => vga_b
     );
 
   CAPTURE: component model_vga_sink
@@ -153,9 +153,9 @@ begin
       vga_vs   => vga_vs,
       vga_hs   => vga_hs,
       vga_de   => vga_de,
-      vga_r  => vga_r,
-      vga_g  => vga_g,
-      vga_b  => vga_b,
+      vga_r    => vga_r,
+      vga_g    => vga_g,
+      vga_b    => vga_b,
       cap_rst  => cap_rst,
       cap_stb  => cap_stb,
       cap_name => "tb_hdmi_tpg"

@@ -16,139 +16,138 @@
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
+  use ieee.std_logic_1164.all;
 
 package model_vga_sink_pkg is
 
-    component model_vga_sink is
-        port
-        (
-            vga_rst  : in  std_logic;                    -- pixel clock synchronous reset
-            vga_clk  : in  std_logic;                    -- pixel clock
-            vga_vs   : in  std_logic;                    -- vertical sync
-            vga_hs   : in  std_logic;                    -- horizontal sync
-            vga_de   : in  std_logic;                    -- pixel data enable
-            vga_r    : in  std_logic_vector(7 downto 0); -- red
-            vga_g    : in  std_logic_vector(7 downto 0); -- green
-            vga_b    : in  std_logic_vector(7 downto 0); -- blue
-            cap_rst  : in  std_logic;                    -- capture reset
-            cap_stb  : out std_logic;                    -- capture strobe
-            cap_name : in  string                        -- BMP filename prefix
-        );
-    end component model_vga_sink;
+  component model_vga_sink is
+    port (
+      vga_rst  : in    std_logic;
+      vga_clk  : in    std_logic;
+      vga_vs   : in    std_logic;
+      vga_hs   : in    std_logic;
+      vga_de   : in    std_logic;
+      vga_r    : in    std_logic_vector(7 downto 0);
+      vga_g    : in    std_logic_vector(7 downto 0);
+      vga_b    : in    std_logic_vector(7 downto 0);
+      cap_rst  : in    std_logic;
+      cap_stb  : out   std_logic;
+      cap_name : in    string
+    );
+  end component model_vga_sink;
 
 end package model_vga_sink_pkg;
 
 --------------------------------------------------------------------------------
 
 library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 library work;
-use work.tyto_types_pkg.all;
-use work.tyto_sim_pkg.all;
+  use work.tyto_types_pkg.all;
+  use work.tyto_sim_pkg.all;
 
 entity model_vga_sink is
-    port
-    (
-        vga_rst  : in  std_logic;                    -- pixel clock synchronous reset
-        vga_clk  : in  std_logic;                    -- pixel clock
-        vga_vs   : in  std_logic;                    -- vertical sync
-        vga_hs   : in  std_logic;                    -- horizontal sync
-        vga_de   : in  std_logic;                    -- pixel data enable
-        vga_r    : in  std_logic_vector(7 downto 0); -- red
-        vga_g    : in  std_logic_vector(7 downto 0); -- green
-        vga_b    : in  std_logic_vector(7 downto 0); -- blue
-        cap_rst  : in  std_logic;                    -- capture reset
-        cap_stb  : out std_logic;                    -- capture strobe
-        cap_name : in  string                        -- BMP filename prefix
-    );
+  port (
+    vga_rst  : in    std_logic;                    -- pixel clock synchronous reset
+    vga_clk  : in    std_logic;                    -- pixel clock
+    vga_vs   : in    std_logic;                    -- vertical sync
+    vga_hs   : in    std_logic;                    -- horizontal sync
+    vga_de   : in    std_logic;                    -- pixel data enable
+    vga_r    : in    std_logic_vector(7 downto 0); -- red
+    vga_g    : in    std_logic_vector(7 downto 0); -- green
+    vga_b    : in    std_logic_vector(7 downto 0); -- blue
+    cap_rst  : in    std_logic;                    -- capture reset
+    cap_stb  : out   std_logic;                    -- capture strobe
+    cap_name : in    string                        -- BMP filename prefix
+  );
 end entity model_vga_sink;
 
 architecture model of model_vga_sink is
 
-    signal bmp_count  : integer := 0;
-    signal bmp        : bmp_t(0 to 1919,0 to 1079); -- max size
-    signal ax         : integer;
-    signal ay         : integer;
-    signal width      : integer;
-    signal hieght     : integer;
-    signal capturing  : boolean;
-    signal interlaced : boolean;
+  signal bmp_count  : integer := 0;
+  signal bmp        : bmp_t(0 to 1919, 0 to 1079); -- max size
+  signal ax         : integer;
+  signal ay         : integer;
+  signal width      : integer;
+  signal hieght     : integer;
+  signal capturing  : boolean;
+  signal interlaced : boolean;
 
 begin
 
-    process(cap_rst,vga_rst,vga_clk,vga_vs,vga_hs,vga_de)
-    begin
+  MAIN: process (cap_rst, vga_rst, vga_clk, vga_vs, vga_hs, vga_de) is
+  begin
 
-        if cap_rst = '1' then
+    if cap_rst = '1' then
 
-            bmp_count <= 0;
+      bmp_count <= 0;
 
+    end if;
+
+    if vga_rst = '1' then
+
+      ax         <= 0;
+      ay         <= 0;
+      width      <= 0;
+      hieght     <= 0;
+      capturing  <= false;
+      interlaced <= false;
+
+    else
+
+      if rising_edge(vga_de) then
+        if not capturing then
+          ax     <= 0;
+          ay     <= 0;
+          width  <= 0;
+          hieght <= 0;
+          bmp    <= (others => (others => (0, 0, 0)));
         end if;
+        capturing <= true;
+      end if;
 
-        if vga_rst = '1' then
+      if falling_edge(vga_de) then
+        hieght <= hieght+1;
+        ay     <= ay + 1;
+        ax     <= 0;
+      end if;
 
-            ax         <= 0;
-            ay         <= 0;
-            width      <= 0;
-            hieght     <= 0;
-            capturing  <= false;
-            interlaced <= false;
+      if rising_edge(vga_clk) then
+        cap_stb <= '0';
+        if vga_de = '1' then
+          if hieght = 0 then
+            width <= width+1;
+          end if;
+          bmp(ax,ay)(0) <= to_integer(unsigned(vga_r));
+          bmp(ax,ay)(1) <= to_integer(unsigned(vga_g));
+          bmp(ax,ay)(2) <= to_integer(unsigned(vga_b));
+          ax            <= ax+1;
+        end if;
+      end if;
 
+      if capturing and vga_vs'event then
+        if vga_hs'event then
+          write_bmp(cap_name&"_"&integer'image(bmp_count), bmp, width, hieght, interlaced);
+          bmp_count  <= bmp_count + 1;
+          ax         <= 0;
+          ay         <= 0;
+          width      <= 0;
+          hieght     <= 0;
+          capturing  <= false;
+          interlaced <= false;
+          cap_stb    <= '1';
         else
-
-            if rising_edge(vga_de) then
-                if not capturing then
-                    ax <= 0;
-                    ay <= 0;
-                    width <= 0;
-                    hieght <= 0;
-                    bmp <= (others => (others => (0,0,0)));
-                end if;
-                capturing <= true;
-            end if;
-
-            if falling_edge(vga_de) then
-                hieght <= hieght+1;
-                ay <= ay + 1;
-                ax <= 0;
-            end if;
-
-            if rising_edge(vga_clk) then
-                cap_stb <= '0';
-                if vga_de = '1' then
-                    if hieght = 0 then
-                        width <= width+1;
-                    end if;
-                    bmp(ax,ay)(0) <= to_integer(unsigned(vga_r));
-                    bmp(ax,ay)(1) <= to_integer(unsigned(vga_g));
-                    bmp(ax,ay)(2) <= to_integer(unsigned(vga_b));
-                    ax <= ax+1;
-                end if;
-            end if;
-
-            if capturing and vga_vs'event then
-                if vga_hs'event then
-                    write_bmp(cap_name&"_"&integer'image(bmp_count),bmp,width,hieght,interlaced);
-                    bmp_count  <= bmp_count + 1;
-                    ax         <= 0;
-                    ay         <= 0;
-                    width      <= 0;
-                    hieght     <= 0;
-                    capturing  <= false;
-                    interlaced <= false;
-                    cap_stb    <= '1';
-                else
-                    interlaced <= true;
-                end if;
-            end if;
-
+          interlaced <= true;
         end if;
+      end if;
 
-    end process;
+    end if;
+
+  end process MAIN;
 
 end architecture model;
+
 ----------------------------------------------------------------------
 -- end of file
