@@ -46,11 +46,11 @@ VHDL_SUPPRESS_IEEE_ASSERTS=TRUE
 include $(MULTISIM_MK)/multisim.mk
 
 # post simulation recipes
-define RR_DIFF
+define RR_CHECK
 sim::
-	diff --binary $1 $2
+	sha256sum --check $1
 endef
-$(foreach TEST,$(TESTS),$(eval $(call RR_DIFF,$(MAKE_DIR)/$(TEST)$(VARIANT).bmp,$(DATA_DIR)/$(TEST)$(VARIANT).bmp)))
+$(foreach TEST,$(TESTS),$(eval $(call RR_CHECK,$(DATA_DIR)/$(TEST)$(VARIANT).bmp.sha256)))
 
 # custom cleanup
 clean::
