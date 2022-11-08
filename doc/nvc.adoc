@@ -1,22 +1,20 @@
 = NVC
 
-NVC is a potent alternative to GHDL. It offers improved simulation run times and simple support for vendor libraries and https://osvvm.org/[OSVVM]. For more information, visit the https://github.com/nickg/nvc[NVC Github repository].
+https://www.nickg.me.uk/nvc/[NVC] is a potent alternative to GHDL. It offers improved simulation run times and simple support for vendor libraries. It also fully supports the https://osvvm.org/[OSVVM] and https://www.uvvm.org/[UVVM] verification frameworks.
 
 To get the latest version of NVC running on your system, you will need to build it from source. The following instructions are for Windows users:
 
 . Install MSYS2 if required by following <<msys2.adoc#,these steps>>.
 
-. Install the packages required by NVC by entering the following command in an *MSYS2 MSYS* shell:
+. Open an *MSYS2 MINGW64* terminal. Install NVC's build dependancies:
 
-  pacman -S base-devel mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools,ruby}
-
-. Open an *MSYS2 MinGW x64* shell.
+  pacman -S --neede3d base-devel mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools,ruby}
 
 . Navigate to your chosen working directory. For example:
 
   cd /c/work
 
-. Clone the NVC repo into your working directory:
+. Clone the NVC repository:
 
   git clone https://github.com/nickg/nvc
 
@@ -32,7 +30,7 @@ To get the latest version of NVC running on your system, you will need to build 
   make
   make install
 
-. Check the NVC version (should be >=1.8):
+. Check the NVC version - it will include a short commit hash:
 
   nvc --version
 
@@ -44,7 +42,3 @@ To get the latest version of NVC running on your system, you will need to build 
 . **Optional**: build and install the Quartus libraries:
 
   nvc --install quartus
-
-. **Optional**: build and install the OSVVM libraries:
-
-  nvc --install osvvm

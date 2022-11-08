@@ -442,7 +442,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="content">
 <div class="paragraph">
-<p>NVC is a potent alternative to GHDL. It offers improved simulation run times and simple support for vendor libraries and <a href="https://osvvm.org/">OSVVM</a>. For more information, visit the <a href="https://github.com/nickg/nvc">NVC Github repository</a>.</p>
+<p><a href="https://www.nickg.me.uk/nvc/">NVC</a> is a potent alternative to GHDL. It offers improved simulation run times and simple support for vendor libraries. It also fully supports the <a href="https://osvvm.org/">OSVVM</a> and <a href="https://www.uvvm.org/">UVVM</a> verification frameworks.</p>
 </div>
 <div class="paragraph">
 <p>To get the latest version of NVC running on your system, you will need to build it from source. The following instructions are for Windows users:</p>
@@ -453,15 +453,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Install MSYS2 if required by following <a href="msys2.html">these steps</a>.</p>
 </li>
 <li>
-<p>Install the packages required by NVC by entering the following command in an <strong>MSYS2 MSYS</strong> shell:</p>
+<p>Open an <strong>MSYS2 MINGW64</strong> terminal. Install NVC&#8217;s build dependancies:</p>
 <div class="literalblock">
 <div class="content">
-<pre>pacman -S base-devel mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools,ruby}</pre>
+<pre>pacman -S --neede3d base-devel mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools,ruby}</pre>
 </div>
 </div>
-</li>
-<li>
-<p>Open an <strong>MSYS2 MinGW x64</strong> shell.</p>
 </li>
 <li>
 <p>Navigate to your chosen working directory. For example:</p>
@@ -472,7 +469,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </li>
 <li>
-<p>Clone the NVC repo into your working directory:</p>
+<p>Clone the NVC repository:</p>
 <div class="literalblock">
 <div class="content">
 <pre>git clone https://github.com/nickg/nvc</pre>
@@ -500,7 +497,7 @@ make install</pre>
 </div>
 </li>
 <li>
-<p>Check the NVC version (should be &gt;=1.8):</p>
+<p>Check the NVC version - it will include a short commit hash:</p>
 <div class="literalblock">
 <div class="content">
 <pre>nvc --version</pre>
@@ -524,20 +521,12 @@ nvc --install vivado</pre>
 </div>
 </div>
 </li>
-<li>
-<p><strong>Optional</strong>: build and install the OSVVM libraries:</p>
-<div class="literalblock">
-<div class="content">
-<pre>nvc --install osvvm</pre>
-</div>
-</div>
-</li>
 </ol>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-25 09:57:41 +0100
+Last updated 2022-11-08 11:52:03 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

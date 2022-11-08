@@ -452,7 +452,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="trueinstallation-on-windows"><a class="anchor" href="#trueinstallation-on-windows"></a>Installation on Windows</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The easiest way for Windows users to get GHDL running is to install it via MSYS2:</p>
+<p>The easiest way for Windows users to get GHDL running is to install it as a binary package in MSYS2:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -460,13 +460,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Install MSYS2 if required by following <a href="msys2.html">these steps</a>.</p>
 </li>
 <li>
-<p>Open an <strong>MSYS2 MinGW x64</strong> shell.</p>
+<p>Open an <strong>MSYS2 MINGW32</strong> shell.</p>
 </li>
 <li>
 <p>Enter the following command to install GHDL:</p>
 <div class="literalblock">
 <div class="content">
-<pre>pacman -S mingw-w64-x86_64-ghdl-llvm</pre>
+<pre>pacman -S --needed mingw-w64-i686-ghdl-mcode</pre>
 </div>
 </div>
 </li>
@@ -482,19 +482,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>user@MACHINE MINGW64 ~
-$ ghdl --version
-GHDL 3.0.0-dev (2.0.0.r394.g4afeced94) [Dunoon edition]
- Compiled with GNAT Version: 12.1.0
- llvm code generator
+<pre>GHDL 3.0.0-dev (2.0.0.r670.ga259712cc) [Dunoon edition]
+ Compiled with GNAT Version: 12.2.0
+ mcode code generator
 Written by Tristan Gingold.
 
 Copyright (C) 2003 - 2022 Tristan Gingold.
 GHDL is free software, covered by the GNU General Public License.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-user@MACHINE MINGW64 ~
-$</pre>
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</pre>
 </div>
 </div>
 </li>
@@ -508,13 +503,13 @@ $</pre>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Open an <strong>MSYS2 MinGW x64</strong> shell.</p>
+<p>Open an <strong>MSYS2 MINGW32</strong> shell.</p>
 </li>
 <li>
 <p>Navigate to the GHDL vendor library directory:</p>
 <div class="literalblock">
 <div class="content">
-<pre>cd /mingw64/lib/ghdl/vendors</pre>
+<pre>cd /mingw32/lib/ghdl/vendors</pre>
 </div>
 </div>
 </li>
@@ -549,7 +544,7 @@ $</pre>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>-P/mingw64/lib/ghdl/vendors/xilinx-vivado</pre>
+<pre>-P/mingw32/lib/ghdl/vendors/xilinx-vivado</pre>
 </div>
 </div>
 </div>
@@ -561,13 +556,13 @@ $</pre>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Open an <strong>MSYS2 MinGW x64</strong> shell.</p>
+<p>Open an <strong>MSYS2 MINGW32</strong> shell.</p>
 </li>
 <li>
 <p>Navigate to the GHDL vendor library directory:</p>
 <div class="literalblock">
 <div class="content">
-<pre>cd /mingw64/lib/ghdl/vendors</pre>
+<pre>cd /mingw32/lib/ghdl/vendors</pre>
 </div>
 </div>
 </li>
@@ -602,7 +597,7 @@ $</pre>
 </div>
 <div class="literalblock">
 <div class="content">
-<pre>-P/mingw64/lib/ghdl/vendors/intel</pre>
+<pre>-P/mingw32/lib/ghdl/vendors/intel</pre>
 </div>
 </div>
 </div>
@@ -614,13 +609,13 @@ $</pre>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Open an <strong>MSYS2 MinGW x64</strong> shell.</p>
+<p>Open an <strong>MSYS2 MINGW64</strong> shell.</p>
 </li>
 <li>
 <p>Ensure that the required build tools are installed:</p>
 <div class="literalblock">
 <div class="content">
-<pre>pacman -S base-devel mingw-w64-x86_64-{gcc,gnatcoll,llvm}</pre>
+<pre>pacman -S --needed base-devel mingw-w64-x86_64-{gcc,gnatcoll,llvm}</pre>
 </div>
 </div>
 </li>
@@ -629,7 +624,7 @@ $</pre>
 <div class="literalblock">
 <div class="content">
 <pre>cd ~
-git clone https://github.com/libgit2/libgit2</pre>
+git clone https://github.com/ghdl/ghdl.git</pre>
 </div>
 </div>
 </li>
@@ -647,7 +642,7 @@ cd build</pre>
 <p>Configure the build, specifying where to install it:</p>
 <div class="literalblock">
 <div class="content">
-<pre>../configure --with-llvm-config --prefix=/mingw64</pre>
+<pre>../configure --prefix=/mingw32</pre>
 </div>
 </div>
 </li>
@@ -668,7 +663,7 @@ make install</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-08-28 18:11:10 +0100
+Last updated 2022-11-08 11:52:06 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

@@ -442,7 +442,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="content">
 <div class="paragraph">
-<p><a href="https://www.msys2.org/">MSYS2</a> is an easy way for Windows users to access to GNU development tools such as <code>make</code>, as well as many other open source tools. It&#8217;s easy to install and configure:</p>
+<p><a href="https://www.msys2.org/">MSYS2</a> is an easy way for Windows users to get GNU and other open source tools such as GHDL and NVC. It&#8217;s easy to install and configure:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -453,10 +453,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>Open an <strong>MSYS2 MSYS</strong> shell (the last step in the install process offers this as an option).</p>
 </li>
 <li>
-<p>Update the package database by entering the following command:</p>
+<p>Update the system, and package database, by entering the following command:</p>
 <div class="literalblock">
 <div class="content">
-<pre>pacman -Syu</pre>
+<pre>pacman -Syyu</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -464,30 +464,29 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </li>
 <li>
-<p>Open an <strong>MSYS2 MSYS2</strong> shell. Perform a system upgrade by entering the following command:</p>
+<p>Open an <strong>MSYS2 MSYS</strong> shell again. Install basic development tools by entering the following command:</p>
 <div class="literalblock">
 <div class="content">
-<pre>pacman -Su</pre>
+<pre>pacman -S --needed base-devel git</pre>
 </div>
 </div>
 </li>
 <li>
-<p>Install <code>make</code> and <code>git</code> by entering the following command:</p>
+<p>Create a Environment Variable named <code>MSYS2</code> set to the install location of MSYS2, and add the MSYS2 and MinGW binary directories to your Windows path in the following order:</p>
 <div class="literalblock">
 <div class="content">
-<pre>pacman -S --needed make git</pre>
+<pre>%MSYS2%/mingw64/bin
+%MSYS2%/mingw32/bin
+%MSYS2%/usr/bin</pre>
 </div>
 </div>
-</li>
-<li>
-<p><strong>RECOMMENDED</strong>: Create a Environment Variable named <code>MSYS2</code> set to the install location of MSYS2, and add MSYS2 and MinGW64 binaries to your Windows path (<code>%MSYS2%/usr/bin</code> and <code>%MSYS2/mingw64/bin</code>).</p>
 </li>
 </ol>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-09-29 09:33:55 +0100
+Last updated 2022-11-08 11:52:09 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

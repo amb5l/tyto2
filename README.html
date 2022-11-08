@@ -455,7 +455,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
-<p><code>src</code> contains source code for designs as well as common IP.</p>
+<p><code>src</code> contains source code for designs and common IP.</p>
 </li>
 <li>
 <p><code>build</code> contains makefiles for designs on supported targets. Hardware designs are located in <code>build\design_name\board_specific_variant</code>, and simulation designs are located in <code>build\design_name</code>.</p>
@@ -467,18 +467,6 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p><code>submodules</code> contains git submodules.</p>
 </li>
 </ul>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-ALL designs have submodule dependencies. Please remember to initialise submodules when cloning this repo!
-</td>
-</tr>
-</table>
 </div>
 <hr>
 </div>
@@ -502,38 +490,38 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/ddr3_test/ddr3_test.html">ddr3_test </a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent&#160;Nexys&#160;Video, QMTech&#160;Wukong</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A simple DDR3 SDRAM tester based on <a href="https://github.com/jorisvr/vhdl_prng">Joris van Rantwijk&#8217;s Pseudo Random Number Generator</a>. Hacks the generated HDL to generate the 200MHz IODELAYCTRL reference clock in the DDR3 IP core MMCM.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/hdmi_tpg/hdmi_tpg.html">hdmi_tpg</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent&#160;Nexys&#160;Video, QMTech&#160;Wukong</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">HDMI test pattern generator. Displays a test pattern on an HDMI monitor at various SD and HD TV resolutions. Includes test audio output.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/mb_cb/mb_cb.html">mb_cb</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent&#160;Nexys&#160;Video, QMTech&#160;Wukong</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A MicroBlaze CPU with a character buffer display, supporting 480i60 and 576i50 resolutions.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/mb_cb_ps2/mb_cb_ps2.html">mb_cb_ps2</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent&#160;Nexys&#160;Video</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The <a href="./doc/designs/mb_cb/mb_cb.html">mb_cb</a> design with an added PS/2 keyboard interface.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="./doc/designs/mb_fb/mb_fb.html">mb_fb</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent&#160;Nexys&#160;Video, QMTech&#160;Wukong</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on <a href="https://github.com/tuupola/hagl">Mike Tuupola&#8217;s hagl graphics library</a>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="doc/designs/np6532_poc/np6532_poc.html">np6532_poc</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent Nexys Video, QMTech Wukong, Altera Cyclone V Dev Kit, Terasic DE10-Nano</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Digilent&#160;Nexys&#160;Video, QMTech&#160;Wukong, Altera&#160;Cyclone&#160;V&#160;Dev&#160;Kit, Terasic&#160;DE10-Nano</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A proof-of-concept demonstration of the <a href="doc/common/retro/np65/np65.html">np65</a> 6502 compatible CPU core clocked at 32MHz. Runs <a href="https://github.com/Klaus2m5/6502_65C02_functional_tests">Klaus Dormann&#8217;s 6502 functional test</a> in a loop.</p></td>
 </tr>
 </tbody>
 </table>
 <div class="paragraph">
-<p>To build an FPGA design, navigate to its subdirectory under <code>build/</code> and run the <strong>make</strong> command.</p>
+<p>To build an FPGA design, navigate to its subdirectory under <code>build/</code> and run the <code>make</code> command.</p>
 </div>
 </div>
 </div>
@@ -579,27 +567,39 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 </tbody>
 </table>
 <div class="paragraph">
-<p>Simulations will normally run on any supported simulator (GHDL, NVC, ModelSim/Questa, Vivado). To run a simulation, navigate to its subdirectory under <code>build/</code> and run the <strong>make</strong> command.</p>
+<p>Simulations will normally run on any supported simulator (GHDL, NVC, ModelSim/Questa, Vivado). To run a simulation, navigate to its subdirectory under <code>build/</code> and run the <code>make</code> command.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="truetools"><a class="anchor" href="#truetools"></a>Tools</h2>
+<h2 id="truedependancies"><a class="anchor" href="#truedependancies"></a>Dependancies</h2>
 <div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<strong>ALL</strong> designs have submodule dependencies. Please remember to initialise submodules when cloning this repository!
+</td>
+</tr>
+</table>
+</div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><a href="https://www.gnu.org/software/make/">GNU make</a> is required, along with <a href="https://git-scm.com/">git</a> and assorted utilities that are usually present on Linux systems. <a href="doc/msys2.html">MSYS2</a> is a quick and easy way to get these tools running on Windows.</p>
+<p><a href="https://www.gnu.org/software/make/">GNU make</a>, <a href="https://www.gnu.org/software/coreutils/">GNU core utilities</a> and <a href="https://git-scm.com/">git</a> are required. These are normally present on Linux systems. Windows users should use <strong>MSYS2</strong> to get these tools running - see <a href="doc/msys2.html">these notes</a> for further details.</p>
 </li>
 <li>
-<p>Building an FPGA design requires vendor tools, and produces projects that can be opened and worked on in the vendor IDE:</p>
+<p>Building an FPGA design requires vendor tools, and produces projects that can be opened and worked on in the vendor&#8217;s IDE:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>For AMD/Xilinx FPGAs, <strong>Vivado</strong> is required - the free <strong>Standard Edition</strong> is sufficient. Versions <strong>2022.1</strong> and <strong>2021.2</strong> are supported. Note that designs including a <a href="https://en.wikipedia.org/wiki/MicroBlaze">Microblaze soft CPU</a> also require <strong>Vitis</strong>. These tools may be obtained from <a href="https://www.xilinx.com/support/download.html">here</a>.</p>
+<p>For AMD/Xilinx FPGAs, <strong>Vivado</strong> is required - the free <strong>Standard Edition</strong> is sufficient. Version since <strong>2020</strong> are supported. <strong>Note:</strong> designs including a <a href="https://en.wikipedia.org/wiki/MicroBlaze">Microblaze soft CPU</a> require <strong>Vitis</strong> (this includes Vivado). These tools may be obtained from <a href="https://www.xilinx.com/support/download.html">here</a>.</p>
 </li>
 <li>
-<p>For Intel/Altera FPGAs, <strong>Quartus Prime</strong> is required - the free <strong>Lite</strong> edition is sufficient. This includes a free edition of the <a href="https://en.wikipedia.org/wiki/ModelSim">Questa</a> simulator. Version <strong>21.1</strong> is supported. This may be obtained from <a href="https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html">here</a>.</p>
+<p>For Intel/Altera FPGAs, <strong>Quartus Prime</strong> is required - the free <strong>Lite</strong> edition is sufficient. This includes a free edition of the <a href="https://en.wikipedia.org/wiki/ModelSim">Questa</a> simulator. Versions since <strong>21.1</strong> are supported. Quartus may be obtained from <a href="https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html">here</a>.</p>
 </li>
 </ul>
 </div>
@@ -608,10 +608,16 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 <p>The free open source <a href="doc/nvc.html">NVC</a> and <a href="doc/ghdl.html">GHDL</a> simulators are supported by most simulation designs.</p>
 </li>
 <li>
-<p>Some builds include <a href="https://www.python.org/downloads/">Python 3</a> scripts.</p>
+<p>Some builds require <a href="https://www.python.org/downloads/">Python 3</a>.</p>
 </li>
 <li>
 <p>Projects including a 6502 or compatible CPU require the the <strong>ca65</strong> assembler and <strong>ld65</strong> linker from the <a href="https://cc65.github.io/">cc65</a> toolchain.</p>
+</li>
+<li>
+<p><a href="https://code.visualstudio.com/">Visual Studio Code</a> is now a supported make target. Run <code>make vscode</code> to build a directory workspace and open the editor. The build process also generates the required <code>config.v4p</code> file for the excellent <a href="http://www.vide-software.at/">VHDL for Professionals (V4P)</a> VS Code extension.</p>
+</li>
+<li>
+<p><a href="https://vhdl-style-guide.readthedocs.io/en/latest/">VHDL Style Guide</a> is supported with a custom configuration file. To check all source files, run <code>make -f vsg.mak</code> in the <code>src/</code> directory.</p>
 </li>
 </ol>
 </div>
@@ -634,7 +640,7 @@ ALL designs have submodule dependencies. Please remember to initialise submodule
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-09-01 16:00:27 +0100
+Last updated 2022-11-08 11:52:13 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

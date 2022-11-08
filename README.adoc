@@ -6,15 +6,13 @@ This repository is incomplete. Work to port all the designs and IP from the http
 
 A simpler directory structure is used:
 
-* `src` contains source code for designs as well as common IP.
+* `src` contains source code for designs and common IP.
 
 * `build` contains makefiles for designs on supported targets. Hardware designs are located in `build\design_name\board_specific_variant`, and simulation designs are located in `build\design_name`.
 
 * `doc` contains documentation.
 
 * `submodules` contains git submodules.
-
-NOTE: ALL designs have submodule dependencies. Please remember to initialise submodules when cloning this repo!
 
 '''
 
@@ -25,32 +23,32 @@ NOTE: ALL designs have submodule dependencies. Please remember to initialise sub
 |Name|Supported Boards|Description
 
 |<<./doc/designs/ddr3_test/ddr3_test.adoc#,ddr3_test >> 
-|Digilent Nexys Video, QMTech Wukong
+|Digilent{nbsp}Nexys{nbsp}Video, QMTech{nbsp}Wukong
 |A simple DDR3 SDRAM tester based on https://github.com/jorisvr/vhdl_prng[Joris van Rantwijk's Pseudo Random Number Generator]. Hacks the generated HDL to generate the 200MHz IODELAYCTRL reference clock in the DDR3 IP core MMCM.
 
 |<<./doc/designs/hdmi_tpg/hdmi_tpg.adoc#,hdmi_tpg>>
-|Digilent Nexys Video, QMTech Wukong
+|Digilent{nbsp}Nexys{nbsp}Video, QMTech{nbsp}Wukong
 |HDMI test pattern generator. Displays a test pattern on an HDMI monitor at various SD and HD TV resolutions. Includes test audio output.
 
 |<<./doc/designs/mb_cb/mb_cb.adoc#,mb_cb>>
-|Digilent Nexys Video, QMTech Wukong
+|Digilent{nbsp}Nexys{nbsp}Video, QMTech{nbsp}Wukong
 |A MicroBlaze CPU with a character buffer display, supporting 480i60 and 576i50 resolutions.
 
 |<<./doc/designs/mb_cb_ps2/mb_cb_ps2.adoc#,mb_cb_ps2>>
-|Digilent Nexys Video
+|Digilent{nbsp}Nexys{nbsp}Video
 |The <<./doc/designs/mb_cb/mb_cb.adoc#,mb_cb>> design with an added PS/2 keyboard interface.
 
 |<<./doc/designs/mb_fb/mb_fb.adoc#,mb_fb>>
-|Digilent Nexys Video, QMTech Wukong
+|Digilent{nbsp}Nexys{nbsp}Video, QMTech{nbsp}Wukong
 |A MicroBlaze CPU with a 24 bpp high resolution graphics frame buffer held in DDR3 SDRAM, with simple demo application based on link:https://github.com/tuupola/hagl[Mike Tuupola's hagl graphics library]. 
 
 |<<doc/designs/np6532_poc/np6532_poc.adoc#,np6532_poc>>
-|Digilent Nexys Video, QMTech Wukong, Altera Cyclone V Dev Kit, Terasic DE10-Nano
+|Digilent{nbsp}Nexys{nbsp}Video, QMTech{nbsp}Wukong, Altera{nbsp}Cyclone{nbsp}V{nbsp}Dev{nbsp}Kit, Terasic{nbsp}DE10-Nano
 |A proof-of-concept demonstration of the <<doc/common/retro/np65/np65.adoc#,np65>> 6502 compatible CPU core clocked at 32MHz. Runs https://github.com/Klaus2m5/6502_65C02_functional_tests[Klaus Dormann's 6502 functional test] in a loop.
 
 |===
 
-To build an FPGA design, navigate to its subdirectory under `build/` and run the *make* command.
+To build an FPGA design, navigate to its subdirectory under `build/` and run the `make` command.
 
 == Simulation Designs
 
@@ -78,23 +76,29 @@ To build an FPGA design, navigate to its subdirectory under `build/` and run the
 
 |=== 
 
-Simulations will normally run on any supported simulator (GHDL, NVC, ModelSim/Questa, Vivado). To run a simulation, navigate to its subdirectory under `build/` and run the *make* command.
+Simulations will normally run on any supported simulator (GHDL, NVC, ModelSim/Questa, Vivado). To run a simulation, navigate to its subdirectory under `build/` and run the `make` command.
 
-== Tools
+== Dependancies
 
-1. https://www.gnu.org/software/make/[GNU make] is required, along with https://git-scm.com/[git] and assorted utilities that are usually present on Linux systems. <<doc/msys2.adoc#,MSYS2>> is a quick and easy way to get these tools running on Windows.
+NOTE: **ALL** designs have submodule dependencies. Please remember to initialise submodules when cloning this repository!
 
-2. Building an FPGA design requires vendor tools, and produces projects that can be opened and worked on in the vendor IDE:
+. https://www.gnu.org/software/make/[GNU make], https://www.gnu.org/software/coreutils/[GNU core utilities] and https://git-scm.com/[git] are required. These are normally present on Linux systems. Windows users should use **MSYS2** to get these tools running - see <<doc/msys2.adoc#,these notes>> for further details.
 
-* For AMD/Xilinx FPGAs, *Vivado* is required - the free *Standard Edition* is sufficient. Versions *2022.1* and *2021.2* are supported. Note that designs including a https://en.wikipedia.org/wiki/MicroBlaze[Microblaze soft CPU] also require *Vitis*. These tools may be obtained from https://www.xilinx.com/support/download.html[here].
+. Building an FPGA design requires vendor tools, and produces projects that can be opened and worked on in the vendor's IDE:
 
-* For Intel/Altera FPGAs, *Quartus Prime* is required - the free *Lite* edition is sufficient. This includes a free edition of the https://en.wikipedia.org/wiki/ModelSim[Questa] simulator. Version *21.1* is supported. This may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
+* For AMD/Xilinx FPGAs, *Vivado* is required - the free *Standard Edition* is sufficient. Version since *2020* are supported. *Note:* designs including a https://en.wikipedia.org/wiki/MicroBlaze[Microblaze soft CPU] require *Vitis* (this includes Vivado). These tools may be obtained from https://www.xilinx.com/support/download.html[here].
 
-3. The free open source <<doc/nvc.adoc#,NVC>> and <<doc/ghdl.adoc#,GHDL>> simulators are supported by most simulation designs.
+* For Intel/Altera FPGAs, *Quartus Prime* is required - the free *Lite* edition is sufficient. This includes a free edition of the https://en.wikipedia.org/wiki/ModelSim[Questa] simulator. Versions since *21.1* are supported. Quartus may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
 
-4. Some builds include https://www.python.org/downloads/[Python 3] scripts.
+. The free open source <<doc/nvc.adoc#,NVC>> and <<doc/ghdl.adoc#,GHDL>> simulators are supported by most simulation designs.
 
-5. Projects including a 6502 or compatible CPU require the the *ca65* assembler and *ld65* linker from the https://cc65.github.io/[cc65] toolchain.
+. Some builds require https://www.python.org/downloads/[Python 3].
+
+. Projects including a 6502 or compatible CPU require the the *ca65* assembler and *ld65* linker from the https://cc65.github.io/[cc65] toolchain.
+
+. https://code.visualstudio.com/[Visual Studio Code] is now a supported make target. Run `make vscode` to build a directory workspace and open the editor. The build process also generates the required `config.v4p` file for the excellent http://www.vide-software.at/[VHDL for Professionals (V4P)] VS Code extension.
+
+. https://vhdl-style-guide.readthedocs.io/en/latest/[VHDL Style Guide] is supported with a custom configuration file. To check all source files, run `make -f vsg.mak` in the `src/` directory.
 
 == License
 

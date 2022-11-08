@@ -1,23 +1,23 @@
 = MSYS2
 
-https://www.msys2.org/[MSYS2] is an easy way for Windows users to access to GNU development tools such as `make`, as well as many other open source tools. It's easy to install and configure:
+https://www.msys2.org/[MSYS2] is an easy way for Windows users to get GNU and other open source tools such as GHDL and NVC. It's easy to install and configure:
 
 . Download and install the latest build of MSYS2 from here: https://repo.msys2.org/distrib/x86_64/[MSYS2 distributions for Win64]. This will normally be the last *.exe* file in the list.
 
 . Open an *MSYS2 MSYS* shell (the last step in the install process offers this as an option).
 
-. Update the package database by entering the following command:
+. Update the system, and package database, by entering the following command:
 
-  pacman -Syu
+  pacman -Syyu
 +
 The update will conclude by closing the shell.
 
-. Open an *MSYS2 MSYS* shell again. Perform a system upgrade by entering the following command:
+. Open an *MSYS2 MSYS* shell again. Install basic development tools by entering the following command:
 
-  pacman -Su
+  pacman -S --needed base-devel git
 
-. Install `make` and `git` by entering the following command:
+. Create a Environment Variable named `MSYS2` set to the install location of MSYS2, and add the MSYS2 and MinGW binary directories to your Windows path in the following order:
 
-  pacman -S --needed make git
-
-. **RECOMMENDED**: Create a Environment Variable named `MSYS2` set to the install location of MSYS2, and add MSYS2 and MinGW64 binaries to your Windows path (`%MSYS2%/usr/bin` and `%MSYS2/mingw64/bin`).
+  %MSYS2%/mingw64/bin
+  %MSYS2%/mingw32/bin
+  %MSYS2%/usr/bin
