@@ -86,7 +86,7 @@ end entity model_hdmi_decoder;
 architecture model of model_hdmi_decoder is
 
   signal hdmi_clk_lock  : std_logic := '0';
-  signal hdmi_clk_prev  : time := 0 ps;                  -- time of last event (since hdmi_clk'last_event always returns 0ps)
+  signal hdmi_clk_prev  : time := 0 ps;                  -- time of last event (since hdmi_clk'last_event always returns 0 ps)
   signal hdmi_clk_hp    : time := 0 ps;                  -- half clock period
   signal hdmi_clk_count : integer := 0;
 
@@ -145,7 +145,7 @@ begin
           hdmi_clk_hp    <= 0 ps;
           hdmi_clk_count <= 0;
         else
-          if abs(hdmi_clk_hp-(now-hdmi_clk_prev)) > 5 ps then -- reject >5ps jitter
+          if abs(hdmi_clk_hp-(now-hdmi_clk_prev)) > 5 ps then -- reject >5 ps jitter
             hdmi_clk_lock  <= '0';
             hdmi_clk_hp    <= 0 ps;
             hdmi_clk_count <= 0;
@@ -155,7 +155,7 @@ begin
         if hdmi_clk_hp = 0 ps then
           hdmi_clk_hp <= now-hdmi_clk_prev;
         else
-          if abs(hdmi_clk_hp-(now-hdmi_clk_prev)) > 5 ps then -- reject >5ps jitter
+          if abs(hdmi_clk_hp-(now-hdmi_clk_prev)) > 5 ps then -- reject >5 ps jitter
             hdmi_clk_lock  <= '0';
             hdmi_clk_hp    <= 0 ps;
             hdmi_clk_count <= 0;

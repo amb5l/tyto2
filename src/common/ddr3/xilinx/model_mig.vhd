@@ -24,7 +24,7 @@ library work;
 
 entity model_mig is
   generic (
-    clk_period      : time := 10ns;
+    clk_period      : time := 10 ns;
     data_width_log2 : integer; -- 4 => 2^4 => 16 bytes
     addr_width_log2 : integer; -- 25 => 2^25 * 16 = 512MBytes
     sim_mem_log2    : integer  -- 19 => 2^19 * 16 = 8MBytes

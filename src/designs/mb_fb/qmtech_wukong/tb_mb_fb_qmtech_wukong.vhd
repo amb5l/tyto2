@@ -96,8 +96,8 @@ architecture sim of tb_mb_fb_qmtech_wukong is
 begin
 
   clki_50m <=
-              '1' after 10ns when clki_50m = '0' else
-              '0' after 10ns when clki_50m = '1' else
+              '1' after 10 ns when clki_50m = '0' else
+              '0' after 10 ns when clki_50m = '1' else
               '0';
 
   TEST: process is
@@ -105,7 +105,7 @@ begin
     key_n(0) <= '0';
     vga_rst  <= '1';
     cap_rst  <= '1';
-    wait for 100ns;
+    wait for 100 ns;
     key_n(0) <= '1';
     vga_rst  <= '0';
     cap_rst  <= '0';

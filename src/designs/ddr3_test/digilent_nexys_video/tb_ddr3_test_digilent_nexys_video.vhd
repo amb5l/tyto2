@@ -46,8 +46,8 @@ architecture sim of tb_ddr3_test_digilent_nexys_video is
 begin
 
   clki_100m <=
-               '1' after 5ns when clki_100m = '0' else
-               '0' after 5ns when clki_100m = '1' else
+               '1' after 5 ns when clki_100m = '0' else
+               '0' after 5 ns when clki_100m = '1' else
                '0';
 
   TEST: process is
@@ -57,7 +57,7 @@ begin
     sw(6)          <= '1';     -- run
     sw(5)          <= '0';     -- fast
     sw(4 downto 0) <= "01000"; -- 2**8 = 256 bytes
-    wait for 100ns;
+    wait for 100 ns;
     btn_rst_n      <= '1';
     wait;
   end process TEST;

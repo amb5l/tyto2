@@ -116,7 +116,7 @@ begin
     btn_rst_n <= '0';
     vga_rst   <= '1';
     cap_rst   <= '1';
-    wait for 100ns;
+    wait for 100 ns;
     btn_rst_n <= '1';
     vga_rst   <= '0';
     cap_rst   <= '0';

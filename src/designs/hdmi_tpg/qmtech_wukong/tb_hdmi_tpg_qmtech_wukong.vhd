@@ -60,8 +60,8 @@ architecture sim of tb_hdmi_tpg_qmtech_wukong is
 begin
 
   clki_50m <=
-              '1' after 10ns when clki_50m = '0' else
-              '0' after 10ns when clki_50m = '1' else
+              '1' after 10 ns when clki_50m = '0' else
+              '0' after 10 ns when clki_50m = '1' else
               '0';
 
   TEST: process is
@@ -71,7 +71,7 @@ begin
     key_n(0) <= '0';
     key_n(1) <= '1';
     cap_rst  <= '1';
-    wait for 20ns;
+    wait for 20 ns;
     key_n(0) <= '1';
     cap_rst  <= '0';
     loop
@@ -81,9 +81,9 @@ begin
         exit;
       end if;
       key_n(1) <= '0';
-      wait for 100ns;
+      wait for 100 ns;
       key_n(1) <= '1';
-      wait for 100ns;
+      wait for 100 ns;
     end loop;
   end process TEST;
 

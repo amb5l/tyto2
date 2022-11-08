@@ -33,14 +33,14 @@ architecture sim of tb_np6532_poc_256k_digilent_nexys_video is
 begin
 
   clki_100m <=
-               '1' after 5ns when clki_100m = '0' else
-               '0' after 5ns when clki_100m = '1' else
+               '1' after 5 ns when clki_100m = '0' else
+               '0' after 5 ns when clki_100m = '1' else
                '0';
 
   TEST: process is
   begin
     btn_rst_n <= '0';
-    wait for 20ns;
+    wait for 20 ns;
     btn_rst_n <= '1';
     wait;
   end process TEST;

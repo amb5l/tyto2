@@ -36,7 +36,7 @@ end entity model_video_out_clock;
 
 architecture model of model_video_out_clock is
 
-  signal t10 : time := 3968ps;
+  signal t10 : time := 3968 ps;
   signal rst : std_logic;
 
 begin
@@ -64,9 +64,9 @@ begin
     wait until sel'event;
     rst  <= '1';
     rsto <= '1';
-    wait for 100ns;
+    wait for 100 ns;
     rst  <= '0';
-    wait for 100ns;
+    wait for 100 ns;
     for i in 0 to 9 loop
       wait until rising_edge(clko);
     end loop;

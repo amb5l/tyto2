@@ -69,14 +69,14 @@ architecture sim of tb_mb_cb_qmtech_wukong is
 begin
 
   clki_50m <=
-              '1' after 10ns when clki_50m = '0' else
-              '0' after 10ns when clki_50m = '1' else
+              '1' after 10 ns when clki_50m = '0' else
+              '0' after 10 ns when clki_50m = '1' else
               '0';
 
   TEST: process is
   begin
     key_n(0) <= '0';
-    wait for 20ns;
+    wait for 20 ns;
     key_n(0) <= '1';
     wait until rising_edge(cap_stb);
     stop;

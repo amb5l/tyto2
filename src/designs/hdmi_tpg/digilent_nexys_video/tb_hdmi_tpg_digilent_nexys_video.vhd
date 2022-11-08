@@ -62,8 +62,8 @@ architecture sim of tb_hdmi_tpg_digilent_nexys_video is
 begin
 
   clki_100m <=
-               '1' after 5ns when clki_100m = '0' else
-               '0' after 5ns when clki_100m = '1' else
+               '1' after 5 ns when clki_100m = '0' else
+               '0' after 5 ns when clki_100m = '1' else
                '0';
 
   sw <= (others => '0');
@@ -75,7 +75,7 @@ begin
     btn_rst_n <= '0';
     btn_c     <= '0';
     cap_rst   <= '1';
-    wait for 20ns;
+    wait for 20 ns;
     btn_rst_n <= '1';
     cap_rst   <= '0';
     loop
@@ -85,9 +85,9 @@ begin
         exit;
       end if;
       btn_c <= '1';
-      wait for 100ns;
+      wait for 100 ns;
       btn_c <= '0';
-      wait for 100ns;
+      wait for 100 ns;
     end loop;
   end process TEST;
 

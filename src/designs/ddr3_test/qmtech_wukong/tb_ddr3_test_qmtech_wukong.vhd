@@ -45,8 +45,8 @@ architecture sim of tb_ddr3_test_qmtech_wukong is
 begin
 
   clki_50m <=
-              '1' after 10ns when clki_50m = '0' else
-              '0' after 10ns when clki_50m = '1' else
+              '1' after 10 ns when clki_50m = '0' else
+              '0' after 10 ns when clki_50m = '1' else
               '0';
 
   key_n(1) <= '0'; -- test size = 256 bytes
@@ -54,7 +54,7 @@ begin
   TEST: process is
   begin
     key_n(0) <= '0';
-    wait for 100ns;
+    wait for 100 ns;
     key_n(0) <= '1';
     wait;
   end process TEST;

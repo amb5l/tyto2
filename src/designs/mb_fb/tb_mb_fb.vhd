@@ -61,8 +61,8 @@ architecture sim of tb_mb_fb is
 
 begin
 
-  xclk <= '1' after 5ns when xclk = '0' else
-          '0' after 5ns when xclk = '1' else
+  xclk <= '1' after 5 ns when xclk = '0' else
+          '0' after 5 ns when xclk = '1' else
           '0';
 
   TEST: process is
@@ -70,7 +70,7 @@ begin
     xrst    <= '1';
     vga_rst <= '1';
     cap_rst <= '1';
-    wait for 20ns;
+    wait for 20 ns;
     xrst    <= '0';
     vga_rst <= '0';
     cap_rst <= '0';
@@ -107,7 +107,7 @@ begin
 
   MIG: entity work.model_mig
     generic map (
-      clk_period      => 10ns,
+      clk_period      => 10 ns,
       data_width_log2 => 4,  -- 16 bytes
       addr_width_log2 => 25, -- 16 * 2^25 = 512MBytes (4Gbits)
       sim_mem_log2    => 19  -- 16 * 2^19 = 8MBytes
