@@ -27,7 +27,8 @@ num_builds=0
 for dir in $dirs; do
 	if [[ ! " ${exlusions[*]} " =~ " $(basename ${dir}) " ]]; then
 		cd $dir
-		cmd.exe /C "start cmd.exe /C \"make clean & make 1> make.log 2>&1 & touch finished\""
+		# VIVADO_JOBS=1 reduces/eliminates Vivado hang on exit (following wait_on_run)
+		cmd.exe /C "start cmd.exe /C \"pwd & make clean & make VIVADO_JOBS=1 & touch finished & if exist *.bit exit & if exist *.sof exit & pause\""
 		cd $base_dir
 		num_builds=$((num_builds+1))
 	fi;
