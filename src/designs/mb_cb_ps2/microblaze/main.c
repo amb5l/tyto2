@@ -1,6 +1,6 @@
 /*******************************************************************************
 ** main.c                                                                     **
-** MicroBlaze demo application for mb_cb design.                              **
+** MicroBlaze demo application for mb_cb_ps2 design.                          **
 ********************************************************************************
 ** (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        **
 ** This file is part of The Tyto Project. The Tyto Project is free software:  **
