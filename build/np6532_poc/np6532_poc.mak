@@ -10,18 +10,18 @@ FPGA_DEVICE:=$(word 3,$(FPGA))
 
 # definitions for generating VHDL source from data
 
-BUILD_VHDL_DIR:=$(shell cygpath -m -a ./vhdl)
+BUILD_VHDL_DIR:=vhdl
 PYTHON:=python
 DECODER_PY:=$(SRC)/common/retro/np65/$(FPGA_VENDOR)/np65_decoder.py
 DECODER_CSV:=$(SRC)/common/retro/np65/6502.csv
-DECODER_VHD:=$(BUILD_VHDL_DIR)/np65_decoder.vhd
-DECODER_MIF:=$(BUILD_VHDL_DIR)/np65_decoder.mif
+DECODER_VHD:=$(shell cygpath -m -a $(BUILD_VHDL_DIR)/np65_decoder.vhd)
+DECODER_MIF:=$(shell cygpath -m -a $(BUILD_VHDL_DIR)/np65_decoder.mif)
 RAM_INIT_PY:=$(SRC)/common/retro/np65/np6532_ram_init.py
-RAM_INIT_VHD:=$(BUILD_VHDL_DIR)/np6532_ram_init_$(RAM_SIZE)k_pkg.vhd
+RAM_INIT_VHD:=$(shell cygpath -m -a $(BUILD_VHDL_DIR)/np6532_ram_init_$(RAM_SIZE)k_pkg.vhd)
 
 # definitions for building 6502 binaries
 
-BUILD_6502_DIR:=$(shell cygpath -m -a ./6502)
+BUILD_6502_DIR:=6502
 CA65:=ca65
 LD65:=ld65
 FUNCTEST:=6502_functional_test
@@ -125,7 +125,7 @@ SIM_SRC:=\
 GHDL_LIBS:=intel
 
 VSCODE_SRC:=$(SIM_SRC)
-V4P_TOP:=$(QUARTUS_TOP) $(SIM_TOP)
+V4P_TOP:=$(QUARTUS_TOP),$(SIM_TOP)
 V4P_LIB_SRC:=\
 	work;$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/pll_otus_50m_96m_32m/pll_otus_50m_96m_32m_sim/pll_otus_50m_96m_32m.vho \
 	altera_lnsim;$(QUARTUS_ROOTDIR)/libraries/vhdl/altera_lnsim/altera_lnsim_components.vhd \
@@ -146,7 +146,7 @@ include $(REPO_ROOT)/build/build.mak
 
 .PHONY: decoder
 decoder: $(DECODER_VHD) $(DECODER_MIF)
-$(DECODER_VHD) $(DECODER_MIF) &: $(DECODER_CSV) | $(BUILD_VHDL_DIR)
+$(DECODER_VHD) $(DECODER_MIF): $(DECODER_CSV) | $(BUILD_VHDL_DIR)
 	$(PYTHON) $(DECODER_PY) $< $(@D)/
 
 .PHONY: raminit
@@ -155,14 +155,14 @@ $(RAM_INIT_VHD): $(FUNCTEST_BIN) $(INIT_BIN) | $(BUILD_VHDL_DIR)
 	$(PYTHON) $(RAM_INIT_PY) $(RAM_SIZE) 0 $(FUNCTEST_BIN) FC00 $(INIT_BIN) > $@
 
 $(BUILD_VHDL_DIR):
-	mkdir -p $(BUILD_VHDL_DIR)
+	mkdir $(BUILD_VHDL_DIR)
 
 .PHONY: functest
 functest: $(FUNCTEST_BIN)
 $(FUNCTEST_BIN): $(FUNCTEST_OBJ) $(FUNCTEST_CFG)
 	$(LD65) $< -o $@ -m $(FUNCTEST_MAP) -C $(FUNCTEST_CFG)
 
-$(FUNCTEST_OBJ) $(FUNCTEST_LST) &: $(FUNCTEST_SRC) | $(BUILD_6502_DIR)
+$(FUNCTEST_OBJ) $(FUNCTEST_LST): $(FUNCTEST_SRC) | $(BUILD_6502_DIR)
 	$(CA65) $(FUNCTEST_SRC) -o $(FUNCTEST_OBJ) -l $(FUNCTEST_LST)
 
 .PHONY: init
@@ -170,8 +170,8 @@ init: $(INIT_BIN)
 $(INIT_BIN): $(INIT_OBJ) $(INIT_CFG)
 	$(LD65) $< -o $@ -m $(INIT_MAP) -C $(INIT_CFG)
 
-$(INIT_OBJ) $(INIT_LST) &: $(INIT_SRC) | $(BUILD_6502_DIR)
+$(INIT_OBJ) $(INIT_LST): $(INIT_SRC) | $(BUILD_6502_DIR)
 	$(CA65) $(INIT_SRC) -o $(INIT_OBJ) -l $(INIT_LST)
 
 $(BUILD_6502_DIR):
-	mkdir -p $(BUILD_6502_DIR)
+	mkdir $(BUILD_6502_DIR)
