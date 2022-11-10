@@ -29,13 +29,13 @@ VIVADO_DSN_VHDL:=\
 	$(SRC)/designs/mb_cb/cb.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
-VIVADO_DSN_BD_TCL=$(SRC)/designs/mb_cb/microblaze.tcl
+VIVADO_DSN_BD_TCL:=$(SRC)/designs/mb_cb/microblaze.tcl
 VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).tcl
-VIVADO_DSN_PROC_INST=cpu
-VIVADO_DSN_PROC_REF=microblaze
-VIVADO_DSN_ELF_CFG=Release
+VIVADO_DSN_PROC_INST:=cpu
+VIVADO_DSN_PROC_REF:=microblaze
+VIVADO_DSN_ELF_CFG:=Release
 VIVADO_SIM_TOP:=tb_$(VIVADO_DSN_TOP)
 VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/tyto_sim_pkg.vhd \
@@ -44,10 +44,10 @@ VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/video_out/model_vga_sink.vhd \
 	$(SRC)/designs/$(DESIGN)/tb_$(DESIGN).vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
-VIVADO_SIM_ELF_CFG=Debug
+VIVADO_SIM_ELF_CFG:=Debug
 
-VITIS_APP=microblaze
-VITIS_SRC=\
+VITIS_APP:=microblaze
+VITIS_SRC:=\
 	$(SRC)/designs/$(DESIGN)/microblaze/main.c \
 	$(SRC)/common/basic/microblaze/peekpoke.h \
 	$(SRC)/common/basic/microblaze/axi_gpio_p.h \
@@ -57,12 +57,12 @@ VITIS_SRC=\
 	$(SRC)/common/video_out/microblaze/cb.c \
 	$(SRC)/common/basic/microblaze/printf.h \
 	$(SRC)/common/basic/microblaze/printf.c
-VITIS_INCLUDE=\
+VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/microblaze \
 	$(SRC)/common/basic/microblaze \
 	$(SRC)/common/video_out/microblaze
 
-SIMULATORS=vivado xsim
+SIMULATORS:=vivado xsim
 SIM_TOP:=$(VIVADO_SIM_TOP)
 SIM_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
 
