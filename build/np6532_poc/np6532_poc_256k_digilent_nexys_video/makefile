@@ -1,6 +1,5 @@
 DESIGN=np6532_poc
 BOARD=digilent_nexys_video
-DEVICE=xilinx 7series xc7a200tsbg484-1
+FPGA=xilinx 7series xc7a200tsbg484-1
 RAM_SIZE=256
-
-include ../../fpga.mak
+include ../np6532_poc.mak
