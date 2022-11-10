@@ -14,8 +14,9 @@ cmd.exe /C "xsct -eval \"puts [version]\""
 printf "\nChecking Quartus...\n"
 cmd.exe /C "quartus_sh --version"
 
-# build array of directories
+# build array of directories by searching for makefiles
 designs=( \
+	'ddr3_test' \
 	'hdmi_tpg' \
 	'np6532_poc' \
 	)
@@ -53,7 +54,7 @@ do
 	printf "time: %ds   finished: %d    \r" $(( $now-$start_time )) $finished
 	next=$(( $now+$interval ))
 done
-printf "\nall finished\n\n" $count
+printf "\nall finished\n\n"
 
 # check results
 failures=0
