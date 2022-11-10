@@ -57,7 +57,7 @@ library ieee;
 
 library work;
   use work.tyto_types_pkg.all;
-  use model_tmds_cdr_des_pkg.all;
+  use work.model_tmds_cdr_des_pkg.all;
 
 entity model_hdmi_decoder is
   port (

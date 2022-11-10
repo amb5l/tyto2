@@ -1,5 +1,5 @@
 DESIGN=hdmi_tpg
 BOARD=digilent_nexys_video
-DEVICE=xilinx 7series xc7a200tsbg484-1
-
-include ../../fpga.mak
+FPGA=xilinx 7series xc7a200tsbg484-1
+SIMULATORS=ghdl nvc vsim xsim
+include ../hdmi_tpg.mak

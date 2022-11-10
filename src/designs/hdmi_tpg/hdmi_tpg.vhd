@@ -256,7 +256,7 @@ begin
       fref    => fclk
     )
     port map (
-      rsti    => rst,
+      rsti    => rst or mode_rst,
       clki    => clk,
       sel     => mode_clk_sel,
       rsto    => pix_rst,

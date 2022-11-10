@@ -42,9 +42,9 @@ architecture model of model_video_out_clock is
 begin
 
   with sel select t10 <=
-      673 ps  when "11" else
-      1347 ps when "10" else
-      3705 ps when "01" else
+      673 ps  when "11",
+      1347 ps when "10",
+      3705 ps when "01",
       3968 ps when others;
 
   clko <=
