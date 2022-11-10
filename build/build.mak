@@ -8,13 +8,13 @@ REPO_ROOT:=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 ################################################################################
 # default target
 
-fail:
-	@echo "No target specified. Supported simulators: $(SIMULATORS)"
 ifeq ($(FPGA_VENDOR),xilinx)
 all: bit
 else ifeq ($(FPGA_VENDOR),intel)
 all: sof
 endif
+fail:
+	@echo "No target specified. Supported simulators: $(SIMULATORS)"
 
 ################################################################################
 # simulation targets
