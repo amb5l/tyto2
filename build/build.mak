@@ -22,7 +22,7 @@ fail:
 SIM:=$(word 1,$(filter $(SIMULATORS),$(MAKECMDGOALS)))
 ifneq ($(SIM),)
 
-SIM_DIR=.$(SIM)
+SIM_DIR:=.$(SIM)
 SCT_DIR:=.sct
 define GET_SCT
 $(shell cygpath -m $(SIM_DIR)/$(SCT_DIR)/$(shell realpath --relative-to="$(shell cygpath -u $(REPO_ROOT))" $(shell cygpath -u $1)))
@@ -156,12 +156,12 @@ endif
 
 else ifneq ($(filter vscode,$(MAKECMDGOALS)),)
 
-VSCODE=code
-VSCODE_DIR=.vscode
+VSCODE:=code
+VSCODE_DIR:=.vscode
 $(VSCODE_DIR):
 	mkdir $(VSCODE_DIR)
 VSCODE_SRC+=$(foreach x,$(V4P_LIB_SRC),$(word 2,$(subst ;, ,$x)))
-VSCODE_SYMLINKS=$(addprefix $(VSCODE_DIR)/,$(notdir $(VSCODE_SRC)))
+VSCODE_SYMLINKS:=$(addprefix $(VSCODE_DIR)/,$(notdir $(VSCODE_SRC)))
 define RR_VSCODE_SYMLINK
 ifeq ($(OS),Windows_NT)
 $(VSCODE_DIR)/$(notdir $1): $1 | $(VSCODE_DIR)
@@ -172,8 +172,8 @@ $(VSCODE_DIR)/$(notdir $1): $1
 endif
 endef
 $(foreach s,$(VSCODE_SRC),$(eval $(call RR_VSCODE_SYMLINK,$s)))
-CONFIG_V4P_FILE=$(VSCODE_DIR)/config.v4p
-CONFIG_V4P_LINES= \
+CONFIG_V4P_FILE:=$(VSCODE_DIR)/config.v4p
+CONFIG_V4P_LINES:= \
 	[libraries] \
 	$(foreach x,$(V4P_LIB_SRC),$(notdir $(word 2,$(subst ;, ,$x)))=$(word 1,$(subst ;, ,$x))) \
 	*.vhd=work \
