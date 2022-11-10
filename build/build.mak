@@ -41,7 +41,6 @@ SIM_WORK:=work
 
 # definitions for GHDL
 ifeq (ghdl,$(SIM))
-SIM:=ghdl
 GHDL?=ghdl
 GHDL_PREFIX?=$(dir $(shell which $(GHDL)))..
 GHDL_AOPTS+=--std=08 -fsynopsys -frelaxed -Wno-hide -Wno-shared $(addprefix -P$(GHDL_PREFIX)/lib/ghdl/vendors/,$(GHDL_LIBS))
@@ -59,7 +58,6 @@ endif
 
 # definitions for NVC
 ifeq (nvc,$(SIM))
-SIM:=nvc
 NVC?=nvc
 NVC_GOPTS+=--std=2008
 NVC_AOPTS+=--relaxed
@@ -79,7 +77,6 @@ endif
 # definitions for ModelSim/Questa/etc (vsim)
 # TODO: add VCD support
 ifeq (vsim,$(SIM))
-SIM:=vsim
 VCOM?=vcom
 VSIM?=vsim
 VSIM_LIB_PATH?=$(shell cygpath -m ~/.simlib)
@@ -98,7 +95,6 @@ endif
 
 # definitions for XSim (Vivado simulator, non project mode)
 ifeq (xsim,$(SIM))
-SIM:=xsim
 XVHDL?=xvhdl
 XELAB?=xelab
 XSIM?=xsim
