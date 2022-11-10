@@ -2,9 +2,9 @@
 
 REPO_ROOT:=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 
-FPGA_VENDOR=$(word 1,$(FPGA))
-FPGA_FAMILY=$(word 2,$(FPGA))
-FPGA_DEVICE=$(word 3,$(FPGA))
+FPGA_VENDOR:=$(word 1,$(FPGA))
+FPGA_FAMILY:=$(word 2,$(FPGA))
+FPGA_DEVICE:=$(word 3,$(FPGA))
 
 SRC:=$(REPO_ROOT)/src
 
@@ -52,7 +52,7 @@ SIM_SRC+=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/cfg_$(VIVADO_SIM_TOP)_n.vhd
 SIM_TOP:=cfg_$(VIVADO_SIM_TOP)
 endif
-GHDL_LIBS=xilinx-vivado
+GHDL_LIBS:=xilinx-vivado
 
 VSCODE_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
 V4P_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
@@ -63,8 +63,8 @@ V4P_LIB_SRC:=\
 
 endif
 
-SIM_RUN=$(SIM_TOP)
-#SIM_RUN=$(SIM_TOP),path_basename=$(shell cygpath -m -a $(SIM_DIR))/$(SIM_TOP)
+SIM_RUN:=$(SIM_TOP)
+#SIM_RUN:=$(SIM_TOP),path_basename=$(shell cygpath -m -a $(SIM_DIR))/$(SIM_TOP)
 
 include $(REPO_ROOT)/build/build.mak
 
