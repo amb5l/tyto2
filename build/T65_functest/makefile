@@ -35,6 +35,9 @@ SIM_SRC:=\
 	$(SRC)/designs/T65_functest/$(SIM_TOP).vhd
 SIM_RUN:=$(SIM_TOP),start_address=1024;bin_file=$(shell cygpath -m -a $(FUNCTEST_BIN));ref_file=$(shell cygpath -m -a $(REF_FILE))
 
+VSCODE_SRC:=$(SIM_SRC)
+V4P_TOP:=$(SIM_TOP)
+
 include $(REPO_ROOT)/build/build.mak
 
 sim:: .EXTRA_PREREQS=$(FUNCTEST_BIN) $(REF_FILE)
