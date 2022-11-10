@@ -59,6 +59,36 @@ architecture sim of tb_hdmi_tpg_digilent_nexys_video is
   signal cap_rst       : std_logic;
   signal cap_stb       : std_logic;
 
+  component hdmi_tpg_digilent_nexys_video is
+    port (
+      clki_100m     : in    std_logic;
+      led           : out   std_logic_vector(7 downto 0);
+      btn_c         : in    std_logic;
+      btn_rst_n     : in    std_logic;
+      sw            : in    std_logic_vector(7 downto 0);
+      oled_res_n    : out   std_logic;
+      oled_d_c      : out   std_logic;
+      oled_sclk     : out   std_logic;
+      oled_sdin     : out   std_logic;
+      hdmi_tx_clk_p : out   std_logic;
+      hdmi_tx_clk_n : out   std_logic;
+      hdmi_tx_d_p   : out   std_logic_vector(0 to 2);
+      hdmi_tx_d_n   : out   std_logic_vector(0 to 2);
+      ac_mclk       : out   std_logic;
+      ac_dac_sdata  : out   std_logic;
+      uart_rx_out   : out   std_logic;
+      eth_rst_n     : out   std_logic;
+      ftdi_rd_n     : out   std_logic;
+      ftdi_wr_n     : out   std_logic;
+      ftdi_siwu_n   : out   std_logic;
+      ftdi_oe_n     : out   std_logic;
+      ps2_clk       : inout std_logic;
+      ps2_data      : inout std_logic;
+      qspi_cs_n     : out   std_logic;
+      ddr3_reset_n  : out   std_logic
+    );
+  end component hdmi_tpg_digilent_nexys_video;
+
 begin
 
   clki_100m <=
@@ -91,7 +121,7 @@ begin
     end loop;
   end process TEST;
 
-  DUT: entity work.hdmi_tpg_digilent_nexys_video
+  DUT: component hdmi_tpg_digilent_nexys_video
     port map (
       clki_100m     => clki_100m,
       led           => led,
