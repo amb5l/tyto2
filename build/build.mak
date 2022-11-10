@@ -42,7 +42,7 @@ SIM_WORK:=work
 # definitions for GHDL
 ifeq (ghdl,$(SIM))
 GHDL?=ghdl
-GHDL_PREFIX?=$(dir $(shell which $(GHDL)))..
+GHDL_PREFIX?=$(shell cygpath -m $(dir $(shell which $(GHDL))))/..
 GHDL_AOPTS+=--std=08 -fsynopsys -frelaxed -Wno-hide -Wno-shared $(addprefix -P$(GHDL_PREFIX)/lib/ghdl/vendors/,$(GHDL_LIBS))
 GHDL_EOPTS+=--std=08 -fsynopsys -frelaxed $(addprefix -P$(GHDL_PREFIX)/lib/ghdl/vendors/,$(GHDL_LIBS))
 GHDL_ROPTS+=--unbuffered --max-stack-alloc=0 --ieee-asserts=disable
