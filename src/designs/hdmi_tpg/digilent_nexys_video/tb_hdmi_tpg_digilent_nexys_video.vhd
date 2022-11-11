@@ -99,6 +99,7 @@ begin
   sw <= (others => '0');
 
   TEST: process is
+    constant progress_interval : time := 1 ms;
     variable mode : integer;
   begin
     mode      := 0;
@@ -109,7 +110,14 @@ begin
     btn_rst_n <= '1';
     cap_rst   <= '0';
     loop
-      wait until rising_edge(cap_stb);
+      loop
+        wait until rising_edge(cap_stb) for progress_interval;
+        report "waiting...";
+        if cap_stb'event then
+          report "capture complete - mode " & integer'image(mode);
+          exit;
+        end if;
+      end loop;
       mode := mode + 1;
       if mode = 15 then
         exit;

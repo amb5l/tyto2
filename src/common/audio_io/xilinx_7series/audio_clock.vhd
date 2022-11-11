@@ -218,13 +218,13 @@ begin
       psincdec             => '0'
     );
 
-  BUFG_O: component unisim.vcomponents.bufg
+  BUFG_O: component bufg
     port map (
       i => clk_u,
       o => clk
     );
 
-  BUFG_F: component unisim.vcomponents.bufg
+  BUFG_F: component bufg
     port map (
       i => clko_fb,
       o => clki_fb
