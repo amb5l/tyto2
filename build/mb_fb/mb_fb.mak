@@ -1,9 +1,18 @@
 # mb_fb.mak
 
+REPO_ROOT:=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
+SUBMODULES:=$(REPO_ROOT)/submodules
 SRC:=$(REPO_ROOT)/src
 
-DSN_TOP:=$(DESIGN)_$(BOARD)
-DSN_SRC:=\
+FPGA_VENDOR:=$(word 1,$(FPGA))
+FPGA_FAMILY:=$(word 2,$(FPGA))
+FPGA_DEVICE:=$(word 3,$(FPGA))
+
+VIVADO_PART:=$(FPGA_DEVICE)
+VIVADO_PROJ:=fpga
+VIVADO_LANG:=VHDL
+VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
+VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/tyto_utils_pkg.vhd \
 	$(SRC)/designs/$(DESIGN)/mig_bridge_axi.vhd \
@@ -14,16 +23,22 @@ DSN_SRC:=\
 	$(SRC)/common/video_out/video_mode.vhd \
 	$(SRC)/common/video_out/video_out_timing.vhd \
 	$(SRC)/common/video_out/dvi_tx_encoder.vhd \
-	$(SRC)/common/video_out/xilinx_7series/video_out_clock.vhd \
-	$(SRC)/common/basic/xilinx_7series/serialiser_10to1_selectio.vhd \
+	$(SRC)/common/video_out/$(FPGA_VENDOR)_$(FPGA_FAMILY)/video_out_clock.vhd \
+	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/serialiser_10to1_selectio.vhd \
 	$(SRC)/common/basic/sync_reg.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/global_pkg_$(BOARD).vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DSN_TOP).vhd
-
-SIMULATORS:=vivado xsim
-SIM_TOP:=tb_$(DSN_TOP)
-SIM_SRC:=\
+	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
+VIVADO_DSN_IP_TCL:=$(SRC)/common/ddr3/$(BOARD)/ddr3.tcl
+VIVADO_DSN_BD_TCL:=$(SRC)/designs/$(DESIGN)/microblaze.tcl
+VIVADO_DSN_XDC_IMPL:=\
+	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
+	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc
+VIVADO_DSN_PROC_INST:=cpu
+VIVADO_DSN_PROC_REF:=microblaze
+VIVADO_DSN_ELF_CFG:=Release
+VIVADO_SIM_TOP:=tb_$(VIVADO_DSN_TOP)
+VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/basic/model_fifoctrl_s.vhd \
 	$(SRC)/common/ddr3/xilinx/model_mig.vhd \
@@ -33,30 +48,14 @@ SIM_SRC:=\
 	$(SRC)/common/video_out/model_vga_sink.vhd \
 	$(SRC)/designs/$(DESIGN)/tb_crtc_etc.vhd \
 	$(SRC)/designs/$(DESIGN)/tb_$(DESIGN).vhd \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(SIM_TOP).vhd
-
-VIVADO_PART:=$(PART)
-VIVADO_PROJ=fpga
-VIVADO_LANG=VHDL
-VIVADO_DSN_TOP=$(DSN_TOP)
-VIVADO_DSN_VHDL_2008=$(DSN_SRC)
-VIVADO_DSN_IP_TCL=$(SRC)/common/ddr3/$(BOARD)/ddr3.tcl
-VIVADO_DSN_BD_TCL=$(SRC)/designs/$(DESIGN)/microblaze.tcl
-VIVADO_DSN_XDC_IMPL=\
-	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DSN_TOP).xdc
-VIVADO_DSN_PROC_INST=cpu
-VIVADO_DSN_PROC_REF=microblaze
-VIVADO_DSN_ELF_CFG=Release
-VIVADO_SIM_TOP=tb_$(DESIGN)_$(BOARD)
-VIVADO_SIM_VHDL_2008=$(SIM_SRC)
+	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
 VIVADO_SIM_IP_ddr3=\
 	ddr3/ddr3/example_design/sim/ddr3_model.sv \
 	ddr3/ddr3/example_design/sim/ddr3_model_parameters.vh
-VIVADO_SIM_ELF_CFG=Debug
+VIVADO_SIM_ELF_CFG:=Debug
 
-VITIS_APP=microblaze
-VITIS_SRC=\
+VITIS_APP:=microblaze
+VITIS_SRC:=\
 	$(SRC)/designs/$(DESIGN)/microblaze/main.c \
 	$(SRC)/designs/$(DESIGN)/microblaze/hagl_hal.c \
 	$(SRC)/designs/$(DESIGN)/microblaze/hagl_hal.h \
@@ -89,13 +88,28 @@ VITIS_SRC=\
 	$(SUBMODULES)/hagl/include/rgb888.h \
 	$(SUBMODULES)/hagl/include/tjpgd.h \
 	$(SUBMODULES)/hagl/include/window.h
-VITIS_INCLUDE=\
+VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/microblaze \
 	$(SRC)/common/basic/microblaze \
 	$(SRC)/common/video_out/microblaze \
 	$(SUBMODULES)/hagl/include
-VITIS_SYMBOL=\
+VITIS_SYMBOL:=\
 	NO_MENUCONFIG \
 	HAGL_HAS_HAL_VARIABLE_DISPLAY_SIZE
-VITIS_SYMBOL_DEBUG=\
+VITIS_SYMBOL_DEBUG:=\
 	BUILD_CONFIG_DEBUG
+
+SIMULATORS:=vivado xsim
+SIM_TOP:=$(VIVADO_SIM_TOP)
+SIM_SRC:=$(VIVADO_DSN_VHDL_2008) $(VIVADO_SIM_VHDL_2008)
+
+VSCODE_SRC:=$(SIM_SRC)
+V4P_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
+V4P_LIB_SRC:=\
+	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
+	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
+	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd \
+	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd \
+	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/secureip/OSERDESE2.vhd
+
+include $(REPO_ROOT)/build/build.mak
