@@ -1,4 +1,3 @@
-DESIGN=tb_saa5050
-VARIANT=d
-SIMULATORS=ghdl nvc vsim xsim
+DESIGN:=tb_saa5050
+VARIANT:=d
 include ../$(DESIGN).mak

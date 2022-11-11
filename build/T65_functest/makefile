@@ -6,8 +6,8 @@ SRC:=$(REPO_ROOT)/src
 
 # 6502 binary definitions
 
-CA65=ca65
-LD65=ld65
+CA65:=ca65
+LD65:=ld65
 BUILD_6502_DIR:=6502
 FUNCTEST:=6502_functional_test
 FUNCTEST_BIN:=$(BUILD_6502_DIR)/$(FUNCTEST).bin
@@ -42,7 +42,7 @@ include $(REPO_ROOT)/build/build.mak
 
 sim:: .EXTRA_PREREQS=$(FUNCTEST_BIN) $(REF_FILE)
 
-# 6502 binary recipes
+# 6502 binary rules and recipes
 
 $(BUILD_6502_DIR):
 	mkdir $(BUILD_6502_DIR)
@@ -56,7 +56,7 @@ $(FUNCTEST_BIN): $(BUILD_6502_DIR)/$(FUNCTEST).o $(FUNCTEST_CFG)
 $(BUILD_6502_DIR)/$(FUNCTEST).o: $(FUNCTEST_SRC) | $(BUILD_6502_DIR)
 	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(FUNCTEST).lst
 
-# reference execution trace recipes
+# reference execution trace rules and recipes
 
 $(REF_DIR):
 	mkdir $(REF_DIR)
