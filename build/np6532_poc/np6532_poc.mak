@@ -81,7 +81,8 @@ V4P_LIB_SRC:=\
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/LDCE.vhd
+	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/LDCE.vhd \
+	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/RAM64X1D.vhd
 
 endif
 
@@ -130,7 +131,7 @@ V4P_LIB_SRC:=\
 	work;$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/pll_otus_50m_96m_32m/pll_otus_50m_96m_32m_sim/pll_otus_50m_96m_32m.vho \
 	altera_lnsim;$(QUARTUS_ROOTDIR)/libraries/vhdl/altera_lnsim/altera_lnsim_components.vhd \
 	altera_mf;$(QUARTUS_ROOTDIR)/libraries/vhdl/altera_mf/altera_mf_components.vhd
-	
+
 endif
 
 # simulation definitions
