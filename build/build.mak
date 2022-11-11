@@ -161,7 +161,7 @@ VSCODE_SYMLINKS:=$(addprefix $(VSCODE_DIR)/,$(notdir $(VSCODE_SRC)))
 define RR_VSCODE_SYMLINK
 ifeq ($(OS),Windows_NT)
 $(VSCODE_DIR)/$(notdir $1): $1 | $(VSCODE_DIR)
-	cmd.exe /C "mklink $$(shell cygpath -w $$@) $$(shell cygpath -w $$<)"
+	cmd.exe /C "rm -f  $$(shell cygpath -w $$@) & mklink $$(shell cygpath -w $$@) $$(shell cygpath -w -a $$<)"
 else
 $(VSCODE_DIR)/$(notdir $1): $1
 	ln $$< $$@
@@ -173,6 +173,8 @@ CONFIG_V4P_LINES:= \
 	[libraries] \
 	$(foreach x,$(V4P_LIB_SRC),$(notdir $(word 2,$(subst ;, ,$x)))=$(word 1,$(subst ;, ,$x))) \
 	*.vhd=work \
+	*.vhdl=work \
+	*.vho=work \
 	[settings] \
 	V4p.Settings.Basics.TopLevelEntities=$(V4P_TOP)
 FORCE:
