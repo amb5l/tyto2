@@ -23,11 +23,8 @@ SIM:=$(word 1,$(filter $(SIMULATORS),$(MAKECMDGOALS)))
 ifneq ($(SIM),)
 
 SIM_DIR:=.$(SIM)
-SCT_DIR:=.sct
-define GET_SCT
-$(shell cygpath -m $(SIM_DIR)/$(SCT_DIR)/$(shell realpath --relative-to="$(shell cygpath -u $(REPO_ROOT))" $(shell cygpath -u $1)))
-endef
-SIM_SCT:=$(foreach s,$(SIM_SRC),$(call GET_SCT,$s))
+# simulation compile tracking
+SIM_SCT:=$(SIM_DIR)/.sct
 
 ifeq ($(SIM_RUNS),)
 ifneq ($(SIM_RUN),)
@@ -127,9 +124,9 @@ $(SIM): sim
 $(SIM_DIR):
 	mkdir -p $(SIM_DIR)
 define RR_COM
-$(call GET_SCT,$1): $1 | $(SIM_DIR)
+$(SIM_SCT):: $1 | $(SIM_DIR)
 	$(call CMD_COM,$$<)
-	mkdir -p $$(dir $$@) && touch $$@
+	touch $(SIM_SCT)
 endef
 $(foreach s,$(SIM_SRC),$(eval $(call RR_COM,$s)))
 define RR_SIM
