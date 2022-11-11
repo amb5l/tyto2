@@ -19,8 +19,11 @@ designs=( \
 	'ddr3_test' \
 	'hdmi_tpg' \
 	'np6532_poc' \
+	'mb_cb' \
+	'mb_cb_ps2' \
+	'mb_fb' \
 	)
-makefiles=($(find ${designs[@]} -name makefile -type f))
+makefiles=($(find ${designs[@]} -maxdepth 2 -name makefile -type f))
 dirs=()
 for makefile in ${makefiles[@]}; do
 	dirs+=($(dirname $makefile))
@@ -33,9 +36,9 @@ num_builds=0
 for dir in ${dirs[@]}; do
 	cd $dir
 	echo $(pwd)
-	rm -f finished
+	find . -name '*.bit' -or -name '*.sof' -type f -delete
 	# VIVADO_JOBS=1 reduces/eliminates Vivado hang on exit (following wait_on_run)
-	cmd.exe /C "start cmd.exe /C \"pwd & make clean & rm -f *.bit & rm -f *.sof & set VIVADO_JOBS=1 & make & touch finished & if exist *.bit exit & if exist *.sof exit & pause\""
+	cmd.exe /C "start cmd.exe /C \"pwd & make clean & set VIVADO_JOBS=1 & make & if exist *.bit exit & if exist *.sof exit & pause\""
 	cd $base_dir
 	num_builds=$((num_builds+1))
 done
@@ -49,7 +52,14 @@ next=$(( $interval+$start_time ))
 while (( $finished != $num_builds ))
 do
 	while (( $(date +%s) < next )) ; do sleep 1 ; done
-	finished=$(( "$(wc -w <<< $(find . -name finished -type f))" ))
+	finished=0
+	for dir in ${dirs[@]}; do
+		if compgen -G "${dir}/*.bit" > /dev/null || \
+		   compgen -G "${dir}/*.sof" > /dev/null
+		then
+			finished=$(( $finished+1 ))
+		fi
+	done
 	now=$(date +%s)
 	printf "time: %ds   finished: %d    \r" $(( $now-$start_time )) $finished
 	next=$(( $now+$interval ))
