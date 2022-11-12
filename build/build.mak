@@ -53,7 +53,7 @@ define CMD_COM
 endef
 define CMD_SIM
 	cd $$(SIM_DIR) && \
-	$$(GHDL) --elab-run --work=$$(SIM_WORK) $$(GHDL_EOPTS) $$(word 2,$1) $$(GHDL_ROPTS) $$(if $$(filter vcd,$$(MAKECMDGOALS)),--vcd=$$$(word 1,$1).vcd) $$(addprefix -g,$$(subst ;, ,$$(word 3,$1)))
+	$$(GHDL) --elab-run --work=$$(SIM_WORK) $$(GHDL_EOPTS) $$(word 2,$1) $$(GHDL_ROPTS) $$(if $$(filter vcd gtkwave,$$(MAKECMDGOALS)),--vcd=$$(word 1,$1).vcd) $$(addprefix -g,$$(subst ;, ,$$(word 3,$1)))
 endef
 endif
 
@@ -71,12 +71,11 @@ endef
 define CMD_SIM
 	cd $$(SIM_DIR) && \
 	$$(NVC) $$(NVC_GOPTS) --work=$$(SIM_WORK) -e $$(word 2,$1) $$(NVC_EOPTS) $$(addprefix -g,$$(subst ;, ,$$(word 3,$1))) && \
-	$$(NVC) $$(NVC_GOPTS) --work=$$(SIM_WORK) -r $$(word 2,$1) $$(NVC_ROPTS) $$(if $$(filter vcd,$$(MAKECMDGOALS)),--format=vcd --wave=$$$(word 1,$1).vcd)
+	$$(NVC) $$(NVC_GOPTS) --work=$$(SIM_WORK) -r $$(word 2,$1) $$(NVC_ROPTS) $$(if $$(filter vcd gtkwave,$$(MAKECMDGOALS)),--format=vcd --wave=$$(word 1,$1).vcd)
 endef
 endif
 
 # definitions for ModelSim/Questa/etc (vsim)
-# TODO: add VCD support
 ifeq (vsim,$(SIM))
 VCOM?=vcom
 VSIM?=vsim
@@ -90,7 +89,7 @@ define CMD_COM
 endef
 define CMD_SIM
 	cd $$(SIM_DIR) && \
-	$$(VSIM) -work $$(SIM_WORK) $$(if $$(filter vcd,$$(MAKECMDGOALS)),-do "vcd file $$$(word 1,$1).vcd; vcd add -r *") $$(VSIMOPTS) $$(word 2,$1) $$(addprefix -g,$$(subst ;, ,$$(word 3,$1)))
+	$$(VSIM) -work $$(SIM_WORK) $$(if $$(filter vcd gtkwave,$$(MAKECMDGOALS)),-do "vcd file $$(word 1,$1).vcd; vcd add -r *") $$(VSIMOPTS) $$(word 2,$1) $$(addprefix -g,$$(subst ;, ,$$(word 3,$1)))
 endef
 endif
 
@@ -107,7 +106,7 @@ define CMD_COM
 	cmd.exe /C "cd $$(SIM_DIR) & call $$(XVHDL).bat $$(XVHDL_OPTS) -work $$(SIM_WORK) $1"
 endef
 define CMD_SIM
-	cmd.exe /C "cd $$(SIM_DIR) & call $$(XELAB).bat $$(XELAB_OPTS) -top $$(word 2,$1) -snapshot $$(word 2,$1)_$$(word 1,$1) $$(addprefix -generic_top \",$$(addsuffix \",$$(subst ;, ,$$(word 3,$1)))) & call $$(XSIM).bat $$(XSIM_OPTS) $$(if $$(filter vcd,$$(MAKECMDGOALS)),$$$(addprefix --vcdfile ,$$$(word 1,$$1))) $$(word 2,$1)_$$(word 1,$1)"
+	cmd.exe /C "cd $$(SIM_DIR) & call $$(XELAB).bat $$(XELAB_OPTS) -top $$(word 2,$1) -snapshot $$(word 2,$1)_$$(word 1,$1) $$(addprefix -generic_top \",$$(addsuffix \",$$(subst ;, ,$$(word 3,$1)))) & call $$(XSIM).bat $$(XSIM_OPTS) $$(if $$(filter vcd gtkwave,$$(MAKECMDGOALS)),$$(addprefix --vcdfile ,$$(word 1,$$1))) $$(word 2,$1)_$$(word 1,$1)"
 endef
 else
 define CMD_COM
@@ -117,7 +116,7 @@ endef
 define CMD_SIM
 	cd $$(SIM_DIR) && \
 	$$(XELAB) --debug typical --O2 --relax -L $$(SIM_WORK) --snapshot $$(word 2,$1)_$$(word 1,$1) $$(word 2,$1) $(addprefix -generic_top \",$(addsuffix \",$(subst ;, ,$$(word 3,$1)))) && \
-	$$(XSIM) $$(XSIM_OPTS) $$(if $$(filter vcd,$$(MAKECMDGOALS)),$$$(addprefix --vcdfile ,$$$(word 1,$$1))) $$(word 2,$1)_$$(word 2,$1)
+	$$(XSIM) $$(XSIM_OPTS) $$(if $$(filter vcd gtkwave,$$(MAKECMDGOALS)),$$$(addprefix --vcdfile ,$$$(word 1,$$1))) $$(word 2,$1)_$$(word 2,$1)
 endef
 endif
 endif
@@ -136,16 +135,13 @@ $(foreach s,$(SIM_SRC),$(eval $(call RR_COM,$s)))
 define RR_SIM
 sim:: $(SIM_SCT) | $(SIM_DIR)
 	$(call CMD_SIM,$1)
+ifneq ($$(filter gtkwave,$$(MAKECMDGOALS)),)
+	sh $(REPO_ROOT)/submodules/vcd2gtkw/vcd2gtkw.sh $(SIM_DIR)/$(word 1,$1).vcd $(SIM_DIR)/$(word 1,$1).gtkw
+	gtkwave $(SIM_DIR)/$(word 1,$1).vcd $(SIM_DIR)/$(word 1,$1).gtkw
+endif
 endef
 comma:=,
 $(foreach r,$(SIM_RUNS),$(eval $(call RR_SIM,$(subst $(comma), ,$r))))
-
-################################################################################
-# TODO: GTKWave support
-
-ifneq ($(filter vcd,$(MAKECMDGOALS)),)
-
-endif
 
 ################################################################################
 # Visual Studio Code (including support for V4P extension)
