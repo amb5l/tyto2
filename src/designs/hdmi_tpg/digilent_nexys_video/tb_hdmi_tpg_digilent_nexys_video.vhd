@@ -120,7 +120,7 @@ begin
       end loop;
       mode := mode + 1;
       if mode = 15 then
-        exit;
+        finish;
       end if;
       btn_c <= '1';
       wait for 100 ns;

@@ -69,5 +69,5 @@ SIM_RUN:=$(SIM_TOP)
 
 include $(REPO_ROOT)/build/build.mak
 
-sim:: $(wildcard $(SRC)/designs/$(DESIGN)test/*.sha256)
-	sha256sum --check $^
+sim:: $(wildcard $(SRC)/designs/$(DESIGN)/test/*.sha256)
+	cd $(SIM_DIR) && sha256sum --check $^
