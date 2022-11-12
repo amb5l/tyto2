@@ -68,8 +68,8 @@ SIM_SRC:=\
 SIM_RUN:=$(SIM_TOP),vector_init=64512;start_address=1024;ref_file=$(shell cygpath -m -a $(REF_FILE));progress_interval=1000
 
 GHDL_LIBS:=xilinx-vivado
-NVC_EOPTS:=-V
 NVC_GOPTS:=-M 32m
+
 # Visual Studio Code and V4P support
 
 VSCODE_SRC:=$(SIM_SRC)
