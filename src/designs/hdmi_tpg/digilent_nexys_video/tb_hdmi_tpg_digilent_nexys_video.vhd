@@ -100,7 +100,7 @@ begin
 
   TEST: process is
     constant progress_interval : time := 1 ms;
-    variable mode : integer;
+    variable mode              : integer;
   begin
     mode      := 0;
     btn_rst_n <= '0';

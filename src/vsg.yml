@@ -28,6 +28,9 @@ rule:
   # blank line before closing parenthesis at end of port declaration
   port_024:
     disable: true
+  # constant identifier case
+  constant_004 :
+     disable: true
   # signal - default assignment
   signal_007:
     disable: true

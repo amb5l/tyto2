@@ -98,7 +98,7 @@ NOTE: **ALL** designs have submodule dependencies. Please remember to initialise
 
 . https://code.visualstudio.com/[Visual Studio Code] is now a supported make target. Run `make vscode` to build a directory workspace and open the editor. The build process also generates the required `config.v4p` file for the excellent http://www.vide-software.at/[VHDL for Professionals (V4P)] VS Code extension.
 
-. https://vhdl-style-guide.readthedocs.io/en/latest/[VHDL Style Guide] is supported with a custom configuration file. To check all source files, run `make -f vsg.mak` in the `src/` directory.
+. https://vhdl-style-guide.readthedocs.io/en/latest/[VHDL Style Guide] is supported with a custom configuration file. To fix all source files, run `make` in the `src/` directory.
 
 == License
 
