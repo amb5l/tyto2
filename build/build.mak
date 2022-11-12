@@ -9,9 +9,13 @@ REPO_ROOT:=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 # default target
 
 ifeq ($(FPGA_VENDOR),xilinx)
+ifdef FPGA_DEVICE
 all: bit
+endif
 else ifeq ($(FPGA_VENDOR),intel)
+ifdef FPGA_DEVICE
 all: sof
+endif
 endif
 fail:
 	@echo "No target specified. Supported simulators: $(SIMULATORS)"
@@ -196,14 +200,15 @@ clean:
 
 else ifeq ($(FPGA_VENDOR),xilinx)
 
+ifdef FPGA_DEVICE
 XILINX_MK?=$(REPO_ROOT)/submodules/xilinx-mk
 include $(XILINX_MK)/xilinx.mk
-all: bit
-
+endif
 else ifeq ($(FPGA_VENDOR),intel)
 
+ifdef FPGA_DEVICE
 QUARTUS_MK?=$(REPO_ROOT)/submodules/quartus-mk
 include $(QUARTUS_MK)/quartus.mk
-all: sof
+endif
 
 endif
