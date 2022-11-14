@@ -134,7 +134,13 @@ endef
 $(foreach s,$(SIM_SRC),$(eval $(call RR_COM,$s)))
 define RR_SIM
 sim:: $(SIM_SCT) | $(SIM_DIR)
+	@bash -c "echo --------------------------------------------------------------------------------"
+	@bash -c "echo SIMULATION RUN: $(word 1,$1)   START: $$$$(date)"
+	@bash -c "echo --------------------------------------------------------------------------------"
 	$(call CMD_SIM,$1)
+	@bash -c "echo --------------------------------------------------------------------------------"
+	@bash -c "echo SIMULATION RUN: $(word 1,$1)   END: $$$$(date)"
+	@bash -c "echo --------------------------------------------------------------------------------"
 ifneq ($$(filter gtkwave,$$(MAKECMDGOALS)),)
 	sh $(REPO_ROOT)/submodules/vcd2gtkw/vcd2gtkw.sh $(SIM_DIR)/$(word 1,$1).vcd $(SIM_DIR)/$(word 1,$1).gtkw
 	gtkwave $(SIM_DIR)/$(word 1,$1).vcd $(SIM_DIR)/$(word 1,$1).gtkw
