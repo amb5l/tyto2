@@ -25,6 +25,9 @@ fail:
 
 SIM:=$(word 1,$(filter $(SIMULATORS),$(MAKECMDGOALS)))
 ifneq ($(SIM),)
+ifeq ($(filter $(SIM),ghdl nvc vsim xsim),)
+$(error Simulator is unsupported ($(SIM)))
+endif
 
 SIM_DIR:=.$(SIM)
 # simulation compile tracking
@@ -40,7 +43,7 @@ endif
 
 SIM_WORK:=work
 
-# definitions for GHDL
+# definitions for ghdl (GHDL)
 ifeq (ghdl,$(SIM))
 GHDL?=ghdl
 GHDL_PREFIX?=$(shell cygpath -m $(dir $(shell which $(GHDL))))/..
@@ -57,7 +60,7 @@ define CMD_SIM
 endef
 endif
 
-# definitions for NVC
+# definitions for nvc (NVC)
 ifeq (nvc,$(SIM))
 NVC?=nvc
 NVC_GOPTS+=--std=2008
@@ -75,7 +78,7 @@ define CMD_SIM
 endef
 endif
 
-# definitions for ModelSim/Questa/etc (vsim)
+# definitions for vsim (ModelSim/Questa/etc)
 ifeq (vsim,$(SIM))
 VCOM?=vcom
 VSIM?=vsim
@@ -93,20 +96,28 @@ define CMD_SIM
 endef
 endif
 
-# definitions for XSim (Vivado simulator, non project mode)
+# definitions for xsim (Vivado simulator - non project mode)
 ifeq (xsim,$(SIM))
 XVHDL?=xvhdl
 XELAB?=xelab
 XSIM?=xsim
-XVHDL_OPTS+=--2008 --relax
-XELAB_OPTS+=--debug typical --O2 --relax
-XSIM_OPTS+=-runall --onerror quit --onfinish quit
+XVHDL_OPTS+=-2008 -relax
+XELAB_OPTS+=-debug typical -O2 -relax
+XSIM_OPTS+=-onerror quit -onfinish quit
 ifeq ($(OS),Windows_NT)
 define CMD_COM
-	cmd.exe /C "cd $$(SIM_DIR) & call $$(XVHDL).bat $$(XVHDL_OPTS) -work $$(SIM_WORK) $1"
+	cmd.exe /C " \
+	cd $$(SIM_DIR) & \
+	call $$(XVHDL).bat $$(XVHDL_OPTS) -work $$(SIM_WORK) $1 \
+	"
 endef
 define CMD_SIM
-	cmd.exe /C "cd $$(SIM_DIR) & call $$(XELAB).bat $$(XELAB_OPTS) -top $$(word 2,$1) -snapshot $$(word 2,$1)_$$(word 1,$1) $$(addprefix -generic_top \",$$(addsuffix \",$$(subst ;, ,$$(word 3,$1)))) & call $$(XSIM).bat $$(XSIM_OPTS) $$(if $$(filter vcd gtkwave,$$(MAKECMDGOALS)),$$(addprefix --vcdfile ,$$(word 1,$$1))) $$(word 2,$1)_$$(word 1,$1)"
+	cd $$(SIM_DIR) && echo "open_vcd $$(word 1,$1).vcd; log_vcd /*; run all; close_vcd; quit" > $$(word 1,$1).tcl
+	cmd.exe /C " \
+	cd $$(SIM_DIR) & \
+	call $$(XELAB).bat $$(XELAB_OPTS) -L $$(SIM_WORK) -top $$(word 2,$1) -snapshot $$(word 2,$1)_$$(word 1,$1) $$(addprefix -generic_top \",$$(addsuffix \",$$(subst ;, ,$$(word 3,$1)))) & \
+	call $$(XSIM).bat $$(XSIM_OPTS) -tclbatch $$(word 1,$1).tcl $$(word 2,$1)_$$(word 1,$1) \
+	"
 endef
 else
 define CMD_COM
@@ -115,8 +126,9 @@ define CMD_COM
 endef
 define CMD_SIM
 	cd $$(SIM_DIR) && \
-	$$(XELAB) --debug typical --O2 --relax -L $$(SIM_WORK) --snapshot $$(word 2,$1)_$$(word 1,$1) $$(word 2,$1) $(addprefix -generic_top \",$(addsuffix \",$(subst ;, ,$$(word 3,$1)))) && \
-	$$(XSIM) $$(XSIM_OPTS) $$(if $$(filter vcd gtkwave,$$(MAKECMDGOALS)),$$$(addprefix --vcdfile ,$$$(word 1,$$1))) $$(word 2,$1)_$$(word 2,$1)
+	echo "open_vcd $$(word 1,$1).vcd; log_vcd /*; run all; close_vcd; quit" > $$(word 1,$1).tcl && \
+	$$(XELAB) $$(XELAB_OPTS) -L $$(SIM_WORK) -top $$(word 2,$1) -snapshot $$(word 2,$1)_$$(word 1,$1) $$(word 2,$1) $(addprefix -generic_top \",$(addsuffix \",$(subst ;, ,$$(word 3,$1)))) && \
+	$$(XSIM) $$(XSIM_OPTS) -tclbatch $$(word 1,$1).tcl $$(word 2,$1)_$$(word 1,$1)
 endef
 endif
 endif
@@ -133,7 +145,7 @@ $(SIM_SCT):: $1 | $(SIM_DIR)
 endef
 $(foreach s,$(SIM_SRC),$(eval $(call RR_COM,$s)))
 define RR_SIM
-sim:: $(SIM_SCT) | $(SIM_DIR)
+sim :: $(SIM_SCT) | $(SIM_DIR)
 	@bash -c "echo --------------------------------------------------------------------------------"
 	@bash -c "echo SIMULATION RUN: $(word 1,$1)   START: $$$$(date)"
 	@bash -c "echo --------------------------------------------------------------------------------"
@@ -141,9 +153,15 @@ sim:: $(SIM_SCT) | $(SIM_DIR)
 	@bash -c "echo --------------------------------------------------------------------------------"
 	@bash -c "echo SIMULATION RUN: $(word 1,$1)   END: $$$$(date)"
 	@bash -c "echo --------------------------------------------------------------------------------"
-ifneq ($$(filter gtkwave,$$(MAKECMDGOALS)),)
+$(SIM_DIR)/$(word 1,$1).vcd: sim
+vcd:: $(SIM_DIR)/$(word 1,$1).vcd
+$(SIM_DIR)/$(word 1,$1).gtkw: $(SIM_DIR)/$(word 1,$1).vcd
 	sh $(REPO_ROOT)/submodules/vcd2gtkw/vcd2gtkw.sh $(SIM_DIR)/$(word 1,$1).vcd $(SIM_DIR)/$(word 1,$1).gtkw
-	gtkwave $(SIM_DIR)/$(word 1,$1).vcd $(SIM_DIR)/$(word 1,$1).gtkw
+gtkwave:: $(SIM_DIR)/$(word 1,$1).vcd $(SIM_DIR)/$(word 1,$1).gtkw
+ifeq ($(OS),Windows_NT)
+	cmd.exe /C "start cmd.exe /C \"gtkwave $(SIM_DIR)/$(word 1,$1).vcd $(SIM_DIR)/$(word 1,$1).gtkw\""
+else
+	gtkwave $(SIM_DIR)/$(word 1,$1).vcd $(SIM_DIR)/$(word 1,$1).gtkw &
 endif
 endef
 comma:=,
