@@ -51,7 +51,7 @@ package body tyto_utils_pkg is
 
   function "/=" (L: std_logic; R: std_logic) return std_logic is
   begin
-    return L xnor R;
+    return L xor R;
   end function "/=";
 
   function "=" (L: std_logic_vector; R: std_logic_vector) return std_logic is
