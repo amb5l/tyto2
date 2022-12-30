@@ -8,7 +8,7 @@ To get the latest version of NVC running on your system, you will need to build 
 
 . Open an *MSYS2 MINGW64* terminal. Install NVC's build dependancies:
 
-  pacman -S --needed base-devel mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools,ruby}
+  pacman -S --needed base-devel git mingw-w64-x86_64-{gcc,llvm,ncurses,libffi,check,pkg-config,autotools,ruby}
 
 . Navigate to your chosen working directory. For example:
 
