@@ -214,7 +214,7 @@ begin
 
   MAIN: component hdmi_tpg
     generic map (
-      fclk       => Real(MEGA65_CLOCK_FREQ_HZ)
+      fclk       => Real(MEGA65_CLOCK_FREQ_HZ / 1_000_000)
     )
     port map (
       rst        => not jsb_fire_n,
