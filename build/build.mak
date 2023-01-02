@@ -3,7 +3,12 @@
 ################################################################################
 # global definitions
 
-REPO_ROOT:=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
+ifndef REPO_ROOT
+REPO_ROOT:=$(shell git rev-parse --show-toplevel)
+ifeq ($(OS),Windows_NT)
+REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
+endif
+endif
 
 ################################################################################
 # default target
@@ -46,7 +51,12 @@ SIM_WORK:=work
 # definitions for ghdl (GHDL)
 ifeq (ghdl,$(SIM))
 GHDL?=ghdl
-GHDL_PREFIX?=$(shell cygpath -m $(dir $(shell which $(GHDL))))/..
+ifndef GHDL_PREFIX
+GHDL_PREFIX:=$(dir $(shell which $(GHDL)))/..
+ifeq ($(OS),Windows_NT)
+GHDL_PREFIX:=$(shell cygpath -m $(GHDL_PREFIX))
+endif
+endif
 GHDL_AOPTS+=--std=08 -fsynopsys -frelaxed -Wno-hide -Wno-shared $(addprefix -P$(GHDL_PREFIX)/lib/ghdl/vendors/,$(GHDL_LIBS))
 GHDL_EOPTS+=--std=08 -fsynopsys -frelaxed $(addprefix -P$(GHDL_PREFIX)/lib/ghdl/vendors/,$(GHDL_LIBS))
 GHDL_ROPTS+=--unbuffered --max-stack-alloc=0 --ieee-asserts=disable
@@ -82,7 +92,12 @@ endif
 ifeq (vsim,$(SIM))
 VCOM?=vcom
 VSIM?=vsim
-VSIM_LIB_PATH?=$(shell cygpath -m ~/.simlib)
+ifndef VSIM_LIB_PATH
+VSIM_LIB_PATH:=~/.simlib
+ifeq ($(OS),Windows_NT)
+VSIM_LIB_PATH:=$(shell cygpath -m $(VSIM_LIB_PATH))
+endif
+endif
 VCOMOPTS+=-2008 -explicit -vopt -stats=none
 VSIMTCL+=set NumericStdNoWarnings 1; onfinish exit; run -all; exit
 VSIMOPTS+=-t ps -c -onfinish stop -do "$(VSIMTCL)"

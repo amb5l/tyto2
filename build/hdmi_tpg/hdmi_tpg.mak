@@ -1,6 +1,11 @@
 # hdmi_tpg.mak
 
-REPO_ROOT:=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
+ifndef REPO_ROOT
+REPO_ROOT:=$(shell git rev-parse --show-toplevel)
+ifeq ($(OS),Windows_NT)
+REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
+endif
+endif
 
 FPGA_VENDOR:=$(word 1,$(FPGA))
 FPGA_FAMILY:=$(word 2,$(FPGA))

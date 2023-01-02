@@ -1,6 +1,11 @@
 # mb_cb_ps2.mak
 
-REPO_ROOT:=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
+ifndef REPO_ROOT
+REPO_ROOT:=$(shell git rev-parse --show-toplevel)
+ifeq ($(OS),Windows_NT)
+REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
+endif
+endif
 SRC:=$(REPO_ROOT)/src
 
 FPGA_VENDOR:=$(word 1,$(FPGA))
