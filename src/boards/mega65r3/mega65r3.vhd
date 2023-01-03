@@ -15,8 +15,6 @@ entity mega65r3 is
     max10_tx                : in    std_logic;
     max10_rx                : out   std_logic;
 
-    led                     : out   std_logic;                      -- user LED
-
     uart_rx                 : in    std_logic;                      -- debug UART
     uart_tx                 : out   std_logic;
 

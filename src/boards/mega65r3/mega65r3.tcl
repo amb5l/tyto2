@@ -21,7 +21,6 @@ if {[llength [get_ports { clk_in           }]]} {set_property -dict { PACKAGE_PI
 if {[llength [get_ports { max10_clk        }]]} {set_property -dict { PACKAGE_PIN L16   IOSTANDARD LVCMOS33                                    } [get_ports { max10_clk        }] } ;#
 if {[llength [get_ports { max10_tx         }]]} {set_property -dict { PACKAGE_PIN M13   IOSTANDARD LVCMOS33                                    } [get_ports { max10_tx         }] } ;# Interface to MAX10
 if {[llength [get_ports { max10_rx         }]]} {set_property -dict { PACKAGE_PIN K16   IOSTANDARD LVCMOS33                                    } [get_ports { max10_rx         }] } ;#
-if {[llength [get_ports { led              }]]} {set_property -dict { PACKAGE_PIN U22   IOSTANDARD LVCMOS33                                    } [get_ports { led              }] } ;# user LED
 if {[llength [get_ports { uart_rx          }]]} {set_property -dict { PACKAGE_PIN L14   IOSTANDARD LVCMOS33                                    } [get_ports { uart_rx          }] } ;#
 if {[llength [get_ports { uart_tx          }]]} {set_property -dict { PACKAGE_PIN L13   IOSTANDARD LVCMOS33                                    } [get_ports { uart_tx          }] } ;# USB serial
 if {[llength [get_ports { kb_io0           }]]} {set_property -dict { PACKAGE_PIN A14   IOSTANDARD LVCMOS33                                    } [get_ports { kb_io0           }] } ;#
