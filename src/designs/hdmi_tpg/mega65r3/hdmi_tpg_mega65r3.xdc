@@ -18,14 +18,13 @@
 # clock renaming
 create_generated_clock -name pix_clk_x5 [get_pins MAIN/VIDEO_CLOCK/MMCM/CLKOUT0]
 create_generated_clock -name pix_clk    [get_pins MAIN/VIDEO_CLOCK/MMCM/CLKOUT1]
-create_generated_clock -name pcm_clk    [get_pins MAIN/AUDIO_TONE/CLOCK/MMCM/CLKOUT0]
+create_generated_clock -name pix_clk_a  [get_pins MAIN/VIDEO_CLOCK/MMCM/CLKOUT2]
 
 # false paths
-set_false_path -from [get_clocks clk_in]  -to   [get_clocks pix_clk]
-set_false_path -from [get_clocks clk_in]  -to   [get_clocks pix_clk_x5]
-set_false_path -to   [get_clocks clk_in]  -from [get_clocks pix_clk]
-set_false_path -to   [get_clocks clk_in]  -from [get_clocks pix_clk_x5]
-set_false_path -from [get_clocks pcm_clk] -to   [get_clocks pix_clk]
-set_false_path -from [get_clocks pcm_clk] -to   [get_clocks pix_clk_x5]
-set_false_path -to   [get_clocks pcm_clk] -from [get_clocks pix_clk]
-set_false_path -to   [get_clocks pcm_clk] -from [get_clocks pix_clk_x5]
+set_false_path -from [get_clocks clk_in] -to [get_clocks pix_clk]
+set_false_path -from [get_clocks clk_in] -to [get_clocks pix_clk_a]
+set_false_path -from [get_clocks pix_clk] -to [get_clocks clk_in]
+
+# multicycle paths (10 is enough, it's actually much longer)
+set_multicycle_path 10 -setup -end -from pix_clk_a -to pix_clk_a
+set_multicycle_path  9  -hold -end -from pix_clk_a -to pix_clk_a

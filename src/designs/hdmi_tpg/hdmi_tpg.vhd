@@ -34,7 +34,7 @@ package hdmi_tpg_pkg is
       dvi        : in    std_logic;
 
       heartbeat  : out   std_logic_vector(3 downto 0);
-      status     : out   std_logic_vector(1 downto 0);
+      status     : out   std_logic;
 
       hdmi_clk_p : out   std_logic;
       hdmi_clk_n : out   std_logic;
@@ -58,6 +58,8 @@ library work;
   use work.video_out_clock_pkg.all;
   use work.video_out_timing_pkg.all;
   use work.video_out_test_pattern_pkg.all;
+  use work.sync_reg_pkg.all;
+  use work.clkengen_pkg.all;
   use work.audio_out_test_tone_pkg.all;
   use work.vga_to_hdmi_pkg.all;
   use work.serialiser_10to1_selectio_pkg.all;
@@ -76,7 +78,7 @@ entity hdmi_tpg is
     dvi        : in    std_logic;                    -- 1 = DVI, 0 = HDMI
 
     heartbeat  : out   std_logic_vector(3 downto 0); -- 4 bit count @ 8Hz (heartbeat for LEDs)
-    status     : out   std_logic_vector(1 downto 0); -- MMCM lock status
+    status     : out   std_logic;                    -- MMCM lock status
 
     hdmi_clk_p : out   std_logic;                    -- HDMI (TMDS) clock output (+ve)
     hdmi_clk_n : out   std_logic;                    -- HDMI (TMDS) clock output (-ve)
@@ -88,12 +90,17 @@ end entity hdmi_tpg;
 
 architecture synth of hdmi_tpg is
 
+  signal f_pix          : std_logic_vector(27 downto 0); -- pixel clock frequency (Hz)
+  signal f_pcm          : std_logic_vector(19 downto 0); -- PCM sample frequency (Hz)
+  signal f_pix_s        : std_logic_vector(27 downto 0); -- pixel clock frequency (Hz) synchronised
+
   signal clken_1khz     : std_logic;                     -- 1kHz clock enable
 
   signal heartbeat_i    : std_logic_vector(3 downto 0);  -- internal copy
 
   signal pix_rst        : std_logic;                     -- pixel clock domain reset
   signal pix_clk        : std_logic;                     -- pixel clock (25.2/27/74.25/148.5 MHz)
+  signal pix_clk_a      : std_logic;                     -- additional/duplicate pixel clock for PCM, makes timing exceptions easier
   signal pix_clk_x5     : std_logic;                     -- serial clock = pixel clock x5
 
   signal mode_i         : std_logic_vector(3 downto 0);  -- internal copy
@@ -103,7 +110,6 @@ architecture synth of hdmi_tpg is
   signal mode_rst       : std_logic;                     -- mode step related reset
 
   signal mode_clk_sel   : std_logic_vector(1 downto 0);  -- pixel frequency select
-  signal mode_dmt       : std_logic;                     -- 1 = DMT, 0 = CEA
   signal mode_id        : std_logic_vector(7 downto 0);  -- DMT ID or CEA/CTA VIC
   signal mode_pix_rep   : std_logic;                     -- 1 = pixel doubling/repetition
   signal mode_aspect    : std_logic_vector(1 downto 0);  -- 0x = normal, 10 = force 16:9, 11 = force 4:3
@@ -119,7 +125,6 @@ architecture synth of hdmi_tpg is
   signal mode_vs_pol    : std_logic;                     -- vertical sync polarity (1 = high)
   signal mode_hs_pol    : std_logic;                     -- horizontal sync polarity (1 = high)
 
-  signal raw_f          : std_logic;                     -- field ID
   signal raw_vs         : std_logic;                     -- vertical sync
   signal raw_hs         : std_logic;                     -- horizontal sync
   signal raw_vblank     : std_logic;                     -- vertical blank
@@ -135,8 +140,6 @@ architecture synth of hdmi_tpg is
   signal vga_g          : std_logic_vector(7 downto 0);  -- green
   signal vga_b          : std_logic_vector(7 downto 0);  -- blue
 
-  signal pcm_rst        : std_logic;                     -- audio clock domain reset
-  signal pcm_clk        : std_logic;                     -- audio clock (12.288MHz)
   signal pcm_clken      : std_logic;                     -- audio clock enable @ 48kHz
   signal pcm_l          : std_logic_vector(15 downto 0); -- left channel  } audio sample,
   signal pcm_r          : std_logic_vector(15 downto 0); -- right channel } signed 16 bit
@@ -148,8 +151,7 @@ architecture synth of hdmi_tpg is
 
 begin
 
-  status(0) <= not pix_rst; -- pixel clock MMCM locked
-  status(1) <= not pcm_rst; -- audio clock MMCM locked
+  status <= not pix_rst; -- pixel clock MMCM locked
 
   DO_1KHZ: process (rst, clk) is
     variable counter : integer range 0 to 99999;
@@ -233,7 +235,7 @@ begin
     port map (
       mode      => mode_i,
       clk_sel   => mode_clk_sel,
-      dmt       => mode_dmt,
+      dmt       => open,
       id        => mode_id,
       pix_rep   => mode_pix_rep,
       aspect    => mode_aspect,
@@ -256,12 +258,13 @@ begin
       fref    => fclk
     )
     port map (
-      rsti    => rst or mode_rst,
-      clki    => clk,
-      sel     => mode_clk_sel,
-      rsto    => pix_rst,
-      clko    => pix_clk,
-      clko_x5 => pix_clk_x5
+      rsti      => rst or mode_rst,
+      clki      => clk,
+      sel       => mode_clk_sel,
+      rsto      => pix_rst,
+      clko      => pix_clk,
+      clko_a    => pix_clk_a,
+      clko_x5   => pix_clk_x5
     );
 
   -- basic video timing generation
@@ -281,7 +284,7 @@ begin
       h_bp      => mode_h_bp,
       genlock   => '0',
       genlocked => open,
-      f         => raw_f,
+      f         => open,
       vs        => raw_vs,
       hs        => raw_hs,
       vblank    => raw_vblank,
@@ -315,19 +318,46 @@ begin
       vga_ay     => open
     );
 
-  -- simple audio test tone
-  AUDIO_TONE: component audio_out_test_tone
+  with mode_clk_sel select f_pix <=
+    std_logic_vector(to_unsigned(148500000,f_pix'length)) when "11",
+    std_logic_vector(to_unsigned( 74250000,f_pix'length)) when "10",
+    std_logic_vector(to_unsigned( 27000000,f_pix'length)) when "01",
+    std_logic_vector(to_unsigned( 25200000,f_pix'length)) when others;
+
+  SYNC: component sync_reg
     generic map (
-      fref      => 100.0
+      width => f_pix'length,
+      depth => 2
     )
     port map (
-      ref_rst   => rst,
-      ref_clk   => clk,
-      pcm_rst   => pcm_rst,
-      pcm_clk   => pcm_clk,
-      pcm_clken => pcm_clken,
-      pcm_l     => pcm_l,
-      pcm_r     => pcm_r
+      clk   => pix_clk,
+      d     => f_pix,
+      q     => f_pix_s
+    );
+
+  f_pcm <= std_logic_vector(to_unsigned(48000,f_pcm'length));
+
+  AUDIO_CLKEN: component clkengen
+    generic map (
+      fclk_width   => f_pix'length,
+      fclken_width => f_pcm'length
+    )
+    port map (
+      fclk   => f_pix_s,
+      fclken => f_pcm,
+      rst    => pix_rst,
+      clk    => pix_clk,
+      clken  => pcm_clken
+    );
+
+  -- simple audio test tone
+  AUDIO_TONE: component audio_out_test_tone
+    port map (
+      rst   => pix_rst,
+      clk   => pix_clk_a,
+      clken => pcm_clken,
+      l     => pcm_l,
+      r     => pcm_r
     );
 
   -- N and CTS values for HDMI Audio Clock Regeneration; depends on pixel clock
@@ -340,13 +370,13 @@ begin
         std_logic_vector(to_unsigned(25200, pcm_cts'length)) when others;
 
   -- ACR packet rate should be 128fs/N = 1kHz
-  DO_ACR: process (pcm_rst, pcm_clk, pcm_clken) is
+  DO_ACR: process (pix_rst, pix_clk_a, pcm_clken) is
     variable count : integer range 0 to 47;
   begin
-    if pcm_rst = '1' then
+    if pix_rst = '1' then
       count   := 0;
       pcm_acr <= '0';
-    elsif rising_edge(pcm_clk) and pcm_clken = '1' then
+    elsif rising_edge(pix_clk_a) and pcm_clken = '1' then
       pcm_acr <= '0';
       if count = 47 then
         count   := 0;
@@ -377,8 +407,8 @@ begin
       vga_r     => vga_r,
       vga_g     => vga_g,
       vga_b     => vga_b,
-      pcm_rst   => pcm_rst,
-      pcm_clk   => pcm_clk,
+      pcm_rst   => pix_rst,
+      pcm_clk   => pix_clk_a,
       pcm_clken => pcm_clken,
       pcm_l     => pcm_l,
       pcm_r     => pcm_r,

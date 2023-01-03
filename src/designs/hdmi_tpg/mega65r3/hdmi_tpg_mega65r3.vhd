@@ -194,13 +194,11 @@ end entity hdmi_tpg_mega65r3;
 
 architecture synth of hdmi_tpg_mega65r3 is
 
-  constant MEGA65_CLOCK_FREQ_HZ : natural := 100_000_000;
-
   signal mode_step : std_logic;
   signal mode      : std_logic_vector(3 downto 0);
   signal dvi       : std_logic;
   signal heartbeat : std_logic_vector(3 downto 0);
-  signal status    : std_logic_vector(1 downto 0);
+  signal status    : std_logic;
   
   -- MEGA65 specific signals
   signal floppyled    : std_logic;
@@ -210,11 +208,12 @@ begin
 
   mode_step <= not key_return_n;
   dvi       <= '0';
-  floppyled <= heartbeat(0) and status(0) and status(1);
+  -- 1Hz when MMCM locked, 4Hz when not locked
+  floppyled <= heartbeat(2) when status = '1' else heartbeat(0);
 
   MAIN: component hdmi_tpg
     generic map (
-      fclk       => Real(MEGA65_CLOCK_FREQ_HZ / 1_000_000)
+      fclk       => 100.0
     )
     port map (
       rst        => not jsb_fire_n,
@@ -232,7 +231,7 @@ begin
 
    M65_KEYB: entity work.keyboard
     generic map (
-      CLOCK_FREQ_HZ  => MEGA65_CLOCK_FREQ_HZ
+      CLOCK_FREQ_HZ  => 100_000_000
     )
     port map (
       cpuclock    => clk_in,
@@ -250,10 +249,7 @@ begin
 
   max10_clk      <= 'Z'; -- assumed
   max10_rx       <= '1';
---led            <= '1'; -- on
   uart_tx        <= '1';
---  kb_io0         <= '0'; -- assumed
---  kb_io1         <= '0'; -- assumed
   kb_jtagen      <= '0'; -- assumed
   paddle_drain   <= '0';
   i2c_sda        <= 'Z';

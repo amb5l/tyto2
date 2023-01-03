@@ -182,7 +182,7 @@ architecture synth of hdmi_tpg_digilent_nexys_video is
   signal mode      : std_logic_vector(3 downto 0);
   signal dvi       : std_logic;
   signal heartbeat : std_logic_vector(3 downto 0);
-  signal status    : std_logic_vector(1 downto 0);
+  signal status    : std_logic;
 
 begin
 
@@ -210,8 +210,8 @@ begin
   mode_step       <= btn_c;
   dvi             <= sw(0);
   led(7)          <= dvi;
-  led(6)          <= status(1);
-  led(5)          <= status(0);
+  led(6)          <= status;
+  led(5)          <= heartbeat(1);
   led(4)          <= heartbeat(0);
   led(3 downto 0) <= mode;
 

@@ -31,8 +31,8 @@ package video_out_clock_pkg is
       sel     : in    std_logic_vector(1 downto 0);
       rsto    : out   std_logic;
       clko    : out   std_logic;
+      clko_a  : out   std_logic;
       clko_x5 : out   std_logic
-
     );
   end component video_out_clock;
 
@@ -61,6 +61,7 @@ entity video_out_clock is
     sel     : in    std_logic_vector(1 downto 0); -- output clock select: 00 = 25.2, 01 = 27.0, 10 = 74.25, 11 = 148.5
     rsto    : out   std_logic;                    -- output clock synchronous reset
     clko    : out   std_logic;                    -- pixel clock
+    clko_a  : out   std_logic;                    -- pixel clock (additional/duplicate)
     clko_x5 : out   std_logic                     -- serialiser clock (5x pixel clock)
 
   );
@@ -80,7 +81,8 @@ architecture synth of video_out_clock is
   signal clk_fb       : std_logic;                     -- feedback clock
   signal clku_fb      : std_logic;                     -- unbuffered feedback clock
   signal clko_u       : std_logic;                     -- unbuffered pixel clock
-  signal clko_b       : std_logic;                     -- buffered pixel clock
+  signal clko_i       : std_logic;                     -- buffered pixel clock, internal
+  signal clko_u_a     : std_logic;                     -- unbuffered pixel clock (additional/duplicate)
   signal clko_u_x5    : std_logic;                     -- unbuffered serializer clock
 
   signal cfg_tbl_addr : std_logic_vector(6 downto 0);  -- 4 x 32 entries
@@ -127,8 +129,8 @@ begin
           when x"03" => data := x"09" & x"0080" & x"8000";
           when x"04" => data := x"0A" & x"130d" & x"1000";
           when x"05" => data := x"0B" & x"0080" & x"8000";
-          when x"06" => data := x"0C" & x"1145" & x"1000";
-          when x"07" => data := x"0D" & x"0000" & x"8000";
+          when x"06" => data := x"0C" & x"130d" & x"1000";
+          when x"07" => data := x"0D" & x"0080" & x"8000";
           when x"08" => data := x"0E" & x"1145" & x"1000";
           when x"09" => data := x"0F" & x"0000" & x"8000";
           when x"0A" => data := x"10" & x"1145" & x"1000";
@@ -150,8 +152,8 @@ begin
           when x"23" => data := x"09" & x"0080" & x"8000";
           when x"24" => data := x"0A" & x"1452" & x"1000";
           when x"25" => data := x"0B" & x"0080" & x"8000";
-          when x"26" => data := x"0C" & x"1145" & x"1000";
-          when x"27" => data := x"0D" & x"0000" & x"8000";
+          when x"26" => data := x"0C" & x"1452" & x"1000";
+          when x"27" => data := x"0D" & x"0080" & x"8000";
           when x"28" => data := x"0E" & x"1145" & x"1000";
           when x"29" => data := x"0F" & x"0000" & x"8000";
           when x"2A" => data := x"10" & x"1145" & x"1000";
@@ -196,8 +198,8 @@ begin
           when x"63" => data := x"09" & x"00C0" & x"8000";
           when x"64" => data := x"0A" & x"1083" & x"1000";
           when x"65" => data := x"0B" & x"0080" & x"8000";
-          when x"66" => data := x"0C" & x"1145" & x"1000";
-          when x"67" => data := x"0D" & x"0000" & x"8000";
+          when x"66" => data := x"0C" & x"1083" & x"1000";
+          when x"67" => data := x"0D" & x"0080" & x"8000";
           when x"68" => data := x"0E" & x"1145" & x"1000";
           when x"69" => data := x"0F" & x"0000" & x"8000";
           when x"6A" => data := x"10" & x"1145" & x"1000";
@@ -315,54 +317,54 @@ begin
       depth => 2
     )
     port map (
-      clk   => clko_b,
+      clk   => clko_i,
       d(0)  => rsto_req or not locked or mmcm_rst,
       q(0)  => rsto
     );
 
   mmcm_rst <= cfg_rst or rsti;
 
-  -- The 7 series LVDS serdes is rated at as follows for DDR outputs:
+  -- The 7 series LVDS serdes is rated as follows for DDR outputs:
   --  1200Mbps max for -2 speed grade
   --  950Mbps max for -1 speed grade
   -- 1485Mbps (for full HD) overclocks these, so we use a fictional
   --  recipe for the MMCM to achieve timing closure:
-  --   m = 9.25, d = 1, outdiv0 = 2.0, outdiv1 = 6
-  --    => fVCO = 925 MHz, fclko_x5 = 462.5 MHz, fclko = 154.166 MHz
+  --   m = 9.5, d = 1, outdiv0 = 2.25, outdiv1..2 = 7
+  --    => fVCO = 950 MHz, fclko_x5 = 422.2 MHz, fclko = 135.714 MHz
   MMCM: component mmcme2_adv
     generic map (
       bandwidth            => "OPTIMIZED",
-      clkfbout_mult_f      => 9.25,
+      clkfbout_mult_f      => 9.5,
       clkfbout_phase       => 0.0,
       clkfbout_use_fine_ps => false,
       clkin1_period        => 10.0,
       clkin2_period        => 0.0,
-      clkout0_divide_f     => 2.0,
+      clkout0_divide_f     => 2.25,
       clkout0_duty_cycle   => 0.5,
       clkout0_phase        => 0.0,
       clkout0_use_fine_ps  => false,
-      clkout1_divide       => 6,
+      clkout1_divide       => 7,
       clkout1_duty_cycle   => 0.5,
       clkout1_phase        => 0.0,
       clkout1_use_fine_ps  => false,
-      clkout2_divide       => 1,
+      clkout2_divide       => 7,
       clkout2_duty_cycle   => 0.5,
       clkout2_phase        => 0.0,
       clkout2_use_fine_ps  => false,
-      clkout3_divide       => 1,
+      clkout3_divide       => 10,
       clkout3_duty_cycle   => 0.5,
       clkout3_phase        => 0.0,
       clkout3_use_fine_ps  => false,
       clkout4_cascade      => false,
-      clkout4_divide       => 1,
+      clkout4_divide       => 10,
       clkout4_duty_cycle   => 0.5,
       clkout4_phase        => 0.0,
       clkout4_use_fine_ps  => false,
-      clkout5_divide       => 1,
+      clkout5_divide       => 10,
       clkout5_duty_cycle   => 0.5,
       clkout5_phase        => 0.0,
       clkout5_use_fine_ps  => false,
-      clkout6_divide       => 1,
+      clkout6_divide       => 10,
       clkout6_duty_cycle   => 0.5,
       clkout6_phase        => 0.0,
       clkout6_use_fine_ps  => false,
@@ -396,7 +398,7 @@ begin
       clkout0b             => open,
       clkout1              => clko_u,
       clkout1b             => open,
-      clkout2              => open,
+      clkout2              => clko_u_a,
       clkout2b             => open,
       clkout3              => open,
       clkout3b             => open,
@@ -425,7 +427,13 @@ begin
   U_BUFG_1: component bufg
     port map (
       i => clko_u,
-      o => clko_b
+      o => clko_i
+    );
+
+  U_BUFG_2: component bufg
+    port map (
+      i => clko_u_a,
+      o => clko_a
     );
 
   U_BUFG_F: component bufg
@@ -434,6 +442,6 @@ begin
       o => clk_fb
     );
 
-  clko <= clko_b;
+  clko <= clko_i;
 
 end architecture synth;

@@ -130,9 +130,10 @@ begin
 
   mode_step <= not key_n(1);
   dvi       <= '0';
-  led_n(0)  <= heartbeat(2) when status = "111" else  -- full lock = 1Hz
-               heartbeat(1) when status /= "000" else -- partial lock = 2Hz
-               heartbeat(0);                          -- no lock = 4Hz
+  status(0) <= not rst_100m;
+  led_n(0)  <= heartbeat(2) when status = "11" else  -- full lock = 1Hz
+               heartbeat(1) when status /= "00" else -- partial lock = 2Hz
+               heartbeat(0);                         -- no lock = 4Hz
   led_n(1)  <= not mode(0);
 
   MAIN: component hdmi_tpg
@@ -146,7 +147,7 @@ begin
       mode       => mode,
       dvi        => dvi,
       heartbeat  => heartbeat,
-      status     => status,
+      status     => status(1),
       hdmi_clk_p => hdmi_clk_p,
       hdmi_clk_n => hdmi_clk_n,
       hdmi_d_p   => hdmi_d_p,
