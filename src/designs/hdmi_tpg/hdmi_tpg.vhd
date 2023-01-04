@@ -90,9 +90,9 @@ end entity hdmi_tpg;
 
 architecture synth of hdmi_tpg is
 
-  signal f_pix          : std_logic_vector(27 downto 0); -- pixel clock frequency (Hz)
+  signal f_pix          : std_logic_vector(28 downto 0); -- pixel clock frequency (Hz)
   signal f_pcm          : std_logic_vector(19 downto 0); -- PCM sample frequency (Hz)
-  signal f_pix_s        : std_logic_vector(27 downto 0); -- pixel clock frequency (Hz) synchronised
+  signal f_pix_s        : std_logic_vector(28 downto 0); -- pixel clock frequency (Hz) synchronised
 
   signal clken_1khz     : std_logic;                     -- 1kHz clock enable
 

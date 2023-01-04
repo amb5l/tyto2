@@ -72,7 +72,7 @@ begin
       else
         clken <= '0';
         cnt_next := cnt-unsigned(fclken);
-        if cnt_next(27) = '1' then
+        if cnt_next(fclk_width-1) = '1' then
           cnt <= cnt_next+unsigned(fclk);
           clken <= '1';
         else
