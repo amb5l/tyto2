@@ -28,3 +28,8 @@ set_false_path -from [get_clocks pix_clk] -to [get_clocks clk_in]
 # multicycle paths (10 is enough, it's actually much longer)
 set_multicycle_path 10 -setup -end -from pix_clk_a -to pix_clk_a
 set_multicycle_path  9  -hold -end -from pix_clk_a -to pix_clk_a
+
+# placement constraint for the keyboard driver
+create_pblock pblock_m65_keyb
+add_cells_to_pblock pblock_m65_keyb [get_cells [list M65_KEYB]]
+resize_pblock pblock_m65_keyb -add {SLICE_X0Y225:SLICE_X7Y243}
