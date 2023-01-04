@@ -699,7 +699,7 @@ begin
       hb(2) <= hb_2;
       pb(2) <= pb_2;
 
-      if vga_vs_p = '1' and vga_vs_1 = '0' and vga_hs_p /= vga_hs_1 then                    -- once per frame
+      if vga_vs_p = '1' and vga_vs_1 = '0' then                                             -- once per field/frame
         data_req(3) <= '1';
       end if;
       hb(3)                <= hb_3;
@@ -711,8 +711,8 @@ begin
                                        pb(3)(5)(3 downto 0)
                                      );
       pb(3)(2)(5 downto 4) <= unsigned(aspect_s);
-      -- pb(3)(2)(3) <= '1';
-      -- pb(3)(2)(1 downto 0) <= unsigned(aspect_s);
+      pb(3)(2)(3) <= '1';
+      pb(3)(2)(1 downto 0) <= unsigned(aspect_s);
       pb(3)(4)       <= unsigned(vic_s);
       pb(3)(5)(0)    <= pix_rep_s;
       pb(3)(6 to 27) <= pb_3(6 to 27);
