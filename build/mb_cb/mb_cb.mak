@@ -21,10 +21,10 @@ VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_utils_pkg.vhd \
 	$(SRC)/common/basic/sync_reg.vhd \
 	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/ram_tdp_ar_2kx32_4kx16.vhd \
-	$(SRC)/common/video_out/char_rom_437_8x16.vhd \
-	$(SRC)/common/video_out/video_out_timing.vhd \
-	$(SRC)/common/video_out/vga_to_hdmi.vhd \
-	$(SRC)/common/video_out/hdmi_tx_encoder.vhd \
+	$(SRC)/common/video/char_rom_437_8x16.vhd \
+	$(SRC)/common/video/video_out_timing.vhd \
+	$(SRC)/common/video/vga_to_hdmi.vhd \
+	$(SRC)/common/video/hdmi_tx_encoder.vhd \
 	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
 	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/serialiser_10to1_selectio.vhd \
 	$(SRC)/designs/$(DESIGN)/cb.vhd \
@@ -40,9 +40,9 @@ VIVADO_DSN_ELF_CFG:=Release
 VIVADO_SIM_TOP:=tb_$(VIVADO_DSN_TOP)
 VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/tyto_sim_pkg.vhd \
-	$(SRC)/common/video_out/model_tmds_cdr_des.vhd \
-	$(SRC)/common/video_out/model_dvi_decoder.vhd \
-	$(SRC)/common/video_out/model_vga_sink.vhd \
+	$(SRC)/common/video/model_tmds_cdr_des.vhd \
+	$(SRC)/common/video/model_dvi_decoder.vhd \
+	$(SRC)/common/video/model_vga_sink.vhd \
 	$(SRC)/designs/$(DESIGN)/tb_$(DESIGN).vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
 VIVADO_SIM_ELF_CFG:=Debug
@@ -54,14 +54,14 @@ VITIS_SRC:=\
 	$(SRC)/common/basic/microblaze/axi_gpio_p.h \
 	$(SRC)/common/basic/microblaze/axi_gpio.h \
 	$(SRC)/common/basic/microblaze/axi_gpio.c \
-	$(SRC)/common/video_out/microblaze/cb.h \
-	$(SRC)/common/video_out/microblaze/cb.c \
+	$(SRC)/common/video/microblaze/cb.h \
+	$(SRC)/common/video/microblaze/cb.c \
 	$(SRC)/common/basic/microblaze/printf.h \
 	$(SRC)/common/basic/microblaze/printf.c
 VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/microblaze \
 	$(SRC)/common/basic/microblaze \
-	$(SRC)/common/video_out/microblaze
+	$(SRC)/common/video/microblaze
 
 SIMULATORS:=vivado xsim
 SIM_TOP:=$(VIVADO_SIM_TOP)

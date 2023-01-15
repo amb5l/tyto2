@@ -25,10 +25,10 @@ VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/designs/$(DESIGN)/mig_hub.vhd \
 	$(SRC)/designs/$(DESIGN)/crtc.vhd \
 	$(SRC)/designs/$(DESIGN)/dvi_tx.vhd \
-	$(SRC)/common/video_out/video_mode.vhd \
-	$(SRC)/common/video_out/video_out_timing.vhd \
-	$(SRC)/common/video_out/dvi_tx_encoder.vhd \
-	$(SRC)/common/video_out/$(FPGA_VENDOR)_$(FPGA_FAMILY)/video_out_clock.vhd \
+	$(SRC)/common/video/video_mode.vhd \
+	$(SRC)/common/video/video_out_timing.vhd \
+	$(SRC)/common/video/dvi_tx_encoder.vhd \
+	$(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/video_out_clock.vhd \
 	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/serialiser_10to1_selectio.vhd \
 	$(SRC)/common/basic/sync_reg.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/global_pkg_$(BOARD).vhd \
@@ -47,10 +47,10 @@ VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/basic/model_fifoctrl_s.vhd \
 	$(SRC)/common/ddr3/xilinx/model_mig.vhd \
-	$(SRC)/common/video_out/model_video_out_clock.vhd \
-	$(SRC)/common/video_out/model_tmds_cdr_des.vhd \
-	$(SRC)/common/video_out/model_dvi_decoder.vhd \
-	$(SRC)/common/video_out/model_vga_sink.vhd \
+	$(SRC)/common/video/model_video_out_clock.vhd \
+	$(SRC)/common/video/model_tmds_cdr_des.vhd \
+	$(SRC)/common/video/model_dvi_decoder.vhd \
+	$(SRC)/common/video/model_vga_sink.vhd \
 	$(SRC)/designs/$(DESIGN)/tb_crtc_etc.vhd \
 	$(SRC)/designs/$(DESIGN)/tb_$(DESIGN).vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
@@ -68,8 +68,8 @@ VITIS_SRC:=\
 	$(SRC)/common/basic/microblaze/axi_gpio_p.h \
 	$(SRC)/common/basic/microblaze/axi_gpio.h \
 	$(SRC)/common/basic/microblaze/axi_gpio.c \
-	$(SRC)/common/video_out/microblaze/fb.h \
-	$(SRC)/common/video_out/microblaze/fb.c \
+	$(SRC)/common/video/microblaze/fb.h \
+	$(SRC)/common/video/microblaze/fb.c \
 	$(SUBMODULES)/hagl/src/bitmap.c \
 	$(SUBMODULES)/hagl/src/clip.c \
 	$(SUBMODULES)/hagl/src/fontx.c \
@@ -96,7 +96,7 @@ VITIS_SRC:=\
 VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/microblaze \
 	$(SRC)/common/basic/microblaze \
-	$(SRC)/common/video_out/microblaze \
+	$(SRC)/common/video/microblaze \
 	$(SUBMODULES)/hagl/include
 VITIS_SYMBOL:=\
 	NO_MENUCONFIG \

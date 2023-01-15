@@ -73,17 +73,17 @@ VIVADO_DSN_VHDL=\
 	$(SRC)/common/ps2/ps2_to_usbhid.vhd \
 	$(SRC)/common/ps2/ps2set2_to_usbhid_pkg.vhd \
 	$(SRC)/common/usb/usb_hid_codes_pkg.vhd \
-	$(SRC)/common/video_out/$(VENDOR_FAMILY)/video_out_clock.vhd \
+	$(SRC)/common/video/$(VENDOR_FAMILY)/video_out_clock.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_hdtv.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_overscan.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_genlock.vhd \
-	$(SRC)/common/video_out/video_mode.vhd \
-	$(SRC)/common/video_out/video_out_timing.vhd \
+	$(SRC)/common/video/video_mode.vhd \
+	$(SRC)/common/video/video_out_timing.vhd \
 	$(SRC)/common/basic/$(VENDOR)/ram_tdp_ar.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_resample.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_hdtv_pcm_to_hdmi.vhd \
-	$(SRC)/common/video_out/vga_to_hdmi.vhd \
-	$(SRC)/common/video_out/hdmi_tx_encoder.vhd \
+	$(SRC)/common/video/vga_to_hdmi.vhd \
+	$(SRC)/common/video/hdmi_tx_encoder.vhd \
 	$(SRC)/common/basic/$(VENDOR_FAMILY)/serialiser_10to1_selectio.vhd
 
 VIVADO_DSN_XDC_IMPL=\
@@ -96,9 +96,9 @@ VIVADO_SIM_VHDL=\
 	$(SRC)/designs/$(DESIGN)/test/tb_bpp_hdtv.vhd \
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/basic/model_clk_src.vhd \
-	$(SRC)/common/video_out/model_hdmi_decoder.vhd \
-	$(SRC)/common/video_out/model_tmds_cdr_des.vhd \
-	$(SRC)/common/video_out/model_vga_sink.vhd
+	$(SRC)/common/video/model_hdmi_decoder.vhd \
+	$(SRC)/common/video/model_tmds_cdr_des.vhd \
+	$(SRC)/common/video/model_vga_sink.vhd
 VIVADO_SIM_GENERICS=\
 	mode7_binfile=$(abspath $(MODE7_BIN)) \
 	mode2_binfile=$(abspath $(MODE2_BIN))
