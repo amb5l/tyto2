@@ -55,11 +55,11 @@ entity hdmi_tpg_digilent_nexys_video is
     -- hdmi_rx_clk_n   : in    std_logic;
     -- hdmi_rx_d_p     : in    std_logic_vector(0 to 2);
     -- hdmi_rx_d_n     : in    std_logic_vector(0 to 2);
+    -- hdmi_rx_scl     : in    std_logic;
     -- hdmi_rx_sda     : inout std_logic;
     -- hdmi_rx_cec     : in    std_logic;
     -- hdmi_rx_hpd     : out   std_logic;
     -- hdmi_rx_txen    : out   std_logic;
-    -- hdmi_rx_scl     : in    std_logic;
 
     -- HDMI TX
     hdmi_tx_clk_p : out   std_logic;
