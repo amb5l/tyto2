@@ -197,7 +197,7 @@ VSCODE_SYMLINKS:=$(addprefix $(VSCODE_DIR)/,$(notdir $(VSCODE_SRC)))
 define RR_VSCODE_SYMLINK
 ifeq ($(OS),Windows_NT)
 $(VSCODE_DIR)/$(notdir $1): $1 | $(VSCODE_DIR)
-	cmd.exe /C "rm -f  $$(shell cygpath -w $$@) & mklink $$(shell cygpath -w $$@) $$(shell cygpath -w -a $$<)"
+	cmd.exe //C "rm -f  $$(shell cygpath -w $$@) & mklink $$(shell cygpath -w $$@) $$(shell cygpath -w -a $$<)"
 else
 $(VSCODE_DIR)/$(notdir $1): $1
 	ln $$< $$@
