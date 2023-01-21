@@ -25,20 +25,12 @@ package hdmi_io_pkg is
       fclk       : real
     );
     port (
-
-      rst        : in    std_logic;
-      clk        : in    std_logic;
-
-      hdmi_rx_clk_p : out   std_logic;
-      hdmi_rx_clk_n : out   std_logic;
-      hdmi_rx_d_p   : out   std_logic_vector(0 to 2);
-      hdmi_rx_d_n   : out   std_logic_vector(0 to 2)
-
-      hdmi_tx_clk_p : out   std_logic;
-      hdmi_tx_clk_n : out   std_logic;
-      hdmi_tx_d_p   : out   std_logic_vector(0 to 2);
-      hdmi_tx_d_n   : out   std_logic_vector(0 to 2)
-
+      rst         : in    std_logic;
+      clk         : in    std_logic;
+      hdmi_rx_clk : in    std_logic;
+      hdmi_rx_d   : in    std_logic_vector(0 to 2);
+      hdmi_tx_clk : out   std_logic;
+      hdmi_tx_d   : out   std_logic_vector(0 to 2)
     );
   end component hdmi_io;
 
@@ -49,43 +41,57 @@ end package hdmi_io_pkg;
 library ieee;
   use ieee.std_logic_1164.all;
 
+library work;
+  use work.tyto_types_pkg.all;
+  use work.hdmi_rx_selectio_pkg.all;
+  use work.hdmi_tx_selectio_pkg.all;
+
 entity hdmi_io is
   generic (
-    fclk          : real                                -- clock frequency (MHz), typically 100.0
+    fclk        : real                                -- clock frequency (MHz), typically 100.0
   );
   port (
-
-    rst           : in    std_logic;                    -- reference/system reset (synchronous)
-    clk           : in    std_logic;                    -- reference/system clock
-
-    hdmi_rx_clk_p : out   std_logic;                    -- HDMI (TMDS) clock input (+ve)
-    hdmi_rx_clk_n : out   std_logic;                    -- HDMI (TMDS) clock input (-ve)
-    hdmi_rx_d_p   : out   std_logic_vector(0 to 2);     -- HDMI (TMDS) data input channels 0..2 (+ve)
-    hdmi_rx_d_n   : out   std_logic_vector(0 to 2)      -- HDMI (TMDS) data input channels 0..2 (-ve)
-
-    hdmi_tx_clk_p : out   std_logic;                    -- HDMI (TMDS) clock output (+ve)
-    hdmi_tx_clk_n : out   std_logic;                    -- HDMI (TMDS) clock output (-ve)
-    hdmi_tx_d_p   : out   std_logic_vector(0 to 2);     -- HDMI (TMDS) data output channels 0..2 (+ve)
-    hdmi_tx_d_n   : out   std_logic_vector(0 to 2)      -- HDMI (TMDS) data output channels 0..2 (-ve)
-
+    rst         : in    std_logic;                    -- reference/system reset (synchronous)
+    clk         : in    std_logic;                    -- reference/system clock
+    hdmi_rx_clk : in    std_logic;                    -- HDMI (TMDS) clock input (+ve
+    hdmi_rx_d   : in    std_logic_vector(0 to 2);     -- HDMI (TMDS) data input channels 0..2 (+ve)
+    hdmi_tx_clk : out   std_logic;                    -- HDMI (TMDS) clock output (+ve)
+    hdmi_tx_d   : out   std_logic_vector(0 to 2)      -- HDMI (TMDS) data output channels 0..2 (+ve)
   );
 end entity hdmi_io;
 
 architecture synth of hdmi_io is
 
+  signal sclk : std_logic;
+  signal prst : std_logic;
+  signal pclk : std_logic;
+  signal tmds : slv_9_0_t(0 to 2);
+
 begin
 
   U_HDMI_RX: component hdmi_rx_selectio
-    generic (
+    generic map (
       fclk  => 100.0
     )
-    port (
+    port map (
       rst   => rst,
       clk   => clk,
-      pclki => 
-      si    => hdmi_rx_d
-      pclko => pclk
-      po    => hdmi_rx_pd
+      pclki => hdmi_rx_clk,
+      si    => hdmi_rx_d,
+      sclko => sclk,
+      prsto => prst,
+      pclko => pclk,
+      po    => tmds
+    );
+
+  HDMI_TX: component hdmi_tx_selectio
+    port map (
+      sclki => sclk,
+      prsti => prst,
+      pclki => pclk,
+      pi    => tmds,
+      pclko => hdmi_tx_clk,
+      so    => hdmi_tx_d
     );
 
 end architecture synth;

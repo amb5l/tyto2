@@ -21,9 +21,11 @@ VIVADO_LANG:=VHDL
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
 VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
-    $(SRC)/common/video/$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
-    $(SRC)/designs/$(DESIGN).vhd \
-	$(SRC)/designs/$(BOARD)/$(DESIGN)_$(BOARD).vhd
+    $(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
+    $(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
+	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
 VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc

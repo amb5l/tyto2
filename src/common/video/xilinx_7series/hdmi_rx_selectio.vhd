@@ -1,8 +1,10 @@
 --------------------------------------------------------------------------------
 -- hdmi_rx_selectio.vhd                                                       --
 -- HDMI sink front end built on Xilinx 7 Series SelectIO primitives.          --
--- Supports pixel clocks in the range 25..148.5MHz. Note that -1 parts are    --
--- rated at 950Mbps (95MHz) max, and -2 parts are rated at 1200Mbps max.      --
+-- Notes:                                                                     --
+-- 1) Does not include I/O buffers.                                           --
+-- 2) Supports pixel clocks in the range 25..148.5MHz. -1 parts are rated at  --
+-- 950Mbps (95MHz) max, and -2 parts are rated at 1200Mbps max.               --
 -- Higher frequencies may not work!                                           --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
@@ -35,6 +37,8 @@ package hdmi_rx_selectio_pkg is
       clk     : in    std_logic;
       pclki   : in    std_logic;
       si      : in    std_logic_vector(0 to 2);
+      sclko   : out   std_logic;
+      prsto   : out   std_logic;
       pclko   : out   std_logic;
       po      : out   slv_9_0_t(0 to 2)
     );
@@ -62,9 +66,11 @@ entity hdmi_rx_selectio is
   port (
     rst     : in    std_logic;                -- reset (sychronous to clk)
     clk     : in    std_logic;                -- clock (measurement and control)
-    pclki   : in    std_logic;                -- pixel/character clock in
+    pclki   : in    std_logic;                -- pixel clock in
     si      : in    std_logic_vector(0 to 2); -- serial TMDS in
-    pclko   : out   std_logic;                -- pixel/character clock out
+    sclko   : out   std_logic;                -- serial clock out
+    prsto   : out   std_logic;                -- pixel clock reset out
+    pclko   : out   std_logic;                -- pixel clock out
     po      : out   slv_9_0_t(0 to 2)         -- parallel TMDS out
   );
 end entity hdmi_rx_selectio;
@@ -123,42 +129,42 @@ architecture synth of hdmi_rx_selectio is
   signal fmo_ack        : std_logic;
   signal fmo_state      : fmo_state_t;
 
-  -- MMCM
-  signal mmcm_rst      : std_logic;
-  signal mmcm_clkout0  : std_logic;
-  signal mmcm_clkout1p : std_logic;
-  signal mmcm_clkout1n : std_logic;
-  signal mmcm_fbo      : std_logic;
-  signal mmcm_fbi      : std_logic;
-  signal mmcm_lock_a   : std_logic;
-  signal mmcm_lock_s   : std_logic_vector(0 to 1);
-  alias  mmcm_lock     : std_logic is mmcm_lock_s(1);
-  signal mmcm_tbl_a    : std_logic_vector(6 downto 0);  -- 4 x 32 entries
-  signal mmcm_tbl_d    : std_logic_vector(39 downto 0); -- 8 bit address + 16 bit write data + 16 bit read mask
+  -- MMCM (DRP = Dynamic Reconfiguration Port)
+  signal mmcm_rst      : std_logic;                     -- reset
+  signal mmcm_clkout0  : std_logic;                     -- clkout0
+  signal mmcm_clkout1p : std_logic;                     -- clkout1+
+  signal mmcm_clkout1n : std_logic;                     -- clkout1-
+  signal mmcm_fbo      : std_logic;                     -- feedback clock out
+  signal mmcm_fbi      : std_logic;                     -- feedback clock in
+  signal mmcm_lock_a   : std_logic;                     -- lock (asynchronous)
+  signal mmcm_lock_s   : std_logic_vector(0 to 1);      -- lock synchroniser
+  alias  mmcm_lock     : std_logic is mmcm_lock_s(1);   -- lock (synchronous to clk)
+  signal mmcm_tbl_a    : std_logic_vector(6 downto 0);  -- DRP table address (4 x 32 = 128 entries)
+  signal mmcm_tbl_d    : std_logic_vector(39 downto 0); -- DRP data: 8 bit register address + 16 bit write data + 16 bit read mask
   signal mmcm_daddr    : std_logic_vector(6 downto 0);  -- DRP register address
   signal mmcm_den      : std_logic;                     -- DRP enable (pulse)
   signal mmcm_dwe      : std_logic;                     -- DRP write enable
   signal mmcm_di       : std_logic_vector(15 downto 0); -- DRP write data
   signal mmcm_do       : std_logic_vector(15 downto 0); -- DRP read data
   signal mmcm_drdy     : std_logic;                     -- DRP access complete
-  signal mmcm_state    : mmcm_state_t;
-  signal prst_a        : std_logic;
-  signal prst_s        : std_logic_vector(0 to 1);
-  alias  prst          : std_logic is prst_s(1);
-  signal pclk          : std_logic;
-  signal sclk_p        : std_logic;
-  signal sclk_n        : std_logic;
+  signal mmcm_state    : mmcm_state_t;                  -- state machine state
+  signal prst_a        : std_logic;                     -- pclk domain reset before synchronisation
+  signal prst_s        : std_logic_vector(0 to 1);      -- pclk domain reset synchroniser
+  alias  prst          : std_logic is prst_s(1);        -- pclk domain synchronous reset
+  signal pclk          : std_logic;                     -- main pixel clock
+  signal sclk_p        : std_logic;                     -- serial clock +
+  signal sclk_n        : std_logic;                     -- serial clock -
 
   -- IDELAYE2
-  signal sid           : std_logic_vector(0 to 2);      -- si, delayed by IDELAYE2
-  signal idelay_ld     : std_logic;
-  signal idelay_tap    : std_logic_vector(4 downto 0);
-  signal idelay_slip   : std_logic;
+  signal idelay_ld     : std_logic;                     -- load tap value
+  signal idelay_tap    : std_logic_vector(4 downto 0);  -- tap value (0..31)
 
   -- ISERDESE2
-  signal pi            : slv_9_0_t(0 to 2);             -- parallel input
-  signal shift1        : std_logic_vector(0 to 2);      -- master-slave cascade
-  signal shift2        : std_logic_vector(0 to 2);      -- "
+  signal iserdes_ddly   : std_logic_vector(0 to 2);      -- serial input, delayed by IDELAYE2
+  signal iserdes_q      : slv_9_0_t(0 to 2);             -- parallel output
+  signal iserdes_shift1 : std_logic_vector(0 to 2);      -- master-slave cascade
+  signal iserdes_shift2 : std_logic_vector(0 to 2);      -- "
+  signal iserdes_slip   : std_logic;                     -- bit slip
 
 begin
 
@@ -563,7 +569,10 @@ begin
       o => mmcm_fbi
     );
 
+  sclko <= sclk_p;
+  prsto <= prst;
   pclko <= pclk;
+
 
   ----------------------------------------------------------------------
   -- SelectIO input primitives
@@ -593,7 +602,7 @@ begin
         cntvalueout => open,                  -- 5-bit output: Counter value output
         idatain     => si(i),                 -- 1-bit input: Data input from the I/O
         datain      => '0',                   -- 1-bit input: Internal delay data input
-        dataout     => sid(i)                 -- 1-bit output: Delayed data output
+        dataout     => iserdes_ddly(i)        -- 1-bit output: Delayed data output
       );
 
     U_ISERDESE2_M: component iserdese2
@@ -629,22 +638,22 @@ begin
         oclk              => '0',
         oclkb             => '1',
         d                 => '0',
-        ddly              => sid(i),
+        ddly              => iserdes_ddly(i),
         ofb               => '0',
         o                 => open,
-        q1                => pi(i)(9),
-        q2                => pi(i)(8),
-        q3                => pi(i)(7),
-        q4                => pi(i)(6),
-        q5                => pi(i)(5),
-        q6                => pi(i)(4),
-        q7                => pi(i)(3),
-        q8                => pi(i)(2),
-        bitslip           => idelay_slip,
+        q1                => iserdes_q(i)(9),
+        q2                => iserdes_q(i)(8),
+        q3                => iserdes_q(i)(7),
+        q4                => iserdes_q(i)(6),
+        q5                => iserdes_q(i)(5),
+        q6                => iserdes_q(i)(4),
+        q7                => iserdes_q(i)(3),
+        q8                => iserdes_q(i)(2),
+        bitslip           => iserdes_slip,
         shiftin1          => '0',
         shiftin2          => '0',
-        shiftout1         => shift1(i),
-        shiftout2         => shift2(i)
+        shiftout1         => iserdes_shift1(i),
+        shiftout2         => iserdes_shift2(i)
       );
 
     U_ISERDESE2_S: component iserdese2
@@ -685,15 +694,15 @@ begin
         o                 => open,
         q1                => open,
         q2                => open,
-        q3                => pi(i)(1),
-        q4                => pi(i)(0),
+        q3                => iserdes_q(i)(1),
+        q4                => iserdes_q(i)(0),
         q5                => open,
         q6                => open,
         q7                => open,
         q8                => open,
         bitslip           => open,
-        shiftin1          => shift1(i),
-        shiftin2          => shift2(i),
+        shiftin1          => iserdes_shift1(i),
+        shiftin2          => iserdes_shift2(i),
         shiftout1         => open,
         shiftout2         => open
       );

@@ -18,9 +18,12 @@
 library ieee;
   use ieee.std_logic_1164.all;
 
+library unisim;
+  use unisim.vcomponents.all;
+
 library work;
+  use work.mmcm_pkg.all;
   use work.hdmi_io_pkg.all;
-  use work.sync_reg_pkg.all;
 
 entity hdmi_io_digilent_nexys_video is
   port (
@@ -177,9 +180,28 @@ end entity hdmi_io_digilent_nexys_video;
 
 architecture synth of hdmi_io_digilent_nexys_video is
 
+  signal rst_a          : std_logic;
+  signal clk_100m       : std_logic;
+  signal clk_200m       : std_logic;
+  signal clk_spare      : std_logic_vector(2 to 6);
+  signal rst_200m_s     : std_logic_vector(0 to 1);
+  signal rst_200m       : std_logic;
+  signal idelayctrl_rdy : std_logic;
+  signal rst_100m_s     : std_logic_vector(0 to 1);
+  signal rst_100m       : std_logic;
+
+  signal hdmi_rx_clku   : std_logic;
+  signal hdmi_rx_clk    : std_logic;
+  signal hdmi_rx_d      : std_logic_vector(0 to 2);
+
+  signal hdmi_tx_clk    : std_logic;
+  signal hdmi_tx_d      : std_logic_vector(0 to 2);
+
 begin
 
-  -- MMCM generates general purpose and IDELAYCTRL reference clocks
+  --------------------------------------------------------------------------------
+  -- clock and reset generation
+
   U_MMCM: component mmcm
     generic map (
       mul         => 10.0,
@@ -187,26 +209,57 @@ begin
       num_outputs => 2,
       odiv0       => 10.0,
       odiv        => (5, 10, 10, 10, 10, 10)
-    );
-    port (
-      rsti        => rst,
+    )
+    port map (
+      rsti        => not btn_rst_n,
       clki        => clki_100m,
       rsto        => rst_a,
       clko(0)     => clk_100m,
       clko(1)     => clk_200m,
       clko(2 to 6) => clk_spare(2 to 6)
-    );    
+    );
 
-  -- synchronous resets
-  process(rst_a,clk_100m)
-  begin
-    rst_100m <= 
-  end process;
   process(rst_a,clk_200m)
   begin
-    rst_200m <=
+    if rst_a = '1' then
+      rst_200m_s(0 to 1) <= (others => '1');
+      rst_200m <= '1';
+    elsif rising_edge(clk_200m) then
+      rst_200m_s(0 to 1) <= rst_a & rst_100m_s(0);
+      rst_200m <= rst_100m_s(1);
+    end if;
   end process;
-    
+
+  process(rst_a,clk_100m)
+  begin
+    if rst_a = '1' then
+      rst_100m_s(0 to 1) <= (others => '1');
+      rst_100m <= '1';
+    elsif rising_edge(clk_100m) then
+      rst_100m_s(0 to 1) <= (rst_a or not idelayctrl_rdy) & rst_100m_s(0);
+      rst_100m <= rst_100m_s(1);
+    end if;
+  end process;
+
+  --------------------------------------------------------------------------------
+  -- main design
+
+  MAIN: component hdmi_io
+    generic map (
+      fclk       => 100.0
+    )
+    port map (
+      rst         => rst_100m,
+      clk         => clk_100m,
+      hdmi_rx_clk => hdmi_rx_clk,
+      hdmi_rx_d   => hdmi_rx_d,
+      hdmi_tx_clk => hdmi_tx_clk,
+      hdmi_tx_d   => hdmi_tx_d
+    );
+
+  --------------------------------------------------------------------------------
+  -- I/O primitives
+
   -- required to use I/O delay primitives
   U_IDELAYCTRL: idelayctrl
     port map (
@@ -214,7 +267,6 @@ begin
       refclk => clk_200m,
       rdy    => idelayctrl_rdy
     );
-      
 
   -- HDMI input and output buffers
 
@@ -228,8 +280,8 @@ begin
   U_IBUFG: component ibufg
     port map (
       i => hdmi_rx_clku,
-      i => hdmi_rx_clk
-    )
+      o => hdmi_rx_clk
+    );
 
   U_OBUFDS_CLK: component obufds
       port map (
@@ -256,6 +308,7 @@ begin
 
   end generate GEN_CH;
 
+  --------------------------------------------------------------------------------
   -- unused I/Os
 
   oled_res_n   <= '0';
@@ -274,5 +327,7 @@ begin
   ps2_data     <= 'Z';
   qspi_cs_n    <= '1';
   ddr3_reset_n <= '0';
+
+  --------------------------------------------------------------------------------
 
 end architecture synth;
