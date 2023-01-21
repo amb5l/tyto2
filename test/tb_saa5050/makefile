@@ -1,12 +1,7 @@
-# tb_saa5050.mak
-
-ifndef REPO_ROOT
 REPO_ROOT:=$(shell git rev-parse --show-toplevel)
-ifeq ($(OS),Windows_NT)
-REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
-endif
-endif
 
+DESIGN?=tb_saa5050
+VARIANT?=
 SRC:=$(REPO_ROOT)/src
 
 SIMULATORS:=ghdl nvc vsim xsim
