@@ -30,7 +30,8 @@ package hdmi_io_pkg is
       hdmi_rx_clk : in    std_logic;
       hdmi_rx_d   : in    std_logic_vector(0 to 2);
       hdmi_tx_clk : out   std_logic;
-      hdmi_tx_d   : out   std_logic_vector(0 to 2)
+      hdmi_tx_d   : out   std_logic_vector(0 to 2);
+      status      : out   std_logic_vector(3 downto 0)
     );
   end component hdmi_io;
 
@@ -56,22 +57,28 @@ entity hdmi_io is
     hdmi_rx_clk : in    std_logic;                    -- HDMI (TMDS) clock input (+ve
     hdmi_rx_d   : in    std_logic_vector(0 to 2);     -- HDMI (TMDS) data input channels 0..2 (+ve)
     hdmi_tx_clk : out   std_logic;                    -- HDMI (TMDS) clock output (+ve)
-    hdmi_tx_d   : out   std_logic_vector(0 to 2)      -- HDMI (TMDS) data output channels 0..2 (+ve)
+    hdmi_tx_d   : out   std_logic_vector(0 to 2);     -- HDMI (TMDS) data output channels 0..2 (+ve)
+    status      : out   std_logic_vector(3 downto 0)
   );
 end entity hdmi_io;
 
 architecture synth of hdmi_io is
 
-  signal sclk : std_logic;
-  signal prst : std_logic;
-  signal pclk : std_logic;
-  signal tmds : slv_9_0_t(0 to 2);
+  signal sclk  : std_logic;
+  signal prst  : std_logic;
+  signal pclk  : std_logic;
+  signal tmds  : slv_9_0_t(0 to 2);
+  signal align : std_logic;
+  signal lock  : std_logic;
+  signal band  : std_logic_vector(1 downto 0);
 
 begin
 
+  status <= band & lock & align;
+
   U_HDMI_RX: component hdmi_rx_selectio
     generic map (
-      fclk  => 100.0
+      fclk  => fclk
     )
     port map (
       rst   => rst,
@@ -81,13 +88,16 @@ begin
       sclko => sclk,
       prsto => prst,
       pclko => pclk,
-      po    => tmds
+      po    => tmds,
+      lock  => lock,
+      band  => band,
+      align => align
     );
 
-  HDMI_TX: component hdmi_tx_selectio
+  U_HDMI_TX: component hdmi_tx_selectio
     port map (
       sclki => sclk,
-      prsti => prst,
+      prsti => prst or not align,
       pclki => pclk,
       pi    => tmds,
       pclko => hdmi_tx_clk,

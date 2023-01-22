@@ -37,13 +37,13 @@ entity hdmi_io_digilent_nexys_video is
 
     -- LEDs, buttons and switches
     led           : out   std_logic_vector(7 downto 0);
-    btn_c         : in    std_logic;
+    -- btn_c           : in    std_logic;
     -- btn_d           : in    std_logic;
     -- btn_l           : in    std_logic;
     -- btn_r           : in    std_logic;
     -- btn_u           : in    std_logic;
     btn_rst_n     : in    std_logic;
-    sw            : in    std_logic_vector(7 downto 0);
+    -- sw              : in    std_logic_vector(7 downto 0);
 
     -- OLED
     oled_res_n    : out   std_logic;
@@ -129,8 +129,8 @@ entity hdmi_io_digilent_nexys_video is
     -- ftdi_spien      : out   std_logic;
 
     -- PS/2
-    ps2_clk       : inout std_logic;
-    ps2_data      : inout std_logic;
+    -- ps2_clk         : inout std_logic;
+    -- ps2_data        : inout std_logic;
 
     -- QSPI
     qspi_cs_n     : out   std_logic;
@@ -199,6 +199,11 @@ architecture synth of hdmi_io_digilent_nexys_video is
 
 begin
 
+  led(4) <= not rst_100m;
+  led(5) <= idelayctrl_rdy
+  led(6) <= not rst_200m;
+  led(7) <= '1';
+
   --------------------------------------------------------------------------------
   -- clock and reset generation
 
@@ -226,7 +231,7 @@ begin
       rst_200m <= '1';
     elsif rising_edge(clk_200m) then
       rst_200m_s(0 to 1) <= rst_a & rst_100m_s(0);
-      rst_200m <= rst_100m_s(1);
+      rst_200m <= rst_200m_s(1);
     end if;
   end process;
 
@@ -254,7 +259,8 @@ begin
       hdmi_rx_clk => hdmi_rx_clk,
       hdmi_rx_d   => hdmi_rx_d,
       hdmi_tx_clk => hdmi_tx_clk,
-      hdmi_tx_d   => hdmi_tx_d
+      hdmi_tx_d   => hdmi_tx_d,
+      status      => led(3 downto 0)
     );
 
   --------------------------------------------------------------------------------
@@ -284,11 +290,11 @@ begin
     );
 
   U_OBUFDS_CLK: component obufds
-      port map (
-        i  => hdmi_tx_clk,
-        o  => hdmi_tx_clk_p,
-        ob => hdmi_tx_clk_n
-      );
+    port map (
+      i  => hdmi_tx_clk,
+      o  => hdmi_tx_clk_p,
+      ob => hdmi_tx_clk_n
+    );
 
   GEN_CH: for i in 0 to 2 generate
 
@@ -323,8 +329,6 @@ begin
   ftdi_wr_n    <= '1';
   ftdi_siwu_n  <= '1';
   ftdi_oe_n    <= '1';
-  ps2_clk      <= 'Z';
-  ps2_data     <= 'Z';
   qspi_cs_n    <= '1';
   ddr3_reset_n <= '0';
 
