@@ -80,35 +80,55 @@ architecture synth of hdmi_rx_selectio is
   --------------------------------------------------------------------------------
   -- constants
 
-  constant FM_FMIN_MHZ    : real    := 24.0;  -- frequency measurement - min frequency
-  constant FM_FMAX_MHZ    : real    := 150.0; -- frequency measurement - max frequency
-  constant FM_INTERVAL_US : integer := 100;   -- frequency measurement - interval
-  constant FM_FTOL_MHZ    : real    := 0.5;   -- frequency measurement - tolerance
+  -- frequency measurement
+  constant FM_FMIN_MHZ     : real    := 24.0;                                    -- min frequency
+  constant FM_FMAX_MHZ     : real    := 150.0;                                   -- max frequency
+  constant FM_INTERVAL_US  : integer := 100;                                     -- interval
+  constant FM_FTOL_MHZ     : real    := 0.5;                                     -- tolerance
+  constant FM_FCOUNT_MIN   : integer := integer(FM_INTERVAL_US*FM_FMIN_MHZ)-1;
+  constant FM_FCOUNT_MAX   : integer := integer(FM_INTERVAL_US*FM_FMAX_MHZ)-1;
+  constant FM_TCOUNT_MAX   : integer := integer(FM_INTERVAL_US*fclk)-1;
+  constant FM_FDELTA_MAX   : integer := integer(FM_INTERVAL_US*FM_FTOL_MHZ);
+  constant FM_FCOUNT_44M   : integer := integer(FM_INTERVAL_US*44);              -- boundaries between different MMCM recipes
+  constant FM_FCOUNT_70M   : integer := integer(FM_INTERVAL_US*70);              -- "
+  constant FM_FCOUNT_120M  : integer := integer(FM_INTERVAL_US*120);             -- "
 
-  constant FM_FCOUNT_MIN : integer := integer(FM_INTERVAL_US*FM_FMIN_MHZ)-1;
-  constant FM_FCOUNT_MAX : integer := integer(FM_INTERVAL_US*FM_FMAX_MHZ)-1;
-  constant FM_TCOUNT_MAX : integer := integer(FM_INTERVAL_US*fclk)-1;
-  constant FM_FDELTA_MAX : integer := integer(FM_INTERVAL_US*FM_FTOL_MHZ);
-
-  -- boundaries between different MMCM recipes
-  constant FM_FCOUNT_44M  : integer := integer(FM_INTERVAL_US*44);
-  constant FM_FCOUNT_70M  : integer := integer(FM_INTERVAL_US*70);
-  constant FM_FCOUNT_120M : integer := integer(FM_INTERVAL_US*120);
+  -- input lock
+  constant IL_INTERVAL     : integer := 2048;                                    -- long enough to see 12x control characters
+  constant IL_PCOUNT_MAX   : integer := IL_INTERVAL-1;
+  constant IL_CCOUNT_MIN   : integer := 12;                                      -- minimum control character sequence length
+  constant IL_EYE_OPEN_MIN : integer := 3;                                       -- minimum eye open (IDELAY taps)
 
   --------------------------------------------------------------------------------
   -- types
 
   type fmo_state_t is (FM_UNLOCKED,FM_LOCKING,FM_LOCKED);
 
-  type mmcm_state_t is (                              -- state machine states
-    idle,                                              -- waiting for fsel change
-    reset,                                             -- put MMCM into reset
-    tbl,                                               -- get first/next table value
-    rd,                                                -- start read
-    rd_wait,                                           -- wait for read to complete
-    wr,                                                -- start write
-    wr_wait,                                           -- wait for write to complete
-    lock_wait                                          -- wait for reconfig to complete
+  type drp_state_t is (
+    DRP_IDLE,     -- waiting for fsel change
+    DRP_RESET,    -- put MMCM into reset
+    DRP_TBL,      -- get first/next table value
+    DRP_RD,       -- start read
+    DRP_RD_WAIT,  -- wait for read to complete
+    DRP_WR,       -- start write
+    DRP_WR_WAIT,  -- wait for write to complete
+    DRP_LOCK_WAIT -- wait for reconfig to complete
+  );
+
+  type il_state_t is (
+    IL_IDLE,
+    IL_LOAD_TAP,
+    IL_CC_COUNT,
+    IL_CC_FINAL,
+    IL_CHECK_LOSS,
+    IL_NEXT_TAP,
+    IL_CHECK_LOCK,
+    IL_TAP_SCAN_1,
+    IL_TAP_SCAN_2,
+    IL_TAP_SCAN_3,
+    IL_TAP_SCAN_4,
+    IL_NEXT_BITSLIP,
+    IL_NEXT_CHANNEL
   );
 
   --------------------------------------------------------------------------------
@@ -130,41 +150,62 @@ architecture synth of hdmi_rx_selectio is
   signal fmo_state      : fmo_state_t;
 
   -- MMCM (DRP = Dynamic Reconfiguration Port)
-  signal mmcm_rst      : std_logic;                     -- reset
-  signal mmcm_clkout0  : std_logic;                     -- clkout0
-  signal mmcm_clkout1p : std_logic;                     -- clkout1+
-  signal mmcm_clkout1n : std_logic;                     -- clkout1-
-  signal mmcm_fbo      : std_logic;                     -- feedback clock out
-  signal mmcm_fbi      : std_logic;                     -- feedback clock in
-  signal mmcm_lock_a   : std_logic;                     -- lock (asynchronous)
-  signal mmcm_lock_s   : std_logic_vector(0 to 1);      -- lock synchroniser
-  alias  mmcm_lock     : std_logic is mmcm_lock_s(1);   -- lock (synchronous to clk)
-  signal mmcm_tbl_a    : std_logic_vector(6 downto 0);  -- DRP table address (4 x 32 = 128 entries)
-  signal mmcm_tbl_d    : std_logic_vector(39 downto 0); -- DRP data: 8 bit register address + 16 bit write data + 16 bit read mask
-  signal mmcm_daddr    : std_logic_vector(6 downto 0);  -- DRP register address
-  signal mmcm_den      : std_logic;                     -- DRP enable (pulse)
-  signal mmcm_dwe      : std_logic;                     -- DRP write enable
-  signal mmcm_di       : std_logic_vector(15 downto 0); -- DRP write data
-  signal mmcm_do       : std_logic_vector(15 downto 0); -- DRP read data
-  signal mmcm_drdy     : std_logic;                     -- DRP access complete
-  signal mmcm_state    : mmcm_state_t;                  -- state machine state
-  signal prst_a        : std_logic;                     -- pclk domain reset before synchronisation
-  signal prst_s        : std_logic_vector(0 to 1);      -- pclk domain reset synchroniser
-  alias  prst          : std_logic is prst_s(1);        -- pclk domain synchronous reset
-  signal pclk          : std_logic;                     -- main pixel clock
-  signal sclk_p        : std_logic;                     -- serial clock +
-  signal sclk_n        : std_logic;                     -- serial clock -
+  signal mmcm_rst       : std_logic;                        -- reset
+  signal mmcm_clkout0   : std_logic;                        -- clkout0
+  signal mmcm_clkout1p  : std_logic;                        -- clkout1+
+  signal mmcm_clkout1n  : std_logic;                        -- clkout1-
+  signal mmcm_fbo       : std_logic;                        -- feedback clock out
+  signal mmcm_fbi       : std_logic;                        -- feedback clock in
+  signal mmcm_lock_a    : std_logic;                        -- lock (asynchronous)
+  signal mmcm_lock_s    : std_logic_vector(0 to 1);         -- lock synchroniser
+  alias  mmcm_lock      : std_logic is mmcm_lock_s(1);      -- lock (synchronous to clk)
+  signal mmcm_tbl_a     : std_logic_vector(6 downto 0);     -- DRP table address (4 x 32 = 128 entries)
+  signal mmcm_tbl_d     : std_logic_vector(39 downto 0);    -- DRP data: 8 bit register address + 16 bit write data + 16 bit read mask
+  signal mmcm_daddr     : std_logic_vector(6 downto 0);     -- DRP register address
+  signal mmcm_den       : std_logic;                        -- DRP enable (pulse)
+  signal mmcm_dwe       : std_logic;                        -- DRP write enable
+  signal mmcm_di        : std_logic_vector(15 downto 0);    -- DRP write data
+  signal mmcm_do        : std_logic_vector(15 downto 0);    -- DRP read data
+  signal mmcm_drdy      : std_logic;                        -- DRP access complete
+  signal drp_state      : drp_state_t;                      -- DRP state machine
+  signal prst_a         : std_logic;                        -- pclk domain reset before synchronisation
+  signal prst_s         : std_logic_vector(0 to 1);         -- pclk domain reset synchroniser
+  alias  prst           : std_logic is prst_s(1);           -- pclk domain synchronous reset
+  signal pclk           : std_logic;                        -- main pixel clock
+  signal sclk_p         : std_logic;                        -- serial clock +
+  signal sclk_n         : std_logic;                        -- serial clock -
+
+  -- input lock
+  signal il_channel         : integer range 0 to 2;             -- HDMI data channel
+  signal il_bitslip         : integer range 0 to 9;             -- bit slip position
+  signal il_tap             : integer range 0 to 31;            -- delay tap
+  signal il_tap_ok          : std_logic;                        -- this tap is OK
+  signal il_tap_ok_mask     : std_logic_vector(0 to 31);        -- tap OK mask
+  signal il_pcount          : integer range 0 to IL_PCOUNT_MAX; -- count pixels
+  signal il_ccount          : integer range 0 to IL_PCOUNT_MAX; -- count control characters
+  signal il_state           : il_state_t;
+
+  signal il_scan_pass       : std_logic;
+  signal il_tap_ok_prev     : std_logic;
+  signal il_scan_start      : integer range 0 to 31;            -- start of OK section in progress
+  signal il_scan_this_start : integer range 0 to 31;            -- latest OK section start
+  signal il_scan_this_len   : integer range 0 to 31;            -- latest OK section length
+  signal il_scan_ok_start   : integer range 0 to 31;
+  signal il_scan_ok_len     : integer range 0 to 31;
+  signal il_scan_ok_tap     : integer range 0 to 31;
+  signal il_ch_lock         : std_logic_vector(0 to 2);
+  signal il_lock            : std_logic;
 
   -- IDELAYE2
-  signal idelay_ld     : std_logic;                     -- load tap value
-  signal idelay_tap    : std_logic_vector(4 downto 0);  -- tap value (0..31)
+  signal idelay_ld      : std_logic;                        -- load tap value
+  signal idelay_tap     : std_logic_vector(4 downto 0);     -- tap value (0..31)
 
   -- ISERDESE2
-  signal iserdes_ddly   : std_logic_vector(0 to 2);      -- serial input, delayed by IDELAYE2
-  signal iserdes_q      : slv_9_0_t(0 to 2);             -- parallel output
-  signal iserdes_shift1 : std_logic_vector(0 to 2);      -- master-slave cascade
-  signal iserdes_shift2 : std_logic_vector(0 to 2);      -- "
-  signal iserdes_slip   : std_logic;                     -- bit slip
+  signal iserdes_ddly   : std_logic_vector(0 to 2);         -- serial input, delayed by IDELAYE2
+  signal iserdes_q      : slv_9_0_t(0 to 2);                -- parallel output
+  signal iserdes_shift1 : std_logic_vector(0 to 2);         -- master-slave cascade
+  signal iserdes_shift2 : std_logic_vector(0 to 2);         -- "
+  signal iserdes_slip   : std_logic;                        -- bit slip
 
 begin
 
@@ -248,7 +289,6 @@ begin
   -- reconfigure MMCM when required by loss of lock or changes in pclki
 
   process (rst,clk) is
-
     -- contents of synchronous ROM table
     function mmcm_tbl (addr : std_logic_vector) return std_logic_vector is
       -- bits 39..32 = mmcm_daddr (MSB = 1 for last entry)
@@ -355,39 +395,31 @@ begin
       end case;
       return data;
     end function mmcm_tbl;
-
   begin
-
     if rst = '1' then                                                                                                           -- full reset
-
         mmcm_lock_s <= (others => '0');
         mmcm_rst    <= '1';
         mmcm_daddr  <= (others => '0');
         mmcm_den    <= '0';
         mmcm_dwe    <= '0';
         mmcm_di     <= (others => '0');
-        mmcm_state  <= RESET;
-
+        drp_state   <= DRP_RESET;
     elsif rising_edge(clk) then
-
       mmcm_tbl_d <= mmcm_tbl(mmcm_tbl_a); -- synchronous ROM
-
-      mmcm_lock_s(0 to 1) <= mmcm_lock_a & mmcm_lock_s(0);
-
+      mmcm_lock_s(0 to 1) <= mmcm_lock_a & mmcm_lock_s(0); -- synchroniser
       -- defaults
       fmo_ack  <= '0';
       mmcm_den <= '0';
       mmcm_dwe <= '0';
-
       -- state machine
-      case mmcm_state is
-        when IDLE =>
+      case drp_state is
+        when DRP_IDLE =>
           if mmcm_lock = '0' or fmo_chg = '1' then
             fmo_ack    <= '1';
             mmcm_rst   <= '1';
-            mmcm_state <= RESET;
+            drp_state <= DRP_RESET;
           end if;
-        when RESET =>
+        when DRP_RESET =>
           -- program for correct frequency range
           mmcm_tbl_a <= (others => '0');
           if fmo_fvalue > FM_FCOUNT_44M then
@@ -397,44 +429,43 @@ begin
           elsif fmo_fvalue > FM_FCOUNT_120M then
             mmcm_tbl_a(6 downto 5) <= "11";
           end if;
-          mmcm_state <= TBL;
-        when TBL =>                                                                                                                -- get table entry from sychronous ROM
-          mmcm_state <= RD;
-        when RD =>                                                                                                                 -- read specified register
+          drp_state <= DRP_TBL;
+        when DRP_TBL =>                                                                                                                -- get table entry from sychronous ROM
+          drp_state <= DRP_RD;
+        when DRP_RD =>                                                                                                                 -- read specified register
           mmcm_daddr <= mmcm_tbl_d(38 downto 32);
           mmcm_den   <= '1';
-          mmcm_state <= RD_WAIT;
-        when RD_WAIT =>                                                                                                            -- wait for read to complete
+          drp_state <= DRP_RD_WAIT;
+        when DRP_RD_WAIT =>                                                                                                            -- wait for read to complete
           if mmcm_drdy = '1' then
-            mmcm_di    <= (mmcm_do and mmcm_tbl_d(15 downto 0)) or (mmcm_tbl_d(31 downto 16) and not mmcm_tbl_d(15 downto 0));
-            mmcm_den   <= '1';
-            mmcm_dwe   <= '1';
-            mmcm_state <= WR;
+            mmcm_di   <= (mmcm_do and mmcm_tbl_d(15 downto 0)) or (mmcm_tbl_d(31 downto 16) and not mmcm_tbl_d(15 downto 0));
+            mmcm_den  <= '1';
+            mmcm_dwe  <= '1';
+            drp_state <= DRP_WR;
           end if;
-        when WR =>                                                                                                                 -- write modified contents back to same register
-          mmcm_state <= WR_WAIT;
-        when WR_WAIT =>                                                                                                            -- wait for write to complete
+        when DRP_WR =>                                                                                                                 -- write modified contents back to same register
+          drp_state <= DRP_WR_WAIT;
+        when DRP_WR_WAIT =>                                                                                                            -- wait for write to complete
           if mmcm_drdy = '1' then
             if mmcm_tbl_d(39) = '1' then                                                                                         -- last entry in table
               mmcm_tbl_a <= (others => '0');
-              mmcm_state <= LOCK_WAIT;
+              drp_state <= DRP_LOCK_WAIT;
             else                                                                                                                   -- do next entry in table
               mmcm_tbl_a(4 downto 0) <= std_logic_vector(unsigned(mmcm_tbl_a(4 downto 0)) + 1);
-              mmcm_state                <= TBL;
+              drp_state                <= DRP_TBL;
             end if;
           end if;
-        when LOCK_WAIT =>                                                                                                          -- wait for MMCM to lock
+        when DRP_LOCK_WAIT =>                                                                                                          -- wait for MMCM to lock
           mmcm_rst <= '0';
           if mmcm_lock = '1' then                                                                                                   -- all done
-            mmcm_state <= IDLE;
+            drp_state <= DRP_IDLE;
           end if;
       end case;
-
     end if;
   end process;
 
   -- pclk domain reset
-  prst_a <= '1' when mmcm_state /= IDLE or mmcm_lock = '0' else '0';
+  prst_a <= '1' when drp_state /= DRP_IDLE or mmcm_lock = '0' else '0';
   process(prst_a,pclk)
   begin
     if prst_a = '1' then
@@ -445,7 +476,209 @@ begin
   end process;
 
   ----------------------------------------------------------------------
-  -- input lock - channel by channel
+  -- input lock
+  --  for each channel:
+  --    for each bit slip position:
+  --      tap OK mask = all zeroes
+  --      for each input delay tap:
+  --        during 2048 pixel clocks:
+  --          look for N x control symbols (N = 12?)
+  --          mark this tap OK if found
+
+  process(prst,pclk)
+  begin
+    if prst = '1' then
+
+      il_pcount          <= 0;
+      il_ccount          <= 0;
+      il_tap             <= 0;
+      il_tap_ok          <= '0';
+      il_tap_ok_mask     <= (others => '0');
+      il_bitslip         <= 0;
+      il_channel         <= 0;
+      il_scan_pass       <= '0';
+      il_tap_ok_prev     <= '1';
+      il_scan_start      <= 0;
+      il_scan_this_start <= 0;
+      il_scan_this_len   <= 0;
+      il_scan_ok_start   <= 0;
+      il_scan_ok_len     <= 0;
+      il_ch_lock         <= (others => '0');
+      il_lock            <= '0';
+      idelay_tap         <= (others => '0');
+      idelay_ld          <= '0';
+
+    elsif rising_edge(pclk) then
+
+      il_lock <= il_ch_lock(0) and il_ch_lock(1) and il_ch_lock(2);
+
+      -- defaults
+      idelay_ld    <= '0';
+      iserdes_slip <= '0';
+
+      -- state machine
+      case il_state is
+
+        when IL_IDLE =>
+          il_tap_ok  <= '0';
+          if il_ch_lock(il_channel) = '1' then -- locked, so don't change anything
+            il_state <= IL_CC_COUNT;
+          else -- unlocked, so start searching
+            il_tap         <= 0;
+            il_tap_ok_mask <= (others => '0');
+            il_bitslip     <= 0;
+            il_state       <= IL_LOAD_TAP;
+          end if;
+
+        -- load current tap into IDELAY...
+        when IL_LOAD_TAP =>
+          idelay_tap <= std_logic_vector(to_unsigned(il_tap,5));
+          idelay_ld  <= '1';
+          il_pcount  <= 0;
+          il_ccount  <= 0;
+          il_tap_ok  <= '0';
+          il_state   <= IL_CC_COUNT;
+
+        -- ...then look for control characters for IL_INTERVAL pclk cycles...
+        when IL_CC_COUNT =>
+          if iserdes_q = "1101010100" -- } control characters
+          or iserdes_q = "0010101011" -- }
+          or iserdes_q = "0101010100" -- }
+          or iserdes_q = "1010101011" -- }
+          then
+            il_ccount <= il_ccount+1;
+          else
+            il_ccount <= 0;
+          end if;
+          if il_ccount >= IL_CCOUNT_MIN then -- this tap was OK
+            il_tap_ok <= '1';
+          end if;
+          if il_pcount = IL_PCOUNT_MAX then
+            il_pcount <= 0;
+            il_state <= IL_CC_FINAL;
+          else
+            il_pcount <= il_pcount+1;
+          end if;
+
+        -- ...then check final character
+        when IL_CC_FINAL =>
+          if il_ccount >= IL_CCOUNT_MIN then -- this tap was OK
+            il_tap_ok <= '1';
+          end if;
+          if il_ch_lock(il_channel) = '1' then
+            il_state <= IL_CHECK_LOSS;
+          else
+            il_state <= IL_NEXT_TAP;
+          end if;
+
+        -- currently locked, so check for loss
+        when IL_CHECK_LOSS =>
+          if il_tap_ok = '0' then -- we have lost lock
+            il_ch_lock(il_channel) <= '0';
+            il_state <= IL_IDLE;
+          end if;
+
+        -- not currently locked, so move to next tap or check results
+        when IL_NEXT_TAP =>
+          il_tap_ok_mask(il_tap) <= il_tap_ok;
+          if il_tap /= 31 then -- move to next tap
+            il_tap   <= il_tap+1;
+            il_state <= IL_LOAD_TAP;
+          else -- all taps have been tried
+            il_tap   <= 0;
+            il_state <= IL_CHECK_LOCK;
+          end if;
+
+        -- initial results check
+        when IL_CHECK_LOCK =>
+          if il_tap_ok_mask = x"00000000" then -- shortcut if no taps OK
+            il_state <= IL_NEXT_BITSLIP;
+          elsif il_tap_ok_mask = x"FFFFFFFF" then -- shortcut if all taps OK
+            if il_ch_lock(il_channel) = '0' then -- we have acquired lock
+              il_ch_lock(il_channel) <= '1';
+              idelay_tap             <= "01111"; -- set delay to centre
+              idelay_ld              <= '1';
+            end if;
+            il_state <= IL_NEXT_CHANNEL;
+          else -- all taps not OK so scan
+            il_scan_pass       <= '0';
+            il_tap_ok_prev     <= '1';
+            il_scan_start      <= 0;
+            il_scan_this_start <= 0;
+            il_scan_this_len   <= 0;
+            il_scan_ok_start   <= 0;
+            il_scan_ok_len     <= 0;
+            il_state           <= IL_TAP_SCAN_1;
+          end if;
+
+        -- scan all tap outcomes (2 passes)
+        when IL_TAP_SCAN_1 =>
+          if il_tap_ok_mask(il_tap) = '1' and il_tap_ok_prev = '0' then -- OK section start
+            il_scan_start <= il_tap;
+          elsif il_tap_ok_mask(il_tap) = '0' and il_tap_ok_prev = '1' then -- OK section end
+            il_scan_this_start <= il_scan_start;
+            il_scan_this_len <= ((32+il_scan_start)-il_tap) mod 32;
+          end if;
+          il_tap <= il_tap+1 mod 32;
+          if il_tap = 31 then
+            il_scan_pass <= not il_scan_pass;
+            if il_scan_pass = '1' then
+              il_state <= IL_TAP_SCAN_2;
+            end if;
+          end if;
+          if il_scan_this_len > il_scan_ok_len then
+            il_scan_ok_start <= il_scan_this_start;
+            il_scan_ok_len   <= il_scan_this_len;
+          end if;
+
+        -- finalise scan...
+        when IL_TAP_SCAN_2 =>
+          if il_scan_this_len > il_scan_ok_len then
+            il_scan_ok_start <= il_scan_this_start;
+            il_scan_ok_len   <= il_scan_this_len;
+          end if;
+          il_state <= IL_TAP_SCAN_3;
+
+        -- ...then calculate result...
+        when IL_TAP_SCAN_3 =>
+          il_scan_ok_tap <= il_scan_ok_start+(il_scan_ok_len/2);
+          il_state <= IL_TAP_SCAN_4;
+
+        -- ...then act on result
+        when IL_TAP_SCAN_4 =>
+          if il_scan_ok_len >= IL_EYE_OPEN_MIN then -- lock established
+            il_ch_lock(il_channel) <= '1';
+            idelay_ld              <= '1';
+            idelay_tap             <= std_logic_vector(to_unsigned(il_scan_ok_tap));
+          end if;
+          -- assumption: no point doing more bit slips
+          il_state <= IL_NEXT_CHANNEL;
+
+        --------------------------------------------------------------------------------
+
+        when IL_NEXT_BITSLIP =>
+          if il_bitslip /= 9 then -- move to next bitslip position
+            iserdes_slip   <= '1';
+            il_bitslip     <= il_bitslip+1;
+            il_tap         <= 0;
+            il_tap_ok_mask <= (others => '0');
+            il_state       <= IL_LOAD_TAP;
+          else -- all bitslips have been tried
+            il_state       <= IL_NEXT_CHANNEL;
+          end if;
+
+        when IL_NEXT_CHANNEL =>
+          if il_channel = 2 then
+            il_channel <= 0;
+          else
+            il_channel <= il_channel+1;
+          end if;
+          il_state <= IL_IDLE;
+
+      end case;
+
+    end if;
+  end process;
 
   ----------------------------------------------------------------------
   -- MMCM

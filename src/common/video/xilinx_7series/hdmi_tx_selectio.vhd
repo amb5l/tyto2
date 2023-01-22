@@ -33,7 +33,7 @@ package hdmi_tx_selectio_pkg is
       prsti   : in    std_logic;
       pclki   : in    std_logic;
       pi      : in    slv_9_0_t(0 to 2);
-      pclko   : in    std_logic;
+      pclko   : out   std_logic;
       so      : out   std_logic_vector(0 to 2)
     );
   end component hdmi_tx_selectio;
@@ -59,7 +59,7 @@ entity hdmi_tx_selectio is
     prsti   : in    std_logic;
     pclki   : in    std_logic;
     pi      : in    slv_9_0_t(0 to 2);
-    pclko   : in    std_logic;
+    pclko   : out   std_logic;
     so      : out   std_logic_vector(0 to 2)
   );
 end entity hdmi_tx_selectio;
@@ -115,7 +115,7 @@ begin
         oce            => '1',
         rst            => prsti,
         shiftin1       => d_shift1(i),
-        shiftin2       => d_shift1(i),
+        shiftin2       => d_shift2(i),
         t1             => '0',
         t2             => '0',
         t3             => '0',
@@ -191,7 +191,7 @@ begin
     )
     port map (
       ofb            => open,
-      oq             => so,
+      oq             => pclko,
       shiftout1      => open,
       shiftout2      => open,
       tbyteout       => open,
