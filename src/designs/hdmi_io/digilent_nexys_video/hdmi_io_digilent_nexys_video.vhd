@@ -251,7 +251,7 @@ begin
 
   MAIN: component hdmi_io
     generic map (
-      fclk       => 100.0
+      fclk        => 100.0
     )
     port map (
       rst         => rst_100m,

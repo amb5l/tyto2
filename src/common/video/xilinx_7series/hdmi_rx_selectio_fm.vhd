@@ -23,9 +23,9 @@ package hdmi_rx_selectio_fm_pkg is
 
   constant FM_FMIN_MHZ     : real    := 24.0;                                    -- min frequency
   constant FM_FMAX_MHZ     : real    := 150.0;                                   -- max frequency
-  constant FM_INTERVAL_US  : integer := 100;                                     -- interval
+  constant FM_INTERVAL_US  : integer := 10;                                      -- interval
   constant FM_FTOL_MHZ     : real    := 0.5;                                     -- tolerance
-  constant FM_FCOUNT_MAX   : integer := integer(FM_INTERVAL_US*FM_FMAX_MHZ)-1;
+  constant FM_FCOUNT_MAX   : integer := integer(real(FM_INTERVAL_US)*FM_FMAX_MHZ)-1;
   constant FM_FCOUNT_44M   : integer := integer(FM_INTERVAL_US*44);              -- boundaries between different MMCM recipes
   constant FM_FCOUNT_70M   : integer := integer(FM_INTERVAL_US*70);              -- "
   constant FM_FCOUNT_120M  : integer := integer(FM_INTERVAL_US*120);             -- "
@@ -38,9 +38,8 @@ package hdmi_rx_selectio_fm_pkg is
       rst  : in    std_logic;
       clk  : in    std_logic;
       mclk : in    std_logic;
-      mval : out   integer range 0 to FM_FCOUNT_MAX;
-      mstb : out   std_logic;
-      mack : in    std_logic
+      mf   : out   integer range 0 to FM_FCOUNT_MAX;
+      mok  : out   std_logic
     );
   end component hdmi_rx_selectio_fm;
 
@@ -62,61 +61,61 @@ entity hdmi_rx_selectio_fm is
     rst  : in    std_logic;
     clk  : in    std_logic;
     mclk : in    std_logic;
-    mval : out   integer range 0 to FM_FCOUNT_MAX;
-    mstb : out   std_logic;
-    mack : in    std_logic
+    mf   : out   integer range 0 to FM_FCOUNT_MAX;
+    mok  : out   std_logic
   );
 end entity hdmi_rx_selectio_fm;
 
 architecture synth of hdmi_rx_selectio_fm is
 
-  constant FM_FCOUNT_MIN   : integer := integer(FM_INTERVAL_US*FM_FMIN_MHZ)-1;
-  constant FM_TCOUNT_MAX   : integer := integer(FM_INTERVAL_US*fclk)-1;
-  constant FM_FDELTA_MAX   : integer := integer(FM_INTERVAL_US*FM_FTOL_MHZ);
+  constant FM_FCOUNT_MIN   : integer := integer(real(FM_INTERVAL_US)*FM_FMIN_MHZ)-1;
+  constant FM_TCOUNT_MAX   : integer := integer(real(FM_INTERVAL_US)*fclk)-1;
+  constant FM_FDELTA_MAX   : integer := integer(real(FM_INTERVAL_US)*FM_FTOL_MHZ);
 
-  type fmo_state_t is (FM_UNLOCKED,FM_LOCKING,FM_LOCKED);
+  type c_state_t is (UNLOCKED,LOCKING,LOCKED);
 
-  signal fmi_rst_s      : std_logic_vector(0 to 1);                       -- reset synchronisers
-  alias  fmi_rst        : std_logic is fmi_rst_s(1);                      -- reset
-  signal fmi_fcount     : integer range 0 to FM_FCOUNT_MAX;               -- frequency counter
-  signal fmi_fvalue     : integer range 0 to FM_FCOUNT_MAX;               -- latest frequency value
-  signal fmi_toggle_s   : std_logic_vector(0 to 2);
-  signal fmo_tcount     : integer range 0 to FM_TCOUNT_MAX;               -- interval counter
-  signal fmo_toggle     : std_logic;
-  signal fmo_fvalue     : integer range 0 to FM_TCOUNT_MAX;
-  signal fmo_fdelta     : integer range -FM_TCOUNT_MAX to FM_TCOUNT_MAX;
-  signal fmo_fdelta_abs : integer range 0 to FM_TCOUNT_MAX;
-  signal fmo_chg        : std_logic;
-  signal fmo_ack        : std_logic;
-  signal fmo_state      : fmo_state_t;
+  -- mclk domain
+  signal m_rst_s      : std_logic_vector(0 to 1);                       -- reset synchronisers
+  alias  m_rst        : std_logic is m_rst_s(1);                        -- reset
+  signal m_fcount     : integer range 0 to FM_FCOUNT_MAX;               -- frequency counter
+  signal m_fvalue     : integer range 0 to FM_FCOUNT_MAX;               -- latest frequency value
+  signal m_toggle_s   : std_logic_vector(0 to 2);
 
+  -- clk domain
+  signal c_tcount     : integer range 0 to FM_TCOUNT_MAX;               -- interval counter
+  signal c_toggle     : std_logic;
+  signal c_fvalue     : integer range 0 to FM_FCOUNT_MAX;
+  signal c_fdelta     : integer range -FM_FCOUNT_MAX to FM_FCOUNT_MAX;
+  signal c_fdelta_abs : integer range 0 to FM_FCOUNT_MAX;
+  signal c_state      : c_state_t;
 
 begin
 
-  -- mclk frequency measurement
+  mf <= c_fvalue;
+  mok <= '1' when c_state = LOCKED else '0';
 
   -- symchronise to mclk domain
   process(rst,mclk)
   begin
     if rst = '1' then
-      fmi_rst_s <= (others => '1');
-      fmi_toggle_s <= (others => '0');
+      m_rst_s <= (others => '1');
+      m_toggle_s <= (others => '0');
     elsif rising_edge(mclk) then
-      fmi_rst_s(0 to 1) <= rst & fmi_rst_s(0);
-      fmi_toggle_s(0 to 2) <= fmo_toggle & fmi_toggle_s(0 to 1);
+      m_rst_s(0 to 1) <= rst & m_rst_s(0);
+      m_toggle_s(0 to 2) <= c_toggle & m_toggle_s(0 to 1);
     end if;
   end process;
 
-  process(fmi_rst,mclk)
+  process(m_rst,mclk)
   begin
-    if fmi_rst = '1' then
-      fmi_fvalue <= 0;
-      fmi_fcount <= 0;
+    if m_rst = '1' then
+      m_fvalue <= 0;
+      m_fcount <= 0;
     elsif rising_edge(mclk) then
-      fmi_fcount <= fmi_fcount+1;
-      if fmi_toggle_s(1) /= fmi_toggle_s(2) then
-        fmi_fvalue <= fmi_fcount;
-        fmi_fcount <= 0;
+      m_fcount <= m_fcount+1;
+      if m_toggle_s(1) /= m_toggle_s(2) then
+        m_fvalue <= m_fcount;
+        m_fcount <= 0;
       end if;
     end if;
   end process;
@@ -124,47 +123,42 @@ begin
   process(rst,clk)
   begin
     if rst = '1' then
-      fmo_tcount <= 0;
-      fmo_toggle <= '0';
-      fmo_state <= FM_UNLOCKED;
-      fmo_fvalue <= 0;
-      fmo_chg <= '0';
+      c_tcount <= 0;
+      c_toggle <= '0';
+      c_state  <= UNLOCKED;
+      c_fvalue <= 0;
     elsif rising_edge(clk) then
-      if fmo_tcount = FM_TCOUNT_MAX then
-        fmo_tcount <= 0;
-        fmo_toggle <= not fmo_toggle;
-        case fmo_state is
-          when FM_UNLOCKED =>
-            if fmi_fvalue > FM_FCOUNT_MIN then
-              fmo_fvalue <= fmi_fvalue;
-              fmo_state <= FM_LOCKING;
+      if c_tcount = FM_TCOUNT_MAX then
+        c_tcount <= 0;
+        c_toggle <= not c_toggle;
+        case c_state is
+          when UNLOCKED =>
+            if m_fvalue > FM_FCOUNT_MIN then
+              c_fvalue <= m_fvalue;
+              c_state  <= LOCKING;
             else
-              fmo_fvalue <= 0;
+              c_fvalue <= 0;
             end if;
-          when FM_LOCKING =>
-            if fmo_fdelta_abs <= FM_FDELTA_MAX then
-              fmo_chg <= '1';
-              fmo_state <= FM_LOCKED;
+          when LOCKING =>
+            if c_fdelta_abs <= FM_FDELTA_MAX then
+              c_state  <= LOCKED;
             else
-              fmo_fvalue <= 0;
-              fmo_state <= FM_UNLOCKED;
+              c_fvalue <= 0;
+              c_state  <= UNLOCKED;
             end if;
-          when FM_LOCKED =>
-            if fmo_fdelta_abs > FM_FDELTA_MAX then
-              fmo_fvalue <= 0;
-              fmo_state <= FM_UNLOCKED;
+          when LOCKED =>
+            if c_fdelta_abs > FM_FDELTA_MAX then
+              c_fvalue <= 0;
+              c_state  <= UNLOCKED;
             end if;
         end case;
       else
-        fmo_tcount <= fmo_tcount+1;
-      end if;
-      if fmo_ack = '1' then
-        fmo_chg <= '0';
+        c_tcount <= c_tcount+1;
       end if;
     end if;
   end process;
 
-  fmo_fdelta <= fmo_fvalue-fmi_fvalue;
-  fmo_fdelta_abs <= fmo_fdelta when fmo_fdelta >= 0 else -fmo_fdelta;
+  c_fdelta <= c_fvalue-m_fvalue;
+  c_fdelta_abs <= c_fdelta when c_fdelta >= 0 else -c_fdelta;
 
 end architecture synth;

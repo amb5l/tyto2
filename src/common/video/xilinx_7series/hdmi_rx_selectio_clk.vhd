@@ -73,20 +73,21 @@ end entity hdmi_rx_selectio_clk;
 architecture synth of hdmi_rx_selectio_clk is
 
   type drp_state_t is (
-    DRP_IDLE,     -- waiting for fsel change
-    DRP_RESET,    -- put MMCM into reset
-    DRP_TBL,      -- get first/next table value
-    DRP_RD,       -- start read
-    DRP_RD_WAIT,  -- wait for read to complete
-    DRP_WR,       -- start write
-    DRP_WR_WAIT,  -- wait for write to complete
-    DRP_LOCK_WAIT -- wait for reconfig to complete
+    DRP_LOCKED,    -- wait for loss of lock or frequency change
+    DRP_UNLOCKING, -- wait for frequency change
+    DRP_UNLOCKED,  -- wait for frequency change
+    DRP_RESET,     -- put MMCM into reset
+    DRP_TBL,       -- get first/next table value
+    DRP_RD,        -- start read
+    DRP_RD_WAIT,   -- wait for read to complete
+    DRP_WR,        -- start write
+    DRP_WR_WAIT,   -- wait for write to complete
+    DRP_LOCK_WAIT  -- wait for reconfig to complete
   );
 
   -- frequency measurement
-  signal fm_val  : integer range 0 to FM_FCOUNT_MAX;
-  signal fm_stb  : std_logic;
-  signal fm_ack  : std_logic;
+  signal fm_f    : integer range 0 to FM_FCOUNT_MAX;
+  signal fm_ok   : std_logic;
 
   -- MMCM (DRP = Dynamic Reconfiguration Port)
   signal mmcm_rst       : std_logic;                        -- reset
@@ -97,14 +98,15 @@ architecture synth of hdmi_rx_selectio_clk is
   signal mmcm_fbi       : std_logic;                        -- feedback clock in
   signal mmcm_lock_a    : std_logic;                        -- lock (asynchronous)
   signal mmcm_lock_s    : std_logic_vector(0 to 1);         -- lock synchroniser
-  signal mmcm_tbl_a     : std_logic_vector(6 downto 0);     -- DRP table address (4 x 32 = 128 entries)
-  signal mmcm_tbl_d     : std_logic_vector(39 downto 0);    -- DRP data: 8 bit register address + 16 bit write data + 16 bit read mask
-  signal mmcm_daddr     : std_logic_vector(6 downto 0);     -- DRP register address
-  signal mmcm_den       : std_logic;                        -- DRP enable (pulse)
-  signal mmcm_dwe       : std_logic;                        -- DRP write enable
-  signal mmcm_di        : std_logic_vector(15 downto 0);    -- DRP write data
-  signal mmcm_do        : std_logic_vector(15 downto 0);    -- DRP read data
-  signal mmcm_drdy      : std_logic;                        -- DRP access complete
+  alias  mmcm_lock      : std_logic is mmcm_lock_s(1);
+  signal drp_daddr      : std_logic_vector(6 downto 0);     -- DRP register address
+  signal drp_den        : std_logic;                        -- DRP enable (pulse)
+  signal drp_dwe        : std_logic;                        -- DRP write enable
+  signal drp_di         : std_logic_vector(15 downto 0);    -- DRP write data
+  signal drp_do         : std_logic_vector(15 downto 0);    -- DRP read data
+  signal drp_drdy       : std_logic;                        -- DRP access complete
+  signal drp_tbl_a      : std_logic_vector(6 downto 0);     -- DRP table address (4 x 32 = 128 entries)
+  signal drp_tbl_d      : std_logic_vector(39 downto 0);    -- DRP data: 8 bit register address + 16 bit write data + 16 bit read mask
   signal drp_state      : drp_state_t;                      -- DRP state machine
   signal prst_a         : std_logic;                        -- pclk domain reset before synchronisation
   signal prst_s         : std_logic_vector(0 to 1);         -- pclk domain reset synchroniser
@@ -113,8 +115,8 @@ architecture synth of hdmi_rx_selectio_clk is
 begin
 
   pclko <= pclk;
-  lock <= mmcm_lock_a;
-  band <= mmcm_tbl_a(6 downto 5);
+  lock <= '1' when drp_state = DRP_LOCKED else '0';
+  band <= drp_tbl_a(6 downto 5);
 
   -- frequency measurement
   U_FM: component hdmi_rx_selectio_fm
@@ -125,16 +127,15 @@ begin
       rst  => rst,
       clk  => clk,
       mclk => pclki,
-      mval => fm_val,
-      mstb => fm_stb,
-      mack => fm_ack
+      mf   => fm_f,
+      mok  => fm_ok
     );
 
   -- reconfigure MMCM when after loss of lock or changes in frequency
   process (rst,clk) is
     -- contents of synchronous ROM table
-    function mmcm_tbl (addr : std_logic_vector) return std_logic_vector is
-      -- bits 39..32 = mmcm_daddr (MSB = 1 for last entry)
+    function drp_tbl (addr : std_logic_vector) return std_logic_vector is
+      -- bits 39..32 = drp_daddr (MSB = 1 for last entry)
       -- bits 31..16 = cfg write data
       -- bits 15..0 = cfg read mask
       variable data : std_logic_vector(39 downto 0);
@@ -237,78 +238,87 @@ begin
         when others => data := (others => '0');
       end case;
       return data;
-    end function mmcm_tbl;
+    end function drp_tbl;
   begin
     if rst = '1' then -- full reset
         mmcm_lock_s <= (others => '0');
         mmcm_rst    <= '1';
-        mmcm_daddr  <= (others => '0');
-        mmcm_den    <= '0';
-        mmcm_dwe    <= '0';
-        mmcm_di     <= (others => '0');
-        drp_state   <= DRP_RESET;
+        drp_daddr   <= (others => '0');
+        drp_den     <= '0';
+        drp_dwe     <= '0';
+        drp_di      <= (others => '0');
+        drp_state   <= DRP_UNLOCKED;
     elsif rising_edge(clk) then
-      mmcm_tbl_d <= mmcm_tbl(mmcm_tbl_a); -- synchronous ROM
+      drp_tbl_d <= drp_tbl(drp_tbl_a); -- synchronous ROM
       mmcm_lock_s(0 to 1) <= mmcm_lock_a & mmcm_lock_s(0); -- synchroniser
       -- defaults
-      fm_ack  <= '0';
-      mmcm_den <= '0';
-      mmcm_dwe <= '0';
+      drp_den <= '0';
+      drp_dwe <= '0';
       -- state machine
       case drp_state is
-        when DRP_IDLE =>
-          if mmcm_lock_s(1) = '0' or fm_stb = '1' then
-            fm_ack    <= '1';
+        when DRP_LOCKED =>
+          if fm_ok = '0' then
             mmcm_rst  <= '1';
+            drp_state <= DRP_UNLOCKED;
+          elsif mmcm_lock = '0' then
+            mmcm_rst  <= '1';
+            drp_state <= DRP_UNLOCKING;
+          end if;
+        when DRP_UNLOCKING =>
+          if fm_ok = '0' then
+            drp_state <= DRP_UNLOCKED;
+          end if;
+        when DRP_UNLOCKED =>
+          if fm_ok = '1' then
             drp_state <= DRP_RESET;
           end if;
         when DRP_RESET =>
           -- program for correct frequency range
-          mmcm_tbl_a <= (others => '0');
-          if fm_val > FM_FCOUNT_44M then
-            mmcm_tbl_a(6 downto 5) <= "01";
-          elsif fm_val > FM_FCOUNT_70M then
-            mmcm_tbl_a(6 downto 5) <= "10";
-          elsif fm_val > FM_FCOUNT_120M then
-            mmcm_tbl_a(6 downto 5) <= "11";
+          drp_tbl_a <= (others => '0');
+          if fm_f > FM_FCOUNT_44M then
+            drp_tbl_a(6 downto 5) <= "01";
+          elsif fm_f > FM_FCOUNT_70M then
+            drp_tbl_a(6 downto 5) <= "10";
+          elsif fm_f > FM_FCOUNT_120M then
+            drp_tbl_a(6 downto 5) <= "11";
           end if;
           drp_state <= DRP_TBL;
         when DRP_TBL => -- get table entry from sychronous ROM
           drp_state <= DRP_RD;
         when DRP_RD => -- read specified register
-          mmcm_daddr <= mmcm_tbl_d(38 downto 32);
-          mmcm_den   <= '1';
+          drp_daddr <= drp_tbl_d(38 downto 32);
+          drp_den   <= '1';
           drp_state <= DRP_RD_WAIT;
         when DRP_RD_WAIT => -- wait for read to complete
-          if mmcm_drdy = '1' then
-            mmcm_di   <= (mmcm_do and mmcm_tbl_d(15 downto 0)) or (mmcm_tbl_d(31 downto 16) and not mmcm_tbl_d(15 downto 0));
-            mmcm_den  <= '1';
-            mmcm_dwe  <= '1';
+          if drp_drdy = '1' then
+            drp_di   <= (drp_do and drp_tbl_d(15 downto 0)) or (drp_tbl_d(31 downto 16) and not drp_tbl_d(15 downto 0));
+            drp_den  <= '1';
+            drp_dwe  <= '1';
             drp_state <= DRP_WR;
           end if;
         when DRP_WR => -- write modified contents back to same register
           drp_state <= DRP_WR_WAIT;
         when DRP_WR_WAIT => -- wait for write to complete
-          if mmcm_drdy = '1' then
-            if mmcm_tbl_d(39) = '1' then -- last entry in table
-              mmcm_tbl_a <= (others => '0');
+          if drp_drdy = '1' then
+            if drp_tbl_d(39) = '1' then -- last entry in table
+              drp_tbl_a <= (others => '0');
               drp_state <= DRP_LOCK_WAIT;
             else -- do next entry in table
-              mmcm_tbl_a(4 downto 0) <= std_logic_vector(unsigned(mmcm_tbl_a(4 downto 0)) + 1);
+              drp_tbl_a(4 downto 0) <= std_logic_vector(unsigned(drp_tbl_a(4 downto 0)) + 1);
               drp_state                <= DRP_TBL;
             end if;
           end if;
         when DRP_LOCK_WAIT => -- wait for MMCM to lock
           mmcm_rst <= '0';
-          if mmcm_lock_s(1) = '1' then -- all done
-            drp_state <= DRP_IDLE;
+          if mmcm_lock = '1' then -- all done
+            drp_state <= DRP_LOCKED;
           end if;
       end case;
     end if;
   end process;
 
   -- pclk domain reset
-  prst_a <= '1' when rst = '1' or drp_state /= DRP_IDLE or mmcm_lock_a = '0' else '0';
+  prst_a <= '1' when rst = '1' or drp_state /= DRP_LOCKED or mmcm_lock_a = '0' else '0';
   process(prst_a,pclk)
   begin
     if prst_a = '1' then
@@ -404,12 +414,12 @@ begin
       clkout5              => open,
       clkout6              => open,
       dclk                 => clk,
-      daddr                => mmcm_daddr,
-      den                  => mmcm_den,
-      dwe                  => mmcm_dwe,
-      di                   => mmcm_di,
-      do                   => mmcm_do,
-      drdy                 => mmcm_drdy,
+      daddr                => drp_daddr,
+      den                  => drp_den,
+      dwe                  => drp_dwe,
+      di                   => drp_di,
+      do                   => drp_do,
+      drdy                 => drp_drdy,
       psclk                => '0',
       psdone               => open,
       psen                 => '0',
