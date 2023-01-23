@@ -22,3 +22,6 @@
 [submodule "submodules/vcd2gtkw"]
 	path = submodules/vcd2gtkw
 	url = https://github.com/amb5l/vcd2gtkw.git
+[submodule "submodules/make-fpga"]
+	path = submodules/make-fpga
+	url = https://github.com/amb5l/make-fpga.git
