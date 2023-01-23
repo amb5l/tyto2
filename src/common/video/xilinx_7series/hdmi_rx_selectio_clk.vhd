@@ -115,8 +115,6 @@ architecture synth of hdmi_rx_selectio_clk is
 begin
 
   pclko <= pclk;
-  lock <= '1' when drp_state = DRP_LOCKED else '0';
-  band <= drp_tbl_a(6 downto 5);
 
   -- frequency measurement
   U_FM: component hdmi_rx_selectio_fm
@@ -248,6 +246,8 @@ begin
         drp_dwe     <= '0';
         drp_di      <= (others => '0');
         drp_state   <= DRP_UNLOCKED;
+        lock        <= '0';
+        band        <= (others => '0');
     elsif rising_edge(clk) then
       drp_tbl_d <= drp_tbl(drp_tbl_a); -- synchronous ROM
       mmcm_lock_s(0 to 1) <= mmcm_lock_a & mmcm_lock_s(0); -- synchroniser
@@ -259,9 +259,11 @@ begin
         when DRP_LOCKED =>
           if fm_ok = '0' then
             mmcm_rst  <= '1';
+            lock      <= '0';
             drp_state <= DRP_UNLOCKED;
           elsif mmcm_lock = '0' then
             mmcm_rst  <= '1';
+            lock      <= '0';
             drp_state <= DRP_UNLOCKING;
           end if;
         when DRP_UNLOCKING =>
@@ -274,16 +276,19 @@ begin
           end if;
         when DRP_RESET =>
           -- program for correct frequency range
-          drp_tbl_a <= (others => '0');
-          if fm_f > FM_FCOUNT_44M then
-            drp_tbl_a(6 downto 5) <= "01";
+          drp_tbl_a(4 downto 0) <= (others => '0');
+          if fm_f > FM_FCOUNT_120M then
+            drp_tbl_a(6 downto 5) <= "11";
           elsif fm_f > FM_FCOUNT_70M then
             drp_tbl_a(6 downto 5) <= "10";
-          elsif fm_f > FM_FCOUNT_120M then
-            drp_tbl_a(6 downto 5) <= "11";
+          elsif fm_f > FM_FCOUNT_44M then
+            drp_tbl_a(6 downto 5) <= "01";
+          else
+            drp_tbl_a(6 downto 5) <= "00";
           end if;
           drp_state <= DRP_TBL;
         when DRP_TBL => -- get table entry from sychronous ROM
+          band      <= drp_tbl_a(6 downto 5);
           drp_state <= DRP_RD;
         when DRP_RD => -- read specified register
           drp_daddr <= drp_tbl_d(38 downto 32);
@@ -311,6 +316,7 @@ begin
         when DRP_LOCK_WAIT => -- wait for MMCM to lock
           mmcm_rst <= '0';
           if mmcm_lock = '1' then -- all done
+            lock      <= '1';
             drp_state <= DRP_LOCKED;
           end if;
       end case;

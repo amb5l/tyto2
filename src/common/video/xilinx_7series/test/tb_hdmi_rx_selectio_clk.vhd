@@ -17,6 +17,7 @@
 
 library ieee;
   use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 library std;
   use std.env.finish;
@@ -91,12 +92,28 @@ begin
 
     report "trying 25.175 MHz";
     try(25.175,tpclk,pclko,lock);
+    if band /= "00" then
+      report "band incorrect - expect 0, got " & integer'image(to_integer(unsigned(band))) severity failure;
+    end if;
+
     report "trying 27.0 MHz";
     try(27.0,tpclk,pclko,lock);
+    if band /= "00" then
+      report "band incorrect - expect 0, got " & integer'image(to_integer(unsigned(band))) severity failure;
+    end if;
+
     report "trying 74.25 MHz";
     try(74.25,tpclk,pclko,lock);
+    if band /= "10" then
+      report "band incorrect - expect 2, got " & integer'image(to_integer(unsigned(band))) severity failure;
+    end if;
+
     report "trying 148.5 MHz";
     try(148.5,tpclk,pclko,lock);
+    if band /= "11" then
+      report "band incorrect - expect 3, got " & integer'image(to_integer(unsigned(band))) severity failure;
+    end if;
+
     report "SUCCESS!";
     finish;
 
