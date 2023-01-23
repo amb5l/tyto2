@@ -458,7 +458,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p><code>src</code> contains source code for designs and common IP.</p>
 </li>
 <li>
-<p><code>build</code> contains makefiles for designs on supported targets. Hardware designs are located in <code>build\design_name\board_specific_variant</code>, and simulation designs are located in <code>build\design_name</code>.</p>
+<p><code>build</code> contains makefiles for FPGA builds.</p>
+</li>
+<li>
+<p><code>test</code> contains makefiles for simulation testbenches.</p>
 </li>
 <li>
 <p><code>doc</code> contains documentation.</p>
@@ -521,12 +524,12 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </tbody>
 </table>
 <div class="paragraph">
-<p>To build an FPGA design, navigate to its subdirectory under <code>build/</code> and run the <code>make</code> command.</p>
+<p>To build an FPGA design, navigate to the board specific subdirectory under <code>build/</code> and run the <code>make</code> command.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="truesimulation-designs"><a class="anchor" href="#truesimulation-designs"></a>Simulation Designs</h2>
+<h2 id="truesimulations"><a class="anchor" href="#truesimulations"></a>Simulations</h2>
 <div class="sectionbody">
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -605,7 +608,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </li>
 <li>
-<p>The free open source <a href="doc/nvc.html">NVC</a> and <a href="doc/ghdl.html">GHDL</a> simulators are supported by most simulation designs.</p>
+<p>The free open source <a href="doc/nvc.html">NVC</a> and <a href="doc/ghdl.html">GHDL</a> simulators are supported by most simulations. Note that you may need to pre-compile vendor libraries.</p>
 </li>
 <li>
 <p>Some builds require <a href="https://www.python.org/downloads/">Python 3</a>.</p>
@@ -640,7 +643,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-11-12 17:44:24 UTC
+Last updated 2023-01-23 12:54:26 UTC
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css">

@@ -8,7 +8,9 @@ A simpler directory structure is used:
 
 * `src` contains source code for designs and common IP.
 
-* `build` contains makefiles for designs on supported targets. Hardware designs are located in `build\design_name\board_specific_variant`, and simulation designs are located in `build\design_name`.
+* `build` contains makefiles for FPGA builds.
+
+* `test` contains makefiles for simulation testbenches.
 
 * `doc` contains documentation.
 
@@ -48,9 +50,9 @@ A simpler directory structure is used:
 
 |===
 
-To build an FPGA design, navigate to its subdirectory under `build/` and run the `make` command.
+To build an FPGA design, navigate to the board specific subdirectory under `build/` and run the `make` command.
 
-== Simulation Designs
+== Simulations
 
 [cols="20,80"]
 |===
@@ -90,7 +92,7 @@ NOTE: **ALL** designs have submodule dependencies. Please remember to initialise
 
 * For Intel/Altera FPGAs, *Quartus Prime* is required - the free *Lite* edition is sufficient. This includes a free edition of the https://en.wikipedia.org/wiki/ModelSim[Questa] simulator. Versions since *21.1* are supported. Quartus may be obtained from https://www.intel.co.uk/content/www/uk/en/software/programmable/quartus-prime/download.html[here].
 
-. The free open source <<doc/nvc.adoc#,NVC>> and <<doc/ghdl.adoc#,GHDL>> simulators are supported by most simulation designs.
+. The free open source <<doc/nvc.adoc#,NVC>> and <<doc/ghdl.adoc#,GHDL>> simulators are supported by most simulations. Note that you may need to pre-compile vendor libraries.
 
 . Some builds require https://www.python.org/downloads/[Python 3].
 
