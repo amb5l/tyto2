@@ -7,7 +7,7 @@
 -- 950Mbps (95MHz) max, and -2 parts are rated at 1200Mbps max.               --
 -- Higher frequencies may not work!                                           --
 --------------------------------------------------------------------------------
--- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
+-- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
 -- you can redistribute it and/or modify it under the terms of the GNU Lesser --
 -- General Public License as published by the Free Software Foundation,       --

@@ -2,7 +2,7 @@
 -- tb_hdmi_rx_selectio_clk.vhd                                                --
 -- Simulation testbench for hdmi_rx_selectio_clk.vhd.                         --
 --------------------------------------------------------------------------------
--- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
+-- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
 -- you can redistribute it and/or modify it under the terms of the GNU Lesser --
 -- General Public License as published by the Free Software Foundation,       --

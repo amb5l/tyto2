@@ -3,7 +3,7 @@
 -- HDMI sink front end built on Xilinx 7 Series SelectIO primitives -         --
 --  IDELAYE2 and ISERDESE2 alignment module.                                  --
 --------------------------------------------------------------------------------
--- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
+-- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
 -- you can redistribute it and/or modify it under the terms of the GNU Lesser --
 -- General Public License as published by the Free Software Foundation,       --
@@ -247,12 +247,14 @@ begin
             scan_this_start <= scan_start;
             scan_this_len <= ((32+scan_start)-tap) mod 32;
           end if;
-          tap <= tap+1 mod 32;
           if tap = 31 then
+            tap <= 0;
             scan_pass <= not scan_pass;
             if scan_pass = '1' then
               state <= TAP_SCAN_2;
             end if;
+          else
+            tap <= tap+1;
           end if;
           if scan_this_len > scan_ok_len then
             scan_ok_start <= scan_this_start;

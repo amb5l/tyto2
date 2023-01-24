@@ -2,7 +2,7 @@
 -- tb_hdmi_rx_selectio_align.vhd                                              --
 -- Simulation testbench for hdmi_rx_selectio_align.vhd.                       --
 --------------------------------------------------------------------------------
--- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
+-- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
 -- you can redistribute it and/or modify it under the terms of the GNU Lesser --
 -- General Public License as published by the Free Software Foundation,       --
@@ -39,17 +39,24 @@ architecture sim of tb_hdmi_rx_selectio_align is
 
   constant VIDEO_PERIOD   : integer := 1920;
   constant CONTROL_PERIOD : integer := 12;
-  constant tpclk          : time := 10 ns; -- clock frequencies are not critical
+
+  -- TODO make these timing parameters variable to exercise more IDELAYE2 taps
+  constant tpclk          : time := 10 ns;
+  constant tdelay         : time := 1 ns;
+  constant tskew          : time := 5 ns;
+  constant topen          : time := 900 ps;
 
   signal prst             : std_logic;
   signal pclk             : std_logic;
   signal sclk_p           : std_logic;
   signal sclk_n           : std_logic;
+
+  signal idelay_d         : std_logic_vector(0 to 2);
   signal idelay_tap       : std_logic_vector(4 downto 0);
   signal idelay_ld        : std_logic_vector(0 to 2);
   signal iserdes_ddly     : std_logic_vector(0 to 2);
   signal iserdes_slip     : std_logic_vector(0 to 2);
-  signal iserdes_q        : slv_9_0_t(0 to 3);
+  signal iserdes_q        : slv_9_0_t(0 to 2);
   signal iserdes_shift1   : std_logic_vector(0 to 2);
   signal iserdes_shift2   : std_logic_vector(0 to 2);
   signal lock             : std_logic;
@@ -63,8 +70,10 @@ architecture sim of tb_hdmi_rx_selectio_align is
   signal check_c          : std_logic_vector(1 downto 0);
 
   signal tmds_p           : std_logic_vector(9 downto 0); -- TMDS parallel (character)
-  signal tmds_s           : std_logic;
   signal tmds_dc          : integer range -5 to 5 := 0; -- TMDS DC balance counter
+  signal tmds_s           : std_logic;
+
+  signal shiftreg         : std_logic_vector(9 downto 0);
 
   --------------------------------------------------------------------------------
   -- encode/decode functions and procedures
@@ -247,7 +256,7 @@ begin
     dvi_decode(tmds_p, check_de, check_d, check_c);
   end process;
 
-  -- check
+  -- check encoding correctness
   process(check_de,check_d,check_c)
   begin
     if now > 0 ps then
@@ -257,8 +266,10 @@ begin
         or (de = '0' and c /= check_c)
       )
       then
-        report "encode: de = " & std_logic'image(de);
-        report "encode:  d = " &
+        report
+          "mismatch!"  & lf &
+          "encode: de = " & std_logic'image(de) & lf &
+          "encode:  d = " &
           std_logic'image(d(7)) &
           std_logic'image(d(6)) &
           std_logic'image(d(5)) &
@@ -266,12 +277,12 @@ begin
           std_logic'image(d(3)) &
           std_logic'image(d(2)) &
           std_logic'image(d(1)) &
-          std_logic'image(d(0));
-        report "encode:  c = " &
+          std_logic'image(d(0)) & lf &
+          "encode:  c = " &
           std_logic'image(c(1)) &
-          std_logic'image(c(0));
-        report "decode: de = " & std_logic'image(check_de);
-        report "decode:  d = " &
+          std_logic'image(c(0)) & lf &
+          "decode: de = " & std_logic'image(check_de) & lf &
+          "decode:  d = " &
           std_logic'image(check_d(7)) &
           std_logic'image(check_d(6)) &
           std_logic'image(check_d(5)) &
@@ -279,156 +290,179 @@ begin
           std_logic'image(check_d(3)) &
           std_logic'image(check_d(2)) &
           std_logic'image(check_d(1)) &
-          std_logic'image(check_d(0));
-        report "decode:  c = " &
+          std_logic'image(check_d(0)) & lf &
+          "decode:  c = " &
           std_logic'image(check_c(1)) &
-          std_logic'image(check_c(0));
-        report "mismatch!" severity FAILURE;
+          std_logic'image(check_c(0))
+          severity FAILURE;
       end if;
     end if;
   end process;
 
   -- serialise
+  process(pclk,sclk_p)
+  begin
+    if rising_edge(pclk) then
+      shiftreg <= tmds_p;
+    elsif sclk_p'event then
+      shiftreg <= shiftreg(8 downto 0) & 'X';
+    end if;
+  end process;
+
+  -- serial eye open/close
+  process(sclk_p)
+  begin
+    tmds_s <= shiftreg(9), 'X' after topen;
+  end process;
+
+  -- channel skew
+  idelay_d(0) <= transport tmds_s after tdelay;
+  idelay_d(1) <= transport tmds_s after tdelay+tskew;
+  idelay_d(2) <= transport tmds_s after tdelay+tskew+tskew;
 
   -- components
 
---  DUT: component hdmi_rx_selectio_align
---    port map (
---      prst         => prst,
---      pclk         => pclk,
---      iserdes_q    => iserdes_q,
---      iserdes_slip => iserdes_slip,
---      idelay_tap   => idelay_tap,
---      idelay_ld    => idelay_ld,
---      lock         => lock
---    );
---
---  U_IDELAY: component idelaye2
---    generic map (
---      delay_src             => "IDATAIN",
---      idelay_type           => "VAR_LOAD",
---      pipe_sel              => "FALSE",
---      idelay_value          => 0,
---      signal_pattern        => "DATA",
---      refclk_frequency      => 200.0,
---      high_performance_mode => "TRUE",
---      cinvctrl_sel          => "FALSE"
---    )
---    port map (
---      regrst      => '0',
---      cinvctrl    => '0',
---      c           => pclk,
---      ce          => '0',
---      inc         => '0',
---      ld          => idelay_ld,
---      ldpipeen    => '0',
---      cntvaluein  => idelay_tap,
---      cntvalueout => open,
---      idatain     => tmds_s,
---      datain      => '0',
---      dataout     => iserdes_ddly
---    );
---
---  U_ISERDESE2_M: component iserdese2
---    generic map (
---      serdes_mode       => "MASTER",
---      interface_type    => "NETWORKING",
---      iobdelay          => "BOTH",
---      data_width        => 10,
---      data_rate         => "DDR",
---      ofb_used          => "FALSE",
---      dyn_clkdiv_inv_en => "FALSE",
---      dyn_clk_inv_en    => "FALSE",
---      num_ce            => 2,
---      init_q1           => '0',
---      init_q2           => '0',
---      init_q3           => '0',
---      init_q4           => '0',
---      srval_q1          => '0',
---      srval_q2          => '0',
---      srval_q3          => '0',
---      srval_q4          => '0'
---    )
---    port map (
---      rst               => prst,
---      dynclksel         => '0',
---      clk               => sclk_p,
---      clkb              => sclk_n,
---      ce1               => '1',
---      ce2               => '1',
---      dynclkdivsel      => '0',
---      clkdiv            => pclk,
---      clkdivp           => '0',
---      oclk              => '0',
---      oclkb             => '1',
---      d                 => '0',
---      ddly              => iserdes_ddly,
---      ofb               => '0',
---      bitslip           => iserdes_slip,
---      q1                => iserdes_q(9),
---      q2                => iserdes_q(8),
---      q3                => iserdes_q(7),
---      q4                => iserdes_q(6),
---      q5                => iserdes_q(5),
---      q6                => iserdes_q(4),
---      q7                => iserdes_q(3),
---      q8                => iserdes_q(2),
---      o                 => open,
---      shiftin1          => '0',
---      shiftin2          => '0',
---      shiftout1         => iserdes_shift1,
---      shiftout2         => iserdes_shift2
---    );
-----
-----  U_ISERDESE2_S: component iserdese2
---    generic map (
---      serdes_mode       => "SLAVE",
---      interface_type    => "NETWORKING",
---      iobdelay          => "BOTH",
---      data_width        => 10,
---      data_rate         => "DDR",
---      ofb_used          => "FALSE",
---      dyn_clkdiv_inv_en => "FALSE",
---      dyn_clk_inv_en    => "FALSE",
---      num_ce            => 2,
---      init_q1           => '0',
---      init_q2           => '0',
---      init_q3           => '0',
---      init_q4           => '0',
---      srval_q1          => '0',
---      srval_q2          => '0',
---      srval_q3          => '0',
---      srval_q4          => '0'
---    )
---    port map (
---      rst               => prst,
---      dynclksel         => '0',
---      clk               => sclk_p,
---      clkb              => sclk_n,
---      ce1               => '1',
---      ce2               => '1',
---      dynclkdivsel      => '0',
---      clkdiv            => pclk,
---      clkdivp           => '0',
---      oclk              => '0',
---      oclkb             => '1',
---      d                 => '0',
---      ddly              => '0',
---      ofb               => '0',
---      bitslip           => iserdes_slip,
---      q1                => open,
---      q2                => open,
---      q3                => iserdes_q(1),
---      q4                => iserdes_q(0),
---      q5                => open,
---      q6                => open,
---      q7                => open,
---      q8                => open,
---      o                 => open,
---      shiftin1          => iserdes_shift1,
---      shiftin2          => iserdes_shift2,
---      shiftout1         => open,
---      shiftout2         => open
---    );
+  DUT: component hdmi_rx_selectio_align
+    port map (
+      prst         => prst,
+      pclk         => pclk,
+      iserdes_q    => iserdes_q,
+      iserdes_slip => iserdes_slip,
+      idelay_tap   => idelay_tap,
+      idelay_ld    => idelay_ld,
+      lock         => lock
+    );
+
+  GEN_CH: for i in 0 to 2 generate
+
+    U_IDELAY: component idelaye2
+      generic map (
+        delay_src             => "IDATAIN",
+        idelay_type           => "VAR_LOAD",
+        pipe_sel              => "FALSE",
+        idelay_value          => 0,
+        signal_pattern        => "DATA",
+        refclk_frequency      => 200.0,
+        high_performance_mode => "TRUE",
+        cinvctrl_sel          => "FALSE"
+      )
+      port map (
+        regrst      => '0',
+        cinvctrl    => '0',
+        c           => pclk,
+        ce          => '0',
+        inc         => '0',
+        ld          => idelay_ld(i),
+        ldpipeen    => '0',
+        cntvaluein  => idelay_tap,
+        cntvalueout => open,
+        idatain     => idelay_d(i),
+        datain      => '0',
+        dataout     => iserdes_ddly(i)
+      );
+
+    U_ISERDESE2_M: component iserdese2
+      generic map (
+        serdes_mode       => "MASTER",
+        interface_type    => "NETWORKING",
+        iobdelay          => "BOTH",
+        data_width        => 10,
+        data_rate         => "DDR",
+        ofb_used          => "FALSE",
+        dyn_clkdiv_inv_en => "FALSE",
+        dyn_clk_inv_en    => "FALSE",
+        num_ce            => 2,
+        init_q1           => '0',
+        init_q2           => '0',
+        init_q3           => '0',
+        init_q4           => '0',
+        srval_q1          => '0',
+        srval_q2          => '0',
+        srval_q3          => '0',
+        srval_q4          => '0'
+      )
+      port map (
+        rst               => prst,
+        dynclksel         => '0',
+        clk               => sclk_p,
+        clkb              => sclk_n,
+        ce1               => '1',
+        ce2               => '1',
+        dynclkdivsel      => '0',
+        clkdiv            => pclk,
+        clkdivp           => '0',
+        oclk              => '0',
+        oclkb             => '1',
+        d                 => '0',
+        ddly              => iserdes_ddly(i),
+        ofb               => '0',
+        bitslip           => iserdes_slip(i),
+        q1                => iserdes_q(i)(9),
+        q2                => iserdes_q(i)(8),
+        q3                => iserdes_q(i)(7),
+        q4                => iserdes_q(i)(6),
+        q5                => iserdes_q(i)(5),
+        q6                => iserdes_q(i)(4),
+        q7                => iserdes_q(i)(3),
+        q8                => iserdes_q(i)(2),
+        o                 => open,
+        shiftin1          => '0',
+        shiftin2          => '0',
+        shiftout1         => iserdes_shift1(i),
+        shiftout2         => iserdes_shift2(i)
+      );
+
+    U_ISERDESE2_S: component iserdese2
+      generic map (
+        serdes_mode       => "SLAVE",
+        interface_type    => "NETWORKING",
+        iobdelay          => "BOTH",
+        data_width        => 10,
+        data_rate         => "DDR",
+        ofb_used          => "FALSE",
+        dyn_clkdiv_inv_en => "FALSE",
+        dyn_clk_inv_en    => "FALSE",
+        num_ce            => 2,
+        init_q1           => '0',
+        init_q2           => '0',
+        init_q3           => '0',
+        init_q4           => '0',
+        srval_q1          => '0',
+        srval_q2          => '0',
+        srval_q3          => '0',
+        srval_q4          => '0'
+      )
+      port map (
+        rst               => prst,
+        dynclksel         => '0',
+        clk               => sclk_p,
+        clkb              => sclk_n,
+        ce1               => '1',
+        ce2               => '1',
+        dynclkdivsel      => '0',
+        clkdiv            => pclk,
+        clkdivp           => '0',
+        oclk              => '0',
+        oclkb             => '1',
+        d                 => '0',
+        ddly              => '0',
+        ofb               => '0',
+        bitslip           => iserdes_slip(i),
+        q1                => open,
+        q2                => open,
+        q3                => iserdes_q(i)(1),
+        q4                => iserdes_q(i)(0),
+        q5                => open,
+        q6                => open,
+        q7                => open,
+        q8                => open,
+        o                 => open,
+        shiftin1          => iserdes_shift1(i),
+        shiftin2          => iserdes_shift2(i),
+        shiftout1         => open,
+        shiftout2         => open
+      );
+
+  end generate GEN_CH;
 
 end architecture sim;
