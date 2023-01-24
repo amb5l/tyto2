@@ -10,7 +10,7 @@ SRC:=$(REPO_ROOT)/src
 DESIGN?=tb_saa5050
 VARIANT?=
 
-SIMULATORS:=ghdl nvc vsim xsim
+SIMULATOR:=ghdl nvc vsim xsim
 
 SIM_TOP:=$(DESIGN)$(VARIANT)
 SIM_SRC:=\
