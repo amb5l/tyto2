@@ -141,28 +141,28 @@ begin
 
     U_IDELAY: component idelaye2
       generic map (
-        delay_src             => "IDATAIN",   -- Delay input (IDATAIN, DATAIN)
-        idelay_type           => "VAR_LOAD",  -- FIXED, VARIABLE, VAR_LOAD, VAR_LOAD_PIPE
-        pipe_sel              => "FALSE",     -- Select pipelined mode, FALSE, TRUE
-        idelay_value          => 0,           -- Input delay tap setting (0-31)
-        signal_pattern        => "DATA",      -- DATA, CLOCK input signal
-        refclk_frequency      => 200.0,       -- IDELAYCTRL clock input frequency in MHz (190.0-210.0, 290.0-310.0).
-        high_performance_mode => "TRUE",      -- Reduced jitter ("TRUE"), Reduced power ("FALSE")
-        cinvctrl_sel          => "FALSE"      -- Enable dynamic clock inversion (FALSE, TRUE)
+        delay_src             => "IDATAIN",
+        idelay_type           => "VAR_LOAD",
+        pipe_sel              => "FALSE",
+        idelay_value          => 0,
+        signal_pattern        => "DATA",
+        refclk_frequency      => 200.0,
+        high_performance_mode => "TRUE",
+        cinvctrl_sel          => "FALSE"
       )
       port map (
-        regrst      => '0',                   -- 1-bit input: Active-high reset tap-delay input
-        cinvctrl    => '0',                   -- 1-bit input: Dynamic clock inversion input
-        c           => clk,                   -- 1-bit input: Clock input
-        ce          => '0',                   -- 1-bit input: Active high enable increment/decrement input
-        inc         => '0',                   -- 1-bit input: Increment / Decrement tap delay input
-        ld          => idelay_ld,             -- 1-bit input: Load IDELAY_VALUE input
-        ldpipeen    => '0',                   -- 1-bit input: Enable PIPELINE register to load data input
-        cntvaluein  => idelay_tap,            -- 5-bit input: Counter value input
-        cntvalueout => open,                  -- 5-bit output: Counter value output
-        idatain     => si(i),                 -- 1-bit input: Data input from the I/O
-        datain      => '0',                   -- 1-bit input: Internal delay data input
-        dataout     => iserdes_ddly(i)        -- 1-bit output: Delayed data output
+        regrst      => '0',
+        cinvctrl    => '0',
+        c           => clk,
+        ce          => '0',
+        inc         => '0',
+        ld          => idelay_ld,
+        ldpipeen    => '0',
+        cntvaluein  => idelay_tap,
+        cntvalueout => open,
+        idatain     => si(i),
+        datain      => '0',
+        dataout     => iserdes_ddly(i)
       );
 
     U_ISERDESE2_M: component iserdese2
@@ -200,7 +200,7 @@ begin
         d                 => '0',
         ddly              => iserdes_ddly(i),
         ofb               => '0',
-        o                 => open,
+        bitslip           => iserdes_slip(i),
         q1                => iserdes_q(i)(9),
         q2                => iserdes_q(i)(8),
         q3                => iserdes_q(i)(7),
@@ -209,7 +209,7 @@ begin
         q6                => iserdes_q(i)(4),
         q7                => iserdes_q(i)(3),
         q8                => iserdes_q(i)(2),
-        bitslip           => iserdes_slip(i),
+        o                 => open,
         shiftin1          => '0',
         shiftin2          => '0',
         shiftout1         => iserdes_shift1(i),
@@ -251,7 +251,7 @@ begin
         d                 => '0',
         ddly              => '0',
         ofb               => '0',
-        o                 => open,
+        bitslip           => iserdes_slip(i),
         q1                => open,
         q2                => open,
         q3                => iserdes_q(i)(1),
@@ -260,7 +260,7 @@ begin
         q6                => open,
         q7                => open,
         q8                => open,
-        bitslip           => iserdes_slip(i),
+        o                 => open,
         shiftin1          => iserdes_shift1(i),
         shiftin2          => iserdes_shift2(i),
         shiftout1         => open,

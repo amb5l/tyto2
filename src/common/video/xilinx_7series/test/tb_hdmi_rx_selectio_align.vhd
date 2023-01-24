@@ -1,0 +1,434 @@
+--------------------------------------------------------------------------------
+-- tb_hdmi_rx_selectio_align.vhd                                              --
+-- Simulation testbench for hdmi_rx_selectio_align.vhd.                       --
+--------------------------------------------------------------------------------
+-- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
+-- This file is part of The Tyto Project. The Tyto Project is free software:  --
+-- you can redistribute it and/or modify it under the terms of the GNU Lesser --
+-- General Public License as published by the Free Software Foundation,       --
+-- either version 3 of the License, or (at your option) any later version.    --
+-- The Tyto Project is distributed in the hope that it will be useful, but    --
+-- WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY --
+-- or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public     --
+-- License for more details. You should have received a copy of the GNU       --
+-- Lesser General Public License along with The Tyto Project. If not, see     --
+-- https://www.gnu.org/licenses/.                                             --
+--------------------------------------------------------------------------------
+
+library ieee;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
+  use ieee.math_real.all;
+
+library std;
+  use std.env.finish;
+
+library unisim;
+  use unisim.vcomponents.all;
+
+library work;
+  use work.tyto_types_pkg.all;
+  use work.hdmi_rx_selectio_align_pkg.all;
+
+entity tb_hdmi_rx_selectio_align is
+end entity tb_hdmi_rx_selectio_align;
+
+architecture sim of tb_hdmi_rx_selectio_align is
+
+  --------------------------------------------------------------------------------
+
+  constant VIDEO_PERIOD   : integer := 1920;
+  constant CONTROL_PERIOD : integer := 12;
+  constant tpclk          : time := 10 ns; -- clock frequencies are not critical
+
+  signal prst             : std_logic;
+  signal pclk             : std_logic;
+  signal sclk_p           : std_logic;
+  signal sclk_n           : std_logic;
+  signal idelay_tap       : std_logic_vector(4 downto 0);
+  signal idelay_ld        : std_logic_vector(0 to 2);
+  signal iserdes_ddly     : std_logic_vector(0 to 2);
+  signal iserdes_slip     : std_logic_vector(0 to 2);
+  signal iserdes_q        : slv_9_0_t(0 to 3);
+  signal iserdes_shift1   : std_logic_vector(0 to 2);
+  signal iserdes_shift2   : std_logic_vector(0 to 2);
+  signal lock             : std_logic;
+
+  signal video_count      : integer range 0 to VIDEO_PERIOD+CONTROL_PERIOD-1;
+  signal de               : std_logic;
+  signal d                : std_logic_vector(7 downto 0);
+  signal c                : std_logic_vector(1 downto 0);
+  signal check_de         : std_logic;
+  signal check_d          : std_logic_vector(7 downto 0);
+  signal check_c          : std_logic_vector(1 downto 0);
+
+  signal tmds_p           : std_logic_vector(9 downto 0); -- TMDS parallel (character)
+  signal tmds_s           : std_logic;
+  signal tmds_dc          : integer range -5 to 5 := 0; -- TMDS DC balance counter
+
+  --------------------------------------------------------------------------------
+  -- encode/decode functions and procedures
+
+  function nbits(
+    b : std_logic;
+    v : std_logic_vector
+  ) return integer is
+    variable n : integer;
+  begin
+    n := 0;
+    for i in v'low to v'high loop
+      if v(i) = b then
+        n := n+1;
+      end if;
+    end loop;
+    return n;
+  end function;
+
+  function sl_to_int(b : std_logic) return integer is
+  begin
+    if b = '1' then return 1; else return 0; end if;
+  end function sl_to_int;
+
+  procedure dvi_encode(
+    signal de  : in    std_logic;
+    signal d   : in    std_logic_vector(7 downto 0);
+    signal c   : in    std_logic_vector(1 downto 0);
+    signal q   : out   std_logic_vector(9 downto 0);
+    signal cnt : inout integer
+  ) is
+    variable q_m : std_logic_vector(8 downto 0);
+    variable q_out : std_logic_vector(9 downto 0);
+  begin
+    q_m(0) := d(0);
+    if (nbits('1',d) > 4)
+    or ((nbits('1',d) = 4) and (d(0) = '0'))
+    then
+      for i in 1 to 7 loop
+        q_m(i) := q_m(i-1) xnor d(i);
+      end loop;
+      q_m(8) := '0';
+    else
+      for i in 1 to 7 loop
+        q_m(i) := q_m(i-1) xor d(i);
+      end loop;
+      q_m(8) := '1';
+    end if;
+    if de = '1' then
+      if (cnt = 0)
+      or ((nbits('1',q_m(7 downto 0)) = nbits('0',q_m(7 downto 0))))
+      then
+        q_out(9) := not q_m(8);
+        q_out(8) := q_m(8);
+        if q_m(8) = '1' then
+          q_out(7 downto 0) := q_m(7 downto 0);
+        else
+          q_out(7 downto 0) := not q_m(7 downto 0);
+        end if;
+        if q_m(8) = '0' then
+          cnt <= cnt + nbits('0',q_m(7 downto 0)) - nbits('1',q_m(7 downto 0));
+        else
+          cnt <= cnt + nbits('1',q_m(7 downto 0)) - nbits('0',q_m(7 downto 0));
+        end if;
+      else
+        if ((cnt > 0) and (nbits('1',q_m(7 downto 0)) > nbits('0',q_m(7 downto 0))))
+        or ((cnt < 0) and (nbits('0',q_m(7 downto 0)) > nbits('1',q_m(7 downto 0))))
+        then
+          q_out(9) := '1';
+          q_out(8) := q_m(8);
+          q_out(7 downto 0) := not q_m(7 downto 0);
+          cnt <= cnt + (2 * sl_to_int(q_m(8))) + nbits('0',q_m(7 downto 0)) - nbits('1',q_m(7 downto 0));
+        else
+          q_out(9) := '0';
+          q_out(8) := q_m(8);
+          q_out(7 downto 0) := q_m(7 downto 0);
+          cnt <= cnt - (2 * sl_to_int(not q_m(8))) + nbits('1',q_m(7 downto 0)) - nbits('0',q_m(7 downto 0));
+        end if;
+      end if;
+    else
+      case c is
+        when "00"   => q_out := "1101010100";
+        when "01"   => q_out := "0010101011";
+        when "10"   => q_out := "0101010100";
+        when "11"   => q_out := "1010101011";
+        when others => q_out := "XXXXXXXXXX";
+      end case;
+    end if;
+    q <= q_out;
+  end procedure dvi_encode;
+
+  procedure dvi_decode(
+    signal q    : in    std_logic_vector(9 downto 0);
+    signal de   : out   std_logic;
+    signal d    : out   std_logic_vector(7 downto 0);
+    signal c    : out   std_logic_vector(1 downto 0)
+  ) is
+  begin
+    de <= 'X';
+    d  <= "XXXXXXXX";
+    c  <= "XX";
+    if q /= "XXXXXXXXXX" then
+      de <= '1';
+      d(0) <= q(0) xor q(9);
+      for i in 1 to 7 loop
+        d(i) <= (q(i) xor q(9)) xor ((q(i-1) xor q(9)) xnor q(8));
+      end loop;
+    end if;
+    case q(9 downto 0) is
+      when "1101010100" => c <= "00"; de <= '0';
+      when "0010101011" => c <= "01"; de <= '0';
+      when "0101010100" => c <= "10"; de <= '0';
+      when "1010101011" => c <= "11"; de <= '0';
+      when others => null;
+    end case;
+  end procedure dvi_decode;
+
+  --------------------------------------------------------------------------------
+
+begin
+
+  pclk <=
+    '1' after tpclk / 2 when pclk = '0' else
+    '0' after tpclk / 2 when pclk = '1' else
+    '0';
+
+  sclk_p <=
+    '1' after tpclk / 10 when sclk_p = '0' else
+    '0' after tpclk / 10 when sclk_p = '1' else
+    '0';
+
+  sclk_n <=
+    '0' after tpclk / 10 when sclk_n = '1' else
+    '1' after tpclk / 10 when sclk_n = '0' else
+    '1';
+
+  prst <= '1', '0' after 10 ns;
+
+  -- main process
+  process
+  begin
+    wait until prst = '0';
+    wait;
+  end process;
+
+  -- video, encode, check encoding
+  process(pclk)
+    variable seed1, seed2 : positive;
+    variable r : real;
+  begin
+    if prst = '1' then
+      video_count <= 0;
+      de          <= '0';
+      d           <= (others => 'X');
+      c           <= (others => 'X');
+    elsif rising_edge(pclk) then
+      uniform(seed1, seed2, r);
+      if video_count < 1920 then
+        de <= '1';
+        d <= std_logic_vector(to_unsigned(integer(round(r*real(256)-0.5)),8));
+        c <= "XX";
+      else
+        de <= '0';
+        d <= "XXXXXXXX";
+        c <= std_logic_vector(to_unsigned(integer(round(r*real(4)-0.5)),2));
+      end if;
+      video_count <= (video_count+1) mod (1920+12);
+    end if;
+  end process;
+
+  -- encode
+  process(de,d,c)
+  begin
+    dvi_encode(de,d,c,tmds_p,tmds_dc);
+  end process;
+
+  -- decode
+  process(tmds_p)
+  begin
+    dvi_decode(tmds_p, check_de, check_d, check_c);
+  end process;
+
+  -- check
+  process(check_de,check_d,check_c)
+  begin
+    if now > 0 ps then
+      if (de /= 'X') and (
+        (de /= check_de)
+        or (de = '1' and d /= check_d)
+        or (de = '0' and c /= check_c)
+      )
+      then
+        report "encode: de = " & std_logic'image(de);
+        report "encode:  d = " &
+          std_logic'image(d(7)) &
+          std_logic'image(d(6)) &
+          std_logic'image(d(5)) &
+          std_logic'image(d(4)) &
+          std_logic'image(d(3)) &
+          std_logic'image(d(2)) &
+          std_logic'image(d(1)) &
+          std_logic'image(d(0));
+        report "encode:  c = " &
+          std_logic'image(c(1)) &
+          std_logic'image(c(0));
+        report "decode: de = " & std_logic'image(check_de);
+        report "decode:  d = " &
+          std_logic'image(check_d(7)) &
+          std_logic'image(check_d(6)) &
+          std_logic'image(check_d(5)) &
+          std_logic'image(check_d(4)) &
+          std_logic'image(check_d(3)) &
+          std_logic'image(check_d(2)) &
+          std_logic'image(check_d(1)) &
+          std_logic'image(check_d(0));
+        report "decode:  c = " &
+          std_logic'image(check_c(1)) &
+          std_logic'image(check_c(0));
+        report "mismatch!" severity FAILURE;
+      end if;
+    end if;
+  end process;
+
+  -- serialise
+
+  -- components
+
+--  DUT: component hdmi_rx_selectio_align
+--    port map (
+--      prst         => prst,
+--      pclk         => pclk,
+--      iserdes_q    => iserdes_q,
+--      iserdes_slip => iserdes_slip,
+--      idelay_tap   => idelay_tap,
+--      idelay_ld    => idelay_ld,
+--      lock         => lock
+--    );
+--
+--  U_IDELAY: component idelaye2
+--    generic map (
+--      delay_src             => "IDATAIN",
+--      idelay_type           => "VAR_LOAD",
+--      pipe_sel              => "FALSE",
+--      idelay_value          => 0,
+--      signal_pattern        => "DATA",
+--      refclk_frequency      => 200.0,
+--      high_performance_mode => "TRUE",
+--      cinvctrl_sel          => "FALSE"
+--    )
+--    port map (
+--      regrst      => '0',
+--      cinvctrl    => '0',
+--      c           => pclk,
+--      ce          => '0',
+--      inc         => '0',
+--      ld          => idelay_ld,
+--      ldpipeen    => '0',
+--      cntvaluein  => idelay_tap,
+--      cntvalueout => open,
+--      idatain     => tmds_s,
+--      datain      => '0',
+--      dataout     => iserdes_ddly
+--    );
+--
+--  U_ISERDESE2_M: component iserdese2
+--    generic map (
+--      serdes_mode       => "MASTER",
+--      interface_type    => "NETWORKING",
+--      iobdelay          => "BOTH",
+--      data_width        => 10,
+--      data_rate         => "DDR",
+--      ofb_used          => "FALSE",
+--      dyn_clkdiv_inv_en => "FALSE",
+--      dyn_clk_inv_en    => "FALSE",
+--      num_ce            => 2,
+--      init_q1           => '0',
+--      init_q2           => '0',
+--      init_q3           => '0',
+--      init_q4           => '0',
+--      srval_q1          => '0',
+--      srval_q2          => '0',
+--      srval_q3          => '0',
+--      srval_q4          => '0'
+--    )
+--    port map (
+--      rst               => prst,
+--      dynclksel         => '0',
+--      clk               => sclk_p,
+--      clkb              => sclk_n,
+--      ce1               => '1',
+--      ce2               => '1',
+--      dynclkdivsel      => '0',
+--      clkdiv            => pclk,
+--      clkdivp           => '0',
+--      oclk              => '0',
+--      oclkb             => '1',
+--      d                 => '0',
+--      ddly              => iserdes_ddly,
+--      ofb               => '0',
+--      bitslip           => iserdes_slip,
+--      q1                => iserdes_q(9),
+--      q2                => iserdes_q(8),
+--      q3                => iserdes_q(7),
+--      q4                => iserdes_q(6),
+--      q5                => iserdes_q(5),
+--      q6                => iserdes_q(4),
+--      q7                => iserdes_q(3),
+--      q8                => iserdes_q(2),
+--      o                 => open,
+--      shiftin1          => '0',
+--      shiftin2          => '0',
+--      shiftout1         => iserdes_shift1,
+--      shiftout2         => iserdes_shift2
+--    );
+----
+----  U_ISERDESE2_S: component iserdese2
+--    generic map (
+--      serdes_mode       => "SLAVE",
+--      interface_type    => "NETWORKING",
+--      iobdelay          => "BOTH",
+--      data_width        => 10,
+--      data_rate         => "DDR",
+--      ofb_used          => "FALSE",
+--      dyn_clkdiv_inv_en => "FALSE",
+--      dyn_clk_inv_en    => "FALSE",
+--      num_ce            => 2,
+--      init_q1           => '0',
+--      init_q2           => '0',
+--      init_q3           => '0',
+--      init_q4           => '0',
+--      srval_q1          => '0',
+--      srval_q2          => '0',
+--      srval_q3          => '0',
+--      srval_q4          => '0'
+--    )
+--    port map (
+--      rst               => prst,
+--      dynclksel         => '0',
+--      clk               => sclk_p,
+--      clkb              => sclk_n,
+--      ce1               => '1',
+--      ce2               => '1',
+--      dynclkdivsel      => '0',
+--      clkdiv            => pclk,
+--      clkdivp           => '0',
+--      oclk              => '0',
+--      oclkb             => '1',
+--      d                 => '0',
+--      ddly              => '0',
+--      ofb               => '0',
+--      bitslip           => iserdes_slip,
+--      q1                => open,
+--      q2                => open,
+--      q3                => iserdes_q(1),
+--      q4                => iserdes_q(0),
+--      q5                => open,
+--      q6                => open,
+--      q7                => open,
+--      q8                => open,
+--      o                 => open,
+--      shiftin1          => iserdes_shift1,
+--      shiftin2          => iserdes_shift2,
+--      shiftout1         => open,
+--      shiftout2         => open
+--    );
+
+end architecture sim;

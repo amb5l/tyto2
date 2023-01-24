@@ -22,31 +22,31 @@ library ieee;
 
 entity oserdese2 is
   generic (
-    data_rate_oq       : string  := "DDR";
-    data_rate_tq       : string  := "DDR";
-    data_width         : integer := 4;
-    init_oq            : bit     := '0';
-    init_tq            : bit     := '0';
-    is_clkdiv_inverted : bit     := '0';
-    is_clk_inverted    : bit     := '0';
-    is_d1_inverted     : bit     := '0';
-    is_d2_inverted     : bit     := '0';
-    is_d3_inverted     : bit     := '0';
-    is_d4_inverted     : bit     := '0';
-    is_d5_inverted     : bit     := '0';
-    is_d6_inverted     : bit     := '0';
-    is_d7_inverted     : bit     := '0';
-    is_d8_inverted     : bit     := '0';
-    is_t1_inverted     : bit     := '0';
-    is_t2_inverted     : bit     := '0';
-    is_t3_inverted     : bit     := '0';
-    is_t4_inverted     : bit     := '0';
-    serdes_mode        : string  := "MASTER";
-    srval_oq           : bit     := '0';
-    srval_tq           : bit     := '0';
-    tbyte_ctl          : string  := "FALSE";
-    tbyte_src          : string  := "FALSE";
-    tristate_width     : integer := 4
+    data_rate_oq       : string;
+    data_rate_tq       : string;
+    data_width         : integer;
+    init_oq            : bit;
+    init_tq            : bit;
+    is_clkdiv_inverted : bit;
+    is_clk_inverted    : bit;
+    is_d1_inverted     : bit;
+    is_d2_inverted     : bit;
+    is_d3_inverted     : bit;
+    is_d4_inverted     : bit;
+    is_d5_inverted     : bit;
+    is_d6_inverted     : bit;
+    is_d7_inverted     : bit;
+    is_d8_inverted     : bit;
+    is_t1_inverted     : bit;
+    is_t2_inverted     : bit;
+    is_t3_inverted     : bit;
+    is_t4_inverted     : bit;
+    serdes_mode        : string;
+    srval_oq           : bit;
+    srval_tq           : bit;
+    tbyte_ctl          : string;
+    tbyte_src          : string;
+    tristate_width     : integer
   );
   port (
     ofb                : out   std_ulogic;
@@ -198,4 +198,60 @@ begin
 
   end generate gen_tr_buf;
 
+end architecture model;
+
+entity iserdese2 is
+  generic (
+    serdes_mode       : string;
+    interface_type    : string;
+    iobdelay          : string;
+    data_width        : integer;
+    data_rate         : string;
+    ofb_used          : string;
+    dyn_clkdiv_inv_en : string;
+    dyn_clk_inv_en    : string;
+    num_ce            : integer;
+    init_q1           : bit;
+    init_q2           : bit;
+    init_q3           : bit;
+    init_q4           : bit;
+    srval_q1          : bit;
+    srval_q2          : bit;
+    srval_q3          : bit;
+    srval_q4          : bit
+  );
+  port (
+    rst               : in    std_ulogic;
+    dynclksel         : in    std_ulogic;
+    clk               : in    std_ulogic;
+    clkb              : in    std_ulogic;
+    ce1               : in    std_ulogic;
+    ce2               : in    std_ulogic;
+    dynclkdivsel      : in    std_ulogic;
+    clkdiv            : in    std_ulogic;
+    clkdivp           : in    std_ulogic;
+    oclk              : in    std_ulogic;
+    oclkb             : in    std_ulogic;
+    d                 : in    std_ulogic;
+    ddly              : in    std_ulogic;
+    ofb               : in    std_ulogic;
+    bitslip           : in    std_ulogic;
+    q1                : out   std_ulogic;
+    q2                : out   std_ulogic;
+    q3                : out   std_ulogic;
+    q4                : out   std_ulogic;
+    q5                : out   std_ulogic;
+    q6                : out   std_ulogic;
+    q7                : out   std_ulogic;
+    q8                : out   std_ulogic;
+    o                 : out   std_ulogic;
+    shiftin1          : in    std_ulogic;
+    shiftin2          : in    std_ulogic;
+    shiftout1         : out   std_ulogic;
+    shiftout2         : out   std_ulogic;
+  );
+end entity iserdese2;
+
+architecture model of iserdese2 is
+begin
 end architecture model;

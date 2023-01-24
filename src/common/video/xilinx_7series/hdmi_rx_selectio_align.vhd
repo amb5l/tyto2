@@ -225,7 +225,7 @@ begin
             if ch_lock(ch) = '0' then -- we have acquired lock
               ch_lock(ch) <= '1';
               idelay_tap             <= "01111"; -- set delay to centre
-              idelay_ld              <= '1';
+              idelay_ld(ch)          <= '1';
             end if;
             state <= NEXT_CHANNEL;
           else -- all taps not OK so scan
@@ -276,8 +276,8 @@ begin
         when TAP_SCAN_4 =>
           if scan_ok_len >= EYE_OPEN_MIN then -- lock established
             ch_lock(ch) <= '1';
-            idelay_ld              <= '1';
-            idelay_tap             <= std_logic_vector(to_unsigned(scan_ok_tap));
+            idelay_ld(ch)          <= '1';
+            idelay_tap             <= std_logic_vector(to_unsigned(scan_ok_tap,5));
           end if;
           -- assumption: no point doing more bit slips
           state <= NEXT_CHANNEL;
