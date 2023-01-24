@@ -7,7 +7,7 @@ endif
 MAKE_FPGA:=$(REPO_ROOT)/submodules/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
 
-SIMULATORS:=ghdl nvc vsim xsim
+SIMULATOR:=ghdl nvc vsim xsim
 
 SIM_TOP:=tb_ps2_to_usbhid
 SIM_SRC:=\

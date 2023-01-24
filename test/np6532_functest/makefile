@@ -1,11 +1,16 @@
 # makefile for np6532_functest
 
-all: fail
-
-MAKE_DIR:=$(shell cygpath -m -a .)
+MAKE_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 REPO_ROOT:=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
+ifeq ($(OS),Windows_NT)
+REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
+MAKE_DIR:=$(shell cygpath -m $(MAKE_DIR))
+endif
 SUBMODULES:=$(REPO_ROOT)/submodules
+MAKE_FPGA:=$(SUBMODULES)/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
+
+# primary definitions
 
 DESIGN:=np6532_functest
 FPGA_VENDOR:=xilinx
@@ -39,7 +44,7 @@ endif
 # definitions for generating VHDL source from data
 
 BUILD_VHDL_DIR:=vhdl
-PYTHON:=python3
+PYTHON:=python
 DECODER_PY:=$(SRC)/common/retro/np65/$(FPGA_VENDOR)/np65_decoder.py
 DECODER_CSV:=$(SRC)/common/retro/np65/6502.csv
 DECODER_VHD:=$(MAKE_DIR)/$(BUILD_VHDL_DIR)/np65_decoder.vhd
@@ -48,7 +53,7 @@ RAM_INIT_VHD:=$(MAKE_DIR)/$(BUILD_VHDL_DIR)/np6532_ram_init_$(RAM_SIZE)k_pkg.vhd
 
 # simulation
 
-SIMULATORS:=ghdl nvc vsim xsim
+SIMULATOR:=ghdl nvc vsim xsim
 SIM_TOP:=$(DESIGN)
 SIM_SRC:=\
 	$(SRC)/common/tyto_types_pkg.vhd                        \
@@ -79,14 +84,6 @@ V4P_LIB_SRC:=\
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/LDCE.vhd \
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/RAM64X1D.vhd
 
-# heavy lifting
-
-include $(REPO_ROOT)/build/build.mak
-
-# additional simulation prerequisites
-
-sim:: .EXTRA_PREREQS=$(REF_FILE)
-
 # 6502 binary rules and recipes
 
 $(BUILD_6502_DIR):
@@ -99,7 +96,6 @@ $(FUNCTEST_BIN): $(BUILD_6502_DIR)/$(FUNCTEST).o $(FUNCTEST_CFG)
 	$(LD65) $< -o $@ -m $(BUILD_6502_DIR)/$(FUNCTEST).map -C $(FUNCTEST_CFG)
 
 $(BUILD_6502_DIR)/$(FUNCTEST).o: $(FUNCTEST_SRC) | $(BUILD_6502_DIR)
-	echo "ca65 target is $@, prereqs are $?"
 	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(FUNCTEST).lst
 
 .PHONY: init
@@ -129,6 +125,8 @@ ref: $(REF_FILE)
 $(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
 	$(MOS6502_TRACE) $< 0400 FD 34 > $@
 
+sim:: $(REF_FILE)
+
 # rules and recipes for generating VHDL source from data
 
 $(BUILD_VHDL_DIR):
@@ -145,3 +143,8 @@ raminit: $(RAM_INIT_VHD)
 
 $(RAM_INIT_VHD): $(FUNCTEST_BIN) $(NMI_BIN) $(IRQ_BIN) $(INIT_BIN) | $(BUILD_VHDL_DIR)
 	$(PYTHON) $(RAM_INIT_PY) $(RAM_SIZE) 0 $(FUNCTEST_BIN) F000 $(NMI_BIN) F100 $(IRQ_BIN) FC00 $(INIT_BIN) > $@
+
+# heavy lifting
+
+include $(MAKE_FPGA)
+

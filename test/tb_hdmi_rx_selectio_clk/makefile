@@ -11,7 +11,7 @@ FPGA_VENDOR:=xilinx
 FPGA_FAMILY:=7series
 
 # note that Xilinx Vivado libraries must be pre-compiled
-SIMULATORS:=ghdl nvc vsim xsim
+SIMULATOR:=ghdl nvc vsim xsim
 GHDL_LIBS:=xilinx-vivado
 
 SIM_TOP:=tb_hdmi_rx_selectio_clk

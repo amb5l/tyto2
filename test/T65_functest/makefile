@@ -1,7 +1,11 @@
 # makefile for T65_functest
 
 REPO_ROOT:=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
+ifeq ($(OS),Windows_NT)
+REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
+endif
 SUBMODULES:=$(REPO_ROOT)/submodules
+MAKE_FPGA:=$(SUBMODULES)/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
 
 # 6502 binary definitions
@@ -25,7 +29,8 @@ endif
 
 # simulation
 
-SIMULATORS:=ghdl nvc vsim xsim
+SIMULATOR:=ghdl nvc vsim xsim
+
 SIM_TOP:=T65_functest
 SIM_SRC:=\
 	$(SUBMODULES)/T65/T65_Pack.vhd               \
@@ -37,10 +42,6 @@ SIM_RUN:=$(SIM_TOP),start_address=1024;bin_file=$(shell cygpath -m -a $(FUNCTEST
 
 VSCODE_SRC:=$(SIM_SRC)
 V4P_TOP:=$(SIM_TOP)
-
-include $(REPO_ROOT)/build/build.mak
-
-sim:: .EXTRA_PREREQS=$(FUNCTEST_BIN) $(REF_FILE)
 
 # 6502 binary rules and recipes
 
@@ -56,6 +57,8 @@ $(FUNCTEST_BIN): $(BUILD_6502_DIR)/$(FUNCTEST).o $(FUNCTEST_CFG)
 $(BUILD_6502_DIR)/$(FUNCTEST).o: $(FUNCTEST_SRC) | $(BUILD_6502_DIR)
 	$(CA65) $< -o $@ -l $(BUILD_6502_DIR)/$(FUNCTEST).lst
 
+sim:: $(FUNCTEST_BIN)
+
 # reference execution trace rules and recipes
 
 $(REF_DIR):
@@ -66,3 +69,9 @@ ref: $(REF_FILE)
 
 $(REF_FILE): $(FUNCTEST_BIN) | $(REF_DIR)
 	$(MOS6502_TRACE) $< 0400 FD 34 > $@
+
+sim:: $(REF_FILE)
+
+# heavy lifting
+
+include $(MAKE_FPGA)
