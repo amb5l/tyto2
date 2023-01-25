@@ -37,14 +37,16 @@ architecture sim of tb_hdmi_rx_selectio_align is
 
   --------------------------------------------------------------------------------
 
-  constant VIDEO_PERIOD   : integer := 1920;
+  -- synthetic video timing to minimise simulation time
+  constant VIDEO_PERIOD   : integer := 32;
   constant CONTROL_PERIOD : integer := 12;
 
   -- TODO make these timing parameters variable to exercise more IDELAYE2 taps
   constant tpclk          : time := 10 ns;
   constant tdelay         : time := 1 ns;
   constant tskew          : time := 5 ns;
-  constant topen          : time := 900 ps;
+  constant tbit           : time := tpclk / 10; -- serial bit time
+  constant topen          : time := tbit / 4;   -- serial eye open time
 
   signal prst             : std_logic;
   signal pclk             : std_logic;
@@ -172,9 +174,9 @@ architecture sim of tb_hdmi_rx_selectio_align is
     signal c    : out   std_logic_vector(1 downto 0)
   ) is
   begin
-    de <= 'X';
-    d  <= "XXXXXXXX";
-    c  <= "XX";
+    de  <= 'X';
+    d   <= "XXXXXXXX";
+    c   <= "XX";
     if q /= "XXXXXXXXXX" then
       de <= '1';
       d(0) <= q(0) xor q(9);
@@ -219,7 +221,7 @@ begin
     wait;
   end process;
 
-  -- video, encode, check encoding
+  -- generate video
   process(pclk)
     variable seed1, seed2 : positive;
     variable r : real;
@@ -231,7 +233,7 @@ begin
       c           <= (others => 'X');
     elsif rising_edge(pclk) then
       uniform(seed1, seed2, r);
-      if video_count < 1920 then
+      if video_count < VIDEO_PERIOD then
         de <= '1';
         d <= std_logic_vector(to_unsigned(integer(round(r*real(256)-0.5)),8));
         c <= "XX";
@@ -240,7 +242,7 @@ begin
         d <= "XXXXXXXX";
         c <= std_logic_vector(to_unsigned(integer(round(r*real(4)-0.5)),2));
       end if;
-      video_count <= (video_count+1) mod (1920+12);
+      video_count <= (video_count+1) mod (VIDEO_PERIOD+CONTROL_PERIOD);
     end if;
   end process;
 
@@ -268,8 +270,8 @@ begin
       then
         report
           "mismatch!"  & lf &
-          "encode: de = " & std_logic'image(de) & lf &
-          "encode:  d = " &
+          "encode: de = " & std_logic'image(de) &
+          "  d = " &
           std_logic'image(d(7)) &
           std_logic'image(d(6)) &
           std_logic'image(d(5)) &
@@ -277,12 +279,13 @@ begin
           std_logic'image(d(3)) &
           std_logic'image(d(2)) &
           std_logic'image(d(1)) &
-          std_logic'image(d(0)) & lf &
-          "encode:  c = " &
+          std_logic'image(d(0)) &
+          "  c = " &
           std_logic'image(c(1)) &
-          std_logic'image(c(0)) & lf &
-          "decode: de = " & std_logic'image(check_de) & lf &
-          "decode:  d = " &
+          std_logic'image(c(0)) &
+          lf &
+          "decode: de = " & std_logic'image(check_de) &
+          "  d = " &
           std_logic'image(check_d(7)) &
           std_logic'image(check_d(6)) &
           std_logic'image(check_d(5)) &
@@ -290,8 +293,8 @@ begin
           std_logic'image(check_d(3)) &
           std_logic'image(check_d(2)) &
           std_logic'image(check_d(1)) &
-          std_logic'image(check_d(0)) & lf &
-          "decode:  c = " &
+          std_logic'image(check_d(0)) &
+          "  c = " &
           std_logic'image(check_c(1)) &
           std_logic'image(check_c(0))
           severity FAILURE;
@@ -323,6 +326,9 @@ begin
   -- components
 
   DUT: component hdmi_rx_selectio_align
+  generic map (
+    interval    => VIDEO_PERIOD+12+11 -- minimum necessary
+  )
     port map (
       prst         => prst,
       pclk         => pclk,
@@ -397,14 +403,14 @@ begin
         ddly              => iserdes_ddly(i),
         ofb               => '0',
         bitslip           => iserdes_slip(i),
-        q1                => iserdes_q(i)(9),
-        q2                => iserdes_q(i)(8),
-        q3                => iserdes_q(i)(7),
-        q4                => iserdes_q(i)(6),
-        q5                => iserdes_q(i)(5),
-        q6                => iserdes_q(i)(4),
-        q7                => iserdes_q(i)(3),
-        q8                => iserdes_q(i)(2),
+        q1                => iserdes_q(i)(0),
+        q2                => iserdes_q(i)(1),
+        q3                => iserdes_q(i)(2),
+        q4                => iserdes_q(i)(3),
+        q5                => iserdes_q(i)(4),
+        q6                => iserdes_q(i)(5),
+        q7                => iserdes_q(i)(6),
+        q8                => iserdes_q(i)(7),
         o                 => open,
         shiftin1          => '0',
         shiftin2          => '0',
@@ -450,8 +456,8 @@ begin
         bitslip           => iserdes_slip(i),
         q1                => open,
         q2                => open,
-        q3                => iserdes_q(i)(1),
-        q4                => iserdes_q(i)(0),
+        q3                => iserdes_q(i)(8),
+        q4                => iserdes_q(i)(9),
         q5                => open,
         q6                => open,
         q7                => open,

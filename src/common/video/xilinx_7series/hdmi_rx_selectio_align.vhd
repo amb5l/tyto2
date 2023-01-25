@@ -25,6 +25,9 @@ library work;
 package hdmi_rx_selectio_align_pkg is
 
   component hdmi_rx_selectio_align is
+    generic (
+      interval     : integer := 2048 -- can reduce for simulation
+    );
     port (
       prst         : in    std_logic;
       pclk         : in    std_logic;
@@ -48,6 +51,9 @@ library work;
   use work.tyto_types_pkg.all;
 
 entity hdmi_rx_selectio_align is
+  generic (
+    interval     : integer := 2048
+  );
   port (
     prst         : in    std_logic;
     pclk         : in    std_logic;
@@ -61,8 +67,7 @@ end entity hdmi_rx_selectio_align;
 
 architecture synth of hdmi_rx_selectio_align is
 
-  constant INTERVAL     : integer := 2048;       -- long enough to see 12x control characters
-  constant PCOUNT_MAX   : integer := INTERVAL-1;
+  constant PCOUNT_MAX   : integer := interval-1;
   constant CCOUNT_MIN   : integer := 12;         -- minimum control character sequence length
   constant EYE_OPEN_MIN : integer := 3;          -- minimum eye open (IDELAY taps)
 
@@ -167,7 +172,7 @@ begin
           tap_ok              <= '0';
           state               <= CC_COUNT;
 
-        -- ...then look for control characters for INTERVAL pclk cycles...
+        -- ...then look for control characters for (interval) pclk cycles...
         when CC_COUNT =>
           if ch_q = "1101010100" -- } control characters
           or ch_q = "0010101011" -- }
@@ -204,6 +209,8 @@ begin
           if tap_ok = '0' then -- we have lost lock
             ch_lock(ch) <= '0';
             state <= IDLE;
+          else
+            state <= NEXT_CHANNEL;
           end if;
 
         -- not currently locked, so move to next tap or check results
@@ -245,8 +252,9 @@ begin
             scan_start <= tap;
           elsif tap_ok_mask(tap) = '0' and tap_ok_prev = '1' then -- OK section end
             scan_this_start <= scan_start;
-            scan_this_len <= ((32+scan_start)-tap) mod 32;
+            scan_this_len <= ((32+tap)-scan_start) mod 32;
           end if;
+          tap_ok_prev <= tap_ok_mask(tap);
           if tap = 31 then
             tap <= 0;
             scan_pass <= not scan_pass;
