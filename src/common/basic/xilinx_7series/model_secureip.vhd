@@ -16,6 +16,7 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
+-- TODO: IDELAYE2 and ISERDESE2
 
 library ieee;
   use ieee.std_logic_1164.all;

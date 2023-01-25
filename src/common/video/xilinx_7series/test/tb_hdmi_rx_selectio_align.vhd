@@ -41,6 +41,9 @@ architecture sim of tb_hdmi_rx_selectio_align is
   constant VIDEO_PERIOD   : integer := 32;
   constant CONTROL_PERIOD : integer := 12;
 
+  constant LOCK_TIME      : time := 160 us; -- depends on video timing
+  constant UNLOCK_TIME    : time := 100 us; -- reasonable
+
   -- TODO make these timing parameters variable to exercise more IDELAYE2 taps
   constant tpclk          : time := 10 ns;
   constant tdelay         : time := 1 ns;
@@ -217,8 +220,16 @@ begin
   -- main process
   process
   begin
-    wait until prst = '0';
-    wait;
+    wait on lock until lock = '1' for LOCK_TIME;
+    if lock = '0' then
+      report "lock should have been established by now" severity FAILURE;
+    end if;
+    wait on lock until lock = '0' for UNLOCK_TIME;
+    if lock = '0' then
+      report "lock has been lost" severity FAILURE;
+    end if;
+    report "SUCCESS!";
+    finish;
   end process;
 
   -- generate video

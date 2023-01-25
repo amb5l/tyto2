@@ -15,6 +15,7 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
+-- TODO: handle pclk domain channel skew
 
 library ieee;
   use ieee.std_logic_1164.all;
