@@ -183,7 +183,7 @@ architecture synth of hdmi_io_digilent_nexys_video is
   signal rst_a          : std_logic;
   signal clk_100m       : std_logic;
   signal clk_200m       : std_logic;
-  signal clk_spare      : std_logic_vector(2 to 6);
+  signal clk_spare      : std_logic_vector(2 to 5);
   signal rst_200m_s     : std_logic_vector(0 to 1);
   signal rst_200m       : std_logic;
   signal idelayctrl_rdy : std_logic;
@@ -200,7 +200,7 @@ architecture synth of hdmi_io_digilent_nexys_video is
 begin
 
   led(4) <= not rst_100m;
-  led(5) <= idelayctrl_rdy
+  led(5) <= idelayctrl_rdy;
   led(6) <= not rst_200m;
   led(7) <= '1';
 
@@ -213,15 +213,14 @@ begin
       div         => 1,
       num_outputs => 2,
       odiv0       => 10.0,
-      odiv        => (5, 10, 10, 10, 10, 10)
+      odiv        => (5,10,10,10,10,10)
     )
     port map (
       rsti        => not btn_rst_n,
       clki        => clki_100m,
       rsto        => rst_a,
       clko(0)     => clk_100m,
-      clko(1)     => clk_200m,
-      clko(2 to 6) => clk_spare(2 to 6)
+      clko(1)     => clk_200m
     );
 
   process(rst_a,clk_200m)
@@ -249,7 +248,7 @@ begin
   --------------------------------------------------------------------------------
   -- main design
 
-  MAIN: component hdmi_io
+  U_MAIN: component hdmi_io
     generic map (
       fclk        => 100.0
     )
@@ -276,20 +275,20 @@ begin
 
   -- HDMI input and output buffers
 
-  U_IBUFDS_CLK: component ibufds
+  U_IBUFDS: component ibufds
     port map (
       i  => hdmi_rx_clk_p,
       ib => hdmi_rx_clk_n,
       o  => hdmi_rx_clku
     );
 
-  U_IBUFG: component ibufg
+  U_BUFG: component bufg
     port map (
-      i => hdmi_rx_clku,
-      o => hdmi_rx_clk
+      i  => hdmi_rx_clku,
+      o  => hdmi_rx_clk
     );
 
-  U_OBUFDS_CLK: component obufds
+  U_OBUFDS: component obufds
     port map (
       i  => hdmi_tx_clk,
       o  => hdmi_tx_clk_p,
@@ -300,16 +299,16 @@ begin
 
     U_IBUFDS: component ibufds
       port map (
-        i  => hdmi_rx_d_p,
-        ib => hdmi_rx_d_n,
-        o  => hdmi_rx_d
+        i  => hdmi_rx_d_p(i),
+        ib => hdmi_rx_d_n(i),
+        o  => hdmi_rx_d(i)
       );
 
     U_OBUFDS: component obufds
       port map (
-        i  => hdmi_tx_d,
-        o  => hdmi_tx_d_p,
-        ob => hdmi_tx_d_n
+        i  => hdmi_tx_d(i),
+        o  => hdmi_tx_d_p(i),
+        ob => hdmi_tx_d_n(i)
       );
 
   end generate GEN_CH;

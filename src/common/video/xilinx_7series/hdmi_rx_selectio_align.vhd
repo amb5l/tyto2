@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- hdmi_rx_selectio_align.vhd                                                 --
 -- HDMI sink front end built on Xilinx 7 Series SelectIO primitives -         --
---  IDELAYE2 and ISERDESE2 alignment module.                                  --
+--  TMDS alignment module.                                                    --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -36,7 +36,7 @@ package hdmi_rx_selectio_align_pkg is
       iserdes_slip : out   std_logic_vector(0 to 2);
       idelay_tap   : out   std_logic_vector(4 downto 0);
       idelay_ld    : out   std_logic_vector(0 to 2);
-      tmds_p       : out   slv_9_0_t(0 to 2);
+      tmds         : out   slv_9_0_t(0 to 2);
       lock         : out   std_logic
     );
   end component hdmi_rx_selectio_align;
@@ -63,7 +63,7 @@ entity hdmi_rx_selectio_align is
     iserdes_slip : out   std_logic_vector(0 to 2);     -- bit slip
     idelay_tap   : out   std_logic_vector(4 downto 0); -- tap value (0..31)
     idelay_ld    : out   std_logic_vector(0 to 2);     -- load tap value
-    tmds_p       : out   slv_9_0_t(0 to 2);            -- aligned TMDS output
+    tmds         : out   slv_9_0_t(0 to 2);            -- aligned TMDS output
     lock         : out   std_logic                     -- lock status
   );
 end entity hdmi_rx_selectio_align;
@@ -363,16 +363,16 @@ begin
       -- output
       iserdes_q1(0 to 2) <= iserdes_q(0 to 2);
       iserdes_q2(1 to 2) <= iserdes_q1(1 to 2);
-      tmds_p <= (others => (others => '0'));
+      tmds <= (others => (others => '0'));
       if lock_p = '1' then
-        tmds_p(0) <= iserdes_q1(0);
+        tmds(0) <= iserdes_q1(0);
         for i in 1 to 2 loop
           if ch_skew(i) = SKEW_P1 then
-            tmds_p(i) <= iserdes_q2(i);
+            tmds(i) <= iserdes_q2(i);
           elsif ch_skew(i) = SKEW_N1 then
-            tmds_p(i) <= iserdes_q(i);
+            tmds(i) <= iserdes_q(i);
           else
-            tmds_p(i) <= iserdes_q1(i);
+            tmds(i) <= iserdes_q1(i);
           end if;
         end loop;
       end if;

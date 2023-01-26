@@ -26,7 +26,8 @@ package hdmi_rx_selectio_fm_pkg is
   constant FM_INTERVAL_US  : integer := 10;                                      -- interval
   constant FM_FTOL_MHZ     : real    := 0.5;                                     -- tolerance
   constant FM_FCOUNT_MAX   : integer := integer(real(FM_INTERVAL_US)*FM_FMAX_MHZ)-1;
-  constant FM_FCOUNT_44M   : integer := integer(FM_INTERVAL_US*44);              -- boundaries between different MMCM recipes
+  constant FM_FCOUNT_24M   : integer := integer(FM_INTERVAL_US*24);              -- boundaries between different MMCM recipes
+  constant FM_FCOUNT_44M   : integer := integer(FM_INTERVAL_US*44);              -- "
   constant FM_FCOUNT_70M   : integer := integer(FM_INTERVAL_US*70);              -- "
   constant FM_FCOUNT_120M  : integer := integer(FM_INTERVAL_US*120);             -- "
 

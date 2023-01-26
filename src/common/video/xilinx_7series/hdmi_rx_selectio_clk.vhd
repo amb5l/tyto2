@@ -276,17 +276,17 @@ begin
           end if;
         when DRP_RESET =>
           -- program for correct frequency range
-          drp_tbl_a(4 downto 0) <= (others => '0');
+          drp_tbl_a <= (others => '0');
           if fm_f > FM_FCOUNT_120M then
             drp_tbl_a(6 downto 5) <= "11";
           elsif fm_f > FM_FCOUNT_70M then
             drp_tbl_a(6 downto 5) <= "10";
           elsif fm_f > FM_FCOUNT_44M then
             drp_tbl_a(6 downto 5) <= "01";
-          else
-            drp_tbl_a(6 downto 5) <= "00";
           end if;
-          drp_state <= DRP_TBL;
+          if fm_f >= FM_FCOUNT_24M then -- catch low frequencies
+            drp_state <= DRP_TBL;
+          end if;
         when DRP_TBL => -- get table entry from sychronous ROM
           band      <= drp_tbl_a(6 downto 5);
           drp_state <= DRP_RD;
@@ -343,17 +343,17 @@ begin
   -- 1485Mbps (full HD) overclocks these, so we use a fictional static
   -- recipe for the MMCM to achieve timing closure:
   --  clkin1_period = 10ns (100MHz)
-  --  m = 9.5, d = 1, outdiv0 = 6.25, outdiv1 = 2
-  --  => VCO = 950MHz, pclk = 152MHz, sclk_p/n = 425MHz
+  --  m = 8.5, d = 1, outdiv0 = 5.6125, outdiv1 = 2
+  --  => VCO = 850MHz, pclk = 151.11MHz, sclk_p/n = 425MHz
   U_MMCM: component mmcme2_adv
     generic map (
       bandwidth            => "OPTIMIZED",
-      clkfbout_mult_f      => 9.5,
+      clkfbout_mult_f      => 8.5,
       clkfbout_phase       => 0.0,
       clkfbout_use_fine_ps => false,
       clkin1_period        => 10.0,
       clkin2_period        => 0.0,
-      clkout0_divide_f     => 6.25,
+      clkout0_divide_f     => 5.625,
       clkout0_duty_cycle   => 0.5,
       clkout0_phase        => 0.0,
       clkout0_use_fine_ps  => false,

@@ -68,36 +68,31 @@ architecture synth of hdmi_io is
   signal prst  : std_logic;
   signal pclk  : std_logic;
   signal tmds  : slv_9_0_t(0 to 2);
-  signal align : std_logic;
-  signal lock  : std_logic;
-  signal band  : std_logic_vector(1 downto 0);
 
 begin
-
-  status <= band & lock & align;
 
   U_HDMI_RX: component hdmi_rx_selectio
     generic map (
       fclk  => fclk
     )
     port map (
-      rst   => rst,
-      clk   => clk,
-      pclki => hdmi_rx_clk,
-      si    => hdmi_rx_d,
-      sclko => sclk,
-      prsto => prst,
-      pclko => pclk,
-      po    => tmds,
-      lock  => lock,
-      band  => band,
-      align => align
+      rst    => rst,
+      clk    => clk,
+      pclki  => hdmi_rx_clk,
+      si     => hdmi_rx_d,
+      sclko  => sclk,
+      prsto  => prst,
+      pclko  => pclk,
+      po     => tmds,
+      align  => status(0),
+      lock   => status(1),
+      band   => status(3 downto 2)
     );
 
   U_HDMI_TX: component hdmi_tx_selectio
     port map (
       sclki => sclk,
-      prsti => prst or not align,
+      prsti => prst,
       pclki => pclk,
       pi    => tmds,
       pclko => hdmi_tx_clk,

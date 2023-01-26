@@ -41,9 +41,9 @@ package hdmi_rx_selectio_pkg is
       prsto   : out   std_logic;
       pclko   : out   std_logic;
       po      : out   slv_9_0_t(0 to 2);
+      align   : out   std_logic;
       lock    : out   std_logic;
-      band    : out   std_logic_vector(1 downto 0);
-      align   : out   std_logic
+      band    : out   std_logic_vector(1 downto 0)
     );
   end component hdmi_rx_selectio;
 
@@ -77,9 +77,9 @@ entity hdmi_rx_selectio is
     prsto   : out   std_logic;                   -- pixel clock reset out
     pclko   : out   std_logic;                   -- pixel clock out
     po      : out   slv_9_0_t(0 to 2);           -- parallel TMDS out
+    align   : out   std_logic;
     lock    : out   std_logic;
-    band    : out   std_logic_vector(1 downto 0);
-    align   : out   std_logic
+    band    : out   std_logic_vector(1 downto 0)
   );
 end entity hdmi_rx_selectio;
 
@@ -89,10 +89,11 @@ architecture synth of hdmi_rx_selectio is
   signal pclk           : std_logic;                    -- main pixel clock
   signal sclk_p         : std_logic;                    -- serial clock +
   signal sclk_n         : std_logic;                    -- serial clock -
-  signal idelay_ld      : std_logic;                    -- load tap value
+
+  signal idelay_ld      : std_logic_vector(0 to 2);     -- load tap value
   signal idelay_tap     : std_logic_vector(4 downto 0); -- tap value (0..31)
   signal iserdes_ddly   : std_logic_vector(0 to 2);     -- serial input, delayed by IDELAYE2
-  signal iserdes_slip   : std_logic;                    -- bit slip
+  signal iserdes_slip   : std_logic_vector(0 to 2);     -- bit slip
   signal iserdes_q      : slv_9_0_t(0 to 2);
   signal iserdes_shift1 : std_logic_vector(0 to 2);     -- master-slave cascade
   signal iserdes_shift2 : std_logic_vector(0 to 2);     -- "
@@ -102,7 +103,6 @@ begin
   sclko <= sclk_p;
   prsto <= prst;
   pclko <= pclk;
-  po    <= iserdes_q;
 
   -- clock and reset generation
 
@@ -122,7 +122,7 @@ begin
       band    => band
     );
 
-  -- alignment control
+  -- alignment
 
   U_ALIGN: component hdmi_rx_selectio_align
     port map (
@@ -132,6 +132,7 @@ begin
       iserdes_slip => iserdes_slip,
       idelay_tap   => idelay_tap,
       idelay_ld    => idelay_ld,
+      tmds         => po,
       lock         => align
     );
 
@@ -156,7 +157,7 @@ begin
         c           => clk,
         ce          => '0',
         inc         => '0',
-        ld          => idelay_ld,
+        ld          => idelay_ld(i),
         ldpipeen    => '0',
         cntvaluein  => idelay_tap,
         cntvalueout => open,
@@ -201,14 +202,14 @@ begin
         ddly              => iserdes_ddly(i),
         ofb               => '0',
         bitslip           => iserdes_slip(i),
-        q1                => iserdes_q(i)(9),
-        q2                => iserdes_q(i)(8),
-        q3                => iserdes_q(i)(7),
-        q4                => iserdes_q(i)(6),
-        q5                => iserdes_q(i)(5),
-        q6                => iserdes_q(i)(4),
-        q7                => iserdes_q(i)(3),
-        q8                => iserdes_q(i)(2),
+        q1                => iserdes_q(i)(0),
+        q2                => iserdes_q(i)(1),
+        q3                => iserdes_q(i)(2),
+        q4                => iserdes_q(i)(3),
+        q5                => iserdes_q(i)(4),
+        q6                => iserdes_q(i)(5),
+        q7                => iserdes_q(i)(6),
+        q8                => iserdes_q(i)(7),
         o                 => open,
         shiftin1          => '0',
         shiftin2          => '0',
@@ -254,8 +255,8 @@ begin
         bitslip           => iserdes_slip(i),
         q1                => open,
         q2                => open,
-        q3                => iserdes_q(i)(1),
-        q4                => iserdes_q(i)(0),
+        q3                => iserdes_q(i)(8),
+        q4                => iserdes_q(i)(9),
         q5                => open,
         q6                => open,
         q7                => open,

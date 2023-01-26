@@ -64,7 +64,6 @@ architecture sim of tb_hdmi_rx_selectio_align is
   signal iserdes_q        : slv_9_0_t(0 to 2);
   signal iserdes_shift1   : std_logic_vector(0 to 2);
   signal iserdes_shift2   : std_logic_vector(0 to 2);
-  signal lock             : std_logic;
 
   signal video_count      : integer range 0 to VIDEO_PERIOD+CONTROL_PERIOD-1;
   signal de               : std_logic;
@@ -79,6 +78,9 @@ architecture sim of tb_hdmi_rx_selectio_align is
   signal tmds_s           : std_logic;
 
   signal shiftreg         : std_logic_vector(9 downto 0);
+
+  signal tmds_out         : slv_9_0_t(0 to 2);            -- DUT output
+  signal lock             : std_logic;                    -- DUT alignment status
 
   --------------------------------------------------------------------------------
   -- encode/decode functions and procedures
@@ -347,6 +349,7 @@ begin
       iserdes_slip => iserdes_slip,
       idelay_tap   => idelay_tap,
       idelay_ld    => idelay_ld,
+      tmds         => tmds_out,
       lock         => lock
     );
 
