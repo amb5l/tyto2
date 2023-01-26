@@ -36,6 +36,7 @@ package hdmi_rx_selectio_align_pkg is
       iserdes_slip : out   std_logic_vector(0 to 2);
       idelay_tap   : out   std_logic_vector(4 downto 0);
       idelay_ld    : out   std_logic_vector(0 to 2);
+      tmds_p       : out   slv_9_0_t(0 to 2);
       lock         : out   std_logic
     );
   end component hdmi_rx_selectio_align;
@@ -58,11 +59,12 @@ entity hdmi_rx_selectio_align is
   port (
     prst         : in    std_logic;
     pclk         : in    std_logic;
-    iserdes_q    : in    slv_9_0_t(0 to 2);
+    iserdes_q    : in    slv_9_0_t(0 to 2);            -- raw TMDS input
     iserdes_slip : out   std_logic_vector(0 to 2);     -- bit slip
     idelay_tap   : out   std_logic_vector(4 downto 0); -- tap value (0..31)
     idelay_ld    : out   std_logic_vector(0 to 2);     -- load tap value
-    lock         : out   std_logic
+    tmds_p       : out   slv_9_0_t(0 to 2);            -- aligned TMDS output
+    lock         : out   std_logic                     -- lock status
   );
 end entity hdmi_rx_selectio_align;
 
@@ -88,24 +90,31 @@ architecture synth of hdmi_rx_selectio_align is
     NEXT_CHANNEL
   );
 
-  signal state           : state_t;
-  signal ch              : integer range 0 to 2;             -- channel #
-  signal ch_q            : std_logic_vector(9 downto 0);     -- character from channel
-  signal bitslip         : integer range 0 to 9;             -- bit slip position
-  signal tap             : integer range 0 to 31;            -- delay tap
-  signal tap_ok          : std_logic;                        -- this tap is OK
-  signal tap_ok_prev     : std_logic;
-  signal tap_ok_mask     : std_logic_vector(0 to 31);        -- tap OK mask
-  signal pcount          : integer range 0 to PCOUNT_MAX;    -- count pixels
-  signal ccount          : integer range 0 to PCOUNT_MAX;    -- count control characters
-  signal scan_pass       : std_logic;                        -- scanning takes 2 passes
-  signal scan_start      : integer range 0 to 31;            -- start of OK section in progress
-  signal scan_this_start : integer range 0 to 31;            -- latest OK section start
-  signal scan_this_len   : integer range 0 to 31;            -- latest OK section length
-  signal scan_ok_start   : integer range 0 to 31;
-  signal scan_ok_len     : integer range 0 to 31;
-  signal scan_ok_tap     : integer range 0 to 31;
-  signal ch_lock         : std_logic_vector(0 to 2);
+  type skew_t is (SKEW_BAD, SKEW_0, SKEW_P1, SKEW_N1);
+  type ch_skew_t is array(1 to 2) of skew_t;
+
+  signal iserdes_cc       : slv_0_3_t(0 to 2);                -- control character per channel x 3 clocks
+  signal state            : state_t;                          -- state machine
+  signal ch               : integer range 0 to 2;             -- current channel #
+  signal bitslip          : integer range 0 to 9;             -- bit slip position
+  signal tap              : integer range 0 to 31;            -- delay tap
+  signal pcount           : integer range 0 to PCOUNT_MAX;    -- count pixels
+  signal ccount           : integer range 0 to PCOUNT_MAX;    -- count control characters
+  signal tap_ok           : std_logic;                        -- this tap is OK
+  signal tap_ok_mask      : std_logic_vector(0 to 31);        -- tap OK mask
+  signal scan_pass        : std_logic;                        -- scanning takes 2 passes
+  signal scan_start       : integer range 0 to 31;            -- start of OK tap range in progress
+  signal scan_tap_ok_prev : std_logic;                        -- previous scanned tap
+  signal scan_this_start  : integer range 0 to 31;            -- latest OK tap range start
+  signal scan_this_len    : integer range 0 to 31;            -- latest OK tap range length
+  signal scan_ok_start    : integer range 0 to 31;            -- best OK tap range start
+  signal scan_ok_len      : integer range 0 to 31;            -- best OK tap range length
+  signal scan_ok_tap      : integer range 0 to 31;            -- best OK tap
+  signal ch_lock          : std_logic_vector(0 to 2);         -- channel lock (serial)
+  signal ch_skew          : ch_skew_t;                        -- channel skew (parallel)
+  signal lock_p           : std_logic;                        -- parallel lock status
+  signal iserdes_q1       : slv_9_0_t(0 to 2);                -- iserdes_q delayed by 1 clock
+  signal iserdes_q2       : slv_9_0_t(1 to 2);                -- iserdes_q delayed by 2 clocks
 
 begin
 
@@ -122,42 +131,56 @@ begin
   begin
     if prst = '1' then
 
-      pcount          <= 0;
-      ccount          <= 0;
-      tap             <= 0;
-      tap_ok          <= '0';
-      tap_ok_mask     <= (others => '0');
-      bitslip         <= 0;
-      ch         <= 0;
-      scan_pass       <= '0';
-      tap_ok_prev     <= '1';
-      scan_start      <= 0;
-      scan_this_start <= 0;
-      scan_this_len   <= 0;
-      scan_ok_start   <= 0;
-      scan_ok_len     <= 0;
-      ch_lock         <= (others => '0');
-      lock            <= '0';
-      idelay_tap      <= (others => '0');
-      idelay_ld       <= (others => '0');
+      iserdes_cc       <= (others => (others => '0'));
+      pcount           <= 0;
+      ccount           <= 0;
+      tap              <= 0;
+      tap_ok           <= '0';
+      tap_ok_mask      <= (others => '0');
+      bitslip          <= 0;
+      ch               <= 0;
+      scan_pass        <= '0';
+      scan_start       <= 0;
+      scan_tap_ok_prev <= '1';
+      scan_this_start  <= 0;
+      scan_this_len    <= 0;
+      scan_ok_start    <= 0;
+      scan_ok_len      <= 0;
+      ch_lock          <= (others => '0');
+      idelay_tap       <= (others => '0');
+      idelay_ld        <= (others => '0');
+      ch_skew          <= (others => SKEW_BAD);
+      lock_p           <= '0';
+      iserdes_q1       <= (others => (others => '0'));
+      iserdes_q2       <= (others => (others => '0'));
 
     elsif rising_edge(pclk) then
-
-      ch_q <= iserdes_q(ch);
-      lock <= ch_lock(0) and ch_lock(1) and ch_lock(2);
 
       -- defaults
       idelay_ld    <= (others => '0');
       iserdes_slip <= (others => '0');
 
-      -- state machine
+      -- control character detection
+      for i in 0 to 2 loop
+        iserdes_cc(i)(0) <= '0';
+        if iserdes_q(i) = "1101010100" -- } control characters
+        or iserdes_q(i) = "0010101011" -- }
+        or iserdes_q(i) = "0101010100" -- }
+        or iserdes_q(i) = "1010101011" -- }
+        then
+          iserdes_cc(i)(0) <= '1';
+        end if;
+        iserdes_cc(i)(1 to 3) <= iserdes_cc(i)(0 to 2);
+      end loop;
+
+      -- serial alignment state machine
       case state is
 
         when IDLE =>
           tap_ok  <= '0';
-          if ch_lock(ch) = '1' then -- locked, so don't change anything
+          if ch_lock(ch) = '1' then -- locked, so don't change tap
             state <= CC_COUNT;
-          else -- unlocked, so start searching
+          else -- unlocked, so try all taps
             tap         <= 0;
             tap_ok_mask <= (others => '0');
             bitslip     <= 0;
@@ -175,11 +198,7 @@ begin
 
         -- ...then look for control characters for (interval) pclk cycles...
         when CC_COUNT =>
-          if ch_q = "1101010100" -- } control characters
-          or ch_q = "0010101011" -- }
-          or ch_q = "0101010100" -- }
-          or ch_q = "1010101011" -- }
-          then
+          if iserdes_cc(ch)(0) = '1' then
             ccount <= ccount+1;
           else
             ccount <= 0;
@@ -209,9 +228,9 @@ begin
         when CHECK_LOSS =>
           if tap_ok = '0' then -- we have lost lock
             ch_lock(ch) <= '0';
-            state <= IDLE;
+            state       <= IDLE;
           else
-            state <= NEXT_CHANNEL;
+            state       <= NEXT_CHANNEL;
           end if;
 
         -- not currently locked, so move to next tap or check results
@@ -231,31 +250,31 @@ begin
             state <= NEXT_BITSLIP;
           elsif tap_ok_mask = x"FFFFFFFF" then -- shortcut if all taps OK
             if ch_lock(ch) = '0' then -- we have acquired lock
-              ch_lock(ch) <= '1';
-              idelay_tap             <= "01111"; -- set delay to centre
-              idelay_ld(ch)          <= '1';
+              ch_lock(ch)   <= '1';
+              idelay_tap    <= "01111"; -- set delay to centre
+              idelay_ld(ch) <= '1';
             end if;
             state <= NEXT_CHANNEL;
           else -- all taps not OK so scan
-            scan_pass       <= '0';
-            tap_ok_prev     <= '1';
-            scan_start      <= 0;
-            scan_this_start <= 0;
-            scan_this_len   <= 0;
-            scan_ok_start   <= 0;
-            scan_ok_len     <= 0;
-            state           <= TAP_SCAN_1;
+            scan_pass        <= '0';
+            scan_start       <= 0;
+            scan_tap_ok_prev <= '1';
+            scan_this_start  <= 0;
+            scan_this_len    <= 0;
+            scan_ok_start    <= 0;
+            scan_ok_len      <= 0;
+            state            <= TAP_SCAN_1;
           end if;
 
         -- scan all tap outcomes (2 passes)
         when TAP_SCAN_1 =>
-          if tap_ok_mask(tap) = '1' and tap_ok_prev = '0' then -- OK section start
+          if tap_ok_mask(tap) = '1' and scan_tap_ok_prev = '0' then -- OK section start
             scan_start <= tap;
-          elsif tap_ok_mask(tap) = '0' and tap_ok_prev = '1' then -- OK section end
+          elsif tap_ok_mask(tap) = '0' and scan_tap_ok_prev = '1' then -- OK section end
             scan_this_start <= scan_start;
             scan_this_len <= ((32+tap)-scan_start) mod 32;
           end if;
-          tap_ok_prev <= tap_ok_mask(tap);
+          scan_tap_ok_prev <= tap_ok_mask(tap);
           if tap = 31 then
             tap <= 0;
             scan_pass <= not scan_pass;
@@ -286,9 +305,9 @@ begin
         -- ...then act on result
         when TAP_SCAN_4 =>
           if scan_ok_len >= EYE_OPEN_MIN then -- lock established
-            ch_lock(ch) <= '1';
-            idelay_ld(ch)          <= '1';
-            idelay_tap             <= std_logic_vector(to_unsigned(scan_ok_tap,5));
+            ch_lock(ch)   <= '1';
+            idelay_ld(ch) <= '1';
+            idelay_tap    <= std_logic_vector(to_unsigned(scan_ok_tap,5));
           end if;
           -- assumption: no point doing more bit slips
           state <= NEXT_CHANNEL;
@@ -314,7 +333,53 @@ begin
 
       end case;
 
+      -- parallel deskew
+      if ch_lock = "111" then -- full serial lock
+        if iserdes_cc(0) = "1100" then -- leading edge of control period
+          for i in 1 to 2 loop
+            -- compare channel i with channel 0
+            if iserdes_cc(i) = "1100" then -- channel i is aligned
+              ch_skew(i) <= SKEW_0;
+            elsif iserdes_cc(i) = "1000" then -- channel i is 1 clock behind
+              ch_skew(i) <= SKEW_N1;
+            elsif iserdes_cc(i) = "1110" then -- channel i is 1 clock ahead
+              ch_skew(i) <= SKEW_P1;
+            else -- failure
+              ch_skew(i) <= SKEW_BAD;
+            end if;
+          end loop;
+        end if;
+      end if;
+
+      -- parallel lock status
+      lock_p <= '0';
+      if ch_lock = "111" -- full serial lock
+      and ch_skew(1) /= SKEW_BAD -- channel 1 parallel deskewed
+      and ch_skew(2) /= SKEW_BAD -- channel 2 parallel deskewed
+      then
+        lock_p <= '1';
+      end if;
+
+      -- output
+      iserdes_q1(0 to 2) <= iserdes_q(0 to 2);
+      iserdes_q2(1 to 2) <= iserdes_q1(1 to 2);
+      tmds_p <= (others => (others => '0'));
+      if lock_p = '1' then
+        tmds_p(0) <= iserdes_q1(0);
+        for i in 1 to 2 loop
+          if ch_skew(i) = SKEW_P1 then
+            tmds_p(i) <= iserdes_q2(i);
+          elsif ch_skew(i) = SKEW_N1 then
+            tmds_p(i) <= iserdes_q(i);
+          else
+            tmds_p(i) <= iserdes_q1(i);
+          end if;
+        end loop;
+      end if;
+
     end if;
   end process;
+
+  lock <= lock_p;
 
 end architecture synth;

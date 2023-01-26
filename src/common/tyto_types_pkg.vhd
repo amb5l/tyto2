@@ -23,6 +23,7 @@ package tyto_types_pkg is
   type    sl2d_t is array(natural range <>, natural range <>) of std_logic;
   type    slv_31_0_t is array(natural range <>) of std_logic_vector(31 downto 0);
   type    slv_1_0_t is array(natural range <>) of std_logic_vector(1 downto 0);
+  type    slv_0_3_t is array(natural range <>) of std_logic_vector(0 to 3);
   type    slv_3_0_t is array(natural range <>) of std_logic_vector(3 downto 0);
   type    slv_7_0_t is array(natural range <>) of std_logic_vector(7 downto 0);
   type    slv_7_2_t is array(natural range <>) of std_logic_vector(7 downto 2);

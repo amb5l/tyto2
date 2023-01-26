@@ -75,7 +75,7 @@ architecture sim of tb_hdmi_rx_selectio_align is
   signal check_c          : std_logic_vector(1 downto 0);
 
   signal tmds_p           : std_logic_vector(9 downto 0); -- TMDS parallel (character)
-  signal tmds_dc          : integer range -5 to 5 := 0; -- TMDS DC balance counter
+  signal tmds_dc          : integer range -4 to 4 := 0;   -- TMDS encode DC balance counter
   signal tmds_s           : std_logic;
 
   signal shiftreg         : std_logic_vector(9 downto 0);
