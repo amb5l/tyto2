@@ -329,7 +329,7 @@ begin
   begin
     if prst_a = '1' then
       prst_s <= (others => '1');
-      prsto  <= prst_s(1);
+      prsto  <= '1';
     elsif rising_edge(pclk) then
       prst_s <= prst_a & prst_s(0);
       prsto  <= prst_s(1);

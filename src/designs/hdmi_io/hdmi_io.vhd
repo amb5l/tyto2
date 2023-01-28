@@ -67,7 +67,7 @@ architecture synth of hdmi_io is
   signal sclk  : std_logic;
   signal prst  : std_logic;
   signal pclk  : std_logic;
-  signal tmds  : slv_9_0_t(0 to 2);
+  signal tmds  : slv10_vector(0 to 2);
 
 begin
 

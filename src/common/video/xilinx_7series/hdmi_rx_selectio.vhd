@@ -40,7 +40,7 @@ package hdmi_rx_selectio_pkg is
       sclko   : out   std_logic;
       prsto   : out   std_logic;
       pclko   : out   std_logic;
-      po      : out   slv_9_0_t(0 to 2);
+      po      : out   slv10_vector(0 to 2);
       align   : out   std_logic;
       lock    : out   std_logic;
       band    : out   std_logic_vector(1 downto 0)
@@ -76,7 +76,7 @@ entity hdmi_rx_selectio is
     sclko   : out   std_logic;                   -- serial clock out
     prsto   : out   std_logic;                   -- pixel clock reset out
     pclko   : out   std_logic;                   -- pixel clock out
-    po      : out   slv_9_0_t(0 to 2);           -- parallel TMDS out
+    po      : out   slv10_vector(0 to 2);        -- parallel TMDS out
     align   : out   std_logic;
     lock    : out   std_logic;
     band    : out   std_logic_vector(1 downto 0)
@@ -94,7 +94,7 @@ architecture synth of hdmi_rx_selectio is
   signal idelay_tap     : std_logic_vector(4 downto 0); -- tap value (0..31)
   signal iserdes_ddly   : std_logic_vector(0 to 2);     -- serial input, delayed by IDELAYE2
   signal iserdes_slip   : std_logic_vector(0 to 2);     -- bit slip
-  signal iserdes_q      : slv_9_0_t(0 to 2);
+  signal iserdes_q      : slv10_vector(0 to 2);
   signal iserdes_shift1 : std_logic_vector(0 to 2);     -- master-slave cascade
   signal iserdes_shift2 : std_logic_vector(0 to 2);     -- "
 
@@ -154,7 +154,7 @@ begin
       port map (
         regrst      => '0',
         cinvctrl    => '0',
-        c           => clk,
+        c           => pclk,
         ce          => '0',
         inc         => '0',
         ld          => idelay_ld(i),

@@ -28,3 +28,4 @@ create_generated_clock -name sclk_p   [get_pins U_MAIN/U_HDMI_RX/U_CLK/U_MMCM/CL
 create_generated_clock -name sclk_n   [get_pins U_MAIN/U_HDMI_RX/U_CLK/U_MMCM/CLKOUT1B]
 
 # false paths
+set_false_path -from [get_clocks clk_100m] -to [get_clocks pclk]

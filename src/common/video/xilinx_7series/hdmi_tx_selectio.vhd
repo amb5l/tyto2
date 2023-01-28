@@ -32,7 +32,7 @@ package hdmi_tx_selectio_pkg is
       sclki   : in    std_logic;
       prsti   : in    std_logic;
       pclki   : in    std_logic;
-      pi      : in    slv_9_0_t(0 to 2);
+      pi      : in    slv10_vector(0 to 2);
       pclko   : out   std_logic;
       so      : out   std_logic_vector(0 to 2)
     );
@@ -58,7 +58,7 @@ entity hdmi_tx_selectio is
     sclki   : in    std_logic;
     prsti   : in    std_logic;
     pclki   : in    std_logic;
-    pi      : in    slv_9_0_t(0 to 2);
+    pi      : in    slv10_vector(0 to 2);
     pclko   : out   std_logic;
     so      : out   std_logic_vector(0 to 2)
   );
