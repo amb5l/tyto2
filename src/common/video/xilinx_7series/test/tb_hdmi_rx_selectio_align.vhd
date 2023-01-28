@@ -61,7 +61,7 @@ architecture sim of tb_hdmi_rx_selectio_align is
   signal idelay_ld        : std_logic_vector(0 to 2);
   signal iserdes_ddly     : std_logic_vector(0 to 2);
   signal iserdes_slip     : std_logic_vector(0 to 2);
-  signal iserdes_q        : slv_9_0_t(0 to 2);
+  signal iserdes_q        : slv10_vector(0 to 2);
   signal iserdes_shift1   : std_logic_vector(0 to 2);
   signal iserdes_shift2   : std_logic_vector(0 to 2);
 
@@ -79,7 +79,7 @@ architecture sim of tb_hdmi_rx_selectio_align is
 
   signal shiftreg         : std_logic_vector(9 downto 0);
 
-  signal tmds_out         : slv_9_0_t(0 to 2);            -- DUT output
+  signal tmds_out         : slv10_vector(0 to 2);         -- DUT output
   signal lock             : std_logic;                    -- DUT alignment status
 
   --------------------------------------------------------------------------------

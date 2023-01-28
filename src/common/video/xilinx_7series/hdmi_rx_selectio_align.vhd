@@ -27,16 +27,16 @@ package hdmi_rx_selectio_align_pkg is
 
   component hdmi_rx_selectio_align is
     generic (
-      interval     : integer := 2048 -- can reduce for simulation
+      interval     : integer := 2048
     );
     port (
       prst         : in    std_logic;
       pclk         : in    std_logic;
-      iserdes_q    : in    slv_9_0_t(0 to 2);
+      iserdes_q    : in    slv10_vector(0 to 2);
       iserdes_slip : out   std_logic_vector(0 to 2);
       idelay_tap   : out   std_logic_vector(4 downto 0);
       idelay_ld    : out   std_logic_vector(0 to 2);
-      tmds         : out   slv_9_0_t(0 to 2);
+      tmds         : out   slv10_vector(0 to 2);
       lock         : out   std_logic
     );
   end component hdmi_rx_selectio_align;
@@ -54,16 +54,16 @@ library work;
 
 entity hdmi_rx_selectio_align is
   generic (
-    interval     : integer := 2048
+    interval     : integer := 2048                     -- can reduce for simulation
   );
   port (
     prst         : in    std_logic;
     pclk         : in    std_logic;
-    iserdes_q    : in    slv_9_0_t(0 to 2);            -- raw TMDS input
+    iserdes_q    : in    slv10_vector(0 to 2);         -- raw TMDS input
     iserdes_slip : out   std_logic_vector(0 to 2);     -- bit slip
     idelay_tap   : out   std_logic_vector(4 downto 0); -- tap value (0..31)
     idelay_ld    : out   std_logic_vector(0 to 2);     -- load tap value
-    tmds         : out   slv_9_0_t(0 to 2);            -- aligned TMDS output
+    tmds         : out   slv10_vector(0 to 2);         -- aligned TMDS output
     lock         : out   std_logic                     -- lock status
   );
 end entity hdmi_rx_selectio_align;
@@ -93,28 +93,28 @@ architecture synth of hdmi_rx_selectio_align is
   type skew_t is (SKEW_BAD, SKEW_0, SKEW_P1, SKEW_N1);
   type ch_skew_t is array(1 to 2) of skew_t;
 
-  signal iserdes_cc       : slv_0_3_t(0 to 2);                -- control character per channel x 3 clocks
-  signal state            : state_t;                          -- state machine
-  signal ch               : integer range 0 to 2;             -- current channel #
-  signal bitslip          : integer range 0 to 9;             -- bit slip position
-  signal tap              : integer range 0 to 31;            -- delay tap
-  signal pcount           : integer range 0 to PCOUNT_MAX;    -- count pixels
-  signal ccount           : integer range 0 to PCOUNT_MAX;    -- count control characters
-  signal tap_ok           : std_logic;                        -- this tap is OK
-  signal tap_ok_mask      : std_logic_vector(0 to 31);        -- tap OK mask
-  signal scan_pass        : std_logic;                        -- scanning takes 2 passes
-  signal scan_start       : integer range 0 to 31;            -- start of OK tap range in progress
-  signal scan_tap_ok_prev : std_logic;                        -- previous scanned tap
-  signal scan_this_start  : integer range 0 to 31;            -- latest OK tap range start
-  signal scan_this_len    : integer range 0 to 31;            -- latest OK tap range length
-  signal scan_ok_start    : integer range 0 to 31;            -- best OK tap range start
-  signal scan_ok_len      : integer range 0 to 31;            -- best OK tap range length
-  signal scan_ok_tap      : integer range 0 to 31;            -- best OK tap
-  signal ch_lock          : std_logic_vector(0 to 2);         -- channel lock (serial)
-  signal ch_skew          : ch_skew_t;                        -- channel skew (parallel)
-  signal lock_p           : std_logic;                        -- parallel lock status
-  signal iserdes_q1       : slv_9_0_t(0 to 2);                -- iserdes_q delayed by 1 clock
-  signal iserdes_q2       : slv_9_0_t(1 to 2);                -- iserdes_q delayed by 2 clocks
+  signal iserdes_cc       : slv4_vector(0 to 2);                -- control character: 4 clocks x 3 channels
+  signal state            : state_t;                            -- state machine
+  signal ch               : integer range 0 to 2;               -- current channel #
+  signal bitslip          : integer range 0 to 9;               -- bit slip position
+  signal tap              : integer range 0 to 31;              -- delay tap
+  signal pcount           : integer range 0 to PCOUNT_MAX;      -- count pixels
+  signal ccount           : integer range 0 to PCOUNT_MAX;      -- count control characters
+  signal tap_ok           : std_logic;                          -- this tap is OK
+  signal tap_ok_mask      : std_logic_vector(0 to 31);          -- tap OK mask
+  signal scan_pass        : std_logic;                          -- scanning takes 2 passes
+  signal scan_start       : integer range 0 to 31;              -- start of OK tap range in progress
+  signal scan_tap_ok_prev : std_logic;                          -- previous scanned tap
+  signal scan_this_start  : integer range 0 to 31;              -- latest OK tap range start
+  signal scan_this_len    : integer range 0 to 31;              -- latest OK tap range length
+  signal scan_ok_start    : integer range 0 to 31;              -- best OK tap range start
+  signal scan_ok_len      : integer range 0 to 31;              -- best OK tap range length
+  signal scan_ok_tap      : integer range 0 to 31;              -- best OK tap
+  signal ch_lock          : std_logic_vector(0 to 2);           -- channel lock (serial)
+  signal ch_skew          : ch_skew_t;                          -- channel skew (parallel)
+  signal lock_p           : std_logic;                          -- parallel lock status
+  signal iserdes_q1       : slv10_vector(0 to 2);               -- iserdes_q delayed by 1 clock
+  signal iserdes_q2       : slv10_vector(1 to 2);               -- iserdes_q delayed by 2 clocks
 
 begin
 
@@ -161,7 +161,7 @@ begin
       iserdes_slip <= (others => '0');
 
       -- control character detection
-      for i in 0 to 2 loop
+      for i in 0 to 2 loop -- for each channel
         iserdes_cc(i)(0) <= '0';
         if iserdes_q(i) = "1101010100" -- } control characters
         or iserdes_q(i) = "0010101011" -- }
@@ -170,7 +170,7 @@ begin
         then
           iserdes_cc(i)(0) <= '1';
         end if;
-        iserdes_cc(i)(1 to 3) <= iserdes_cc(i)(0 to 2);
+        iserdes_cc(i)(3 downto 1) <= iserdes_cc(i)(2 downto 0);
       end loop;
 
       -- serial alignment state machine

@@ -20,6 +20,17 @@ library ieee;
 
 package tyto_types_pkg is
 
+  -- 2023+ naming scheme
+  subtype slv4                is std_logic_vector(3 downto 0);
+  subtype slv8                is std_logic_vector(7 downto 0);
+  subtype slv10               is std_logic_vector(9 downto 0);
+  type    slv4_vector         is array(natural range <>) of slv4;
+  type    slv8_vector         is array(natural range <>) of slv8;
+  type    slv10_vector        is array(natural range <>) of slv10;
+  type    std_logic_vector_2d is array(natural range <>, natural range <>) of std_logic;
+  type    slv8_vector_2d      is array(natural range <>, natural range <>) of slv8;
+
+  -- old naming scheme
   type    sl2d_t is array(natural range <>, natural range <>) of std_logic;
   type    slv_31_0_t is array(natural range <>) of std_logic_vector(31 downto 0);
   type    slv_1_0_t is array(natural range <>) of std_logic_vector(1 downto 0);
