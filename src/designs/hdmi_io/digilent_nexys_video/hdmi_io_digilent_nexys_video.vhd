@@ -2,7 +2,7 @@
 -- hdmi_io_digilent_nexys_video.vhd                                           --
 -- Board specific top level wrapper for the hdmi_io design.                   --
 --------------------------------------------------------------------------------
--- (C) Copyright 2022 Adam Barnes <ambarnes@gmail.com>                        --
+-- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
 -- you can redistribute it and/or modify it under the terms of the GNU Lesser --
 -- General Public License as published by the Free Software Foundation,       --

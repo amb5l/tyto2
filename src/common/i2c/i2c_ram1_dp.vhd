@@ -1,12 +1,30 @@
+--------------------------------------------------------------------------------
+-- i2c_ram1_dp.vhd                                                            --
+-- I2C 24LCxx EEPROM emulating DP RAM, 1 byte sub address, 128-2048 bytes.    --
+--  frequency measurement module.                                             --
+--------------------------------------------------------------------------------
+-- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
+-- This file is part of The Tyto Project. The Tyto Project is free software:  --
+-- you can redistribute it and/or modify it under the terms of the GNU Lesser --
+-- General Public License as published by the Free Software Foundation,       --
+-- either version 3 of the License, or (at your option) any later version.    --
+-- The Tyto Project is distributed in the hope that it will be useful, but    --
+-- WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY --
+-- or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public     --
+-- License for more details. You should have received a copy of the GNU       --
+-- Lesser General Public License along with The Tyto Project. If not, see     --
+-- https://www.gnu.org/licenses/.                                             --
+--------------------------------------------------------------------------------
+
 library ieee;
   use ieee.std_logic_1164.all;
 
 library work;
   use work.tyto_types_pkg.all;
 
-package i2c_ram1_pkg is
+package i2c_ram1_dp_pkg is
 
-  component i2c_ram1 is
+  component i2c_ram1_dp is
     generic (
       addr       : std_logic_vector(7 downto 1) := "1010000";
       depth_log2 : integer range 7 to 11 := 7;
@@ -23,9 +41,11 @@ package i2c_ram1_pkg is
       dp_din     : in   std_logic_vector(7 downto 0);
       dp_dout    : out  std_logic_vector(7 downto 0)
     );
-  end component i2c_ram1;
+  end component i2c_ram1_dp;
 
-end package i2c_ram1_pkg;
+end package i2c_ram1_dp_pkg;
+
+--------------------------------------------------------------------------------
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -34,7 +54,7 @@ library ieee;
 library work;
   use work.tyto_types_pkg.all;
 
-entity i2c_ram1 is
+entity i2c_ram1_dp is
   generic (
     addr       : std_logic_vector(7 downto 1) := "1010000"; -- slave address (base)
     depth_log2 : integer range 7 to 11 := 7;                   -- 2^depth_log2 bytes
@@ -51,9 +71,9 @@ entity i2c_ram1 is
     dp_din     : in   std_logic_vector(7 downto 0);            -- RAM data in      }
     dp_dout    : out  std_logic_vector(7 downto 0)             -- RAM data out     }
 	);
-end entity i2c_ram1;
+end entity i2c_ram1_dp;
 
-architecture synth of i2c_ram1 is
+architecture synth of i2c_ram1_dp is
 
   type phase_t is (SLAVE_ADDR,SUB_ADDR,WRITE_DATA,READ_DATA);
 
