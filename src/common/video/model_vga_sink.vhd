@@ -94,6 +94,7 @@ begin
       hieght     <= 0;
       capturing  <= false;
       interlaced <= false;
+      cap_stb    <= '0';
 
     else
 
