@@ -29,7 +29,7 @@ VIVADO_DSN_VHDL:=\
 	$(SRC)/common/video/video_out_test_pattern.vhd \
 	$(SRC)/common/video/hdmi_tx_encoder.vhd \
 	$(SRC)/common/video/vga_to_hdmi.vhd \
-	$(SRC)/common/basic/clkengen.vhd \
+	$(SRC)/common/audio_io/xilinx_7series/audio_clock.vhd \
 	$(SRC)/common/audio_io/audio_out_test_tone.vhd \
 	$(SRC)/common/basic/xilinx_7series/serialiser_10to1_selectio.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
