@@ -62,7 +62,7 @@ entity hdmi_io_digilent_nexys_video is
     -- hdmi_rx_sda     : inout std_logic;
     -- hdmi_rx_cec     : in    std_logic;
     -- hdmi_rx_hpd     : out   std_logic;
-    -- hdmi_rx_txen    : out   std_logic;
+    hdmi_rx_txen  : out   std_logic;
 
     -- HDMI TX
     hdmi_tx_clk_p : out   std_logic;
@@ -229,7 +229,7 @@ begin
       rst_200m_s(0 to 1) <= (others => '1');
       rst_200m <= '1';
     elsif rising_edge(clk_200m) then
-      rst_200m_s(0 to 1) <= rst_a & rst_100m_s(0);
+      rst_200m_s(0 to 1) <= rst_a & rst_200m_s(0);
       rst_200m <= rst_200m_s(1);
     end if;
   end process;
@@ -261,6 +261,8 @@ begin
       hdmi_tx_d   => hdmi_tx_d,
       status      => led(3 downto 0)
     );
+
+  hdmi_rx_txen <= '1';
 
   --------------------------------------------------------------------------------
   -- I/O primitives

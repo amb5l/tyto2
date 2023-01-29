@@ -147,6 +147,7 @@ begin
       scan_ok_start    <= 0;
       scan_ok_len      <= 0;
       ch_lock          <= (others => '0');
+      iserdes_slip     <= (others => '0');
       idelay_tap       <= (others => '0');
       idelay_ld        <= (others => '0');
       ch_skew          <= (others => SKEW_BAD);
@@ -308,9 +309,11 @@ begin
             ch_lock(ch)   <= '1';
             idelay_ld(ch) <= '1';
             idelay_tap    <= std_logic_vector(to_unsigned(scan_ok_tap,5));
+            state <= NEXT_CHANNEL;
+          else
+            state <= NEXT_BITSLIP;
           end if;
           -- assumption: no point doing more bit slips
-          state <= NEXT_CHANNEL;
 
         when NEXT_BITSLIP =>
           if bitslip /= 9 then -- move to next bitslip position
