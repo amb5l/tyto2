@@ -18,7 +18,7 @@
 set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets {clki_100m_IBUF}]
 
 # HDMI input clock set at 100MHz to match fictional recipe for MMCM
-create_clock -add -name hdmi_rx_clk -period 10.00 -waveform {0 5} [get_pins U_BUFG/O]
+create_clock -add -name hdmi_rx_clk -period 10.00 -waveform {0 5} [get_ports hdmi_rx_clk_p]
 
 # clock renaming
 create_generated_clock -name clk_100m [get_pins U_MMCM/MMCM/CLKOUT0]
@@ -29,3 +29,6 @@ create_generated_clock -name sclk_n   [get_pins U_MAIN/U_HDMI_RX/U_CLK/U_MMCM/CL
 
 # false paths
 set_false_path -from [get_clocks clk_100m] -to [get_clocks pclk]
+set_false_path -from [get_clocks pclk] -to [get_clocks clk_100m]
+set_false_path -from [get_clocks clk_100m] -to [get_clocks hdmi_rx_clk]
+set_false_path -from [get_clocks hdmi_rx_clk] -to [get_clocks clk_100m]

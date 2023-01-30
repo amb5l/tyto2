@@ -115,6 +115,7 @@ architecture sim of tb_hdmi_io_digilent_nexys_video is
   signal cap_vga_g          : std_logic_vector(7 downto 0);
   signal cap_vga_b          : std_logic_vector(7 downto 0);
 
+  signal cap_vga_wait       : std_logic;
   signal cap_rst            : std_logic;
   signal cap_stb            : std_logic;
 
@@ -399,12 +400,12 @@ begin
   -- HDMI clock and data (with skew)
   hdmi_rx_clk_p  <=     tpg_pix_clk;
   hdmi_rx_clk_n  <= not tpg_pix_clk;
-  hdmi_rx_d_p(0) <= transport     tpg_tmds_s(0) after TDELAY_HDMI;
-  hdmi_rx_d_n(0) <= transport not tpg_tmds_s(0) after TDELAY_HDMI;
-  hdmi_rx_d_p(1) <= transport     tpg_tmds_s(1) after TDELAY_HDMI+TSKEW_HDMI;
-  hdmi_rx_d_n(1) <= transport not tpg_tmds_s(1) after TDELAY_HDMI+TSKEW_HDMI;
-  hdmi_rx_d_p(2) <= transport     tpg_tmds_s(2) after TDELAY_HDMI+TSKEW_HDMI+TSKEW_HDMI;
-  hdmi_rx_d_n(2) <= transport not tpg_tmds_s(2) after TDELAY_HDMI+TSKEW_HDMI+TSKEW_HDMI;
+  hdmi_rx_d_p(0) <=     tpg_tmds_s(0); -- transport after TDELAY_HDMI;
+  hdmi_rx_d_n(0) <= not tpg_tmds_s(0); -- transport after TDELAY_HDMI;
+  hdmi_rx_d_p(1) <=     tpg_tmds_s(1); -- transport after TDELAY_HDMI+TSKEW_HDMI;
+  hdmi_rx_d_n(1) <= not tpg_tmds_s(1); -- transport after TDELAY_HDMI+TSKEW_HDMI;
+  hdmi_rx_d_p(2) <=     tpg_tmds_s(2); -- transport after TDELAY_HDMI+TSKEW_HDMI+TSKEW_HDMI;
+  hdmi_rx_d_n(2) <= not tpg_tmds_s(2); -- transport after TDELAY_HDMI+TSKEW_HDMI+TSKEW_HDMI;
 
   -- design under test
   DUT: component hdmi_io_digilent_nexys_video
@@ -457,9 +458,18 @@ begin
       vga_p(0)   => cap_vga_b
     );
 
+  process(cap_vga_rst,cap_vga_vs)
+  begin
+    if cap_vga_rst = '1' then
+      cap_vga_wait <= '1';
+    elsif cap_vga_vs = '1' then
+      cap_vga_wait <= '0';
+    end if;
+  end process;
+
   CAPTURE: entity work.model_vga_sink
     port map (
-      vga_rst  => cap_vga_rst,
+      vga_rst  => cap_vga_rst or cap_vga_wait,
       vga_clk  => cap_vga_clk,
       vga_vs   => cap_vga_vs,
       vga_hs   => cap_vga_hs,

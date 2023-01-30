@@ -187,7 +187,7 @@ begin
         srval_q4          => '0'
       )
       port map (
-        rst               => rst,
+        rst               => prst,
         dynclksel         => '0',
         clk               => sclk_p,
         clkb              => sclk_n,
@@ -238,7 +238,7 @@ begin
         srval_q4          => '0'
       )
       port map (
-        rst               => rst,
+        rst               => prst,
         dynclksel         => '0',
         clk               => sclk_p,
         clkb              => sclk_n,

@@ -78,8 +78,6 @@ architecture synth of hdmi_rx_selectio_align is
     IDLE,
     LOAD_TAP,
     CC_COUNT,
-    CC_FINAL,
-    CHECK_LOSS,
     NEXT_TAP,
     CHECK_LOCK,
     TAP_SCAN_1,
@@ -99,7 +97,7 @@ architecture synth of hdmi_rx_selectio_align is
   signal bitslip          : integer range 0 to 9;               -- bit slip position
   signal tap              : integer range 0 to 31;              -- delay tap
   signal pcount           : integer range 0 to PCOUNT_MAX;      -- count pixels
-  signal ccount           : integer range 0 to PCOUNT_MAX;      -- count control characters
+  signal ccount           : integer range 0 to 15;              -- count control characters
   signal tap_ok           : std_logic;                          -- this tap is OK
   signal tap_ok_mask      : std_logic_vector(0 to 31);          -- tap OK mask
   signal scan_pass        : std_logic;                          -- scanning takes 2 passes
@@ -178,13 +176,15 @@ begin
       case state is
 
         when IDLE =>
-          tap_ok  <= '0';
+          pcount      <= 0;
+          ccount      <= 0;
+          tap_ok      <= '0';
+          tap         <= 0;
+          tap_ok_mask <= (others => '0');
+          bitslip     <= 0;
           if ch_lock(ch) = '1' then -- locked, so don't change tap
-            state <= CC_COUNT;
+            state  <= CC_COUNT;
           else -- unlocked, so try all taps
-            tap         <= 0;
-            tap_ok_mask <= (others => '0');
-            bitslip     <= 0;
             state       <= LOAD_TAP;
           end if;
 
@@ -192,46 +192,38 @@ begin
         when LOAD_TAP =>
           idelay_tap <= std_logic_vector(to_unsigned(tap,5));
           idelay_ld(ch) <= '1';
-          pcount              <= 0;
-          ccount              <= 0;
-          tap_ok              <= '0';
-          state               <= CC_COUNT;
+          pcount <= 0;
+          ccount <= 0;
+          tap_ok <= '0';
+          state  <= CC_COUNT;
 
         -- ...then look for control characters for (interval) pclk cycles...
         when CC_COUNT =>
-          if iserdes_cc(ch)(0) = '1' then
-            ccount <= ccount+1;
-          else
-            ccount <= 0;
-          end if;
-          if ccount >= CCOUNT_MIN then -- this tap was OK
-            tap_ok <= '1';
-          end if;
-          if pcount = PCOUNT_MAX then
+          if pcount = PCOUNT_MAX then -- end of interval
             pcount <= 0;
-            state <= CC_FINAL;
+            if ch_lock(ch) = '1' then -- lock lost
+              ch_lock(ch) <= '0';
+              ccount      <= 0;
+              state       <= IDLE;
+            else
+              state       <= NEXT_TAP;
+            end if;
           else
             pcount <= pcount+1;
-          end if;
+            if iserdes_cc(ch)(0) = '1' then
+              ccount <= ccount+1;
+              if ccount = CCOUNT_MIN-1 then -- this tap was OK
+                tap_ok <= '1';
+                if ch_lock(ch) = '1' then -- lock maintained
+                  state  <= NEXT_CHANNEL;
+                else
+                  state <= NEXT_TAP;
+                end if;
+              end if;
+            else
+              ccount <= 0;
+            end if;
 
-        -- ...then check final character
-        when CC_FINAL =>
-          if ccount >= CCOUNT_MIN then -- this tap was OK
-            tap_ok <= '1';
-          end if;
-          if ch_lock(ch) = '1' then
-            state <= CHECK_LOSS;
-          else
-            state <= NEXT_TAP;
-          end if;
-
-        -- currently locked, so check for loss
-        when CHECK_LOSS =>
-          if tap_ok = '0' then -- we have lost lock
-            ch_lock(ch) <= '0';
-            state       <= IDLE;
-          else
-            state       <= NEXT_CHANNEL;
           end if;
 
         -- not currently locked, so move to next tap or check results

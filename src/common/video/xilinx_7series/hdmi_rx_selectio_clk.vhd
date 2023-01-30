@@ -112,6 +112,10 @@ architecture synth of hdmi_rx_selectio_clk is
   signal prst_s         : std_logic_vector(0 to 1);         -- pclk domain reset synchroniser
   signal pclk           : std_logic;
 
+  attribute async_reg : string;
+  attribute async_reg of mmcm_lock_s : signal is "TRUE";
+  attribute async_reg of prst_s      : signal is "TRUE";
+
 begin
 
   pclko <= pclk;

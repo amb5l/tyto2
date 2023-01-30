@@ -90,6 +90,12 @@ architecture synth of hdmi_rx_selectio_fm is
   signal c_fdelta_abs : integer range 0 to FM_FCOUNT_MAX;
   signal c_state      : c_state_t;
 
+  -- attributes
+  attribute async_reg : string;
+  attribute async_reg of m_rst_s    : signal is "TRUE";
+  attribute async_reg of m_toggle_s : signal is "TRUE";
+  attribute async_reg of c_fvalue   : signal is "TRUE";
+
 begin
 
   mf <= c_fvalue;
