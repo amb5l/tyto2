@@ -27,6 +27,8 @@ entity hdmi_tpg_mega65r3 is
 
     clk_in                  : in    std_logic;                      -- clock in (100MHz)
 
+    uled                    : out   std_logic;                      -- LED D9 "ULED"
+
     max10_clk               : inout std_logic;                      -- MAX10 CPLD
     max10_tx                : in    std_logic;
     max10_rx                : out   std_logic;
@@ -86,8 +88,8 @@ entity hdmi_tpg_mega65r3 is
 
     hdmi_clk_p              : out   std_logic;                      -- HDMI out
     hdmi_clk_n              : out   std_logic;
-    hdmi_data_p             : out   std_logic_vector(2 downto 0);
-    hdmi_data_n             : out   std_logic_vector(2 downto 0);
+    hdmi_data_p             : out   std_logic_vector(0 to 2);
+    hdmi_data_n             : out   std_logic_vector(0 to 2);
     hdmi_ct_hpd             : out   std_logic;
     hdmi_hpd                : inout std_logic;
     hdmi_ls_oe              : out   std_logic;
@@ -201,7 +203,7 @@ architecture synth of hdmi_tpg_mega65r3 is
   signal dvi       : std_logic;
   signal heartbeat : std_logic_vector(3 downto 0);
   signal status    : std_logic_vector(1 downto 0);
-  
+
   -- MEGA65 specific signals
   signal floppyled    : std_logic;
   signal key_return_n : std_logic;
@@ -210,11 +212,13 @@ begin
 
   mode_step <= not key_return_n;
   dvi       <= '0';
-  floppyled <= heartbeat(0) and status(0) and status(1);
+  -- 1Hz when MMCMs locked, 4Hz when not locked
+  uled      <= heartbeat(2) when status = "11" else heartbeat(0);
+  floppyled <= heartbeat(2) when status = "11" else heartbeat(0);
 
   MAIN: component hdmi_tpg
     generic map (
-      fclk       => Real(MEGA65_CLOCK_FREQ_HZ / 1_000_000)
+      fclk       => 100.0
     )
     port map (
       rst        => not jsb_fire_n,
@@ -232,7 +236,7 @@ begin
 
    M65_KEYB: entity work.keyboard
     generic map (
-      CLOCK_FREQ_HZ  => MEGA65_CLOCK_FREQ_HZ
+      CLOCK_FREQ_HZ  => 100_000_000
     )
     port map (
       cpuclock    => clk_in,
@@ -243,17 +247,14 @@ begin
       kio10       => kb_io2,        -- data input from keyboard
       delete_out  => open,
       return_out  => key_return_n,
-      fastkey_out => open          
+      fastkey_out => open
     );
 
   -- safe states for unused I/Os
 
   max10_clk      <= 'Z'; -- assumed
   max10_rx       <= '1';
---led            <= '1'; -- on
   uart_tx        <= '1';
---  kb_io0         <= '0'; -- assumed
---  kb_io1         <= '0'; -- assumed
   kb_jtagen      <= '0'; -- assumed
   paddle_drain   <= '0';
   i2c_sda        <= 'Z';

@@ -11,6 +11,8 @@ entity mega65r3 is
 
     clk_in                  : in    std_logic;                      -- clock in (100MHz)
 
+    uled                    : out   std_logic;                      -- LED D9 "ULED"
+
     max10_clk               : inout std_logic;                      -- MAX10 CPLD
     max10_tx                : in    std_logic;
     max10_rx                : out   std_logic;
@@ -70,8 +72,8 @@ entity mega65r3 is
 
     hdmi_clk_p              : out   std_logic;                      -- HDMI out
     hdmi_clk_n              : out   std_logic;
-    hdmi_data_p             : out   std_logic_vector(2 downto 0);
-    hdmi_data_n             : out   std_logic_vector(2 downto 0);
+    hdmi_data_p             : out   std_logic_vector(0 to 2);
+    hdmi_data_n             : out   std_logic_vector(0 to 2);
     hdmi_ct_hpd             : out   std_logic;
     hdmi_hpd                : inout std_logic;
     hdmi_ls_oe              : out   std_logic;

@@ -18,6 +18,7 @@
 create_clock -period 10.000 -name clk_in [get_ports clk_in]
 
 if {[llength [get_ports { clk_in           }]]} {set_property -dict { PACKAGE_PIN V13   IOSTANDARD LVCMOS33                                    } [get_ports { clk_in           }] } ;# clock intput (100MHz)
+if {[llength [get_ports { uled             }]]} {set_property -dict { PACKAGE_PIN U22   IOSTANDARD LVCMOS33                                    } [get_ports { uled             }] } ;# LED D9 "ULED"
 if {[llength [get_ports { max10_clk        }]]} {set_property -dict { PACKAGE_PIN L16   IOSTANDARD LVCMOS33                                    } [get_ports { max10_clk        }] } ;#
 if {[llength [get_ports { max10_tx         }]]} {set_property -dict { PACKAGE_PIN M13   IOSTANDARD LVCMOS33                                    } [get_ports { max10_tx         }] } ;# Interface to MAX10
 if {[llength [get_ports { max10_rx         }]]} {set_property -dict { PACKAGE_PIN K16   IOSTANDARD LVCMOS33                                    } [get_ports { max10_rx         }] } ;#

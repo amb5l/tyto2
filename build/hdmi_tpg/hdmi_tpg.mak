@@ -33,7 +33,8 @@ VIVADO_DSN_VHDL:=\
 	$(SRC)/common/audio_io/audio_out_test_tone.vhd \
 	$(SRC)/common/basic/xilinx_7series/serialiser_10to1_selectio.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
-	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
+	$(if $(filter qmtech_wukong,$(BOARD)),$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd) \
+	$(if $(filter mega65r3,$(BOARD)),$(SRC)/contrib/mega65/keyboard.vhd) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
 VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
