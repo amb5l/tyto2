@@ -21,6 +21,12 @@ library ieee;
 
 package hdmi_rx_selectio_clk_pkg is
 
+  type hdmi_rx_selectio_clk_status_t is record
+      count_freq : std_logic_vector(31 downto 0);
+      band       : std_logic_vector(1 downto 0);
+      lock       : std_logic;
+  end record hdmi_rx_selectio_clk_status_t;
+
   component hdmi_rx_selectio_clk is
     generic (
       fclk    : real
@@ -33,8 +39,7 @@ package hdmi_rx_selectio_clk_pkg is
       pclko   : out   std_logic;
       sclko_p : out   std_logic;
       sclko_n : out   std_logic;
-      lock    : out   std_logic;
-      band    : out   std_logic_vector(1 downto 0)
+      status  : out   hdmi_rx_selectio_clk_status_t
     );
   end component hdmi_rx_selectio_clk;
 
@@ -65,8 +70,7 @@ entity hdmi_rx_selectio_clk is
     pclko   : out   std_logic;
     sclko_p : out   std_logic;
     sclko_n : out   std_logic;
-    lock    : out   std_logic;
-    band    : out   std_logic_vector(1 downto 0)
+    status  : out   hdmi_rx_selectio_clk_status_t
   );
 end entity hdmi_rx_selectio_clk;
 
@@ -119,6 +123,7 @@ architecture synth of hdmi_rx_selectio_clk is
 begin
 
   pclko <= pclk;
+  status.count_freq <= std_logic_vector(to_unsigned(fm_f,32));
 
   -- frequency measurement
   U_FM: component hdmi_rx_selectio_fm
@@ -250,8 +255,8 @@ begin
         drp_dwe     <= '0';
         drp_di      <= (others => '0');
         drp_state   <= DRP_UNLOCKED;
-        lock        <= '0';
-        band        <= (others => '0');
+        status.lock <= '0';
+        status.band <= (others => '0');
     elsif rising_edge(clk) then
       drp_tbl_d <= drp_tbl(drp_tbl_a); -- synchronous ROM
       mmcm_lock_s(0 to 1) <= mmcm_lock_a & mmcm_lock_s(0); -- synchroniser
@@ -262,13 +267,13 @@ begin
       case drp_state is
         when DRP_LOCKED =>
           if fm_ok = '0' then
-            mmcm_rst  <= '1';
-            lock      <= '0';
-            drp_state <= DRP_UNLOCKED;
+            mmcm_rst    <= '1';
+            status.lock <= '0';
+            drp_state   <= DRP_UNLOCKED;
           elsif mmcm_lock = '0' then
-            mmcm_rst  <= '1';
-            lock      <= '0';
-            drp_state <= DRP_UNLOCKING;
+            mmcm_rst    <= '1';
+            status.lock <= '0';
+            drp_state   <= DRP_UNLOCKING;
           end if;
         when DRP_UNLOCKING =>
           if fm_ok = '0' then
@@ -292,8 +297,8 @@ begin
             drp_state <= DRP_TBL;
           end if;
         when DRP_TBL => -- get table entry from sychronous ROM
-          band      <= drp_tbl_a(6 downto 5);
-          drp_state <= DRP_RD;
+          status.band <= drp_tbl_a(6 downto 5);
+          drp_state   <= DRP_RD;
         when DRP_RD => -- read specified register
           drp_daddr <= drp_tbl_d(38 downto 32);
           drp_den   <= '1';
@@ -320,8 +325,8 @@ begin
         when DRP_LOCK_WAIT => -- wait for MMCM to lock
           mmcm_rst <= '0';
           if mmcm_lock = '1' then -- all done
-            lock      <= '1';
-            drp_state <= DRP_LOCKED;
+            status.lock <= '1';
+            drp_state   <= DRP_LOCKED;
           end if;
       end case;
     end if;

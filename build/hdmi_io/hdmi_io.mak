@@ -22,7 +22,6 @@ VIVADO_DSN_VHDL:=\
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_align.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
-    $(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
 VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \

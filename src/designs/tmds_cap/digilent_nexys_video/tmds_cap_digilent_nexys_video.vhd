@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- hdmi_io_digilent_nexys_video.vhd                                           --
--- Board specific top level wrapper for the hdmi_io design.                   --
+-- tmds_cap_digilent_nexys_video.vhd                                          --
+-- Board specific variant of the tmds_cap design.                             --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -23,11 +23,14 @@ library unisim;
 
 library work;
   use work.tyto_types_pkg.all;
+  use work.axi_pkg.all;
   use work.mmcm_pkg.all;
   use work.hdmi_rx_selectio_pkg.all;
+  use work.tmds_cap_mb_pkg.all;
+  use work.tmds_cap_regs_axi_pkg.all;
   use work.hdmi_tx_selectio_pkg.all;
 
-entity hdmi_io_digilent_nexys_video is
+entity tmds_cap_digilent_nexys_video is
   port (
 
     -- clocks
@@ -101,19 +104,19 @@ entity hdmi_io_digilent_nexys_video is
 
     -- UART
     uart_rx_out   : out   std_logic;
-    -- uart_tx_in      : in    std_logic;
+    uart_tx_in    : in    std_logic;
 
     -- ethernet
     eth_rst_n     : out   std_logic;
-    -- eth_txck        : out   std_logic;
-    -- eth_txctl       : out   std_logic;
-    -- eth_txd         : out   std_logic_vector(3 downto 0);
-    -- eth_rxck        : in    std_logic;
-    -- eth_rxctl       : in    std_logic;
-    -- eth_rxd         : in    std_logic_vector(3 downto 0);
-    -- eth_mdc         : out   std_logic;
-    -- eth_mdio        : inout std_logic;
-    -- eth_int_n       : in    std_logic;
+    -- eth_txck      : out   std_logic;
+    -- eth_txctl     : out   std_logic;
+    -- eth_txd       : out   std_logic_vector(3 downto 0);
+    -- eth_rxck      : in    std_logic;
+    -- eth_rxctl     : in    std_logic;
+    -- eth_rxd       : in    std_logic_vector(3 downto 0);
+    -- eth_mdc       : out   std_logic;
+    -- eth_mdio      : inout std_logic;
+    -- eth_int_n     : in    std_logic;
     -- eth_pme_n       : in    std_logic;
 
     -- fan
@@ -178,10 +181,11 @@ entity hdmi_io_digilent_nexys_video is
   -- ddr3_dqs_n      : inout std_logic_vector(1 downto 0)
 
   );
-end entity hdmi_io_digilent_nexys_video;
+end entity tmds_cap_digilent_nexys_video;
 
-architecture synth of hdmi_io_digilent_nexys_video is
+architecture synth of tmds_cap_digilent_nexys_video is
 
+  -- system reset and clock
   signal rst_a          : std_logic;
   signal clk_100m       : std_logic;
   signal clk_200m       : std_logic;
@@ -191,27 +195,28 @@ architecture synth of hdmi_io_digilent_nexys_video is
   signal rst_100m_s     : std_logic_vector(0 to 1);
   signal rst_100m       : std_logic;
 
+  -- HDMI I/O
   signal hdmi_rx_clku   : std_logic;
   signal hdmi_rx_clk    : std_logic;
   signal hdmi_rx_d      : std_logic_vector(0 to 2);
-  signal sclk           : std_logic;
   signal prst           : std_logic;
   signal pclk           : std_logic;
+  signal sclk           : std_logic;
   signal tmds           : slv10_vector(0 to 2);
-  signal status         : hdmi_rx_selectio_status_t;
+  signal rx_status      : hdmi_rx_selectio_status_t;
   signal hdmi_tx_clk    : std_logic;
   signal hdmi_tx_d      : std_logic_vector(0 to 2);
 
+  -- CPU
+  signal axi_mosi       : axi_mosi_t;
+  signal axi_miso       : axi_miso_t;
+
 begin
 
-  led(0) <= not rst_100m;
-  led(1) <= status.lock;
-  led(2) <= status.band(0);
-  led(3) <= status.band(1);
-  led(4) <= status.align_s(0);
-  led(5) <= status.align_s(1);
-  led(6) <= status.align_s(2);
-  led(7) <= status.align_p;
+  led(4) <= not rst_100m;
+  led(5) <= idelayctrl_rdy;
+  led(6) <= not rst_200m;
+  led(7) <= '1';
 
   --------------------------------------------------------------------------------
   -- clock and reset generation
@@ -243,13 +248,13 @@ begin
     end if;
   end process;
 
-  process(rst_a,clk_100m)
+  process(rst_200m,clk_100m)
   begin
-    if rst_a = '1' then
+    if rst_200m = '1' then
       rst_100m_s(0 to 1) <= (others => '1');
       rst_100m <= '1';
     elsif rising_edge(clk_100m) then
-      rst_100m_s(0 to 1) <= (rst_a or not idelayctrl_rdy) & rst_100m_s(0);
+      rst_100m_s(0 to 1) <= (rst_200m or not idelayctrl_rdy) & rst_100m_s(0);
       rst_100m <= rst_100m_s(1);
     end if;
   end process;
@@ -259,7 +264,7 @@ begin
 
   U_HDMI_RX: component hdmi_rx_selectio
     generic map (
-      fclk  => 100.0
+      fclk        => 100.0
     )
     port map (
       rst    => rst_100m,
@@ -270,7 +275,7 @@ begin
       prsto  => prst,
       pclko  => pclk,
       po     => tmds,
-      status => status
+      status => rx_status
     );
 
   hdmi_rx_txen <= '1';
@@ -286,9 +291,35 @@ begin
     );
 
   --------------------------------------------------------------------------------
+
+  U_CTRL: component tmds_cap_mb
+    port map (
+      rsti     => rst_100m,
+      rsto     => open,
+      clk      => clk_100m,
+      uart_tx  => uart_rx_out,
+      uart_rx  => uart_tx_in,
+      axi_mosi => axi_mosi,
+      axi_miso => axi_miso
+    );
+
+  U_REGS: component tmds_cap_regs_axi
+    port map (
+      rst       => rst_100m,
+      clk       => clk_100m,
+      rx_status => rx_status,
+      axi_mosi  => axi_mosi,
+      axi_miso  => axi_miso
+    );
+
+  eth_rst_n <= '0';
+  ddr3_reset_n <= '0';
+
+  --------------------------------------------------------------------------------
   -- I/O primitives
 
   -- required to use I/O delay primitives
+
   U_IDELAYCTRL: idelayctrl
     port map (
       rst    => rst_200m, -- assumption!!! is asserted for >60ns
@@ -296,7 +327,7 @@ begin
       rdy    => idelayctrl_rdy
     );
 
-  -- HDMI input and output buffers
+  -- HDMI input and output differential buffers
 
   U_IBUFDS: component ibufds
     port map (
@@ -345,14 +376,11 @@ begin
   oled_sdin    <= '0';
   ac_mclk      <= '0';
   ac_dac_sdata <= '0';
-  uart_rx_out  <= '1';
-  eth_rst_n    <= '0';
   ftdi_rd_n    <= '1';
   ftdi_wr_n    <= '1';
   ftdi_siwu_n  <= '1';
   ftdi_oe_n    <= '1';
   qspi_cs_n    <= '1';
-  ddr3_reset_n <= '0';
 
   --------------------------------------------------------------------------------
 

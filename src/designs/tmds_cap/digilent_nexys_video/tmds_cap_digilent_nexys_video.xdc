@@ -1,6 +1,6 @@
 ################################################################################
-## hdmi_io_digilent_nexys_video.xdc                                           ##
-## Board specific constraints for the hdmi_io design.                         ##
+## tmds_cap_digilent_nexys_video.xdc                                          ##
+## Board specific constraints for the tmds_cap design.                        ##
 ################################################################################
 ## (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        ##
 ## This file is part of The Tyto Project. The Tyto Project is free software:  ##

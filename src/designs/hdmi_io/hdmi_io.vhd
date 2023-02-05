@@ -18,6 +18,9 @@
 library ieee;
   use ieee.std_logic_1164.all;
 
+library work;
+  use work.hdmi_rx_selectio_pkg.all;
+
 package hdmi_io_pkg is
 
   component hdmi_io is
@@ -31,7 +34,7 @@ package hdmi_io_pkg is
       hdmi_rx_d   : in    std_logic_vector(0 to 2);
       hdmi_tx_clk : out   std_logic;
       hdmi_tx_d   : out   std_logic_vector(0 to 2);
-      status      : out   std_logic_vector(3 downto 0)
+      status      : out   hdmi_rx_selectio_status_t
     );
   end component hdmi_io;
 
@@ -64,10 +67,10 @@ end entity hdmi_io;
 
 architecture synth of hdmi_io is
 
-  signal sclk  : std_logic;
-  signal prst  : std_logic;
-  signal pclk  : std_logic;
-  signal tmds  : slv10_vector(0 to 2);
+  signal sclk   : std_logic;
+  signal prst   : std_logic;
+  signal pclk   : std_logic;
+  signal tmds   : slv10_vector(0 to 2);
 
 begin
 
@@ -84,9 +87,7 @@ begin
       prsto  => prst,
       pclko  => pclk,
       po     => tmds,
-      align  => status(0),
-      lock   => status(1),
-      band   => status(3 downto 2)
+      status => status
     );
 
   U_HDMI_TX: component hdmi_tx_selectio

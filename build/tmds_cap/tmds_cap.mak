@@ -22,12 +22,17 @@ VIVADO_DSN_VHDL:=\
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_align.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
-    $(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
+	$(SRC)/common/axi/axi_pkg.vhd \
+	$(SRC)/designs/$(DESIGN)/tmds_cap_mb.vhd \
+	$(SRC)/designs/$(DESIGN)/tmds_cap_regs_axi.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
 VIVADO_DSN_BD_TCL:=$(SRC)/designs/$(DESIGN)/microblaze.tcl
+VIVADO_DSN_PROC_INST:=cpu
+VIVADO_DSN_PROC_REF:=microblaze
 VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc
+
 VIVADO_SIM_TOP:=tb_$(VIVADO_DSN_TOP)
 VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/tyto_sim_pkg.vhd \
@@ -41,6 +46,13 @@ VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/video/model_hdmi_decoder.vhd \
 	$(SRC)/common/video/model_vga_sink.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
+
+VITIS_APP:=microblaze
+VITIS_SRC:=\
+	$(SRC)/designs/$(DESIGN)/microblaze/main.c
+VITIS_INCLUDE:=\
+	$(SRC)/designs/$(DESIGN)/microblaze \
+	$(SRC)/common/basic/microblaze
 
 # note that Xilinx Vivado libraries must be pre-compiled
 SIMULATOR:=ghdl nvc vsim xsim

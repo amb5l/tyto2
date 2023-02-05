@@ -28,6 +28,22 @@ library work;
 
 package hdmi_rx_selectio_pkg is
 
+  type hdmi_rx_selectio_status_t is record
+      count_freq    : std_logic_vector(31 downto 0);
+      band          : std_logic_vector(1 downto 0);
+      lock          : std_logic;
+      align_s       : std_logic_vector(0 to 2);
+      align_p       : std_logic;
+      skew_p        : slv2_vector(1 to 2);
+      tap_mask      : slv32_vector(0 to 2);
+      tap           : slv5_vector(0 to 2);
+      bitslip       : slv4_vector(0 to 2);
+      count_attempt : slv32_vector(0 to 2);
+      count_align   : slv32_vector(0 to 2);
+      count_retain  : slv32_vector(0 to 2);
+      count_unalign : slv32_vector(0 to 2);
+  end record hdmi_rx_selectio_status_t;
+
   component hdmi_rx_selectio is
     generic (
       fclk    : real
@@ -41,9 +57,7 @@ package hdmi_rx_selectio_pkg is
       prsto   : out   std_logic;
       pclko   : out   std_logic;
       po      : out   slv10_vector(0 to 2);
-      align   : out   std_logic;
-      lock    : out   std_logic;
-      band    : out   std_logic_vector(1 downto 0)
+      status  : out   hdmi_rx_selectio_status_t
     );
   end component hdmi_rx_selectio;
 
@@ -61,6 +75,7 @@ library unisim;
 
 library work;
   use work.tyto_types_pkg.all;
+  use work.hdmi_rx_selectio_pkg.all;
   use work.hdmi_rx_selectio_clk_pkg.all;
   use work.hdmi_rx_selectio_align_pkg.all;
 
@@ -77,9 +92,7 @@ entity hdmi_rx_selectio is
     prsto   : out   std_logic;                   -- pixel clock reset out
     pclko   : out   std_logic;                   -- pixel clock out
     po      : out   slv10_vector(0 to 2);        -- parallel TMDS out
-    align   : out   std_logic;
-    lock    : out   std_logic;
-    band    : out   std_logic_vector(1 downto 0)
+    status  : out   hdmi_rx_selectio_status_t
   );
 end entity hdmi_rx_selectio;
 
@@ -98,11 +111,28 @@ architecture synth of hdmi_rx_selectio is
   signal iserdes_shift1 : std_logic_vector(0 to 2);     -- master-slave cascade
   signal iserdes_shift2 : std_logic_vector(0 to 2);     -- "
 
+  signal status_clk     : hdmi_rx_selectio_clk_status_t;
+  signal status_align   : hdmi_rx_selectio_align_status_t;
+
 begin
 
   sclko <= sclk_p;
   prsto <= prst;
   pclko <= pclk;
+
+  status.count_freq    <= status_clk.count_freq;
+  status.band          <= status_clk.band;
+  status.lock          <= status_clk.lock;
+  status.align_s       <= status_align.align_s;
+  status.align_p       <= status_align.align_p;
+  status.skew_p        <= status_align.skew_p;
+  status.tap_mask      <= status_align.tap_mask;
+  status.tap           <= status_align.tap;
+  status.bitslip       <= status_align.bitslip;
+  status.count_attempt <= status_align.count_attempt;
+  status.count_align   <= status_align.count_align;
+  status.count_retain  <= status_align.count_retain;
+  status.count_unalign <= status_align.count_unalign;
 
   -- clock and reset generation
 
@@ -118,8 +148,7 @@ begin
       pclko   => pclk,
       sclko_p => sclk_p,
       sclko_n => sclk_n,
-      lock    => lock,
-      band    => band
+      status  => status_clk
     );
 
   -- alignment
@@ -133,7 +162,7 @@ begin
       idelay_tap   => idelay_tap,
       idelay_ld    => idelay_ld,
       tmds         => po,
-      lock         => align
+      status       => status_align
     );
 
   -- SelectIO input primitives
@@ -170,7 +199,7 @@ begin
       generic map (
         serdes_mode       => "MASTER",
         interface_type    => "NETWORKING",
-        iobdelay          => "BOTH",
+        iobdelay          => "IFD",
         data_width        => 10,
         data_rate         => "DDR",
         ofb_used          => "FALSE",
@@ -221,7 +250,7 @@ begin
       generic map (
         serdes_mode       => "SLAVE",
         interface_type    => "NETWORKING",
-        iobdelay          => "BOTH",
+        iobdelay          => "IFD",
         data_width        => 10,
         data_rate         => "DDR",
         ofb_used          => "FALSE",

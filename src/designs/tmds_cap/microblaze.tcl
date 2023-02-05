@@ -20,7 +20,7 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2022.1
+set scripts_vivado_version 2022.2
 set current_vivado_version [version -short]
 
 # disable version check
@@ -124,10 +124,8 @@ set bCheckIPsPassed 1
 set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
-xilinx.com:ip:axi_bram_ctrl:4.1\
 xilinx.com:ip:microblaze:11.0\
 xilinx.com:ip:mdm:3.2\
-xilinx.com:ip:axi_gpio:2.0\
 xilinx.com:ip:proc_sys_reset:5.0\
 xilinx.com:ip:axi_uartlite:2.0\
 xilinx.com:ip:lmb_bram_if_cntlr:4.0\
@@ -208,28 +206,27 @@ proc create_hier_cell_ram { parentCell nameHier } {
 
   # Create instance: dlmb_bram_if_cntlr, and set properties
   set dlmb_bram_if_cntlr [ create_bd_cell -type ip -vlnv xilinx.com:ip:lmb_bram_if_cntlr:4.0 dlmb_bram_if_cntlr ]
-  set_property -dict [ list \
-   CONFIG.C_ECC {0} \
- ] $dlmb_bram_if_cntlr
+  set_property CONFIG.C_ECC {0} $dlmb_bram_if_cntlr
+
 
   # Create instance: dlmb_v10, and set properties
   set dlmb_v10 [ create_bd_cell -type ip -vlnv xilinx.com:ip:lmb_v10:3.0 dlmb_v10 ]
 
   # Create instance: ilmb_bram_if_cntlr, and set properties
   set ilmb_bram_if_cntlr [ create_bd_cell -type ip -vlnv xilinx.com:ip:lmb_bram_if_cntlr:4.0 ilmb_bram_if_cntlr ]
-  set_property -dict [ list \
-   CONFIG.C_ECC {0} \
- ] $ilmb_bram_if_cntlr
+  set_property CONFIG.C_ECC {0} $ilmb_bram_if_cntlr
+
 
   # Create instance: ilmb_v10, and set properties
   set ilmb_v10 [ create_bd_cell -type ip -vlnv xilinx.com:ip:lmb_v10:3.0 ilmb_v10 ]
 
   # Create instance: lmb_bram, and set properties
   set lmb_bram [ create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 lmb_bram ]
-  set_property -dict [ list \
-   CONFIG.Memory_Type {True_Dual_Port_RAM} \
-   CONFIG.use_bram_block {BRAM_Controller} \
- ] $lmb_bram
+  set_property -dict [list \
+    CONFIG.Memory_Type {True_Dual_Port_RAM} \
+    CONFIG.use_bram_block {BRAM_Controller} \
+  ] $lmb_bram
+
 
   # Create interface connections
   connect_bd_intf_net -intf_net cpu_dlmb [get_bd_intf_pins DLMB] [get_bd_intf_pins dlmb_v10/LMB_M]
@@ -281,13 +278,14 @@ proc create_root_design { parentCell } {
 
 
   # Create interface ports
-  set bram [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:bram_rtl:1.0 bram ]
+  set axi [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 axi ]
   set_property -dict [ list \
-   CONFIG.MASTER_TYPE {BRAM_CTRL} \
-   CONFIG.READ_WRITE_MODE {READ_WRITE} \
-   ] $bram
-
-  set gpio [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 gpio ]
+   CONFIG.ADDR_WIDTH {32} \
+   CONFIG.DATA_WIDTH {32} \
+   CONFIG.NUM_READ_OUTSTANDING {2} \
+   CONFIG.NUM_WRITE_OUTSTANDING {2} \
+   CONFIG.PROTOCOL {AXI4} \
+   ] $axi
 
   set uart [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:uart_rtl:1.0 uart ]
 
@@ -304,155 +302,83 @@ proc create_root_design { parentCell } {
  ] $rsti_n
   set rsto [ create_bd_port -dir O -from 0 -to 0 -type rst rsto ]
 
-  # Create instance: bram, and set properties
-  set bram [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 bram ]
-  set_property -dict [ list \
-   CONFIG.ECC_TYPE {0} \
-   CONFIG.PROTOCOL {AXI4LITE} \
-   CONFIG.SINGLE_PORT_BRAM {1} \
-   CONFIG.SUPPORTS_NARROW_BURST {0} \
- ] $bram
-
   # Create instance: cpu, and set properties
   set cpu [ create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze:11.0 cpu ]
-  set_property -dict [ list \
-   CONFIG.C_ADDR_TAG_BITS {0} \
-   CONFIG.C_AREA_OPTIMIZED {1} \
-   CONFIG.C_CACHE_BYTE_SIZE {4096} \
-   CONFIG.C_DCACHE_ADDR_TAG {0} \
-   CONFIG.C_DCACHE_BYTE_SIZE {4096} \
-   CONFIG.C_DEBUG_ENABLED {1} \
-   CONFIG.C_D_AXI {1} \
-   CONFIG.C_D_LMB {1} \
-   CONFIG.C_I_LMB {1} \
-   CONFIG.C_MMU_DTLB_SIZE {2} \
-   CONFIG.C_MMU_ITLB_SIZE {1} \
-   CONFIG.C_MMU_ZONES {2} \
-   CONFIG.C_USE_BARREL {1} \
-   CONFIG.C_USE_HW_MUL {1} \
-   CONFIG.C_USE_MSR_INSTR {1} \
-   CONFIG.C_USE_PCMP_INSTR {1} \
-   CONFIG.C_USE_REORDER_INSTR {0} \
-   CONFIG.G_TEMPLATE_LIST {8} \
- ] $cpu
+  set_property -dict [list \
+    CONFIG.C_ADDR_TAG_BITS {0} \
+    CONFIG.C_AREA_OPTIMIZED {1} \
+    CONFIG.C_DCACHE_ADDR_TAG {0} \
+    CONFIG.C_DEBUG_ENABLED {1} \
+    CONFIG.C_D_AXI {1} \
+    CONFIG.C_D_LMB {1} \
+    CONFIG.C_I_LMB {1} \
+    CONFIG.C_USE_BARREL {1} \
+    CONFIG.C_USE_HW_MUL {1} \
+    CONFIG.C_USE_MSR_INSTR {1} \
+    CONFIG.C_USE_PCMP_INSTR {1} \
+    CONFIG.C_USE_REORDER_INSTR {0} \
+    CONFIG.G_TEMPLATE_LIST {8} \
+  ] $cpu
+
 
   # Create instance: debug, and set properties
   set debug [ create_bd_cell -type ip -vlnv xilinx.com:ip:mdm:3.2 debug ]
-  set_property -dict [ list \
-   CONFIG.C_ADDR_SIZE {32} \
-   CONFIG.C_M_AXI_ADDR_WIDTH {32} \
-   CONFIG.C_USE_UART {0} \
- ] $debug
+  set_property -dict [list \
+    CONFIG.C_ADDR_SIZE {32} \
+    CONFIG.C_M_AXI_ADDR_WIDTH {32} \
+    CONFIG.C_USE_UART {0} \
+  ] $debug
 
-  # Create instance: gpio, and set properties
-  set gpio [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 gpio ]
-  set_property -dict [ list \
-   CONFIG.C_ALL_INPUTS_2 {1} \
-   CONFIG.C_ALL_OUTPUTS {0} \
-   CONFIG.C_GPIO2_WIDTH {8} \
-   CONFIG.C_GPIO_WIDTH {32} \
-   CONFIG.C_IS_DUAL {0} \
- ] $gpio
 
   # Create instance: interconnect, and set properties
   set interconnect [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 interconnect ]
-  set_property -dict [ list \
-   CONFIG.ENABLE_ADVANCED_OPTIONS {0} \
-   CONFIG.NUM_MI {3} \
- ] $interconnect
+  set_property -dict [list \
+    CONFIG.ENABLE_ADVANCED_OPTIONS {0} \
+    CONFIG.NUM_MI {2} \
+  ] $interconnect
+
 
   # Create instance: ram
   create_hier_cell_ram [current_bd_instance .] ram
 
   # Create instance: rstctrl, and set properties
   set rstctrl [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rstctrl ]
-  set_property -dict [ list \
-   CONFIG.RESET_BOARD_INTERFACE {Custom} \
-   CONFIG.USE_BOARD_FLOW {true} \
- ] $rstctrl
+  set_property -dict [list \
+    CONFIG.RESET_BOARD_INTERFACE {Custom} \
+    CONFIG.USE_BOARD_FLOW {true} \
+  ] $rstctrl
+
 
   # Create instance: uart, and set properties
   set uart [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_uartlite:2.0 uart ]
-  set_property -dict [ list \
-   CONFIG.C_BAUDRATE {115200} \
- ] $uart
+  set_property CONFIG.C_BAUDRATE {115200} $uart
+
 
   # Create interface connections
-  connect_bd_intf_net -intf_net axi_bram_ctrl_0_BRAM_PORTA [get_bd_intf_ports bram] [get_bd_intf_pins bram/BRAM_PORTA]
-  connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports gpio] [get_bd_intf_pins gpio/GPIO]
   connect_bd_intf_net -intf_net axi_uartlite_0_UART [get_bd_intf_ports uart] [get_bd_intf_pins uart/UART]
   connect_bd_intf_net -intf_net cpu_M_AXI_DP [get_bd_intf_pins cpu/M_AXI_DP] [get_bd_intf_pins interconnect/S00_AXI]
   connect_bd_intf_net -intf_net cpu_debug [get_bd_intf_pins cpu/DEBUG] [get_bd_intf_pins debug/MBDEBUG_0]
   connect_bd_intf_net -intf_net cpu_dlmb_1 [get_bd_intf_pins cpu/DLMB] [get_bd_intf_pins ram/DLMB]
   connect_bd_intf_net -intf_net cpu_ilmb_1 [get_bd_intf_pins cpu/ILMB] [get_bd_intf_pins ram/ILMB]
-  connect_bd_intf_net -intf_net interconnect_M00_AXI [get_bd_intf_pins gpio/S_AXI] [get_bd_intf_pins interconnect/M00_AXI]
-  connect_bd_intf_net -intf_net interconnect_M01_AXI [get_bd_intf_pins interconnect/M01_AXI] [get_bd_intf_pins uart/S_AXI]
-  connect_bd_intf_net -intf_net interconnect_M02_AXI [get_bd_intf_pins bram/S_AXI] [get_bd_intf_pins interconnect/M02_AXI]
+  connect_bd_intf_net -intf_net interconnect_M00_AXI [get_bd_intf_pins interconnect/M00_AXI] [get_bd_intf_pins uart/S_AXI]
+  connect_bd_intf_net -intf_net interconnect_M01_AXI [get_bd_intf_ports axi] [get_bd_intf_pins interconnect/M01_AXI]
 
   # Create port connections
-  connect_bd_net -net cpu_Clk [get_bd_ports clk] [get_bd_pins bram/s_axi_aclk] [get_bd_pins cpu/Clk] [get_bd_pins gpio/s_axi_aclk] [get_bd_pins interconnect/ACLK] [get_bd_pins interconnect/M00_ACLK] [get_bd_pins interconnect/M01_ACLK] [get_bd_pins interconnect/M02_ACLK] [get_bd_pins interconnect/S00_ACLK] [get_bd_pins ram/Clk] [get_bd_pins rstctrl/slowest_sync_clk] [get_bd_pins uart/s_axi_aclk]
+  connect_bd_net -net cpu_Clk [get_bd_ports clk] [get_bd_pins cpu/Clk] [get_bd_pins interconnect/ACLK] [get_bd_pins interconnect/M00_ACLK] [get_bd_pins interconnect/M01_ACLK] [get_bd_pins interconnect/S00_ACLK] [get_bd_pins ram/Clk] [get_bd_pins rstctrl/slowest_sync_clk] [get_bd_pins uart/s_axi_aclk]
   connect_bd_net -net dcm_locked_0_1 [get_bd_ports lock] [get_bd_pins rstctrl/dcm_locked]
   connect_bd_net -net mdm_1_debug_sys_rst [get_bd_pins debug/Debug_SYS_Rst] [get_bd_pins rstctrl/mb_debug_sys_rst]
   connect_bd_net -net reset_rtl_1 [get_bd_ports rsti_n] [get_bd_pins rstctrl/ext_reset_in]
   connect_bd_net -net rst_Clk_100M_bus_struct_reset [get_bd_pins ram/SYS_Rst] [get_bd_pins rstctrl/bus_struct_reset]
   connect_bd_net -net rst_Clk_100M_mb_reset [get_bd_pins cpu/Reset] [get_bd_pins rstctrl/mb_reset]
   connect_bd_net -net rstctrl_peripheral_reset [get_bd_ports rsto] [get_bd_pins rstctrl/peripheral_reset]
-  connect_bd_net -net sysrst_interconnect_aresetn [get_bd_pins bram/s_axi_aresetn] [get_bd_pins gpio/s_axi_aresetn] [get_bd_pins interconnect/ARESETN] [get_bd_pins interconnect/M00_ARESETN] [get_bd_pins interconnect/M01_ARESETN] [get_bd_pins interconnect/M02_ARESETN] [get_bd_pins interconnect/S00_ARESETN] [get_bd_pins rstctrl/interconnect_aresetn] [get_bd_pins uart/s_axi_aresetn]
+  connect_bd_net -net sysrst_interconnect_aresetn [get_bd_pins interconnect/ARESETN] [get_bd_pins interconnect/M00_ARESETN] [get_bd_pins interconnect/M01_ARESETN] [get_bd_pins interconnect/S00_ARESETN] [get_bd_pins rstctrl/interconnect_aresetn] [get_bd_pins uart/s_axi_aresetn]
 
   # Create address segments
-  assign_bd_address -offset 0x40020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces cpu/Data] [get_bd_addr_segs bram/S_AXI/Mem0] -force
-  assign_bd_address -offset 0x00000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces cpu/Data] [get_bd_addr_segs ram/dlmb_bram_if_cntlr/SLMB/Mem] -force
-  assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces cpu/Data] [get_bd_addr_segs gpio/S_AXI/Reg] -force
-  assign_bd_address -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces cpu/Data] [get_bd_addr_segs uart/S_AXI/Reg] -force
-  assign_bd_address -offset 0x00000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces cpu/Instruction] [get_bd_addr_segs ram/ilmb_bram_if_cntlr/SLMB/Mem] -force
+  assign_bd_address -offset 0x70000000 -range 0x10000000 -target_address_space [get_bd_addr_spaces cpu/Data] [get_bd_addr_segs axi/Reg] -force
+  assign_bd_address -offset 0x00000000 -range 0x00020000 -target_address_space [get_bd_addr_spaces cpu/Data] [get_bd_addr_segs ram/dlmb_bram_if_cntlr/SLMB/Mem] -force
+  assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces cpu/Data] [get_bd_addr_segs uart/S_AXI/Reg] -force
+  assign_bd_address -offset 0x00000000 -range 0x00020000 -target_address_space [get_bd_addr_spaces cpu/Instruction] [get_bd_addr_segs ram/ilmb_bram_if_cntlr/SLMB/Mem] -force
 
-  # Perform GUI Layout
-  regenerate_bd_layout -layout_string {
-   "ActiveEmotionalView":"Default View",
-   "Default View_ScaleFactor":"1.0",
-   "Default View_TopLeft":"-185,527",
-   "ExpandedHierarchyInLayout":"",
-   "PinnedBlocks":"/cpu|/debug|/interconnect|/ram|/rstctrl|/uart|/bram|",
-   "PinnedPorts":"lock|rsti_n|rsto|uart|bram|clk|gpo|",
-   "guistr":"# # String gsaved with Nlview 7.0r6  2020-01-29 bk=1.5227 VDI=41 GEI=36 GUI=JA:10.0 non-TLS
-#  -string -flagsOSRD
-preplace port bram -pg 1 -lvl 5 -x 1660 -y 1190 -defaultsOSRD
-preplace port uart -pg 1 -lvl 5 -x 1660 -y 1030 -defaultsOSRD
-preplace port port-id_clk -pg 1 -lvl 0 -x -40 -y 670 -defaultsOSRD
-preplace port port-id_lock -pg 1 -lvl 0 -x -40 -y 750 -defaultsOSRD
-preplace port port-id_rsti_n -pg 1 -lvl 0 -x -40 -y 690 -defaultsOSRD
-preplace port gpio -pg 1 -lvl 5 -x 1660 -y 890 -defaultsOSRD
-preplace portBus rsto -pg 1 -lvl 5 -x 1660 -y 710 -defaultsOSRD
-preplace inst bram -pg 1 -lvl 4 -x 1500 -y 1190 -defaultsOSRD
-preplace inst cpu -pg 1 -lvl 2 -x 730 -y 540 -defaultsOSRD
-preplace inst debug -pg 1 -lvl 1 -x 360 -y 540 -defaultsOSRD
-preplace inst gpio -pg 1 -lvl 4 -x 1500 -y 890 -defaultsOSRD
-preplace inst interconnect -pg 1 -lvl 3 -x 1180 -y 890 -defaultsOSRD
-preplace inst ram -pg 1 -lvl 3 -x 1180 -y 550 -defaultsOSRD
-preplace inst rstctrl -pg 1 -lvl 2 -x 730 -y 710 -defaultsOSRD
-preplace inst uart -pg 1 -lvl 4 -x 1500 -y 1040 -defaultsOSRD
-preplace netloc cpu_Clk 1 0 4 N 670 480 440 1000 1050 1350
-preplace netloc dcm_locked_0_1 1 0 2 NJ 750 N
-preplace netloc mdm_1_debug_sys_rst 1 1 1 470 550n
-preplace netloc reset_rtl_1 1 0 2 NJ 690 N
-preplace netloc rst_Clk_100M_bus_struct_reset 1 2 1 980J 580n
-preplace netloc rst_Clk_100M_mb_reset 1 1 2 490 450 970
-preplace netloc rstctrl_peripheral_reset 1 2 3 NJ 710 NJ 710 NJ
-preplace netloc sysrst_interconnect_aresetn 1 2 2 970 1060 1360
-preplace netloc axi_bram_ctrl_0_BRAM_PORTA 1 4 1 NJ 1190
-preplace netloc axi_gpio_0_GPIO 1 4 1 N 890
-preplace netloc axi_uartlite_0_UART 1 4 1 NJ 1030
-preplace netloc cpu_M_AXI_DP 1 2 1 990 560n
-preplace netloc cpu_debug 1 1 1 N 530
-preplace netloc cpu_dlmb_1 1 2 1 N 520
-preplace netloc cpu_ilmb_1 1 2 1 N 540
-preplace netloc interconnect_M00_AXI 1 3 1 N 870
-preplace netloc interconnect_M01_AXI 1 3 1 1340 890n
-preplace netloc interconnect_M02_AXI 1 3 1 1330 910n
-levelinfo -pg 1 -40 360 730 1180 1500 1660
-pagesize -pg 1 -db -bbox -sgen -130 -10 1760 1710
-"
-}
 
   # Restore current instance
   current_bd_instance $oldCurInst
