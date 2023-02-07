@@ -243,13 +243,13 @@ begin
     end if;
   end process;
 
-  process(rst_a,clk_100m)
+  process(rst_200m,clk_100m)
   begin
-    if rst_a = '1' then
+    if rst_200m = '1' then
       rst_100m_s(0 to 1) <= (others => '1');
       rst_100m <= '1';
     elsif rising_edge(clk_100m) then
-      rst_100m_s(0 to 1) <= (rst_a or not idelayctrl_rdy) & rst_100m_s(0);
+      rst_100m_s(0 to 1) <= (rst_200m or not idelayctrl_rdy) & rst_100m_s(0);
       rst_100m <= rst_100m_s(1);
     end if;
   end process;
@@ -296,7 +296,7 @@ begin
       rdy    => idelayctrl_rdy
     );
 
-  -- HDMI input and output buffers
+  -- HDMI input and output differential buffers
 
   U_IBUFDS: component ibufds
     port map (
