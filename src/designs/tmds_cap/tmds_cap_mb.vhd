@@ -30,8 +30,8 @@ package tmds_cap_mb_pkg is
       clk      : in    std_logic;
       uart_tx  : out   std_logic;
       uart_rx  : in    std_logic;
-      axi_mosi : out   axi_mosi_t;
-      axi_miso : in    axi_miso_t
+      axi_mosi : out   axi32_mosi_t;
+      axi_miso : in    axi32_miso_t
     );
   end component tmds_cap_mb;
 
@@ -52,8 +52,8 @@ entity tmds_cap_mb is
     clk      : in    std_logic;
     uart_tx  : out   std_logic;
     uart_rx  : in    std_logic;
-    axi_mosi : out   axi_mosi_t;
-    axi_miso : in    axi_miso_t
+    axi_mosi : out   axi32_mosi_t;
+    axi_miso : in    axi32_miso_t
   );
 end entity tmds_cap_mb;
 
@@ -62,6 +62,7 @@ architecture wrapper of tmds_cap_mb is
   component microblaze is
     port (
       clk         : in    std_logic;
+      lock        : in    std_logic;
       rsti_n      : in    std_logic;
       rsto        : out   std_logic_vector(0 to 0);
       uart_txd    : out   std_logic;
@@ -93,6 +94,7 @@ begin
   U_CPU: component microblaze
     port map (
       clk            => clk,
+      lock           => not rsti,
       rsti_n         => not rsti,
       rsto(0)        => rsto,
       uart_txd       => uart_tx,

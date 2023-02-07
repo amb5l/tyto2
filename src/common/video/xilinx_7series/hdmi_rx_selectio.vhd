@@ -38,10 +38,13 @@ package hdmi_rx_selectio_pkg is
       tap_mask      : slv32_vector(0 to 2);
       tap           : slv5_vector(0 to 2);
       bitslip       : slv4_vector(0 to 2);
-      count_attempt : slv32_vector(0 to 2);
-      count_align   : slv32_vector(0 to 2);
-      count_retain  : slv32_vector(0 to 2);
-      count_unalign : slv32_vector(0 to 2);
+      count_acycle  : slv32_vector(0 to 2);
+      count_tap_ok  : slv32_vector(0 to 2);
+      count_again_s : slv32_vector(0 to 2);
+      count_again_p : std_logic_vector(31 downto 0);
+      count_aloss_s : slv32_vector(0 to 2);
+      count_aloss_p : std_logic_vector(31 downto 0);
+      ctrl_char     : std_logic_vector(0 to 2);
   end record hdmi_rx_selectio_status_t;
 
   component hdmi_rx_selectio is
@@ -100,8 +103,8 @@ architecture synth of hdmi_rx_selectio is
 
   signal prst           : std_logic;                    -- pclk domain synchronous reset
   signal pclk           : std_logic;                    -- main pixel clock
-  signal sclk_p         : std_logic;                    -- serial clock +
-  signal sclk_n         : std_logic;                    -- serial clock -
+  signal sclk           : std_logic;                    -- serial clock
+  signal sclkb          : std_logic;                    -- serial clock inverted
 
   signal idelay_ld      : std_logic_vector(0 to 2);     -- load tap value
   signal idelay_tap     : std_logic_vector(4 downto 0); -- tap value (0..31)
@@ -116,7 +119,7 @@ architecture synth of hdmi_rx_selectio is
 
 begin
 
-  sclko <= sclk_p;
+  sclko <= sclk;
   prsto <= prst;
   pclko <= pclk;
 
@@ -129,10 +132,13 @@ begin
   status.tap_mask      <= status_align.tap_mask;
   status.tap           <= status_align.tap;
   status.bitslip       <= status_align.bitslip;
-  status.count_attempt <= status_align.count_attempt;
-  status.count_align   <= status_align.count_align;
-  status.count_retain  <= status_align.count_retain;
-  status.count_unalign <= status_align.count_unalign;
+  status.count_acycle  <= status_align.count_acycle;
+  status.count_tap_ok  <= status_align.count_tap_ok;
+  status.count_again_s <= status_align.count_again_s;
+  status.count_again_p <= status_align.count_again_p;
+  status.count_aloss_s <= status_align.count_aloss_s;
+  status.count_aloss_p <= status_align.count_aloss_p;
+  status.ctrl_char     <= status_align.ctrl_char;
 
   -- clock and reset generation
 
@@ -146,10 +152,11 @@ begin
       pclki   => pclki,
       prsto   => prst,
       pclko   => pclk,
-      sclko_p => sclk_p,
-      sclko_n => sclk_n,
+      sclko   => sclk,
       status  => status_clk
     );
+
+  sclkb <= not sclk;
 
   -- alignment
 
@@ -218,8 +225,8 @@ begin
       port map (
         rst               => prst,
         dynclksel         => '0',
-        clk               => sclk_p,
-        clkb              => sclk_n,
+        clk               => sclk,
+        clkb              => sclkb,
         ce1               => '1',
         ce2               => '1',
         dynclkdivsel      => '0',
@@ -231,14 +238,14 @@ begin
         ddly              => iserdes_ddly(i),
         ofb               => '0',
         bitslip           => iserdes_slip(i),
-        q1                => iserdes_q(i)(0),
-        q2                => iserdes_q(i)(1),
-        q3                => iserdes_q(i)(2),
-        q4                => iserdes_q(i)(3),
-        q5                => iserdes_q(i)(4),
-        q6                => iserdes_q(i)(5),
-        q7                => iserdes_q(i)(6),
-        q8                => iserdes_q(i)(7),
+        q1                => iserdes_q(i)(9),
+        q2                => iserdes_q(i)(8),
+        q3                => iserdes_q(i)(7),
+        q4                => iserdes_q(i)(6),
+        q5                => iserdes_q(i)(5),
+        q6                => iserdes_q(i)(4),
+        q7                => iserdes_q(i)(3),
+        q8                => iserdes_q(i)(2),
         o                 => open,
         shiftin1          => '0',
         shiftin2          => '0',
@@ -269,8 +276,8 @@ begin
       port map (
         rst               => prst,
         dynclksel         => '0',
-        clk               => sclk_p,
-        clkb              => sclk_n,
+        clk               => sclk,
+        clkb              => sclkb,
         ce1               => '1',
         ce2               => '1',
         dynclkdivsel      => '0',
@@ -284,8 +291,8 @@ begin
         bitslip           => iserdes_slip(i),
         q1                => open,
         q2                => open,
-        q3                => iserdes_q(i)(8),
-        q4                => iserdes_q(i)(9),
+        q3                => iserdes_q(i)(1),
+        q4                => iserdes_q(i)(0),
         q5                => open,
         q6                => open,
         q7                => open,

@@ -15,8 +15,6 @@
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
 
-set_property CLOCK_DEDICATED_ROUTE BACKBONE [get_nets {clki_100m_IBUF}]
-
 # HDMI input clock set at 100MHz to match fictional recipe for MMCM
 create_clock -add -name hdmi_rx_clk -period 10.00 -waveform {0 5} [get_ports hdmi_rx_clk_p]
 
@@ -24,8 +22,6 @@ create_clock -add -name hdmi_rx_clk -period 10.00 -waveform {0 5} [get_ports hdm
 create_generated_clock -name clk_100m [get_pins U_MMCM/MMCM/CLKOUT0]
 create_generated_clock -name clk_200m [get_pins U_MMCM/MMCM/CLKOUT1]
 create_generated_clock -name pclk     [get_pins U_HDMI_RX/U_CLK/U_MMCM/CLKOUT0]
-create_generated_clock -name sclk_p   [get_pins U_HDMI_RX/U_CLK/U_MMCM/CLKOUT1]
-create_generated_clock -name sclk_n   [get_pins U_HDMI_RX/U_CLK/U_MMCM/CLKOUT1B]
 
 # false paths
 set_false_path -from [get_clocks clk_100m] -to [get_clocks pclk]

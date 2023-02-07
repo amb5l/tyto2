@@ -96,7 +96,7 @@ entity tmds_cap_digilent_nexys_video is
     -- ac_adc_sdata    : in    std_logic;
 
     -- PMODs
-    -- ja              : inout std_logic_vector(7 downto 0);
+    ja            : out   std_logic_vector(7 downto 0);
     -- jb              : inout std_logic_vector(7 downto 0);
     -- jc              : inout std_logic_vector(7 downto 0);
     -- xa_p            : inout std_logic_vector(3 downto 0);
@@ -208,15 +208,29 @@ architecture synth of tmds_cap_digilent_nexys_video is
   signal hdmi_tx_d      : std_logic_vector(0 to 2);
 
   -- CPU
-  signal axi_mosi       : axi_mosi_t;
-  signal axi_miso       : axi_miso_t;
+  signal rsto           : std_logic;
+  signal axi_mosi       : axi32_mosi_t;
+  signal axi_miso       : axi32_miso_t;
 
 begin
 
-  led(4) <= not rst_100m;
-  led(5) <= idelayctrl_rdy;
-  led(6) <= not rst_200m;
-  led(7) <= '1';
+  ja(0) <= rx_status.ctrl_char(0);
+  ja(1) <= rx_status.ctrl_char(1);
+  ja(2) <= rx_status.ctrl_char(2);
+  ja(3) <= rx_status.align_p;
+  ja(4) <= pclk;
+  ja(5) <= '0';
+  ja(6) <= '0';
+  ja(7) <= '0';
+
+  led(0) <= not rst_200m;
+  led(1) <= not rst_100m;
+  led(2) <= not rsto;
+  led(3) <= not prst;
+  led(4) <= rx_status.align_s(0);
+  led(5) <= rx_status.align_s(1);
+  led(6) <= rx_status.align_s(2);
+  led(7) <= rx_status.align_p;
 
   --------------------------------------------------------------------------------
   -- clock and reset generation
@@ -295,7 +309,7 @@ begin
   U_CTRL: component tmds_cap_mb
     port map (
       rsti     => rst_100m,
-      rsto     => open,
+      rsto     => rsto,
       clk      => clk_100m,
       uart_tx  => uart_rx_out,
       uart_rx  => uart_tx_in,

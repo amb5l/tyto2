@@ -36,17 +36,19 @@ int main()
 		printf("      BITSLIP_0 : %08X\n", peek32(RA_BITSLIP_0		));
 		printf("      BITSLIP_1 : %08X\n", peek32(RA_BITSLIP_1		));
 		printf("      BITSLIP_2 : %08X\n", peek32(RA_BITSLIP_2		));
-		printf("COUNT_ATTEMPT_0 : %08X\n", peek32(RA_COUNT_ATTEMPT_0));
-		printf("COUNT_ATTEMPT_1 : %08X\n", peek32(RA_COUNT_ATTEMPT_1));
-		printf("COUNT_ATTEMPT_2 : %08X\n", peek32(RA_COUNT_ATTEMPT_2));
-		printf("  COUNT_ALIGN_0 : %08X\n", peek32(RA_COUNT_ALIGN_0	));
-		printf("  COUNT_ALIGN_1 : %08X\n", peek32(RA_COUNT_ALIGN_1	));
-		printf("  COUNT_ALIGN_2 : %08X\n", peek32(RA_COUNT_ALIGN_2	));
-		printf(" COUNT_RETAIN_0 : %08X\n", peek32(RA_COUNT_RETAIN_0	));
-		printf(" COUNT_RETAIN_1 : %08X\n", peek32(RA_COUNT_RETAIN_1	));
-		printf(" COUNT_RETAIN_2 : %08X\n", peek32(RA_COUNT_RETAIN_2	));
-		printf("COUNT_UNALIGN_0 : %08X\n", peek32(RA_COUNT_UNALIGN_0));
-		printf("COUNT_UNALIGN_1 : %08X\n", peek32(RA_COUNT_UNALIGN_1));
-		printf("COUNT_UNALIGN_2 : %08X\n", peek32(RA_COUNT_UNALIGN_2));
+        printf(" COUNT_ACYCLE_0 : %08X\n", peek32(RA_COUNT_ACYCLE_0 ));
+        printf(" COUNT_ACYCLE_1 : %08X\n", peek32(RA_COUNT_ACYCLE_1 ));
+        printf(" COUNT_ACYCLE_2 : %08X\n", peek32(RA_COUNT_ACYCLE_2 ));
+        printf(" COUNT_TAP_OK_0 : %08X\n", peek32(RA_COUNT_TAP_OK_0 ));
+        printf(" COUNT_TAP_OK_1 : %08X\n", peek32(RA_COUNT_TAP_OK_1 ));
+        printf(" COUNT_TAP_OK_2 : %08X\n", peek32(RA_COUNT_TAP_OK_2 ));
+        printf("COUNT_AGAIN_S_0 : %08X\n", peek32(RA_COUNT_AGAIN_S_0));
+        printf("COUNT_AGAIN_S_1 : %08X\n", peek32(RA_COUNT_AGAIN_S_1));
+        printf("COUNT_AGAIN_S_2 : %08X\n", peek32(RA_COUNT_AGAIN_S_2));
+        printf("  COUNT_AGAIN_P : %08X\n", peek32(RA_COUNT_AGAIN_P  ));
+        printf("COUNT_ALOSS_S_0 : %08X\n", peek32(RA_COUNT_ALOSS_S_0));
+        printf("COUNT_ALOSS_S_1 : %08X\n", peek32(RA_COUNT_ALOSS_S_1));
+        printf("COUNT_ALOSS_S_2 : %08X\n", peek32(RA_COUNT_ALOSS_S_2));
+        printf("  COUNT_ALOSS_P : %08X\n", peek32(RA_COUNT_ALOSS_P  ));
     }
 }

@@ -37,8 +37,7 @@ package hdmi_rx_selectio_clk_pkg is
       pclki   : in    std_logic;
       prsto   : out   std_logic;
       pclko   : out   std_logic;
-      sclko_p : out   std_logic;
-      sclko_n : out   std_logic;
+      sclko   : out   std_logic;
       status  : out   hdmi_rx_selectio_clk_status_t
     );
   end component hdmi_rx_selectio_clk;
@@ -68,8 +67,7 @@ entity hdmi_rx_selectio_clk is
     pclki   : in    std_logic;
     prsto   : out   std_logic;
     pclko   : out   std_logic;
-    sclko_p : out   std_logic;
-    sclko_n : out   std_logic;
+    sclko   : out   std_logic;
     status  : out   hdmi_rx_selectio_clk_status_t
   );
 end entity hdmi_rx_selectio_clk;
@@ -96,8 +94,7 @@ architecture synth of hdmi_rx_selectio_clk is
   -- MMCM (DRP = Dynamic Reconfiguration Port)
   signal mmcm_rst       : std_logic;                        -- reset
   signal mmcm_clkout0   : std_logic;                        -- clkout0
-  signal mmcm_clkout1p  : std_logic;                        -- clkout1+
-  signal mmcm_clkout1n  : std_logic;                        -- clkout1-
+  signal mmcm_clkout1   : std_logic;                        -- clkout1
   signal mmcm_fbo       : std_logic;                        -- feedback clock out
   signal mmcm_fbi       : std_logic;                        -- feedback clock in
   signal mmcm_lock_a    : std_logic;                        -- lock (asynchronous)
@@ -419,8 +416,8 @@ begin
       clkfbstopped         => open,
       clkout0              => mmcm_clkout0,
       clkout0b             => open,
-      clkout1              => mmcm_clkout1p,
-      clkout1b             => mmcm_clkout1n,
+      clkout1              => mmcm_clkout1,
+      clkout1b             => open,
       clkout2              => open,
       clkout2b             => open,
       clkout3              => open,
@@ -447,15 +444,10 @@ begin
       i => mmcm_clkout0,
       o => pclk
     );
-  U_BUFG_1P: component bufg
+  U_BUFG_1: component bufg
     port map (
-      i => mmcm_clkout1p,
-      o => sclko_p
-    );
-  U_BUFG_1N: component bufg
-    port map (
-      i => mmcm_clkout1n,
-      o => sclko_n
+      i => mmcm_clkout1,
+      o => sclko
     );
   U_BUFG_FB: component bufg
     port map (

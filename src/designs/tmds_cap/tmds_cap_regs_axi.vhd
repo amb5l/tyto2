@@ -29,8 +29,8 @@ package tmds_cap_regs_axi_pkg is
       rst         : in    std_logic;
       clk         : in    std_logic;
       rx_status   : in    hdmi_rx_selectio_status_t;
-      axi_mosi    : in    axi_mosi_t;
-      axi_miso    : out   axi_miso_t
+      axi_mosi    : in    axi32_mosi_t;
+      axi_miso    : out   axi32_miso_t
     );
   end component tmds_cap_regs_axi;
 
@@ -50,8 +50,8 @@ entity tmds_cap_regs_axi is
     rst         : in    std_logic;
     clk         : in    std_logic;
     rx_status   : in    hdmi_rx_selectio_status_t;
-    axi_mosi    : in    axi_mosi_t;
-    axi_miso    : out   axi_miso_t
+    axi_mosi    : in    axi32_mosi_t;
+    axi_miso    : out   axi32_miso_t
   );
 end entity tmds_cap_regs_axi;
 
@@ -70,6 +70,7 @@ begin
   axi_miso.bvalid  <= axi_mosi.awvalid and axi_mosi.wvalid;
   axi_miso.arready <= rstb;
   axi_miso.rresp   <= (others => '0');
+  axi_miso.rlast   <= '1';
   axi_miso.rvalid  <= rstb;
 
   process(rst,clk)
@@ -96,18 +97,20 @@ begin
         when x"30" => r( 3 downto 0) <= s.bitslip(0);
         when x"34" => r( 3 downto 0) <= s.bitslip(1);
         when x"38" => r( 3 downto 0) <= s.bitslip(2);
-        when x"40" => r(31 downto 0) <= s.count_attempt(0);
-        when x"44" => r(31 downto 0) <= s.count_attempt(1);
-        when x"48" => r(31 downto 0) <= s.count_attempt(2);
-        when x"50" => r(31 downto 0) <= s.count_align(0);
-        when x"54" => r(31 downto 0) <= s.count_align(1);
-        when x"58" => r(31 downto 0) <= s.count_align(2);
-        when x"60" => r(31 downto 0) <= s.count_retain(0);
-        when x"64" => r(31 downto 0) <= s.count_retain(1);
-        when x"68" => r(31 downto 0) <= s.count_retain(2);
-        when x"70" => r(31 downto 0) <= s.count_unalign(0);
-        when x"74" => r(31 downto 0) <= s.count_unalign(1);
-        when x"78" => r(31 downto 0) <= s.count_unalign(2);
+        when x"40" => r(31 downto 0) <= s.count_acycle(0);
+        when x"44" => r(31 downto 0) <= s.count_acycle(1);
+        when x"48" => r(31 downto 0) <= s.count_acycle(2);
+        when x"50" => r(31 downto 0) <= s.count_tap_ok(0);
+        when x"54" => r(31 downto 0) <= s.count_tap_ok(1);
+        when x"58" => r(31 downto 0) <= s.count_tap_ok(2);
+        when x"60" => r(31 downto 0) <= s.count_again_s(0);
+        when x"64" => r(31 downto 0) <= s.count_again_s(1);
+        when x"68" => r(31 downto 0) <= s.count_again_s(2);
+        when x"6C" => r(31 downto 0) <= s.count_again_p;
+        when x"70" => r(31 downto 0) <= s.count_aloss_s(0);
+        when x"74" => r(31 downto 0) <= s.count_aloss_s(1);
+        when x"78" => r(31 downto 0) <= s.count_aloss_s(2);
+        when x"7C" => r(31 downto 0) <= s.count_aloss_p;
         when others => null;
       end case;
       rstb <= axi_mosi.arvalid and axi_mosi.rready;

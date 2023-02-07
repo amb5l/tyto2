@@ -31,10 +31,13 @@ package hdmi_rx_selectio_align_pkg is
     tap_mask      : slv32_vector(0 to 2);
     tap           : slv5_vector(0 to 2);
     bitslip       : slv4_vector(0 to 2);
-    count_align   : slv32_vector(0 to 2);
-    count_unalign : slv32_vector(0 to 2);
-    count_attempt : slv32_vector(0 to 2);
-    count_retain  : slv32_vector(0 to 2);
+    count_acycle  : slv32_vector(0 to 2);
+    count_tap_ok  : slv32_vector(0 to 2);
+    count_again_s : slv32_vector(0 to 2);
+    count_again_p : std_logic_vector(31 downto 0);
+    count_aloss_s : slv32_vector(0 to 2);
+    count_aloss_p : std_logic_vector(31 downto 0);
+    ctrl_char     : std_logic_vector(0 to 2);
   end record hdmi_rx_selectio_align_status_t;
 
   component hdmi_rx_selectio_align is
@@ -131,10 +134,12 @@ architecture synth of hdmi_rx_selectio_align is
   signal align_p1         : std_logic;                          -- align_p delayed by 1 clock
   signal iserdes_q1       : slv10_vector(0 to 2);               -- iserdes_q delayed by 1 clock
   signal iserdes_q2       : slv10_vector(1 to 2);               -- iserdes_q delayed by 2 clocks
-  signal count_align      : slv32_vector(0 to 2);               -- count gain of lock (full alignment)
-  signal count_unalign    : slv32_vector(0 to 2);               -- count loss of lock
-  signal count_attempt    : slv32_vector(0 to 2);               -- count loss of lock
-  signal count_retain     : slv32_vector(0 to 2);               -- count loss of lock
+  signal count_acycle     : slv32_vector(0 to 2);               -- count alignment cycles per channel
+  signal count_tap_ok     : slv32_vector(0 to 2);               -- count tap ok occurrences per channel
+  signal count_again_s    : slv32_vector(0 to 2);               -- count gain of serial alignment per channel
+  signal count_again_p    : std_logic_vector(31 downto 0);      -- count gain of parallel alignment
+  signal count_aloss_s    : slv32_vector(0 to 2);               -- count loss of serial alignment per channel
+  signal count_aloss_p    : std_logic_vector(31 downto 0);      -- count loss of parallel alignment
 
 begin
 
@@ -148,11 +153,14 @@ begin
     "00" when SKEW_0, "01" when SKEW_P1, "10" when SKEW_BAD, "11" when SKEW_N1;
   with ch_skew(2) select status.skew_p(2) <=
     "00" when SKEW_0, "01" when SKEW_P1, "10" when SKEW_BAD, "11" when SKEW_N1;
+  status.count_acycle  <= count_acycle;
+  status.count_tap_ok  <= count_tap_ok;
+  status.count_again_s <= count_again_s;
+  status.count_again_p <= count_again_p;
+  status.count_aloss_s <= count_aloss_s;
+  status.count_aloss_p <= count_aloss_p;
   GEN_STATUS: for i in 0 to 2 generate
-    status.count_attempt <= count_attempt;
-    status.count_align   <= count_align;
-    status.count_retain  <= count_retain;
-    status.count_unalign <= count_unalign;
+    status.ctrl_char(i) <= iserdes_cc(i)(0);
   end generate GEN_STATUS;
 
   process(prst,pclk)
@@ -183,10 +191,12 @@ begin
       align_p1         <= '0';
       iserdes_q1       <= (others => (others => '0'));
       iserdes_q2       <= (others => (others => '0'));
-      count_attempt    <= (others => (others => '0'));
-      count_align      <= (others => (others => '0'));
-      count_retain     <= (others => (others => '0'));
-      count_unalign    <= (others => (others => '0'));
+      count_acycle     <= (others => (others => '0'));
+      count_tap_ok     <= (others => (others => '0'));
+      count_again_s    <= (others => (others => '0'));
+      count_again_p    <= (others => '0');
+      count_aloss_s    <= (others => (others => '0'));
+      count_aloss_p    <= (others => '0');
       status.tap_mask  <= (others => (others => '0'));
       status.tap       <= (others => (others => '0'));
       status.bitslip   <= (others => (others => '0'));
@@ -218,10 +228,10 @@ begin
           ccount      <= 0;
           tap_ok      <= '0';
           tap         <= 0;
+          count_acycle(ch) <= std_logic_vector(unsigned(count_acycle(ch))+1);
           if align_s(ch) = '1' then -- aligned, so don't change tap
             state <= CC_COUNT;
           else -- not aligned, so try all taps/bitslips
-            count_attempt(ch) <= std_logic_vector(unsigned(count_attempt(ch))+1);
             tap_ok_mask       <= (others => '0');
             bitslip           <= 0;
             state             <= LOAD_TAP;
@@ -241,6 +251,7 @@ begin
           if pcount = PCOUNT_MAX then -- end of interval
             pcount <= 0;
             if align_s(ch) = '1' then -- alignment lost
+              count_aloss_s(ch) <= std_logic_vector(unsigned(count_aloss_s(ch))+1);
               align_s(ch) <= '0';
               ccount      <= 0;
               state       <= IDLE;
@@ -253,8 +264,8 @@ begin
               ccount <= ccount+1;
               if ccount = CCOUNT_MIN-1 then -- this tap was OK
                 tap_ok <= '1';
+                count_tap_ok(ch) <= std_logic_vector(unsigned(count_tap_ok(ch))+1);
                 if align_s(ch) = '1' then -- alignment retained
-                  count_retain(ch) <= std_logic_vector(unsigned(count_attempt(ch))+1);
                   state  <= NEXT_CHANNEL;
                 else
                   state <= NEXT_TAP;
@@ -283,6 +294,7 @@ begin
             state <= NEXT_BITSLIP;
           elsif tap_ok_mask = x"FFFFFFFF" then -- shortcut if all taps OK
             if align_s(ch) = '0' then -- alignment achieved
+              count_again_s(ch) <= std_logic_vector(unsigned(count_again_s(ch))+1);
               align_s(ch)     <= '1';
               idelay_tap_i    <= "01111"; -- set delay to centre
               idelay_ld_i(ch) <= '1';
@@ -338,6 +350,7 @@ begin
         -- ...then act on result
         when TAP_SCAN_4 =>
           if scan_ok_len >= EYE_OPEN_MIN then -- alignment established
+            count_again_s(ch) <= std_logic_vector(unsigned(count_again_s(ch))+1);
             align_s(ch)     <= '1';
             idelay_ld_i(ch) <= '1';
             idelay_tap_i    <= std_logic_vector(to_unsigned(scan_ok_tap,5));
@@ -370,33 +383,47 @@ begin
       end case;
 
       -- parallel alignment
-      if align_s = "111" then -- full serial alignment
-        if iserdes_cc(0) = "1100" then -- leading edge of control period
+      if align_p = '0' then -- currently unaligned
+        if align_s = "111" then -- full serial alignment
+          if iserdes_cc(0) = "0011" then -- leading edge of control period
+            for i in 1 to 2 loop
+              -- compare channel i with channel 0
+              if iserdes_cc(i) = "0011" then -- channel i is aligned
+                ch_skew(i) <= SKEW_0;
+              elsif iserdes_cc(i) = "0001" then -- channel i is 1 clock behind
+                ch_skew(i) <= SKEW_N1;
+              elsif iserdes_cc(i) = "0111" then -- channel i is 1 clock ahead
+                ch_skew(i) <= SKEW_P1;
+              else -- failure
+                ch_skew(i) <= SKEW_BAD;
+              end if;
+            end loop;
+          end if;
+          if ch_skew(1) /= SKEW_BAD -- channel 1 parallel deskewed
+          and ch_skew(2) /= SKEW_BAD -- channel 2 parallel deskewed
+          then
+            align_p <= '1';
+          end if;
+        end if;
+      else -- currently aligned
+        if align_s /= "111" then -- loss of serial alignment
+          align_p <= '0';
+        elsif iserdes_cc(0) = "0011" then -- leading edge of control period
           for i in 1 to 2 loop
-            -- compare channel i with channel 0
-            if iserdes_cc(i) = "1100" then -- channel i is aligned
-              ch_skew(i) <= SKEW_0;
-            elsif iserdes_cc(i) = "1000" then -- channel i is 1 clock behind
-              ch_skew(i) <= SKEW_N1;
-            elsif iserdes_cc(i) = "1110" then -- channel i is 1 clock ahead
-              ch_skew(i) <= SKEW_P1;
-            else -- failure
-              ch_skew(i) <= SKEW_BAD;
+            if (ch_skew(i) = SKEW_0  and iserdes_cc(i) /= "0011")
+            or (ch_skew(i) = SKEW_N1 and iserdes_cc(i) /= "0001")
+            or (ch_skew(i) = SKEW_P1 and iserdes_cc(i) /= "0111")
+            or (ch_skew(i) = SKEW_BAD)
+            then -- loss of alignment
+              align_p <= '0';
             end if;
           end loop;
         end if;
       end if;
-      align_p <= '0';
-      if align_s = "111" -- full alignment
-      and ch_skew(1) /= SKEW_BAD -- channel 1 parallel deskewed
-      and ch_skew(2) /= SKEW_BAD -- channel 2 parallel deskewed
-      then
-        align_p <= '1';
-      end if;
-      if align_p = '1' and align_p1 = '0' then
-        count_align(ch) <= std_logic_vector(unsigned(count_align(ch))+1);
-      elsif align_p = '0' and align_p1 = '1' then
-        count_unalign(ch) <= std_logic_vector(unsigned(count_unalign(ch))+1);
+      if align_p = '1' and align_p1 = '0' then -- count alignment gain
+        count_again_p <= std_logic_vector(unsigned(count_again_p)+1);
+      elsif align_p = '0' and align_p1 = '1' then -- count alignment loss
+        count_aloss_p <= std_logic_vector(unsigned(count_aloss_p)+1);
       end if;
       align_p1 <= align_p;
 
