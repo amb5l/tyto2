@@ -52,6 +52,9 @@ library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
 
+library unisim;
+  use unisim.vcomponents.all;
+
 library work;
   use work.tyto_types_pkg.all;
   use work.video_mode_pkg.all;
@@ -60,7 +63,7 @@ library work;
   use work.video_out_test_pattern_pkg.all;
   use work.audio_out_test_tone_pkg.all;
   use work.vga_to_hdmi_pkg.all;
-  use work.serialiser_10to1_selectio_pkg.all;
+  use work.hdmi_tx_selectio_pkg.all;
 
 entity hdmi_tpg is
   generic (
@@ -145,6 +148,9 @@ architecture synth of hdmi_tpg is
   signal pcm_cts        : std_logic_vector(19 downto 0); -- HDMI Audio Clock Regeneration packet CTS value
 
   signal tmds           : slv_9_0_t(0 to 2);             -- parallel TMDS channels
+
+  signal hdmi_clk       : std_logic;                     -- single ended prior to diff buffers
+  signal hdmi_d         : std_logic_vector(0 to 2);      -- "
 
 begin
 
@@ -388,31 +394,34 @@ begin
       tmds      => tmds
     );
 
-  -- serialiser: in this design we use TMDS SelectIO outputs
+  -- serialiser and output buffers: in this design we use TMDS SelectIO outputs
 
-  gen_hdmi_data: for i in 0 to 2 generate
-  begin
-
-    HDMI_DATA: component serialiser_10to1_selectio
-      port map (
-        rst    => pix_rst,
-        clk    => pix_clk,
-        clk_x5 => pix_clk_x5,
-        d      => tmds(i),
-        out_p  => hdmi_d_p(i),
-        out_n  => hdmi_d_n(i)
-      );
-
-  end generate gen_hdmi_data;
-
-  HDMI_CLK: component serialiser_10to1_selectio
+  HDMI_SER: component hdmi_tx_selectio
     port map (
-      rst    => pix_rst,
-      clk    => pix_clk,
-      clk_x5 => pix_clk_x5,
-      d      => "0000011111",
-      out_p  => hdmi_clk_p,
-      out_n  => hdmi_clk_n
+      sclki => pix_clk_x5,
+      prsti => pix_rst,
+      pclki => pix_clk,
+      pi(0) => tmds(0),
+      pi(1) => tmds(1),
+      pi(2) => tmds(2),
+      pclko => hdmi_clk,
+      so    => hdmi_d
     );
+
+  HDMI_OUT_CLK: component obufds
+    port map (
+      i  => hdmi_clk,
+      o  => hdmi_clk_p,
+      ob => hdmi_clk_n
+    );
+
+  GEN_CH: for i in 0 to 2 generate
+    HDMI_OUT_D: component obufds
+      port map (
+        i  => hdmi_d(i),
+        o  => hdmi_d_p(i),
+        ob => hdmi_d_n(i)
+      );
+  end generate GEN_CH;
 
 end architecture synth;
