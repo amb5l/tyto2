@@ -129,6 +129,7 @@ architecture synth of hdmi_rx_selectio_align is
   signal scan_ok_len      : integer range 0 to 31;              -- best OK tap range length
   signal scan_ok_tap      : integer range 0 to 31;              -- best OK tap
   signal align_s          : std_logic_vector(0 to 2);           -- serial alignment per channel
+  signal align_s1         : std_logic_vector(0 to 2);           -- above, delayed by 1 clock
   signal ch_skew          : ch_skew_t;                          -- channel skew (parallel)
   signal align_p          : std_logic;                          -- parallel alignment
   signal align_p1         : std_logic;                          -- align_p delayed by 1 clock
@@ -183,6 +184,7 @@ begin
       scan_ok_start    <= 0;
       scan_ok_len      <= 0;
       align_s          <= (others => '0');
+      align_s1         <= (others => '0');
       iserdes_slip_i   <= (others => '0');
       idelay_tap_i     <= (others => '0');
       idelay_ld_i      <= (others => '0');
@@ -251,7 +253,6 @@ begin
           if pcount = PCOUNT_MAX then -- end of interval
             pcount <= 0;
             if align_s(ch) = '1' then -- alignment lost
-              count_aloss_s(ch) <= std_logic_vector(unsigned(count_aloss_s(ch))+1);
               align_s(ch) <= '0';
               ccount      <= 0;
               state       <= IDLE;
@@ -294,10 +295,9 @@ begin
             state <= NEXT_BITSLIP;
           elsif tap_ok_mask = x"FFFFFFFF" then -- shortcut if all taps OK
             if align_s(ch) = '0' then -- alignment achieved
-              count_again_s(ch) <= std_logic_vector(unsigned(count_again_s(ch))+1);
               align_s(ch)     <= '1';
-              idelay_tap_i    <= "01111"; -- set delay to centre
               idelay_ld_i(ch) <= '1';
+              idelay_tap_i    <= "01111"; -- set delay to centre
             end if;
             state <= NEXT_CHANNEL;
           else -- all taps not OK so scan
@@ -350,7 +350,6 @@ begin
         -- ...then act on result
         when TAP_SCAN_4 =>
           if scan_ok_len >= EYE_OPEN_MIN then -- alignment established
-            count_again_s(ch) <= std_logic_vector(unsigned(count_again_s(ch))+1);
             align_s(ch)     <= '1';
             idelay_ld_i(ch) <= '1';
             idelay_tap_i    <= std_logic_vector(to_unsigned(scan_ok_tap,5));
@@ -444,13 +443,15 @@ begin
         end loop;
       end if;
 
-      -- status
+      -- counters and status
+      align_s1 <= align_s;
       for i in 0 to 2 loop
-        if state = CHECK_ALIGN then
+        if align_s(i) = '1' and align_s1(i) = '0' then -- alignment gained
+          count_again_s(i)   <= std_logic_vector(unsigned(count_again_s(i))+1);
           status.tap_mask(i) <= tap_ok_mask;
-        end if;
-        if idelay_ld_i(i) = '1' then
-          status.tap(i) <= std_logic_vector(to_unsigned(tap,5));
+          status.tap(i)      <= idelay_tap_i;
+        elsif align_s(i) = '0' and align_s1(i) = '1' then -- alignment lost
+          count_aloss_s(i)   <= std_logic_vector(unsigned(count_aloss_s(i))+1);
         end if;
         if iserdes_slip_i(i) = '1' then
           status.bitslip(i) <= std_logic_vector(to_unsigned(bitslip,4));
