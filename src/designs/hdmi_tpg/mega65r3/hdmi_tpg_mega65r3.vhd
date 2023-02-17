@@ -207,6 +207,7 @@ architecture synth of hdmi_tpg_mega65r3 is
   -- MEGA65 specific signals
   signal floppyled    : std_logic;
   signal key_return_n : std_logic;
+  signal key_delete_n : std_logic;
 
 begin
 
@@ -226,6 +227,7 @@ begin
       mode_step  => mode_step,
       mode       => mode,
       dvi        => dvi,
+      steady     => not key_delete_n,
       heartbeat  => heartbeat,
       status     => status,
       hdmi_clk_p => hdmi_clk_p,
@@ -245,7 +247,7 @@ begin
       kio8        => kb_io0,        -- clock to keyboard
       kio9        => kb_io1,        -- data output to keyboard
       kio10       => kb_io2,        -- data input from keyboard
-      delete_out  => open,
+      delete_out  => key_delete_n,
       return_out  => key_return_n,
       fastkey_out => open
     );

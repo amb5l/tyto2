@@ -29,6 +29,8 @@ package audio_out_test_tone_pkg is
       ref_rst   : in    std_logic;
       ref_clk   : in    std_logic;
 
+      steady    : in    std_logic;
+
       pcm_rst   : out   std_logic;
       pcm_clk   : out   std_logic;
       pcm_clken : out   std_logic;
@@ -59,6 +61,8 @@ entity audio_out_test_tone is
     ref_rst   : in    std_logic;                     -- reference clock reset
     ref_clk   : in    std_logic;                     -- reference clock (100MHz)
 
+    steady    : in    std_logic;                     -- steady tone when asserted
+
     pcm_rst   : out   std_logic;                     -- audio clock reset
     pcm_clk   : out   std_logic;                     -- audio clock (256Fs = 12.288MHz)
     pcm_clken : out   std_logic;                     -- audio clock enable (Fs = 48kHz)
@@ -81,6 +85,7 @@ architecture synth of audio_out_test_tone is
   signal count_p     : integer range 0 to 3;
   signal en_l        : std_logic;
   signal en_r        : std_logic;
+  signal steady_s    : std_logic_vector(0 to 1); -- synchroniser
 
 begin
 
@@ -101,16 +106,18 @@ begin
   MAIN: process (pcm_rst_i, pcm_clk_i) is
   begin
     if pcm_rst_i = '1' then
-      count_t <= 0;
-      a4      <= '0';
-      a3      <= '0';
-      count_2 <= 0;
-      count_p <= 0;
-      en_l    <= '0';
-      en_r    <= '0';
-      pcm_l   <= (others => '0');
-      pcm_r   <= (others => '0');
+      count_t  <= 0;
+      a4       <= '0';
+      a3       <= '0';
+      count_2  <= 0;
+      count_p  <= 0;
+      en_l     <= '0';
+      en_r     <= '0';
+      pcm_l    <= (others => '0');
+      pcm_r    <= (others => '0');
+      steady_s <= (others => '0');
     elsif rising_edge(pcm_clk_i) then
+      steady_s(0 to 1) <= steady & steady_s(0);
       if pcm_clken_i = '1' then
         count_t <= (count_t+1) mod 109;
         if count_t = 108 then
@@ -129,6 +136,10 @@ begin
           when 2 => en_l <= '0'; en_r <= '1';
           when 3 => en_l <= '0'; en_r <= '0';
         end case;
+        if steady_s(1) = '1' then
+          en_l <= '1';
+          en_r <= '1';
+        end if;
         if en_l = '1' then
           if a4 = '1' then
             pcm_l <= std_logic_vector(to_signed(+16384, 16));

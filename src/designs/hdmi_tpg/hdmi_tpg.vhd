@@ -32,6 +32,7 @@ package hdmi_tpg_pkg is
       mode_step  : in    std_logic;
       mode       : out   std_logic_vector(3 downto 0);
       dvi        : in    std_logic;
+      steady     : in    std_logic;
 
       heartbeat  : out   std_logic_vector(3 downto 0);
       status     : out   std_logic_vector(1 downto 0);
@@ -77,6 +78,7 @@ entity hdmi_tpg is
     mode_step  : in    std_logic;                    -- video mode step (e.g. button)
     mode       : out   std_logic_vector(3 downto 0); -- current video mode
     dvi        : in    std_logic;                    -- 1 = DVI, 0 = HDMI
+    steady     : in    std_logic;                    -- 1 = steady tone, 0 = alternating
 
     heartbeat  : out   std_logic_vector(3 downto 0); -- 4 bit count @ 8Hz (heartbeat for LEDs)
     status     : out   std_logic_vector(1 downto 0); -- MMCM lock status
@@ -329,6 +331,7 @@ begin
     port map (
       ref_rst   => rst,
       ref_clk   => clk,
+      steady    => steady,
       pcm_rst   => pcm_rst,
       pcm_clk   => pcm_clk,
       pcm_clken => pcm_clken,

@@ -145,6 +145,7 @@ begin
       mode_step  => mode_step,
       mode       => mode,
       dvi        => dvi,
+      steady     => '0',
       heartbeat  => heartbeat,
       status     => status,
       hdmi_clk_p => hdmi_clk_p,

@@ -29,3 +29,8 @@ set_false_path -from [get_clocks pcm_clk] -to   [get_clocks pix_clk]
 set_false_path -from [get_clocks pcm_clk] -to   [get_clocks pix_clk_x5]
 set_false_path -to   [get_clocks pcm_clk] -from [get_clocks pix_clk]
 set_false_path -to   [get_clocks pcm_clk] -from [get_clocks pix_clk_x5]
+
+# placement constraint for the keyboard driver
+create_pblock pblock_m65_keyb
+add_cells_to_pblock pblock_m65_keyb [get_cells [list M65_KEYB]]
+resize_pblock pblock_m65_keyb -add {SLICE_X0Y225:SLICE_X7Y243}
