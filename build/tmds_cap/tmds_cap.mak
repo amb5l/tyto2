@@ -23,10 +23,13 @@ VIVADO_DSN_VHDL:=\
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
 	$(SRC)/common/axi/axi_pkg.vhd \
-	$(SRC)/designs/$(DESIGN)/tmds_cap_mb.vhd \
+	$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb.vhd \
 	$(SRC)/designs/$(DESIGN)/tmds_cap_regs_axi.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
-VIVADO_DSN_BD_TCL:=$(SRC)/designs/$(DESIGN)/microblaze.tcl
+VIVADO_DSN_BD_TCL:=\
+	$(SRC)/boards/$(BOARD)/axi_ddr3.tcl \
+	$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb_cpu.tcl \
+	$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb_sys.tcl
 VIVADO_DSN_PROC_INST:=cpu
 VIVADO_DSN_PROC_REF:=microblaze
 VIVADO_DSN_XDC_IMPL:=\
