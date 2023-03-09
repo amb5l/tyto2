@@ -6,18 +6,12 @@ ifeq ($(OS),Windows_NT)
 REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
 endif
 endif
-
-FPGA_VENDOR:=$(word 1,$(FPGA))
-FPGA_FAMILY:=$(word 2,$(FPGA))
-FPGA_DEVICE:=$(word 3,$(FPGA))
-
+SUBMODULES:=$(REPO_ROOT)/submodules
+MAKE_FPGA:=$(SUBMODULES)/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
 
-ifeq ($(FPGA_VENDOR),xilinx)
+FPGA_TOOL:=vivado
 
-VIVADO_PART:=$(FPGA_DEVICE)
-VIVADO_PROJ:=fpga
-VIVADO_LANG:=VHDL
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
 VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
@@ -48,7 +42,7 @@ VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/video/model_vga_sink.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
 
-SIMULATORS:=ghdl nvc vsim xsim
+SIMULATOR:=ghdl nvc vsim xsim_cmd xsim_ide
 SIM_TOP:=$(VIVADO_SIM_TOP)
 SIM_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
 NO_SECURE_IP:=ghdl nvc vsim
@@ -58,22 +52,19 @@ SIM_SRC+=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/cfg_$(VIVADO_SIM_TOP)_n.vhd
 SIM_TOP:=cfg_$(VIVADO_SIM_TOP)
 endif
+SIM_RUN:=$(SIM_TOP)
 GHDL_LIBS:=xilinx-vivado
 NVC_GOPTS:=-H 32m
 
-VSCODE_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
-V4P_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
-V4P_LIB_SRC:=\
+VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
+VSCODE_SRC:=$(VIVADO_DSN_VHDL_2008) $(VIVADO_SIM_VHDL_2008)
+VSCODE_XLIB:=unisim
+VSCODE_XSRC.unisim:=\
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
 
-endif
-
-SIM_RUN:=$(SIM_TOP)
-#SIM_RUN:=$(SIM_TOP),path_basename=$(shell cygpath -m -a $(SIM_DIR))/$(SIM_TOP)
-
-include $(REPO_ROOT)/build/build.mak
+include $(MAKE_FPGA)
 
 sim:: $(wildcard $(SRC)/designs/$(DESIGN)/test/*.sha256)
 	cd $(SIM_DIR) && sha256sum --check $^
