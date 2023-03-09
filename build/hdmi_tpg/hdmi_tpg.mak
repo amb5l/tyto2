@@ -10,6 +10,9 @@ SUBMODULES:=$(REPO_ROOT)/submodules
 MAKE_FPGA:=$(SUBMODULES)/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
 
+FPGA_VENDOR:=$(word 1,$(FPGA))
+FPGA_FAMILY:=$(word 2,$(FPGA))
+
 FPGA_TOOL:=vivado
 
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
