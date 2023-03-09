@@ -1,6 +1,3 @@
-[submodule "submodules/xilinx-mk"]
-	path = submodules/xilinx-mk
-	url = https://github.com/amb5l/xilinx-mk.git
 [submodule "submodules/T65"]
 	path = submodules/T65
 	url = https://github.com/amb5l/T65.git
