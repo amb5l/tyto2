@@ -6,15 +6,15 @@ ifeq ($(OS),Windows_NT)
 REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
 endif
 endif
+SUBMODULES:=$(REPO_ROOT)/submodules
+MAKE_FPGA:=$(SUBMODULES)/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
 
 FPGA_VENDOR:=$(word 1,$(FPGA))
 FPGA_FAMILY:=$(word 2,$(FPGA))
-FPGA_DEVICE:=$(word 3,$(FPGA))
 
-VIVADO_PART:=$(FPGA_DEVICE)
-VIVADO_PROJ:=fpga
-VIVADO_LANG:=VHDL
+FPGA_TOOL:=vivado
+
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
 VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
@@ -67,13 +67,14 @@ VITIS_INCLUDE:=\
 	$(SRC)/common/basic/microblaze \
 	$(SRC)/common/video/microblaze
 
-SIMULATORS:=vivado xsim
+SIMULATOR:=xsim_cmd xsim_ide
 SIM_TOP:=$(VIVADO_SIM_TOP)
 SIM_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
 
+VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
 VSCODE_SRC:=$(SIM_SRC)
-V4P_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
-V4P_LIB_SRC:=\
+VSCODE_XLIB:=unisim
+VSCODE_XSRC.unisim:=\
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd \
@@ -81,4 +82,4 @@ V4P_LIB_SRC:=\
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd \
 	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/secureip/OSERDESE2.vhd
 
-include $(REPO_ROOT)/build/build.mak
+include $(MAKE_FPGA)
