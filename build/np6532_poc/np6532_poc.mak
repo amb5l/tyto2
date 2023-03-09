@@ -7,11 +7,11 @@ REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
 endif
 endif
 SUBMODULES:=$(REPO_ROOT)/submodules
+MAKE_FPGA:=$(SUBMODULES)/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
 
 FPGA_VENDOR:=$(word 1,$(FPGA))
 FPGA_FAMILY:=$(word 2,$(FPGA))
-FPGA_DEVICE:=$(word 3,$(FPGA))
 
 # definitions for generating VHDL source from data
 
@@ -46,11 +46,10 @@ INIT_BIN:=$(BUILD_6502_DIR)/$(INIT).bin
 
 # Vivado definitions
 
-ifeq ($(FPGA_VENDOR),xilinx)
+ifeq ($(word 1,$(FPGA)),xilinx)
 
-VIVADO_PART:=$(FPGA_DEVICE)
-VIVADO_PROJ:=fpga
-VIVADO_LANG:=VHDL
+FPGA_TOOL:=vivado
+
 VIVADO_DSN_TOP:=$(DESIGN)_$(RAM_SIZE)k_$(BOARD)
 VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
@@ -80,22 +79,24 @@ SIM_TOP:=$(VIVADO_SIM_TOP)
 SIM_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
 GHDL_LIBS:=xilinx-vivado
 
+VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
 VSCODE_SRC:=$(SIM_SRC)
-V4P_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
-V4P_LIB_SRC:=\
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/LDCE.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/RAM64X1D.vhd
+VSCODE_XLIB:=unisim
+VSCODE_XSRC.unisim:=\
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/LDCE.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/RAM64X1D.vhd
 
 endif
 
 # Quartus definitions
 
-ifeq ($(FPGA_VENDOR),intel)
+ifeq ($(word 1,$(FPGA)),intel)
 
-QUARTUS_PART:=$(FPGA_DEVICE)
+FPGA_TOOL:=quartus
+
 QUARTUS_TOP:=$(DESIGN)_$(RAM_SIZE)k_$(BOARD)
 QUARTUS_MAP_OPTIMIZE:=speed
 QUARTUS_FIT_EFFORT:=auto
@@ -130,23 +131,24 @@ SIM_SRC:=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(SIM_TOP).vhd
 GHDL_LIBS:=intel
 
-VSCODE_SRC:=$(SIM_SRC)
-V4P_TOP:=$(QUARTUS_TOP),$(SIM_TOP)
-V4P_LIB_SRC:=\
-	work;$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/pll_otus_50m_96m_32m/pll_otus_50m_96m_32m_sim/pll_otus_50m_96m_32m.vho \
-	altera_lnsim;$(QUARTUS_ROOTDIR)/libraries/vhdl/altera_lnsim/altera_lnsim_components.vhd \
-	altera_mf;$(QUARTUS_ROOTDIR)/libraries/vhdl/altera_mf/altera_mf_components.vhd
+VSCODE_TOP:=$(QUARTUS_TOP),$(SIM_TOP)
+VSCODE_SRC:=\
+	$(SIM_SRC) \
+	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/pll_otus_50m_96m_32m/pll_otus_50m_96m_32m_sim/pll_otus_50m_96m_32m.vho
+VSCODE_XLIB:=altera_lnsim,altera_mf
+VSCODE_XSRC.altera_lnsim:=$(QUARTUS_ROOTDIR)/libraries/vhdl/altera_lnsim/altera_lnsim_components.vhd \
+VSCODE_XSRC.altera_mf:=$(QUARTUS_ROOTDIR)/libraries/vhdl/altera_mf/altera_mf_components.vhd
 
 endif
 
 # simulation definitions
 
-SIMULATORS:=ghdl nvc vsim xsim
+SIMULATORS:=ghdl nvc vsim xsim_cmd xsim_ide
 SIM_RUN=$(SIM_TOP),success_addr=$(shell printf "%d\n" 0x$(shell grep ";if you get here everything went well" $(FUNCTEST_LST) | cut -c 1-6))
 
 # heavy lifting
 
-include $(REPO_ROOT)/build/build.mak
+include $(MAKE_FPGA)
 
 # rules and recipes for generated VHDL source and 6502 binaries
 
