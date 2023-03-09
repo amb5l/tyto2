@@ -7,15 +7,11 @@ REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
 endif
 endif
 SUBMODULES:=$(REPO_ROOT)/submodules
+MAKE_FPGA:=$(SUBMODULES)/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
 
-FPGA_VENDOR:=$(word 1,$(FPGA))
-FPGA_FAMILY:=$(word 2,$(FPGA))
-FPGA_DEVICE:=$(word 3,$(FPGA))
+FPGA_TOOL:=vivado
 
-VIVADO_PART:=$(FPGA_DEVICE)
-VIVADO_PROJ:=fpga
-VIVADO_LANG:=VHDL
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
 VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/ddr3_wrapper_$(BOARD).vhd \
@@ -34,12 +30,12 @@ VIVADO_SIM_IP_ddr3:=\
     ddr3/ddr3/example_design/sim/ddr3_model.sv \
     ddr3/ddr3/example_design/sim/ddr3_model_parameters.vh
 
-SIMULATORS:=xsim
+SIMULATOR:=xsim_cmd xsim_ide
 SIM_TOP:=$(VIVADO_SIM_TOP)
 SIM_SRC:=$(VIVADO_DSN_VHDL_2008) $(VIVADO_SIM_VHDL_2008)
 SIM_RUN:=$(SIM_TOP)
 
-VSCODE_SRC:=$(SIM_SRC)
-V4P_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
+VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
+VSCODE_SRC:=$(VIVADO_DSN_VHDL_2008) $(VIVADO_SIM_VHDL_2008)
 
-include $(REPO_ROOT)/build/build.mak
+include $(MAKE_FPGA)
