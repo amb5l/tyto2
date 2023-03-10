@@ -23,12 +23,13 @@ set script_folder [_tcl::get_script_folder]
 set scripts_vivado_version 2022.2
 set current_vivado_version [version -short]
 
-if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
-   puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
-
-   return 1
-}
+# skip version check
+#if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
+#   puts ""
+#   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+#
+#   return 1
+#}
 
 ################################################################
 # START
@@ -51,7 +52,6 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
    create_project project_1 myproj -part xc7a200tsbg484-1
-   set_property BOARD_PART digilentinc.com:nexys_video:part0:1.1 [current_project]
 }
 
 
@@ -132,7 +132,6 @@ set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
 xilinx.com:ip:axi_dma:7.1\
-xilinx.com:ip:util_vector_logic:2.0\
 "
 
    set list_ips_missing ""
@@ -237,6 +236,22 @@ proc create_root_design { parentCell } {
   # Create interface ports
   set ddr3 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 ddr3 ]
 
+  set emac_maxis [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:axis_rtl:1.0 emac_maxis ]
+
+  set emac_saxis [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 emac_saxis ]
+  set_property -dict [ list \
+   CONFIG.HAS_TKEEP {1} \
+   CONFIG.HAS_TLAST {1} \
+   CONFIG.HAS_TREADY {1} \
+   CONFIG.HAS_TSTRB {0} \
+   CONFIG.LAYERED_METADATA {undef} \
+   CONFIG.PHASE {0} \
+   CONFIG.TDATA_NUM_BYTES {4} \
+   CONFIG.TDEST_WIDTH {0} \
+   CONFIG.TID_WIDTH {0} \
+   CONFIG.TUSER_WIDTH {0} \
+   ] $emac_saxis
+
   set eth_maxi [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 eth_maxi ]
   set_property -dict [ list \
    CONFIG.ADDR_WIDTH {32} \
@@ -244,37 +259,6 @@ proc create_root_design { parentCell } {
    CONFIG.HAS_REGION {0} \
    CONFIG.PROTOCOL {AXI4} \
    ] $eth_maxi
-
-  set eth_saxi [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 eth_saxi ]
-  set_property -dict [ list \
-   CONFIG.ADDR_WIDTH {32} \
-   CONFIG.ARUSER_WIDTH {0} \
-   CONFIG.AWUSER_WIDTH {0} \
-   CONFIG.BUSER_WIDTH {0} \
-   CONFIG.DATA_WIDTH {32} \
-   CONFIG.HAS_BRESP {0} \
-   CONFIG.HAS_BURST {1} \
-   CONFIG.HAS_CACHE {0} \
-   CONFIG.HAS_LOCK {0} \
-   CONFIG.HAS_PROT {0} \
-   CONFIG.HAS_QOS {0} \
-   CONFIG.HAS_REGION {0} \
-   CONFIG.HAS_RRESP {0} \
-   CONFIG.HAS_WSTRB {0} \
-   CONFIG.ID_WIDTH {0} \
-   CONFIG.MAX_BURST_LENGTH {256} \
-   CONFIG.NUM_READ_OUTSTANDING {1} \
-   CONFIG.NUM_READ_THREADS {1} \
-   CONFIG.NUM_WRITE_OUTSTANDING {1} \
-   CONFIG.NUM_WRITE_THREADS {1} \
-   CONFIG.PROTOCOL {AXI4} \
-   CONFIG.READ_WRITE_MODE {READ_WRITE} \
-   CONFIG.RUSER_BITS_PER_BYTE {0} \
-   CONFIG.RUSER_WIDTH {0} \
-   CONFIG.SUPPORTS_NARROW_BURST {0} \
-   CONFIG.WUSER_BITS_PER_BYTE {0} \
-   CONFIG.WUSER_WIDTH {0} \
-   ] $eth_saxi
 
   set gpio [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 gpio ]
 
@@ -299,24 +283,31 @@ proc create_root_design { parentCell } {
    CONFIG.TUSER_WIDTH {0} \
    ] $tmds_saxis
 
+  set uart [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:uart_rtl:1.0 uart ]
+
 
   # Create ports
   set axi_clk [ create_bd_port -dir O -type clk axi_clk ]
   set_property -dict [ list \
-   CONFIG.ASSOCIATED_BUSIF {tmds_maxi:eth_maxi:eth_saxi:tmds_saxis} \
+   CONFIG.ASSOCIATED_BUSIF {tmds_maxi:eth_maxi:tmds_saxis:emac_saxis:emac_maxis} \
    CONFIG.ASSOCIATED_RESET {axi_rst_n} \
  ] $axi_clk
-  set axi_rst_n [ create_bd_port -dir O -from 0 -to 0 -type rst axi_rst_n ]
+  set axi_rst_n [ create_bd_port -dir I -type rst axi_rst_n ]
   set clk_200m [ create_bd_port -dir O -type clk clk_200m ]
   set_property -dict [ list \
    CONFIG.FREQ_HZ {200000000} \
  ] $clk_200m
-  set mig_rdy [ create_bd_port -dir O mig_rdy ]
-  set mig_ref_clk [ create_bd_port -dir I -type clk mig_ref_clk ]
+  set cpu_lock [ create_bd_port -dir I cpu_lock ]
+  set cpu_rsti_n [ create_bd_port -dir I -type rst cpu_rsti_n ]
+  set cpu_rsto_n [ create_bd_port -dir O -from 0 -to 0 -type rst cpu_rsto_n ]
+  set mig_clk [ create_bd_port -dir I -type clk mig_clk ]
   set_property -dict [ list \
-   CONFIG.ASSOCIATED_RESET {mig_ref_rst_n} \
- ] $mig_ref_clk
-  set mig_ref_rst_n [ create_bd_port -dir I -type rst mig_ref_rst_n ]
+   CONFIG.ASSOCIATED_RESET {mig_rsti_n} \
+ ] $mig_clk
+  set mig_lock [ create_bd_port -dir O mig_lock ]
+  set mig_rdyo [ create_bd_port -dir O mig_rdyo ]
+  set mig_rst [ create_bd_port -dir O -type rst mig_rst ]
+  set mig_rsti_n [ create_bd_port -dir I -type rst mig_rsti_n ]
 
   # Create instance: axi_ddr3, and set properties
   set axi_ddr3 [ create_bd_cell -type container -reference axi_ddr3 axi_ddr3 ]
@@ -330,23 +321,28 @@ proc create_root_design { parentCell } {
   ] $axi_ddr3
 
 
-  # Create instance: axi_dma, and set properties
-  set axi_dma [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 axi_dma ]
+  # Create instance: axi_dma_emac, and set properties
+  set axi_dma_emac [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 axi_dma_emac ]
+  set_property -dict [list \
+    CONFIG.c_enable_multi_channel {0} \
+    CONFIG.c_include_mm2s {1} \
+    CONFIG.c_include_s2mm {1} \
+    CONFIG.c_mm2s_burst_size {256} \
+    CONFIG.c_s2mm_burst_size {256} \
+    CONFIG.c_sg_include_stscntrl_strm {0} \
+    CONFIG.c_sg_length_width {16} \
+  ] $axi_dma_emac
+
+
+  # Create instance: axi_dma_tmds, and set properties
+  set axi_dma_tmds [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 axi_dma_tmds ]
   set_property -dict [list \
     CONFIG.c_include_mm2s {0} \
     CONFIG.c_s2mm_burst_size {256} \
     CONFIG.c_s_axis_s2mm_tdata_width {64} \
     CONFIG.c_sg_include_stscntrl_strm {0} \
     CONFIG.c_sg_length_width {26} \
-  ] $axi_dma
-
-
-  # Create instance: inverter, and set properties
-  set inverter [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_vector_logic:2.0 inverter ]
-  set_property -dict [list \
-    CONFIG.C_OPERATION {not} \
-    CONFIG.C_SIZE {1} \
-  ] $inverter
+  ] $axi_dma_tmds
 
 
   # Create instance: tmds_cap_mb_cpu, and set properties
@@ -362,101 +358,142 @@ proc create_root_design { parentCell } {
 
 
   # Create interface connections
-  connect_bd_intf_net -intf_net S_AXIS_S2MM_0_1 [get_bd_intf_ports tmds_saxis] [get_bd_intf_pins axi_dma/S_AXIS_S2MM]
+  connect_bd_intf_net -intf_net S_AXIS_S2MM_0_1 [get_bd_intf_ports tmds_saxis] [get_bd_intf_pins axi_dma_tmds/S_AXIS_S2MM]
+  connect_bd_intf_net -intf_net S_AXIS_S2MM_0_2 [get_bd_intf_ports emac_saxis] [get_bd_intf_pins axi_dma_emac/S_AXIS_S2MM]
   connect_bd_intf_net -intf_net axi_ddr3_0_ddr3 [get_bd_intf_ports ddr3] [get_bd_intf_pins axi_ddr3/ddr3]
-  connect_bd_intf_net -intf_net axi_dma_0_M_AXI_S2MM [get_bd_intf_pins axi_dma/M_AXI_S2MM] [get_bd_intf_pins tmds_cap_mb_cpu/saxi64]
-  connect_bd_intf_net -intf_net axi_dma_0_M_AXI_SG [get_bd_intf_pins axi_dma/M_AXI_SG] [get_bd_intf_pins tmds_cap_mb_cpu/saxi32b]
-  connect_bd_intf_net -intf_net saxi32a_0_1 [get_bd_intf_ports eth_saxi] [get_bd_intf_pins tmds_cap_mb_cpu/saxi32a]
+  connect_bd_intf_net -intf_net axi_dma_0_M_AXI_S2MM [get_bd_intf_pins axi_dma_tmds/M_AXI_S2MM] [get_bd_intf_pins tmds_cap_mb_cpu/saxi64]
+  connect_bd_intf_net -intf_net axi_dma_enet_M_AXIS_MM2S [get_bd_intf_ports emac_maxis] [get_bd_intf_pins axi_dma_emac/M_AXIS_MM2S]
+  connect_bd_intf_net -intf_net axi_dma_enet_M_AXI_MM2S [get_bd_intf_pins axi_dma_emac/M_AXI_MM2S] [get_bd_intf_pins tmds_cap_mb_cpu/saxi32c]
+  connect_bd_intf_net -intf_net axi_dma_enet_M_AXI_S2MM [get_bd_intf_pins axi_dma_emac/M_AXI_S2MM] [get_bd_intf_pins tmds_cap_mb_cpu/saxi32d]
+  connect_bd_intf_net -intf_net axi_dma_enet_M_AXI_SG [get_bd_intf_pins axi_dma_emac/M_AXI_SG] [get_bd_intf_pins tmds_cap_mb_cpu/saxi32b]
+  connect_bd_intf_net -intf_net axi_dma_tmds_M_AXI_SG [get_bd_intf_pins axi_dma_tmds/M_AXI_SG] [get_bd_intf_pins tmds_cap_mb_cpu/saxi32a]
   connect_bd_intf_net -intf_net tmds_cap_mb_cpu_0_gpio [get_bd_intf_ports gpio] [get_bd_intf_pins tmds_cap_mb_cpu/gpio]
   connect_bd_intf_net -intf_net tmds_cap_mb_cpu_0_maxi128 [get_bd_intf_pins axi_ddr3/axi] [get_bd_intf_pins tmds_cap_mb_cpu/maxi128]
   connect_bd_intf_net -intf_net tmds_cap_mb_cpu_0_maxi32a [get_bd_intf_ports tmds_maxi] [get_bd_intf_pins tmds_cap_mb_cpu/maxi32a]
   connect_bd_intf_net -intf_net tmds_cap_mb_cpu_0_maxi32b [get_bd_intf_ports eth_maxi] [get_bd_intf_pins tmds_cap_mb_cpu/maxi32b]
-  connect_bd_intf_net -intf_net tmds_cap_mb_cpu_0_maxi32c [get_bd_intf_pins axi_dma/S_AXI_LITE] [get_bd_intf_pins tmds_cap_mb_cpu/maxi32c]
+  connect_bd_intf_net -intf_net tmds_cap_mb_cpu_0_maxi32c [get_bd_intf_pins axi_dma_tmds/S_AXI_LITE] [get_bd_intf_pins tmds_cap_mb_cpu/maxi32c]
+  connect_bd_intf_net -intf_net tmds_cap_mb_cpu_maxi32d [get_bd_intf_pins axi_dma_emac/S_AXI_LITE] [get_bd_intf_pins tmds_cap_mb_cpu/maxi32d]
+  connect_bd_intf_net -intf_net tmds_cap_mb_cpu_uart [get_bd_intf_ports uart] [get_bd_intf_pins tmds_cap_mb_cpu/uart]
 
   # Create port connections
-  connect_bd_net -net axi_ddr3_0_axi_clk [get_bd_ports axi_clk] [get_bd_pins axi_ddr3/axi_clk] [get_bd_pins axi_dma/m_axi_s2mm_aclk] [get_bd_pins axi_dma/m_axi_sg_aclk] [get_bd_pins axi_dma/s_axi_lite_aclk] [get_bd_pins tmds_cap_mb_cpu/axi_clk]
+  connect_bd_net -net axi_ddr3_0_axi_clk [get_bd_ports axi_clk] [get_bd_pins axi_ddr3/axi_clk] [get_bd_pins axi_dma_emac/m_axi_mm2s_aclk] [get_bd_pins axi_dma_emac/m_axi_s2mm_aclk] [get_bd_pins axi_dma_emac/m_axi_sg_aclk] [get_bd_pins axi_dma_emac/s_axi_lite_aclk] [get_bd_pins axi_dma_tmds/m_axi_s2mm_aclk] [get_bd_pins axi_dma_tmds/m_axi_sg_aclk] [get_bd_pins axi_dma_tmds/s_axi_lite_aclk] [get_bd_pins tmds_cap_mb_cpu/clk]
   connect_bd_net -net axi_ddr3_0_clk_200m [get_bd_ports clk_200m] [get_bd_pins axi_ddr3/clk_200m]
-  connect_bd_net -net axi_ddr3_0_lock [get_bd_pins axi_ddr3/lock] [get_bd_pins tmds_cap_mb_cpu/lock]
-  connect_bd_net -net axi_ddr3_0_rdy [get_bd_ports mig_rdy] [get_bd_pins axi_ddr3/rdy]
-  connect_bd_net -net axi_ddr3_0_rst [get_bd_pins axi_ddr3/rst] [get_bd_pins inverter/Op1]
-  connect_bd_net -net mig_ref_clk_0_1 [get_bd_ports mig_ref_clk] [get_bd_pins axi_ddr3/mig_ref_clk]
-  connect_bd_net -net mig_ref_rst_n_0_1 [get_bd_ports mig_ref_rst_n] [get_bd_pins axi_ddr3/mig_ref_rst_n]
-  connect_bd_net -net tmds_cap_mb_0_axi_rst_n [get_bd_ports axi_rst_n] [get_bd_pins axi_ddr3/axi_rst_n] [get_bd_pins axi_dma/axi_resetn] [get_bd_pins tmds_cap_mb_cpu/axi_rst_n]
-  connect_bd_net -net util_vector_logic_0_Res [get_bd_pins inverter/Res] [get_bd_pins tmds_cap_mb_cpu/rsti_n]
+  connect_bd_net -net axi_ddr3_0_rdy [get_bd_ports mig_rdyo] [get_bd_pins axi_ddr3/rdy]
+  connect_bd_net -net axi_ddr3_lock [get_bd_ports mig_lock] [get_bd_pins axi_ddr3/lock]
+  connect_bd_net -net axi_ddr3_rst [get_bd_ports mig_rst] [get_bd_pins axi_ddr3/rst]
+  connect_bd_net -net lock_0_1 [get_bd_ports cpu_lock] [get_bd_pins tmds_cap_mb_cpu/lock]
+  connect_bd_net -net mig_ref_clk_0_1 [get_bd_ports mig_clk] [get_bd_pins axi_ddr3/ref_clk]
+  connect_bd_net -net mig_ref_rst_n_0_1 [get_bd_ports mig_rsti_n] [get_bd_pins axi_ddr3/ref_rst_n]
+  connect_bd_net -net rsti_n_0_1 [get_bd_ports cpu_rsti_n] [get_bd_pins tmds_cap_mb_cpu/rsti_n]
+  connect_bd_net -net tmds_cap_mb_0_axi_rst_n [get_bd_ports axi_rst_n] [get_bd_pins axi_ddr3/axi_rst_n] [get_bd_pins axi_dma_emac/axi_resetn] [get_bd_pins axi_dma_tmds/axi_resetn]
+  connect_bd_net -net tmds_cap_mb_cpu_rsto_n [get_bd_ports cpu_rsto_n] [get_bd_pins tmds_cap_mb_cpu/rsto_n]
 
   # Create address segments
-  assign_bd_address -offset 0x40040000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma/Data_S2MM] [get_bd_addr_segs eth_maxi/Reg] -force
-  assign_bd_address -offset 0x80000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces axi_dma/Data_S2MM] [get_bd_addr_segs axi_ddr3/mig/memmap/memaddr] -force
-  assign_bd_address -offset 0x40020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma/Data_S2MM] [get_bd_addr_segs tmds_maxi/Reg] -force
-  assign_bd_address -offset 0x40040000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma/Data_SG] [get_bd_addr_segs eth_maxi/Reg] -force
-  assign_bd_address -offset 0x80000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces axi_dma/Data_SG] [get_bd_addr_segs axi_ddr3/mig/memmap/memaddr] -force
-  assign_bd_address -offset 0x40020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma/Data_SG] [get_bd_addr_segs tmds_maxi/Reg] -force
-  assign_bd_address -offset 0x40030000 -range 0x00010000 -target_address_space [get_bd_addr_spaces tmds_cap_mb_cpu/cpu/Data] [get_bd_addr_segs axi_dma/S_AXI_LITE/Reg] -force
-  assign_bd_address -offset 0x40040000 -range 0x00010000 -target_address_space [get_bd_addr_spaces tmds_cap_mb_cpu/cpu/Data] [get_bd_addr_segs eth_maxi/Reg] -force
-  assign_bd_address -offset 0x80000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces tmds_cap_mb_cpu/cpu/Data] [get_bd_addr_segs axi_ddr3/mig/memmap/memaddr] -force
-  assign_bd_address -offset 0x40020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces tmds_cap_mb_cpu/cpu/Data] [get_bd_addr_segs tmds_maxi/Reg] -force
-  assign_bd_address -offset 0x40030000 -range 0x00010000 -target_address_space [get_bd_addr_spaces eth_saxi] [get_bd_addr_segs axi_dma/S_AXI_LITE/Reg] -force
-  assign_bd_address -offset 0x40040000 -range 0x00010000 -target_address_space [get_bd_addr_spaces eth_saxi] [get_bd_addr_segs eth_maxi/Reg] -force
-  assign_bd_address -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces eth_saxi] [get_bd_addr_segs tmds_cap_mb_cpu/gpio/S_AXI/Reg] -force
-  assign_bd_address -offset 0x80000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces eth_saxi] [get_bd_addr_segs axi_ddr3/mig/memmap/memaddr] -force
-  assign_bd_address -offset 0x40020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces eth_saxi] [get_bd_addr_segs tmds_maxi/Reg] -force
-  assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces eth_saxi] [get_bd_addr_segs tmds_cap_mb_cpu/uart/S_AXI/Reg] -force
+  assign_bd_address -offset 0x80000000 -range 0x80000000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_MM2S] [get_bd_addr_segs axi_ddr3/mig/memmap/memaddr] -force
+  assign_bd_address -offset 0x80000000 -range 0x80000000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_S2MM] [get_bd_addr_segs axi_ddr3/mig/memmap/memaddr] -force
+  assign_bd_address -offset 0x80000000 -range 0x80000000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_SG] [get_bd_addr_segs axi_ddr3/mig/memmap/memaddr] -force
+  assign_bd_address -offset 0x80000000 -range 0x80000000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_S2MM] [get_bd_addr_segs axi_ddr3/mig/memmap/memaddr] -force
+  assign_bd_address -offset 0x80000000 -range 0x80000000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_SG] [get_bd_addr_segs axi_ddr3/mig/memmap/memaddr] -force
+  assign_bd_address -offset 0x80000000 -range 0x80000000 -target_address_space [get_bd_addr_spaces tmds_cap_mb_cpu/cpu/Data] [get_bd_addr_segs axi_ddr3/mig/memmap/memaddr] -force
+  assign_bd_address -offset 0x70000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces tmds_cap_mb_cpu/cpu/Data] [get_bd_addr_segs tmds_maxi/Reg] -force
+  assign_bd_address -offset 0x70010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces tmds_cap_mb_cpu/cpu/Data] [get_bd_addr_segs eth_maxi/Reg] -force
+  assign_bd_address -offset 0x70020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces tmds_cap_mb_cpu/cpu/Data] [get_bd_addr_segs axi_dma_tmds/S_AXI_LITE/Reg] -force
+  assign_bd_address -offset 0x70030000 -range 0x00010000 -target_address_space [get_bd_addr_spaces tmds_cap_mb_cpu/cpu/Data] [get_bd_addr_segs axi_dma_emac/S_AXI_LITE/Reg] -force
 
   # Exclude Address Segments
-  exclude_bd_addr_seg -offset 0x41E00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma/Data_S2MM] [get_bd_addr_segs axi_dma/S_AXI_LITE/Reg]
-  exclude_bd_addr_seg -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma/Data_S2MM] [get_bd_addr_segs tmds_cap_mb_cpu/gpio/S_AXI/Reg]
-  exclude_bd_addr_seg -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma/Data_S2MM] [get_bd_addr_segs tmds_cap_mb_cpu/uart/S_AXI/Reg]
-  exclude_bd_addr_seg -offset 0x41E00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma/Data_SG] [get_bd_addr_segs axi_dma/S_AXI_LITE/Reg]
-  exclude_bd_addr_seg -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma/Data_SG] [get_bd_addr_segs tmds_cap_mb_cpu/gpio/S_AXI/Reg]
-  exclude_bd_addr_seg -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma/Data_SG] [get_bd_addr_segs tmds_cap_mb_cpu/uart/S_AXI/Reg]
+  exclude_bd_addr_seg -offset 0x70030000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_MM2S] [get_bd_addr_segs axi_dma_emac/S_AXI_LITE/Reg]
+  exclude_bd_addr_seg -offset 0x70020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_MM2S] [get_bd_addr_segs axi_dma_tmds/S_AXI_LITE/Reg]
+  exclude_bd_addr_seg -offset 0x70010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_MM2S] [get_bd_addr_segs eth_maxi/Reg]
+  exclude_bd_addr_seg -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_MM2S] [get_bd_addr_segs tmds_cap_mb_cpu/gpio/S_AXI/Reg]
+  exclude_bd_addr_seg -offset 0x70000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_MM2S] [get_bd_addr_segs tmds_maxi/Reg]
+  exclude_bd_addr_seg -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_MM2S] [get_bd_addr_segs tmds_cap_mb_cpu/uart/S_AXI/Reg]
+  exclude_bd_addr_seg -offset 0x41E00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_S2MM] [get_bd_addr_segs axi_dma_emac/S_AXI_LITE/Reg]
+  exclude_bd_addr_seg -offset 0x70020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_S2MM] [get_bd_addr_segs axi_dma_tmds/S_AXI_LITE/Reg]
+  exclude_bd_addr_seg -offset 0x70010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_S2MM] [get_bd_addr_segs eth_maxi/Reg]
+  exclude_bd_addr_seg -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_S2MM] [get_bd_addr_segs tmds_cap_mb_cpu/gpio/S_AXI/Reg]
+  exclude_bd_addr_seg -offset 0x70000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_S2MM] [get_bd_addr_segs tmds_maxi/Reg]
+  exclude_bd_addr_seg -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_S2MM] [get_bd_addr_segs tmds_cap_mb_cpu/uart/S_AXI/Reg]
+  exclude_bd_addr_seg -offset 0x41E00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_SG] [get_bd_addr_segs axi_dma_emac/S_AXI_LITE/Reg]
+  exclude_bd_addr_seg -offset 0x70020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_SG] [get_bd_addr_segs axi_dma_tmds/S_AXI_LITE/Reg]
+  exclude_bd_addr_seg -offset 0x70010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_SG] [get_bd_addr_segs eth_maxi/Reg]
+  exclude_bd_addr_seg -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_SG] [get_bd_addr_segs tmds_cap_mb_cpu/gpio/S_AXI/Reg]
+  exclude_bd_addr_seg -offset 0x70000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_SG] [get_bd_addr_segs tmds_maxi/Reg]
+  exclude_bd_addr_seg -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_emac/Data_SG] [get_bd_addr_segs tmds_cap_mb_cpu/uart/S_AXI/Reg]
+  exclude_bd_addr_seg -offset 0x70030000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_S2MM] [get_bd_addr_segs axi_dma_emac/S_AXI_LITE/Reg]
+  exclude_bd_addr_seg -offset 0x70020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_S2MM] [get_bd_addr_segs axi_dma_tmds/S_AXI_LITE/Reg]
+  exclude_bd_addr_seg -offset 0x70010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_S2MM] [get_bd_addr_segs eth_maxi/Reg]
+  exclude_bd_addr_seg -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_S2MM] [get_bd_addr_segs tmds_cap_mb_cpu/gpio/S_AXI/Reg]
+  exclude_bd_addr_seg -offset 0x70000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_S2MM] [get_bd_addr_segs tmds_maxi/Reg]
+  exclude_bd_addr_seg -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_S2MM] [get_bd_addr_segs tmds_cap_mb_cpu/uart/S_AXI/Reg]
+  exclude_bd_addr_seg -offset 0x70030000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_SG] [get_bd_addr_segs axi_dma_emac/S_AXI_LITE/Reg]
+  exclude_bd_addr_seg -offset 0x70020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_SG] [get_bd_addr_segs axi_dma_tmds/S_AXI_LITE/Reg]
+  exclude_bd_addr_seg -offset 0x70010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_SG] [get_bd_addr_segs eth_maxi/Reg]
+  exclude_bd_addr_seg -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_SG] [get_bd_addr_segs tmds_cap_mb_cpu/gpio/S_AXI/Reg]
+  exclude_bd_addr_seg -offset 0x70000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_SG] [get_bd_addr_segs tmds_maxi/Reg]
+  exclude_bd_addr_seg -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_dma_tmds/Data_SG] [get_bd_addr_segs tmds_cap_mb_cpu/uart/S_AXI/Reg]
 
   # Perform GUI Layout
   regenerate_bd_layout -layout_string {
    "ActiveEmotionalView":"Default View",
    "Default View_ScaleFactor":"1.0",
-   "Default View_TopLeft":"-863,-609",
+   "Default View_TopLeft":"-860,-528",
    "ExpandedHierarchyInLayout":"",
-   "PinnedBlocks":"/axi_ddr3|/axi_dma|/inverter|/tmds_cap_mb_cpu|",
-   "PinnedPorts":"axi_clk|axi_rst_n|clk_200m|mig_rdy|mig_ref_clk|mig_ref_rst_n|ddr3|eth_maxi|eth_saxi|gpio|tmds_maxi|tmds_saxis|",
+   "PinnedBlocks":"/axi_ddr3|/axi_dma_tmds|/tmds_cap_mb_cpu|/axi_dma_emac|",
+   "PinnedPorts":"axi_clk|clk_200m|mig_clk|mig_lock|mig_rst|cpu_rsto_n|cpu_rsti_n|cpu_lock|axi_rst_n|ddr3|eth_maxi|gpio|tmds_maxi|tmds_saxis|emac_saxis|emac_maxis|uart|",
    "guistr":"# # String gsaved with Nlview 7.0r6  2020-01-29 bk=1.5227 VDI=41 GEI=36 GUI=JA:10.0 non-TLS
 #  -string -flagsOSRD
-preplace port ddr3 -pg 1 -lvl 5 -x 1170 -y -390 -defaultsOSRD
-preplace port eth_maxi -pg 1 -lvl 5 -x 1170 -y -80 -defaultsOSRD
-preplace port eth_saxi -pg 1 -lvl 0 -x -150 -y -190 -defaultsOSRD
-preplace port gpio -pg 1 -lvl 5 -x 1170 -y -140 -defaultsOSRD
-preplace port tmds_maxi -pg 1 -lvl 5 -x 1170 -y -100 -defaultsOSRD
-preplace port tmds_saxis -pg 1 -lvl 0 -x -150 -y -110 -defaultsOSRD
-preplace port port-id_axi_clk -pg 1 -lvl 5 -x 1170 -y -370 -defaultsOSRD
-preplace port port-id_clk_200m -pg 1 -lvl 5 -x 1170 -y -350 -defaultsOSRD
-preplace port port-id_mig_rdy -pg 1 -lvl 5 -x 1170 -y -310 -defaultsOSRD
-preplace port port-id_mig_ref_clk -pg 1 -lvl 0 -x -150 -y -330 -defaultsOSRD
-preplace port port-id_mig_ref_rst_n -pg 1 -lvl 0 -x -150 -y -310 -defaultsOSRD
-preplace portBus axi_rst_n -pg 1 -lvl 5 -x 1170 -y -20 -defaultsOSRD
-preplace inst axi_ddr3 -pg 1 -lvl 4 -x 1010 -y -340 -defaultsOSRD
-preplace inst axi_dma -pg 1 -lvl 1 -x 60 -y -80 -defaultsOSRD
-preplace inst inverter -pg 1 -lvl 2 -x 410 -y -10 -defaultsOSRD
-preplace inst tmds_cap_mb_cpu -pg 1 -lvl 3 -x 740 -y -80 -defaultsOSRD
-preplace netloc axi_ddr3_0_axi_clk 1 0 5 -110 30 230 -70 570 -450 N -450 1150
-preplace netloc axi_ddr3_0_clk_200m 1 4 1 NJ -350
-preplace netloc axi_ddr3_0_lock 1 2 3 580 -230 NJ -230 1150
-preplace netloc axi_ddr3_0_rdy 1 4 1 N -310
-preplace netloc axi_ddr3_0_rst 1 1 4 240 -200 NJ -200 NJ -200 1140
-preplace netloc mig_ref_clk_0_1 1 0 4 NJ -330 N -330 NJ -330 NJ
-preplace netloc mig_ref_rst_n_0_1 1 0 4 NJ -310 N -310 NJ -310 NJ
-preplace netloc tmds_cap_mb_0_axi_rst_n 1 0 5 -120 60 NJ 60 NJ 60 880 -20 NJ
-preplace netloc util_vector_logic_0_Res 1 2 1 570 -30n
-preplace netloc S_AXIS_S2MM_0_1 1 0 1 N -110
-preplace netloc axi_ddr3_0_ddr3 1 4 1 N -390
-preplace netloc axi_dma_0_M_AXI_S2MM 1 1 2 N -90 N
-preplace netloc axi_dma_0_M_AXI_SG 1 1 2 N -110 N
-preplace netloc saxi32a_0_1 1 0 3 NJ -190 NJ -190 560J
-preplace netloc tmds_cap_mb_cpu_0_gpio 1 3 2 NJ -140 NJ
-preplace netloc tmds_cap_mb_cpu_0_maxi128 1 3 1 870 -370n
-preplace netloc tmds_cap_mb_cpu_0_maxi32a 1 3 2 NJ -100 NJ
-preplace netloc tmds_cap_mb_cpu_0_maxi32b 1 3 2 NJ -80 NJ
-preplace netloc tmds_cap_mb_cpu_0_maxi32c 1 0 4 -130 50 N 50 N 50 870
-levelinfo -pg 1 -150 60 410 740 1010 1170
-pagesize -pg 1 -db -bbox -sgen -290 -720 1310 330
+preplace port ddr3 -pg 1 -lvl 4 -x 1220 -y -390 -defaultsOSRD
+preplace port eth_maxi -pg 1 -lvl 4 -x 1220 -y -90 -defaultsOSRD
+preplace port gpio -pg 1 -lvl 4 -x 1220 -y -150 -defaultsOSRD
+preplace port tmds_maxi -pg 1 -lvl 4 -x 1220 -y -110 -defaultsOSRD
+preplace port tmds_saxis -pg 1 -lvl 0 -x -220 -y -150 -defaultsOSRD
+preplace port emac_saxis -pg 1 -lvl 0 -x -220 -y 80 -defaultsOSRD
+preplace port emac_maxis -pg 1 -lvl 4 -x 1220 -y 110 -defaultsOSRD
+preplace port uart -pg 1 -lvl 4 -x 1220 -y -70 -defaultsOSRD
+preplace port port-id_axi_clk -pg 1 -lvl 4 -x 1220 -y -370 -defaultsOSRD
+preplace port port-id_clk_200m -pg 1 -lvl 4 -x 1220 -y -350 -defaultsOSRD
+preplace port port-id_mig_rdyo -pg 1 -lvl 4 -x 1220 -y -310 -defaultsOSRD
+preplace port port-id_mig_clk -pg 1 -lvl 0 -x -220 -y -330 -defaultsOSRD
+preplace port port-id_mig_rsti_n -pg 1 -lvl 0 -x -220 -y -310 -defaultsOSRD
+preplace port port-id_mig_lock -pg 1 -lvl 4 -x 1220 -y -330 -defaultsOSRD
+preplace port port-id_mig_rst -pg 1 -lvl 4 -x 1220 -y -290 -defaultsOSRD
+preplace port port-id_cpu_rsti_n -pg 1 -lvl 0 -x -220 -y -10 -defaultsOSRD
+preplace port port-id_cpu_lock -pg 1 -lvl 0 -x -220 -y -250 -defaultsOSRD
+preplace port port-id_axi_rst_n -pg 1 -lvl 0 -x -220 -y -350 -defaultsOSRD
+preplace portBus cpu_rsto_n -pg 1 -lvl 4 -x 1220 -y -10 -defaultsOSRD
+preplace inst axi_ddr3 -pg 1 -lvl 3 -x 1080 -y -340 -defaultsOSRD
+preplace inst axi_dma_tmds -pg 1 -lvl 1 -x 0 -y -120 -defaultsOSRD
+preplace inst tmds_cap_mb_cpu -pg 1 -lvl 2 -x 700 -y -80 -defaultsOSRD
+preplace inst axi_dma_emac -pg 1 -lvl 1 -x 0 -y 120 -defaultsOSRD
+preplace netloc axi_ddr3_0_axi_clk 1 0 4 -180 -240 180 -220 N -220 1200
+preplace netloc axi_ddr3_0_clk_200m 1 3 1 NJ -350
+preplace netloc axi_ddr3_0_rdy 1 3 1 N -310
+preplace netloc mig_ref_clk_0_1 1 0 3 NJ -330 N -330 N
+preplace netloc mig_ref_rst_n_0_1 1 0 3 NJ -310 N -310 N
+preplace netloc tmds_cap_mb_0_axi_rst_n 1 0 3 -200 -350 N -350 N
+preplace netloc axi_ddr3_lock 1 3 1 N -330
+preplace netloc axi_ddr3_rst 1 3 1 N -290
+preplace netloc tmds_cap_mb_cpu_rsto_n 1 2 2 NJ -10 NJ
+preplace netloc rsti_n_0_1 1 0 2 NJ -10 NJ
+preplace netloc lock_0_1 1 0 2 NJ -250 190J
+preplace netloc S_AXIS_S2MM_0_1 1 0 1 N -150
+preplace netloc axi_ddr3_0_ddr3 1 3 1 N -390
+preplace netloc axi_dma_0_M_AXI_S2MM 1 1 1 N -130
+preplace netloc tmds_cap_mb_cpu_0_gpio 1 2 2 NJ -150 NJ
+preplace netloc tmds_cap_mb_cpu_0_maxi128 1 2 1 850 -370n
+preplace netloc tmds_cap_mb_cpu_0_maxi32a 1 2 2 NJ -110 NJ
+preplace netloc tmds_cap_mb_cpu_0_maxi32b 1 2 2 NJ -90 NJ
+preplace netloc tmds_cap_mb_cpu_0_maxi32c 1 0 3 -170 -230 N -230 830
+preplace netloc axi_dma_tmds_M_AXI_SG 1 1 1 N -150
+preplace netloc axi_dma_enet_M_AXI_SG 1 1 1 170 -110n
+preplace netloc axi_dma_enet_M_AXI_MM2S 1 1 1 200 -90n
+preplace netloc axi_dma_enet_M_AXI_S2MM 1 1 1 210 -70n
+preplace netloc tmds_cap_mb_cpu_maxi32d 1 0 3 -190 -260 N -260 840
+preplace netloc S_AXIS_S2MM_0_2 1 0 1 N 80
+preplace netloc axi_dma_enet_M_AXIS_MM2S 1 1 3 NJ 110 NJ 110 NJ
+preplace netloc tmds_cap_mb_cpu_uart 1 2 2 NJ -70 NJ
+levelinfo -pg 1 -220 0 700 1080 1220
+pagesize -pg 1 -db -bbox -sgen -350 -720 1370 670
 "
 }
 

@@ -9,10 +9,9 @@ SRC:=$(REPO_ROOT)/src
 
 FPGA_VENDOR?=$(word 1,$(FPGA))
 FPGA_FAMILY?=$(word 2,$(FPGA))
-FPGA_DEVICE?=$(word 3,$(FPGA))
+
 FPGA_TOOL:=vivado
 
-VIVADO_PART:=$(FPGA_DEVICE)
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
 VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
@@ -57,25 +56,18 @@ VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/microblaze \
 	$(SRC)/common/basic/microblaze
 
-# note that Xilinx Vivado libraries must be pre-compiled
-GHDL_LIBS:=xilinx-vivado
+SIMULATOR:=xsim_cmd xsim_ide
 
 SIM_TOP:=$(VIVADO_SIM_TOP)
 SIM_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
-#NO_SECURE_IP:=ghdl nvc vsim
-#ifneq ($(filter $(NO_SECURE_IP),$(MAKECMDGOALS)),)
-#SIM_SRC+=\
-#	$(SRC)/common/basic/xilinx_7series/model_secureip.vhd \
-#	$(SRC)/designs/$(DESIGN)/$(BOARD)/cfg_$(VIVADO_SIM_TOP)_n.vhd
-#SIM_TOP:=cfg_$(VIVADO_SIM_TOP)
-#endif
 SIM_RUN:=$(SIM_TOP)
 
+VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
 VSCODE_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
-V4P_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
-V4P_LIB_SRC:=\
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
+VSCODE_XLIB:=unisim
+VSCODE_XSRC:=\
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
 
 include $(MAKE_FPGA)

@@ -26,9 +26,9 @@ library work;
   use work.axi_pkg.all;
   use work.mmcm_pkg.all;
   use work.hdmi_rx_selectio_pkg.all;
+  use work.hdmi_tx_selectio_pkg.all;
   use work.tmds_cap_mb_pkg.all;
   use work.tmds_cap_regs_axi_pkg.all;
-  use work.hdmi_tx_selectio_pkg.all;
 
 entity tmds_cap_digilent_nexys_video is
   port (
@@ -96,7 +96,7 @@ entity tmds_cap_digilent_nexys_video is
     -- ac_adc_sdata    : in    std_logic;
 
     -- PMODs
-    ja            : out   std_logic_vector(7 downto 0);
+    -- ja              : inout std_logic_vector(7 downto 0);
     -- jb              : inout std_logic_vector(7 downto 0);
     -- jc              : inout std_logic_vector(7 downto 0);
     -- xa_p            : inout std_logic_vector(3 downto 0);
@@ -165,37 +165,35 @@ entity tmds_cap_digilent_nexys_video is
     -- fmc_la_n        : inout std_logic_vector(33 downto 0);
 
     -- DDR3
-    ddr3_reset_n  : out   std_logic
-  -- ddr3_ck_p       : out   std_logic_vector(0 downto 0);
-  -- ddr3_ck_n       : out   std_logic_vector(0 downto 0);
-  -- ddr3_cke        : out   std_logic_vector(0 downto 0);
-  -- ddr3_ras_n      : out   std_logic;
-  -- ddr3_cas_n      : out   std_logic;
-  -- ddr3_we_n       : out   std_logic;
-  -- ddr3_odt        : out   std_logic_vector(0 downto 0);
-  -- ddr3_addr       : out   std_logic_vector(14 downto 0);
-  -- ddr3_ba         : out   std_logic_vector(2 downto 0);
-  -- ddr3_dm         : out   std_logic_vector(1 downto 0);
-  -- ddr3_dq         : inout std_logic_vector(15 downto 0);
-  -- ddr3_dqs_p      : inout std_logic_vector(1 downto 0);
-  -- ddr3_dqs_n      : inout std_logic_vector(1 downto 0)
+    ddr3_reset_n    : out   std_logic;
+    ddr3_ck_p       : out   std_logic_vector(0 downto 0);
+    ddr3_ck_n       : out   std_logic_vector(0 downto 0);
+    ddr3_cke        : out   std_logic_vector(0 downto 0);
+    ddr3_ras_n      : out   std_logic;
+    ddr3_cas_n      : out   std_logic;
+    ddr3_we_n       : out   std_logic;
+    ddr3_odt        : out   std_logic_vector(0 downto 0);
+    ddr3_addr       : out   std_logic_vector(14 downto 0);
+    ddr3_ba         : out   std_logic_vector(2 downto 0);
+    ddr3_dm         : out   std_logic_vector(1 downto 0);
+    ddr3_dq         : inout std_logic_vector(15 downto 0);
+    ddr3_dqs_p      : inout std_logic_vector(1 downto 0);
+    ddr3_dqs_n      : inout std_logic_vector(1 downto 0)
 
   );
 end entity tmds_cap_digilent_nexys_video;
 
 architecture synth of tmds_cap_digilent_nexys_video is
 
-  -- system reset and clock
-  signal rst_a          : std_logic;
-  signal clk_100m       : std_logic;
+  -- basics
+
+  signal mig_lock       : std_logic;
+  signal mig_rdy        : std_logic;
   signal clk_200m       : std_logic;
-  signal rst_200m_s     : std_logic_vector(0 to 1);
-  signal rst_200m       : std_logic;
   signal idelayctrl_rdy : std_logic;
-  signal rst_100m_s     : std_logic_vector(0 to 1);
-  signal rst_100m       : std_logic;
 
   -- HDMI I/O
+
   signal hdmi_rx_clku   : std_logic;
   signal hdmi_rx_clk    : std_logic;
   signal hdmi_rx_d      : std_logic_vector(0 to 2);
@@ -207,71 +205,36 @@ architecture synth of tmds_cap_digilent_nexys_video is
   signal hdmi_tx_clk    : std_logic;
   signal hdmi_tx_d      : std_logic_vector(0 to 2);
 
-  -- CPU
-  signal rsto           : std_logic;
-  signal axi_mosi       : axi32_mosi_t;
-  signal axi_miso       : axi32_miso_t;
+  -- controller
+  signal axi_clk         : std_logic;
+  signal axi_rst_n       : std_logic;
+
+  signal gpio_i          : std_logic_vector( 31 downto 0 );
+  signal gpio_o          : std_logic_vector( 31 downto 0 );
+  signal gpio_t          : std_logic_vector( 31 downto 0 );
+
+  signal tmds_maxi_mosi  : axi4_mosi_a32d32_t;
+  signal tmds_maxi_miso  : axi4_miso_a32d32_t;
+  signal tmds_saxis_mosi : axis_mosi_64_t;
+  signal tmds_saxis_miso : axis_miso_64_t;
+  signal emac_maxi_mosi  : axi4_mosi_a32d32_t;
+  signal emac_maxi_miso  : axi4_miso_a32d32_t;
+  signal emac_maxis_mosi : axis_mosi_32_t;
+  signal emac_maxis_miso : axis_miso_32_t;
+  signal emac_saxis_mosi : axis_mosi_32_t;
+  signal emac_saxis_miso : axis_miso_32_t;
+
 
 begin
 
-  ja(0) <= rx_status.ctrl_char(0);
-  ja(1) <= rx_status.ctrl_char(1);
-  ja(2) <= rx_status.ctrl_char(2);
-  ja(3) <= rx_status.align_p;
-  ja(4) <= pclk;
-  ja(5) <= '0';
-  ja(6) <= '0';
-  ja(7) <= '0';
-
-  led(0) <= not rst_200m;
-  led(1) <= not rst_100m;
-  led(2) <= not rsto;
+  led(0) <= mig_lock;
+  led(1) <= mig_rdy;
+  led(2) <= axi_rst_n;
   led(3) <= not prst;
   led(4) <= rx_status.align_s(0);
   led(5) <= rx_status.align_s(1);
   led(6) <= rx_status.align_s(2);
   led(7) <= rx_status.align_p;
-
-  --------------------------------------------------------------------------------
-  -- clock and reset generation
-
-  U_MMCM: component mmcm
-    generic map (
-      mul         => 10.0,
-      div         => 1,
-      num_outputs => 2,
-      odiv0       => 10.0,
-      odiv        => (5,10,10,10,10,10)
-    )
-    port map (
-      rsti        => not btn_rst_n,
-      clki        => clki_100m,
-      rsto        => rst_a,
-      clko(0)     => clk_100m,
-      clko(1)     => clk_200m
-    );
-
-  process(rst_a,clk_200m)
-  begin
-    if rst_a = '1' then
-      rst_200m_s(0 to 1) <= (others => '1');
-      rst_200m <= '1';
-    elsif rising_edge(clk_200m) then
-      rst_200m_s(0 to 1) <= rst_a & rst_200m_s(0);
-      rst_200m <= rst_200m_s(1);
-    end if;
-  end process;
-
-  process(rst_200m,clk_100m)
-  begin
-    if rst_200m = '1' then
-      rst_100m_s(0 to 1) <= (others => '1');
-      rst_100m <= '1';
-    elsif rising_edge(clk_100m) then
-      rst_100m_s(0 to 1) <= (rst_200m or not idelayctrl_rdy) & rst_100m_s(0);
-      rst_100m <= rst_100m_s(1);
-    end if;
-  end process;
 
   --------------------------------------------------------------------------------
   -- HDMI I/O
@@ -281,8 +244,8 @@ begin
       fclk        => 100.0
     )
     port map (
-      rst    => rst_100m,
-      clk    => clk_100m,
+      rst    => not axi_rst_n,
+      clk    => axi_clk,
       pclki  => hdmi_rx_clk,
       si     => hdmi_rx_d,
       sclko  => sclk,
@@ -308,26 +271,60 @@ begin
 
   U_CTRL: component tmds_cap_mb
     port map (
-      rsti     => rst_100m,
-      rsto     => rsto,
-      clk      => clk_100m,
-      uart_tx  => uart_rx_out,
-      uart_rx  => uart_tx_in,
-      axi_mosi => axi_mosi,
-      axi_miso => axi_miso
+      ref_rst_n       => btn_rst_n,
+      ref_clk         => clki_100m,
+      mig_lock        => mig_lock,
+      mig_rdy         => mig_rdy,
+      clk_200m        => clk_200m,
+      uart_tx         => uart_rx_out,
+      uart_rx         => uart_tx_in,
+      gpio_i          => gpio_i,
+      gpio_o          => gpio_o,
+      gpio_t          => gpio_t,
+      axi_clk         => axi_clk,
+      axi_rst_n       => axi_rst_n,
+      tmds_maxi_mosi  => tmds_maxi_mosi,
+      tmds_maxi_miso  => tmds_maxi_miso,
+      tmds_saxis_mosi => tmds_saxis_mosi,
+      tmds_saxis_miso => tmds_saxis_miso,
+      emac_maxi_mosi  => emac_maxi_mosi,
+      emac_maxi_miso  => emac_maxi_miso,
+      emac_maxis_mosi => emac_maxis_mosi,
+      emac_maxis_miso => emac_maxis_miso,
+      emac_saxis_mosi => emac_saxis_mosi,
+      emac_saxis_miso => emac_saxis_miso,
+      ddr3_reset_n    => ddr3_reset_n,
+      ddr3_ck_p       => ddr3_ck_p,
+      ddr3_ck_n       => ddr3_ck_n,
+      ddr3_cke        => ddr3_cke,
+      ddr3_ras_n      => ddr3_ras_n,
+      ddr3_cas_n      => ddr3_cas_n,
+      ddr3_we_n       => ddr3_we_n,
+      ddr3_odt        => ddr3_odt,
+      ddr3_addr       => ddr3_addr,
+      ddr3_ba         => ddr3_ba,
+      ddr3_dm         => ddr3_dm,
+      ddr3_dq         => ddr3_dq,
+      ddr3_dqs_p      => ddr3_dqs_p,
+      ddr3_dqs_n      => ddr3_dqs_n
+    );
+
+  gpio_i <= (
+    0 => mig_rdy,
+    1 => idelayctrl_rdy,
+    others => '0'
     );
 
   U_REGS: component tmds_cap_regs_axi
     port map (
-      rst       => rst_100m,
-      clk       => clk_100m,
+      rst       => not axi_rst_n,
+      clk       => axi_clk,
       rx_status => rx_status,
-      axi_mosi  => axi_mosi,
-      axi_miso  => axi_miso
+      axi_mosi  => tmds_maxi_mosi,
+      axi_miso  => tmds_maxi_miso
     );
 
   eth_rst_n <= '0';
-  ddr3_reset_n <= '0';
 
   --------------------------------------------------------------------------------
   -- I/O primitives
@@ -336,7 +333,7 @@ begin
 
   U_IDELAYCTRL: idelayctrl
     port map (
-      rst    => rst_200m, -- assumption!!! is asserted for >60ns
+      rst    => not mig_lock,
       refclk => clk_200m,
       rdy    => idelayctrl_rdy
     );

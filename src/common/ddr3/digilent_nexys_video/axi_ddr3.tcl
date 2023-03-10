@@ -23,12 +23,13 @@ set script_folder [_tcl::get_script_folder]
 set scripts_vivado_version 2022.2
 set current_vivado_version [version -short]
 
-if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
-   puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
-
-   return 1
-}
+# skip version check
+#if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
+#   puts ""
+#   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+#
+#   return 1
+#}
 
 ################################################################
 # START
@@ -44,7 +45,6 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
    create_project project_1 myproj -part xc7a200tsbg484-1
-   set_property BOARD_PART digilentinc.com:nexys_video:part0:1.1 [current_project]
 }
 
 
@@ -447,12 +447,12 @@ proc create_root_design { parentCell } {
   set axi_rst_n [ create_bd_port -dir I -type rst axi_rst_n ]
   set clk_200m [ create_bd_port -dir O -type clk clk_200m ]
   set lock [ create_bd_port -dir O lock ]
-  set mig_ref_clk [ create_bd_port -dir I -type clk mig_ref_clk ]
-  set_property -dict [ list \
-   CONFIG.ASSOCIATED_RESET {mig_ref_rst_n} \
- ] $mig_ref_clk
-  set mig_ref_rst_n [ create_bd_port -dir I -type rst mig_ref_rst_n ]
   set rdy [ create_bd_port -dir O rdy ]
+  set ref_clk [ create_bd_port -dir I -type clk ref_clk ]
+  set_property -dict [ list \
+   CONFIG.ASSOCIATED_RESET {ref_rst_n} \
+ ] $ref_clk
+  set ref_rst_n [ create_bd_port -dir I -type rst ref_rst_n ]
   set rst [ create_bd_port -dir O -type rst rst ]
 
   # Create instance: mig, and set properties
@@ -483,8 +483,8 @@ proc create_root_design { parentCell } {
   connect_bd_net -net mig_7series_0_ui_addn_clk_0 [get_bd_ports clk_200m] [get_bd_pins mig/clk_ref_i] [get_bd_pins mig/ui_addn_clk_0]
   connect_bd_net -net mig_7series_0_ui_clk [get_bd_ports axi_clk] [get_bd_pins mig/ui_clk]
   connect_bd_net -net mig_7series_0_ui_clk_sync_rst [get_bd_ports rst] [get_bd_pins mig/ui_clk_sync_rst]
-  connect_bd_net -net sys_clk_i_0_1 [get_bd_ports mig_ref_clk] [get_bd_pins mig/sys_clk_i]
-  connect_bd_net -net sys_rst_0_1 [get_bd_ports mig_ref_rst_n] [get_bd_pins mig/sys_rst]
+  connect_bd_net -net sys_clk_i_0_1 [get_bd_ports ref_clk] [get_bd_pins mig/sys_clk_i]
+  connect_bd_net -net sys_rst_0_1 [get_bd_ports ref_rst_n] [get_bd_pins mig/sys_rst]
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces axi] [get_bd_addr_segs mig/memmap/memaddr] -force
@@ -495,8 +495,8 @@ proc create_root_design { parentCell } {
    "Color Coded_Layers":"/sys_rst_0_1:true|/mig_7series_0_ui_clk_sync_rst:true|/sys_clk_i_0_1:true|/mig_7series_0_ui_clk:true|/aresetn_0_1:true|/mig_7series_0_ui_addn_clk_0:true|",
    "Color Coded_ScaleFactor":"1.0",
    "Color Coded_TopLeft":"-1235,-313",
-   "Default View_ScaleFactor":"1.0",
-   "Default View_TopLeft":"-1235,-313",
+   "Default View_ScaleFactor":"1.6245",
+   "Default View_TopLeft":"-542,-132",
    "Display-PortTypeClock":"true",
    "Display-PortTypeOthers":"true",
    "Display-PortTypeReset":"true",
@@ -505,39 +505,38 @@ proc create_root_design { parentCell } {
    "Interfaces View_ScaleFactor":"1.0",
    "Interfaces View_TopLeft":"-1247,-368",
    "PinnedBlocks":"/mig|",
-   "PinnedPorts":"axi_clk|axi_rst_n|clk_200m|lock|mig_ref_clk|mig_ref_rst_n|rdy|rst|axi|ddr3|",
+   "PinnedPorts":"mig_mig_axi_clk|axi_rst_n|clk_200m|lock|ref_clk|ref_rst_n|rdy|rst|axi|ddr3|",
    "guistr":"# # String gsaved with Nlview 7.0r6  2020-01-29 bk=1.5227 VDI=41 GEI=36 GUI=JA:10.0 non-TLS
 #  -string -flagsOSRD
-preplace port axi -pg 1 -lvl 0 -x 0 -y 70 -defaultsOSRD
-preplace port ddr3 -pg 1 -lvl 2 -x 300 -y 60 -defaultsOSRD
-preplace port port-id_axi_clk -pg 1 -lvl 2 -x 300 -y 100 -defaultsOSRD
-preplace port port-id_axi_rst_n -pg 1 -lvl 0 -x 0 -y 150 -defaultsOSRD
-preplace port port-id_clk_200m -pg 1 -lvl 2 -x 300 -y 120 -defaultsOSRD
-preplace port port-id_lock -pg 1 -lvl 2 -x 300 -y 140 -defaultsOSRD
-preplace port port-id_mig_ref_clk -pg 1 -lvl 0 -x 0 -y 130 -defaultsOSRD
-preplace port port-id_mig_ref_rst_n -pg 1 -lvl 0 -x 0 -y 90 -defaultsOSRD
-preplace port port-id_rdy -pg 1 -lvl 2 -x 300 -y 160 -defaultsOSRD
-preplace port port-id_rst -pg 1 -lvl 2 -x 300 -y 80 -defaultsOSRD
+preplace port axi -pg 1 -lvl 0 -x -10 -y 70 -defaultsOSRD
+preplace port ddr3 -pg 1 -lvl 2 -x 310 -y 60 -defaultsOSRD
+preplace port port-id_axi_clk -pg 1 -lvl 2 -x 310 -y 100 -defaultsOSRD
+preplace port port-id_axi_rst_n -pg 1 -lvl 0 -x -10 -y 150 -defaultsOSRD
+preplace port port-id_clk_200m -pg 1 -lvl 2 -x 310 -y 120 -defaultsOSRD
+preplace port port-id_lock -pg 1 -lvl 2 -x 310 -y 140 -defaultsOSRD
+preplace port port-id_ref_clk -pg 1 -lvl 0 -x -10 -y 130 -defaultsOSRD
+preplace port port-id_ref_rst_n -pg 1 -lvl 0 -x -10 -y 90 -defaultsOSRD
+preplace port port-id_rdy -pg 1 -lvl 2 -x 310 -y 160 -defaultsOSRD
+preplace port port-id_rst -pg 1 -lvl 2 -x 310 -y 80 -defaultsOSRD
 preplace inst mig -pg 1 -lvl 1 -x 150 -y 110 -defaultsOSRD
 preplace netloc aresetn_0_1 1 0 1 NJ 150
 preplace netloc mig_7series_0_init_calib_complete 1 1 1 NJ 160
 preplace netloc mig_7series_0_mmcm_locked 1 1 1 NJ 140
-preplace netloc mig_7series_0_ui_addn_clk_0 1 0 2 20 220 280
+preplace netloc mig_7series_0_ui_addn_clk_0 1 0 2 10 220 280
 preplace netloc mig_7series_0_ui_clk 1 1 1 NJ 100
 preplace netloc mig_7series_0_ui_clk_sync_rst 1 1 1 NJ 80
 preplace netloc sys_clk_i_0_1 1 0 1 NJ 130
 preplace netloc sys_rst_0_1 1 0 1 NJ 90
 preplace netloc S_AXI_0_1 1 0 1 NJ 70
 preplace netloc mig_7series_0_DDR3 1 1 1 NJ 60
-levelinfo -pg 1 0 150 300
-pagesize -pg 1 -db -bbox -sgen -140 0 410 230
+levelinfo -pg 1 -10 150 310
+pagesize -pg 1 -db -bbox -sgen -120 0 420 230
 "
 }
 
   # Restore current instance
   current_bd_instance $oldCurInst
 
-  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -549,4 +548,6 @@ pagesize -pg 1 -db -bbox -sgen -140 0 410 230
 
 create_root_design ""
 
+
+common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 
