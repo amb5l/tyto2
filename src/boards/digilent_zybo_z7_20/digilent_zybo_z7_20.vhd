@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- digilent_zybo_z7_20.vhd                                                    --
--- Top level entity for Digilent Nexys Video board.                           --
+-- Top level entity for Digilent Zybo Z7-20 board.                            --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2023 Michael Jørgensen <michael.finn.jorgensen@gmail.com>    --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
