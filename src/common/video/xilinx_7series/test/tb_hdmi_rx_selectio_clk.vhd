@@ -35,10 +35,8 @@ architecture sim of tb_hdmi_rx_selectio_clk is
   signal pclki   : std_logic;
   signal prsto   : std_logic;
   signal pclko   : std_logic;
-  signal sclko_p : std_logic;
-  signal sclko_n : std_logic;
-  signal lock    : std_logic;
-  signal band    : std_logic_vector(1 downto 0);
+  signal sclko   : std_logic;
+  signal status  : hdmi_rx_selectio_clk_status_t;
 
   signal tpclk   : time := 1000 ns;
 
@@ -86,32 +84,32 @@ begin
   begin
 
     wait until rst = '0';
-    if lock /= '0' then
+    if status.lock /= '0' then
         report "lock should start out negated" severity FAILURE;
     end if;
 
     report "trying 25.175 MHz";
-    try(25.175,tpclk,pclko,lock);
-    if band /= "00" then
-      report "band incorrect - expect 0, got " & integer'image(to_integer(unsigned(band))) severity failure;
+    try(25.175,tpclk,pclko,status.lock);
+    if status.band /= "00" then
+      report "band incorrect - expect 0, got " & integer'image(to_integer(unsigned(status.band))) severity failure;
     end if;
 
     report "trying 27.0 MHz";
-    try(27.0,tpclk,pclko,lock);
-    if band /= "00" then
-      report "band incorrect - expect 0, got " & integer'image(to_integer(unsigned(band))) severity failure;
+    try(27.0,tpclk,pclko,status.lock);
+    if status.band /= "00" then
+      report "band incorrect - expect 0, got " & integer'image(to_integer(unsigned(status.band))) severity failure;
     end if;
 
     report "trying 74.25 MHz";
-    try(74.25,tpclk,pclko,lock);
-    if band /= "10" then
-      report "band incorrect - expect 2, got " & integer'image(to_integer(unsigned(band))) severity failure;
+    try(74.25,tpclk,pclko,status.lock);
+    if status.band /= "10" then
+      report "band incorrect - expect 2, got " & integer'image(to_integer(unsigned(status.band))) severity failure;
     end if;
 
     report "trying 148.5 MHz";
-    try(148.5,tpclk,pclko,lock);
-    if band /= "11" then
-      report "band incorrect - expect 3, got " & integer'image(to_integer(unsigned(band))) severity failure;
+    try(148.5,tpclk,pclko,status.lock);
+    if status.band /= "11" then
+      report "band incorrect - expect 3, got " & integer'image(to_integer(unsigned(status.band))) severity failure;
     end if;
 
     report "SUCCESS!";
@@ -129,10 +127,8 @@ begin
       pclki   => pclki,
       prsto   => prsto,
       pclko   => pclko,
-      sclko_p => sclko_p,
-      sclko_n => sclko_n,
-      lock    => lock,
-      band    => band
+      sclko   => sclko,
+      status  => status
     );
 
 end architecture sim;
