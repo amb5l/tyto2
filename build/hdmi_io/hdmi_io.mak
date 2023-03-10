@@ -41,7 +41,6 @@ VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
 
 # note that Xilinx Vivado libraries must be pre-compiled
-SIMULATOR:=ghdl nvc vsim xsim
 GHDL_LIBS:=xilinx-vivado
 
 SIM_TOP:=$(VIVADO_SIM_TOP)

@@ -55,7 +55,6 @@ VITIS_INCLUDE:=\
 	$(SRC)/common/basic/microblaze
 
 # note that Xilinx Vivado libraries must be pre-compiled
-SIMULATOR:=ghdl nvc vsim xsim
 GHDL_LIBS:=xilinx-vivado
 
 SIM_TOP:=$(VIVADO_SIM_TOP)

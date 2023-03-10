@@ -29,8 +29,6 @@ endif
 
 # simulation
 
-SIMULATOR:=ghdl nvc vsim xsim
-
 SIM_TOP:=T65_functest
 SIM_SRC:=\
 	$(SUBMODULES)/T65/T65_Pack.vhd               \
@@ -40,8 +38,8 @@ SIM_SRC:=\
 	$(SRC)/designs/T65_functest/$(SIM_TOP).vhd
 SIM_RUN:=$(SIM_TOP),start_address=1024;bin_file=$(shell cygpath -m -a $(FUNCTEST_BIN));ref_file=$(shell cygpath -m -a $(REF_FILE))
 
+VSCODE_TOP:=$(SIM_TOP)
 VSCODE_SRC:=$(SIM_SRC)
-V4P_TOP:=$(SIM_TOP)
 
 # 6502 binary rules and recipes
 

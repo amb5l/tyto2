@@ -53,7 +53,6 @@ RAM_INIT_VHD:=$(MAKE_DIR)/$(BUILD_VHDL_DIR)/np6532_ram_init_$(RAM_SIZE)k_pkg.vhd
 
 # simulation
 
-SIMULATOR:=ghdl nvc vsim xsim
 SIM_TOP:=$(DESIGN)
 SIM_SRC:=\
 	$(SRC)/common/tyto_types_pkg.vhd                        \
@@ -77,12 +76,13 @@ NVC_GOPTS:=-M 32m
 
 # Visual Studio Code and V4P support
 
+VSCODE_TOP:=$(SIM_TOP)
 VSCODE_SRC:=$(SIM_SRC)
-V4P_TOP:=$(SIM_TOP)
-V4P_LIB_SRC:=\
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/LDCE.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/RAM64X1D.vhd
+VSCODE_XLIB:=unisim
+VSCODE_XSRC.unisim:=\
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/LDCE.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/RAM64X1D.vhd
 
 # 6502 binary rules and recipes
 

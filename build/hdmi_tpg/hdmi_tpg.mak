@@ -45,7 +45,6 @@ VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/video/model_vga_sink.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
 
-SIMULATOR:=ghdl nvc vsim xsim_cmd xsim_ide
 SIM_TOP:=$(VIVADO_SIM_TOP)
 SIM_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
 NO_SECURE_IP:=ghdl nvc vsim

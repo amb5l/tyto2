@@ -11,7 +11,6 @@ FPGA_VENDOR:=xilinx
 FPGA_FAMILY:=7series
 
 # note that Xilinx Vivado libraries must be pre-compiled
-SIMULATOR:=ghdl nvc vsim xsim
 GHDL_LIBS:=xilinx-vivado
 
 SIM_TOP:=tb_hdmi_rx_selectio_clk
@@ -22,11 +21,12 @@ SIM_SRC:=\
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/test/$(SIM_TOP).vhd
 SIM_RUN=$(SIM_TOP)
 
+VSCODE_TOP:=$(SIM_TOP)
 VSCODE_SRC:=$(SIM_SRC)
-V4P_TOP:=$(SIM_TOP)
-V4P_LIB_SRC:=\
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
+VSCODE_XLIB:=unisim
+VSCODE_XSRC.unisim:=\
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
 
 include $(MAKE_FPGA)

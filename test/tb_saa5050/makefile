@@ -10,8 +10,6 @@ SRC:=$(REPO_ROOT)/src
 DESIGN?=tb_saa5050
 VARIANT?=
 
-SIMULATOR:=ghdl nvc vsim xsim
-
 SIM_TOP:=$(DESIGN)$(VARIANT)
 SIM_SRC:=\
 	$(SRC)/common/tyto_types_pkg.vhd                          \
@@ -21,8 +19,8 @@ SIM_SRC:=\
 	$(SRC)/common/tyto_sim_pkg.vhd                            \
 	$(SRC)/common/retro/saa5050/test/tb_saa5050$(VARIANT).vhd
 
+VSCODE_TOP:=$(SIM_TOP)
 VSCODE_SRC:=$(SIM_SRC)
-V4P_TOP:=$(SIM_TOP)
 
 MAKE_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 $(info MAKE_DIR=$(MAKE_DIR))
