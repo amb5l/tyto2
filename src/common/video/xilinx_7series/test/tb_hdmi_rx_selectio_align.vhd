@@ -79,8 +79,9 @@ architecture sim of tb_hdmi_rx_selectio_align is
 
   signal shiftreg         : std_logic_vector(9 downto 0);
 
-  signal tmds_out         : slv10_vector(0 to 2);         -- DUT output
-  signal lock             : std_logic;                    -- DUT alignment status
+  signal tmds_out         : slv10_vector(0 to 2);            -- DUT output
+  signal status           : hdmi_rx_selectio_align_status_t; -- DUT status
+  signal align            : std_logic;
 
   --------------------------------------------------------------------------------
   -- encode/decode functions and procedures
@@ -219,16 +220,22 @@ begin
 
   prst <= '1', '0' after 10 ns;
 
+  align <=
+    status.align_s(0) and
+    status.align_s(1) and
+    status.align_s(2) and
+    status.align_p;
+
   -- main process
   process
   begin
-    wait on lock until lock = '1' for LOCK_TIME;
-    if lock = '0' then
-      report "lock should have been established by now" severity FAILURE;
+    wait on align until align = '1' for LOCK_TIME;
+    if align = '0' then
+      report "alignment should have been established by now" severity FAILURE;
     end if;
-    wait on lock until lock = '0' for UNLOCK_TIME;
-    if lock = '0' then
-      report "lock has been lost" severity FAILURE;
+    wait on align until align = '0' for UNLOCK_TIME;
+    if align = '0' then
+      report "alignment has been lost" severity FAILURE;
     end if;
     report "SUCCESS!";
     finish;
@@ -350,7 +357,7 @@ begin
       idelay_tap   => idelay_tap,
       idelay_ld    => idelay_ld,
       tmds         => tmds_out,
-      lock         => lock
+      status       => status
     );
 
   GEN_CH: for i in 0 to 2 generate
