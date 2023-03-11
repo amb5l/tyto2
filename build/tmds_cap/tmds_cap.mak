@@ -9,6 +9,7 @@ SRC:=$(REPO_ROOT)/src
 
 FPGA_VENDOR?=$(word 1,$(FPGA))
 FPGA_FAMILY?=$(word 2,$(FPGA))
+FPGA_DEVICE?=$(word 3,$(FPGA))
 
 FPGA_TOOL:=vivado
 
@@ -22,52 +23,32 @@ VIVADO_DSN_VHDL:=\
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
 	$(SRC)/common/axi/axi_pkg.vhd \
-	$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb.vhd \
+	$(if $(findstring xc7z,$(FPGA_DEVICE)),$(SRC)/designs/$(DESIGN)/$(DESIGN)_z7ps.vhd,$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb.vhd) \
 	$(SRC)/designs/$(DESIGN)/tmds_cap_regs_axi.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
+ifneq (,$(findstring xc7z,$(FPGA_DEVICE)))
+VIVADO_DSN_BD_TCL:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_z7ps_sys.tcl
+else
 VIVADO_DSN_BD_TCL:=\
-	$(SRC)/boards/$(BOARD)/axi_ddr3.tcl \
+	$(SRC)/common/ddr3/$(BOARD)/axi_ddr3.tcl \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb_cpu.tcl \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb_sys.tcl
+endif
+ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VIVADO_DSN_PROC_INST:=cpu
 VIVADO_DSN_PROC_REF:=microblaze
+endif
 VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc
 
-VIVADO_SIM_TOP:=tb_$(VIVADO_DSN_TOP)
-VIVADO_SIM_VHDL_2008:=\
-	$(SRC)/common/tyto_sim_pkg.vhd \
-	$(SRC)/common/tyto_utils_pkg.vhd \
-	$(SRC)/common/basic/sync_reg.vhd \
-	$(SRC)/common/video/video_mode.vhd \
-	$(SRC)/common/video/model_video_out_clock.vhd \
-	$(SRC)/common/video/video_out_timing.vhd \
-	$(SRC)/common/video/video_out_test_pattern.vhd \
-	$(SRC)/common/video/model_tmds_cdr_des.vhd \
-	$(SRC)/common/video/model_hdmi_decoder.vhd \
-	$(SRC)/common/video/model_vga_sink.vhd \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
-
+ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VITIS_APP:=microblaze
 VITIS_SRC:=\
 	$(SRC)/designs/$(DESIGN)/microblaze/main.c
 VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/microblaze \
 	$(SRC)/common/basic/microblaze
-
-SIMULATOR:=xsim_cmd xsim_ide
-
-SIM_TOP:=$(VIVADO_SIM_TOP)
-SIM_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
-SIM_RUN:=$(SIM_TOP)
-
-VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
-VSCODE_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
-VSCODE_XLIB:=unisim
-VSCODE_XSRC:=\
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
+endif
 
 include $(MAKE_FPGA)

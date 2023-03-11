@@ -149,37 +149,37 @@ package axi_pkg is
     rvalid  : std_logic;
   end record axi4_miso_a32d64_t;
 
-  type axis_mosi_32_t is record
+  type axi4s_mosi_32_t is record
     tdata   : std_logic_vector(  31 downto 0 );
     tkeep   : std_logic_vector(   3 downto 0 );
     tlast   : std_logic;
     tvalid  : std_logic;
-  end record axis_mosi_32_t;
+  end record axi4s_mosi_32_t;
   
-  type axis_miso_32_t is record
+  type axi4s_miso_32_t is record
     tready  : std_logic;
-  end record axis_miso_32_t;
+  end record axi4s_miso_32_t;
 
-  type axis_mosi_64_t is record
+  type axi4s_mosi_64_t is record
     tdata   : std_logic_vector(  63 downto 0 );
     tkeep   : std_logic_vector(   7 downto 0 );
     tlast   : std_logic;
     tvalid  : std_logic;
-  end record axis_mosi_64_t;
+  end record axi4s_mosi_64_t;
   
-  type axis_miso_64_t is record
+  type axi4s_miso_64_t is record
     tready  : std_logic;
-  end record axis_miso_64_t;
+  end record axi4s_miso_64_t;
 
-  type axis_mosi_128_t is record
+  type axi4s_mosi_128_t is record
     tdata   : std_logic_vector( 127 downto 0 );
     tkeep   : std_logic_vector(  15 downto 0 );
     tlast   : std_logic;
     tvalid  : std_logic;
-  end record axis_mosi_128_t;
+  end record axi4s_mosi_128_t;
   
-  type axis_miso_128_t is record
+  type axi4s_miso_128_t is record
     tready  : std_logic;
-  end record axis_miso_128_t;
+  end record axi4s_miso_128_t;
 
 end package axi_pkg;

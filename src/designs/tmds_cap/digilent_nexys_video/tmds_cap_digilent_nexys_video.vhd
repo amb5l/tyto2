@@ -208,11 +208,9 @@ architecture synth of tmds_cap_digilent_nexys_video is
   -- controller
   signal axi_clk         : std_logic;
   signal axi_rst_n       : std_logic;
-
   signal gpio_i          : std_logic_vector( 31 downto 0 );
   signal gpio_o          : std_logic_vector( 31 downto 0 );
   signal gpio_t          : std_logic_vector( 31 downto 0 );
-
   signal tmds_maxi_mosi  : axi4_mosi_a32d32_t;
   signal tmds_maxi_miso  : axi4_miso_a32d32_t;
   signal tmds_saxis_mosi : axis_mosi_64_t;

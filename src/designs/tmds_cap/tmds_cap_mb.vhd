@@ -44,14 +44,14 @@ package tmds_cap_mb_pkg is
       axi_rst_n       : out   std_logic;
       tmds_maxi_mosi  : out   axi4_mosi_a32d32_t;
       tmds_maxi_miso  : in    axi4_miso_a32d32_t;
-      tmds_saxis_mosi : in    axis_mosi_64_t;
-      tmds_saxis_miso : out   axis_miso_64_t;
+      tmds_saxis_mosi : in    axi4s_mosi_64_t;
+      tmds_saxis_miso : out   axi4s_miso_64_t;
       emac_maxi_mosi  : out   axi4_mosi_a32d32_t;
       emac_maxi_miso  : in    axi4_miso_a32d32_t;
-      emac_maxis_mosi : out   axis_mosi_32_t;
-      emac_maxis_miso : in    axis_miso_32_t;
-      emac_saxis_mosi : in    axis_mosi_32_t;
-      emac_saxis_miso : out   axis_miso_32_t;
+      emac_maxis_mosi : out   axi4s_mosi_32_t;
+      emac_maxis_miso : in    axi4s_miso_32_t;
+      emac_saxis_mosi : in    axi4s_mosi_32_t;
+      emac_saxis_miso : out   axi4s_miso_32_t;
 
       ddr3_reset_n    : out   std_logic;
       ddr3_ck_p       : out   std_logic_vector(  0 downto 0 );
@@ -102,14 +102,14 @@ entity tmds_cap_mb is
     axi_rst_n       : out   std_logic;
     tmds_maxi_mosi  : out   axi4_mosi_a32d32_t;
     tmds_maxi_miso  : in    axi4_miso_a32d32_t;
-    tmds_saxis_mosi : in    axis_mosi_64_t;
-    tmds_saxis_miso : out   axis_miso_64_t;
+    tmds_saxis_mosi : in    axi4s_mosi_64_t;
+    tmds_saxis_miso : out   axi4s_miso_64_t;
     emac_maxi_mosi  : out   axi4_mosi_a32d32_t;
     emac_maxi_miso  : in    axi4_miso_a32d32_t;
-    emac_maxis_mosi : out   axis_mosi_32_t;
-    emac_maxis_miso : in    axis_miso_32_t;
-    emac_saxis_mosi : in    axis_mosi_32_t;
-    emac_saxis_miso : out   axis_miso_32_t;
+    emac_maxis_mosi : out   axi4s_mosi_32_t;
+    emac_maxis_miso : in    axi4s_miso_32_t;
+    emac_saxis_mosi : in    axi4s_mosi_32_t;
+    emac_saxis_miso : out   axi4s_miso_32_t;
 
     ddr3_reset_n    : out   std_logic;
     ddr3_ck_p       : out   std_logic_vector(  0 downto 0 );
