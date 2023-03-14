@@ -24,6 +24,30 @@ library work;
 
 package tmds_cap_stream_pkg is
 
+  constant RA_FREQ      : std_logic_vector(7 downto 0) := x"00"; -- pixel clock frequency count
+  constant RA_ASTAT     : std_logic_vector(7 downto 0) := x"04"; -- alignment status  
+  constant RA_ATAPMASK0 : std_logic_vector(7 downto 0) := x"10"; -- alignment tap mask (channel 0)
+  constant RA_ATAPMASK1 : std_logic_vector(7 downto 0) := x"14"; -- alignment tap mask (channel 1)
+  constant RA_ATAPMASK2 : std_logic_vector(7 downto 0) := x"18"; -- alignment tap mask (channel 2)
+  constant RA_ATAP      : std_logic_vector(7 downto 0) := x"20"; -- alignment: chosen taps
+  constant RA_ABITSLIP  : std_logic_vector(7 downto 0) := x"24"; -- alignment: bit slip positions
+  constant RA_ACYCLE0   : std_logic_vector(7 downto 0) := x"30"; -- alignment cycle count (channel 0)
+  constant RA_ACYCLE1   : std_logic_vector(7 downto 0) := x"34"; -- alignment cycle count (channel 1)
+  constant RA_ACYCLE2   : std_logic_vector(7 downto 0) := x"38"; -- alignment cycle count (channel 2)
+  constant RA_ATAPOK0   : std_logic_vector(7 downto 0) := x"40"; -- alignment tap OK count (channel 0)
+  constant RA_ATAPOK1   : std_logic_vector(7 downto 0) := x"44"; -- alignment tap OK count (channel 1)
+  constant RA_ATAPOK2   : std_logic_vector(7 downto 0) := x"48"; -- alignment tap OK count (channel 2)
+  constant RA_AGAIN0    : std_logic_vector(7 downto 0) := x"50"; -- serial alignment gain count (channel 0)
+  constant RA_AGAIN1    : std_logic_vector(7 downto 0) := x"54"; -- serial alignment gain count (channel 1)
+  constant RA_AGAIN2    : std_logic_vector(7 downto 0) := x"58"; -- serial alignment gain count (channel 2)
+  constant RA_AGAINP    : std_logic_vector(7 downto 0) := x"5C"; -- parallel alignment gain count
+  constant RA_ALOSS0    : std_logic_vector(7 downto 0) := x"60"; -- serial alignment loss count (channel 0)
+  constant RA_ALOSS1    : std_logic_vector(7 downto 0) := x"64"; -- serial alignment loss count (channel 1)
+  constant RA_ALOSS2    : std_logic_vector(7 downto 0) := x"68"; -- serial alignment loss count (channel 2)
+  constant RA_ALOSSP    : std_logic_vector(7 downto 0) := x"6C"; -- parallel alignment loss count
+  constant RA_CAPCTRL   : std_logic_vector(7 downto 0) := x"70"; -- capture control
+  constant RA_CAPSTAT   : std_logic_vector(7 downto 0) := x"74"; -- capture status
+
   component tmds_cap_stream is
     port (
 
@@ -86,10 +110,7 @@ architecture synth of tmds_cap_stream is
 begin
 
   -- should we be registering these outputs? probably...
-  axi_miso.awready <= axi_mosi.awvalid and axi_mosi.wvalid;
-  axi_miso.wready  <= axi_mosi.awvalid and axi_mosi.wvalid;
   axi_miso.bresp   <= (others => '0');
-  axi_miso.bvalid  <= axi_mosi.awvalid and axi_mosi.wvalid;
   axi_miso.arready <= rstb;
   axi_miso.rresp   <= (others => '0');
   axi_miso.rlast   <= '1';
@@ -99,49 +120,62 @@ begin
   process(axi_rst_n,axi_clk)
   begin
     if axi_rst_n = '0' then
-      rx_status_s1 <= (others => '0');
-      rx_status_s2 <= (others => '0');
-      r            <= (others => '0');
-      rstb         <= '0';
+
+      rx_status_s1     <= (others => '0');
+      rx_status_s2     <= (others => '0');
+      r                <= (others => '0');
+      rstb             <= '0';
+      axi_miso.awready <= '0';
+      axi_miso.wready  <= '0';
+      axi_miso.bvalid  <= '0';
+
     elsif rising_edge(axi_clk) then
 
       -- synchronisers
       rx_status_s1 <= rx_status;
       rx_status_s2 <= rx_status_s1;
 
+      -- register reads and writes
+      axi_miso.awready <= axi_mosi.awvalid and axi_mosi.wvalid;
+      axi_miso.wready  <= axi_mosi.awvalid and axi_mosi.wvalid;
+      axi_miso.bvalid  <= axi_mosi.awvalid and axi_mosi.wvalid;
+
       -- register reads
       r <= (others => '0'); -- default
       case axi_mosi.araddr(7 downto 0) is
-        when x"00" => r(31 downto 0) <= s.count_freq;
-        when x"04" => r( 2 downto 0) <= s.band & s.lock;
-        when x"08" => r( 7 downto 0) <=
-                        s.skew_p(2)(1) & s.skew_p(2)(0) &
-                        s.skew_p(1)(1) & s.skew_p(1)(0) &
-                        s.align_p &
-                        s.align_s(2) & s.align_s(1) & s.align_s(0);
-        when x"10" => r(31 downto 0) <= s.tap_mask(0);
-        when x"14" => r(31 downto 0) <= s.tap_mask(1);
-        when x"18" => r(31 downto 0) <= s.tap_mask(2);
-        when x"20" => r( 4 downto 0) <= s.tap(0);
-        when x"24" => r( 4 downto 0) <= s.tap(1);
-        when x"28" => r( 4 downto 0) <= s.tap(2);
-        when x"30" => r( 3 downto 0) <= s.bitslip(0);
-        when x"34" => r( 3 downto 0) <= s.bitslip(1);
-        when x"38" => r( 3 downto 0) <= s.bitslip(2);
-        when x"40" => r(31 downto 0) <= s.count_acycle(0);
-        when x"44" => r(31 downto 0) <= s.count_acycle(1);
-        when x"48" => r(31 downto 0) <= s.count_acycle(2);
-        when x"50" => r(31 downto 0) <= s.count_tap_ok(0);
-        when x"54" => r(31 downto 0) <= s.count_tap_ok(1);
-        when x"58" => r(31 downto 0) <= s.count_tap_ok(2);
-        when x"60" => r(31 downto 0) <= s.count_again_s(0);
-        when x"64" => r(31 downto 0) <= s.count_again_s(1);
-        when x"68" => r(31 downto 0) <= s.count_again_s(2);
-        when x"6C" => r(31 downto 0) <= s.count_again_p;
-        when x"70" => r(31 downto 0) <= s.count_aloss_s(0);
-        when x"74" => r(31 downto 0) <= s.count_aloss_s(1);
-        when x"78" => r(31 downto 0) <= s.count_aloss_s(2);
-        when x"7C" => r(31 downto 0) <= s.count_aloss_p;
+        when RA_FREQ   => s.count_freq;
+        when RA_ASTAT    =>
+          s.skew_p(2) & s.skew_p(1) &
+          s.align_p & s.align_s(2) & s.align_s(1) & s.align_s(0) &
+          s.band & s.lock;
+        when RA_ATAPMASK0 => r(31 downto 0) <= s.tap_mask(0);
+        when RA_ATAPMASK1 => r(31 downto 0) <= s.tap_mask(1);
+        when RA_ATAPMASK2 => r(31 downto 0) <= s.tap_mask(2);
+        when RA_ATAP      => r(23 downto 0) <=
+          "000" & s.tap(2) &
+          "000" & s.tap(1) &
+          "000" & s.tap(0);
+        when RA_ABITSLIP  =>
+          X"00000" &
+          s.bitslip(2) &
+          s.bitslip(1) &
+          s.bitslip(0);
+        when RA_ACYCLE0 => r(31 downto 0) <= s.count_acycle(0);
+        when RA_ACYCLE1 => r(31 downto 0) <= s.count_acycle(1);
+        when RA_ACYCLE2 => r(31 downto 0) <= s.count_acycle(2);
+        when RA_TAPOK0  => r(31 downto 0) <= s.count_tap_ok(0);
+        when RA_TAPOK1  => r(31 downto 0) <= s.count_tap_ok(1);
+        when RA_TAPOK2  => r(31 downto 0) <= s.count_tap_ok(2);
+        when RA_AGAIN0  => r(31 downto 0) <= s.count_again_s(0);
+        when RA_AGAIN1  => r(31 downto 0) <= s.count_again_s(1);
+        when RA_AGAIN2  => r(31 downto 0) <= s.count_again_s(2);
+        when RA_AGAINP  => r(31 downto 0) <= s.count_again_p;
+        when RA_ALOSS0  => r(31 downto 0) <= s.count_aloss_s(0);
+        when RA_ALOSS1  => r(31 downto 0) <= s.count_aloss_s(1);
+        when RA_ALOSS2  => r(31 downto 0) <= s.count_aloss_s(2);
+        when RA_ALOSSP  => r(31 downto 0) <= s.count_aloss_p;
+        when RA_CAPCTRL => r(31 downto 0) <= -- TODO
+        when RA_CAPSTAT => r(31 downto 0) <= -- TODO
         when others => null;
       end case;
       rstb <= axi_mosi.arvalid and axi_mosi.rready;
@@ -156,7 +190,7 @@ begin
 
   -- TMDS stream ---> FIFO
   -- TODO: implement counter, loaded from capture size register
-  
+
   process(prst,pclk)
     variable d : std_logic_vector(31 downto 0);
   begin
