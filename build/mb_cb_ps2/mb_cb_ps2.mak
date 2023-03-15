@@ -75,11 +75,11 @@ VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
 VSCODE_SRC:=$(SIM_SRC)
 VSCODE_XLIB:=unisim
 VSCODE_XSRC.unisim:=\
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/RAMB36E1.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/secureip/OSERDESE2.vhd
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/RAMB36E1.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/secureip/OSERDESE2.vhd
 
 include $(MAKE_FPGA)

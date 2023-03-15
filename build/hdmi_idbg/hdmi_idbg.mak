@@ -68,11 +68,12 @@ SIM_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
 #endif
 SIM_RUN:=$(SIM_TOP)
 
+VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
 VSCODE_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
-V4P_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
-V4P_LIB_SRC:=\
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
+VSCODE_XLIB:=unisim
+VSCODE_XSRC.unisim:=\
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
 
 include $(MAKE_FPGA)

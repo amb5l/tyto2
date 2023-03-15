@@ -59,12 +59,12 @@ GHDL_LIBS:=xilinx-vivado
 NVC_GOPTS:=-H 32m
 
 VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
-VSCODE_SRC:=$(VIVADO_DSN_VHDL_2008) $(VIVADO_SIM_VHDL_2008)
+VSCODE_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
 VSCODE_XLIB:=unisim
 VSCODE_XSRC.unisim:=\
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
-	unisim;$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
 
 include $(MAKE_FPGA)
 
