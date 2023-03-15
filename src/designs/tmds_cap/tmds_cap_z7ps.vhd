@@ -86,7 +86,7 @@ architecture wrapper of tmds_cap_z7ps is
       tmds_maxi_awlen   : out   std_logic_vector(  7 downto 0 );
       tmds_maxi_awsize  : out   std_logic_vector(  2 downto 0 );
       tmds_maxi_awburst : out   std_logic_vector(  1 downto 0 );
-      tmds_maxi_awlock  : out   std_logic_vector(  0 to     0 );
+      tmds_maxi_awlock  : out   std_logic_vector(  0     to 0 );
       tmds_maxi_awcache : out   std_logic_vector(  3 downto 0 );
       tmds_maxi_awprot  : out   std_logic_vector(  2 downto 0 );
       tmds_maxi_awqos   : out   std_logic_vector(  3 downto 0 );
@@ -104,7 +104,7 @@ architecture wrapper of tmds_cap_z7ps is
       tmds_maxi_arlen   : out   std_logic_vector(  7 downto 0 );
       tmds_maxi_arsize  : out   std_logic_vector(  2 downto 0 );
       tmds_maxi_arburst : out   std_logic_vector(  1 downto 0 );
-      tmds_maxi_arlock  : out   std_logic_vector(  0 to     0 );
+      tmds_maxi_arlock  : out   std_logic_vector(  0     to 0 );
       tmds_maxi_arcache : out   std_logic_vector(  3 downto 0 );
       tmds_maxi_arprot  : out   std_logic_vector(  2 downto 0 );
       tmds_maxi_arqos   : out   std_logic_vector(  3 downto 0 );
