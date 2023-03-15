@@ -23,7 +23,6 @@ VSCODE_TOP:=$(SIM_TOP)
 VSCODE_SRC:=$(SIM_SRC)
 
 MAKE_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST))))
-$(info MAKE_DIR=$(MAKE_DIR))
 ifeq ($(OS),Windows_NT)
 MAKE_DIR:=$(shell cygpath -m $(MAKE_DIR))
 endif
