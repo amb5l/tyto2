@@ -28,7 +28,8 @@ library work;
   use work.hdmi_rx_selectio_pkg.all;
   use work.hdmi_tx_selectio_pkg.all;
   use work.tmds_cap_mb_pkg.all;
-  use work.tmds_cap_regs_axi_pkg.all;
+  use work.tmds_cap_stream_pkg.all;
+  use work.memac_axi4_rgmii_pkg.all;
 
 entity tmds_cap_digilent_nexys_video is
   port (
@@ -108,14 +109,14 @@ entity tmds_cap_digilent_nexys_video is
 
     -- ethernet
     eth_rst_n     : out   std_logic;
-    -- eth_txck      : out   std_logic;
-    -- eth_txctl     : out   std_logic;
-    -- eth_txd       : out   std_logic_vector(3 downto 0);
-    -- eth_rxck      : in    std_logic;
-    -- eth_rxctl     : in    std_logic;
-    -- eth_rxd       : in    std_logic_vector(3 downto 0);
-    -- eth_mdc       : out   std_logic;
-    -- eth_mdio      : inout std_logic;
+    eth_txck      : out   std_logic;
+    eth_txctl     : out   std_logic;
+    eth_txd       : out   std_logic_vector(3 downto 0);
+    eth_rxck      : in    std_logic;
+    eth_rxctl     : in    std_logic;
+    eth_rxd       : in    std_logic_vector(3 downto 0);
+    eth_mdc       : out   std_logic;
+    eth_mdio      : inout std_logic;
     -- eth_int_n     : in    std_logic;
     -- eth_pme_n       : in    std_logic;
 
@@ -186,42 +187,39 @@ end entity tmds_cap_digilent_nexys_video;
 architecture synth of tmds_cap_digilent_nexys_video is
 
   -- basics
-
-  signal mig_lock       : std_logic;
-  signal mig_rdy        : std_logic;
-  signal clk_200m       : std_logic;
-  signal idelayctrl_rdy : std_logic;
+  signal mig_lock          : std_logic;
+  signal mig_rdy           : std_logic;
+  signal clk_200m          : std_logic;
+  signal idelayctrl_rdy    : std_logic;
 
   -- HDMI I/O
-
-  signal hdmi_rx_clku   : std_logic;
-  signal hdmi_rx_clk    : std_logic;
-  signal hdmi_rx_d      : std_logic_vector(0 to 2);
-  signal prst           : std_logic;
-  signal pclk           : std_logic;
-  signal sclk           : std_logic;
-  signal tmds           : slv10_vector(0 to 2);
-  signal rx_status      : hdmi_rx_selectio_status_t;
-  signal hdmi_tx_clk    : std_logic;
-  signal hdmi_tx_d      : std_logic_vector(0 to 2);
+  signal hdmi_rx_clku      : std_logic;
+  signal hdmi_rx_clk       : std_logic;
+  signal hdmi_rx_d         : std_logic_vector(0 to 2);
+  signal prst              : std_logic;
+  signal pclk              : std_logic;
+  signal sclk              : std_logic;
+  signal tmds              : slv10_vector(0 to 2);
+  signal rx_status         : hdmi_rx_selectio_status_t;
+  signal hdmi_tx_clk       : std_logic;
+  signal hdmi_tx_d         : std_logic_vector(0 to 2);
 
   -- controller
-  signal axi_clk         : std_logic;
-  signal axi_rst_n       : std_logic;
-  signal gpio_i          : std_logic_vector( 31 downto 0 );
-  signal gpio_o          : std_logic_vector( 31 downto 0 );
-  signal gpio_t          : std_logic_vector( 31 downto 0 );
-  signal tmds_maxi_mosi  : axi4_mosi_a32d32_t;
-  signal tmds_maxi_miso  : axi4_miso_a32d32_t;
-  signal tmds_saxis_mosi : axis_mosi_64_t;
-  signal tmds_saxis_miso : axis_miso_64_t;
-  signal emac_maxi_mosi  : axi4_mosi_a32d32_t;
-  signal emac_maxi_miso  : axi4_miso_a32d32_t;
-  signal emac_maxis_mosi : axis_mosi_32_t;
-  signal emac_maxis_miso : axis_miso_32_t;
-  signal emac_saxis_mosi : axis_mosi_32_t;
-  signal emac_saxis_miso : axis_miso_32_t;
-
+  signal axi_clk           : std_logic;
+  signal axi_rst_n         : std_logic;
+  signal gpio_i            : std_logic_vector( 31 downto 0 );
+  signal gpio_o            : std_logic_vector( 31 downto 0 );
+  signal gpio_t            : std_logic_vector( 31 downto 0 );
+  signal tmds_axi_mosi     : axi4_mosi_a32d32_t;
+  signal tmds_axi_miso     : axi4_miso_a32d32_t;
+  signal tmds_axis_mosi    : axi4s_mosi_64_t;
+  signal tmds_axis_miso    : axi4s_miso_64_t;
+  signal emac_axi_mosi     : axi4_mosi_a32d32_t;
+  signal emac_axi_miso     : axi4_miso_a32d32_t;
+  signal emac_rx_axis_mosi : axi4s_mosi_32_t;
+  signal emac_rx_axis_miso : axi4s_miso_32_t;
+  signal emac_tx_axis_mosi : axi4s_mosi_32_t;
+  signal emac_tx_axis_miso : axi4s_miso_32_t;
 
 begin
 
@@ -266,6 +264,7 @@ begin
     );
 
   --------------------------------------------------------------------------------
+  -- controller core
 
   U_CTRL: component tmds_cap_mb
     port map (
@@ -281,16 +280,16 @@ begin
       gpio_t          => gpio_t,
       axi_clk         => axi_clk,
       axi_rst_n       => axi_rst_n,
-      tmds_maxi_mosi  => tmds_maxi_mosi,
-      tmds_maxi_miso  => tmds_maxi_miso,
-      tmds_saxis_mosi => tmds_saxis_mosi,
-      tmds_saxis_miso => tmds_saxis_miso,
-      emac_maxi_mosi  => emac_maxi_mosi,
-      emac_maxi_miso  => emac_maxi_miso,
-      emac_maxis_mosi => emac_maxis_mosi,
-      emac_maxis_miso => emac_maxis_miso,
-      emac_saxis_mosi => emac_saxis_mosi,
-      emac_saxis_miso => emac_saxis_miso,
+      tmds_maxi_mosi  => tmds_axi_mosi,
+      tmds_maxi_miso  => tmds_axi_miso,
+      tmds_saxis_mosi => tmds_axis_mosi,
+      tmds_saxis_miso => tmds_axis_miso,
+      emac_maxi_mosi  => emac_axi_mosi,
+      emac_maxi_miso  => emac_axi_miso,
+      emac_maxis_mosi => emac_tx_axis_mosi,
+      emac_maxis_miso => emac_tx_axis_miso,
+      emac_saxis_mosi => emac_rx_axis_mosi,
+      emac_saxis_miso => emac_rx_axis_miso,
       ddr3_reset_n    => ddr3_reset_n,
       ddr3_ck_p       => ddr3_ck_p,
       ddr3_ck_n       => ddr3_ck_n,
@@ -307,22 +306,50 @@ begin
       ddr3_dqs_n      => ddr3_dqs_n
     );
 
-  gpio_i <= (
-    0 => mig_rdy,
-    1 => idelayctrl_rdy,
-    others => '0'
-    );
+  gpio_i <= (0 => mig_rdy,1 => idelayctrl_rdy,others => '0');
 
-  U_REGS: component tmds_cap_regs_axi
-    port map (
-      rst       => not axi_rst_n,
-      clk       => axi_clk,
-      rx_status => rx_status,
-      axi_mosi  => tmds_maxi_mosi,
-      axi_miso  => tmds_maxi_miso
-    );
-
+  -- TODO connect to gpo
   eth_rst_n <= '0';
+
+  --------------------------------------------------------------------------------
+  -- TMDS streaming module (TMDS to AXI4-Stream with AXI4-Lite register interface)
+
+  U_STREAM: component tmds_cap_stream
+    port map (
+      prst       => prst,
+      pclk       => pclk,
+      tmds       => tmds,
+      rx_status  => rx_status,
+      axi_clk    => axi_clk,
+      axi_rst_n  => axi_rst_n,
+      saxi_mosi  => tmds_axi_mosi,
+      saxi_miso  => tmds_axi_miso,
+      maxis_mosi => tmds_axis_mosi,
+      maxis_miso => tmds_axis_miso
+    );
+
+--------------------------------------------------------------------------------
+-- ethernet
+
+  U_EMAC: component memac_axi4_rgmii
+    port map (
+      axi_clk      => axi_clk,
+      axi_rst_n    => axi_rst_n,
+      saxi_mosi    => emac_axi_mosi,
+      saxi_miso    => emac_axi_miso,
+      maxis_mosi   => emac_rx_axis_mosi,
+      maxis_miso   => emac_rx_axis_miso,
+      saxis_mosi   => emac_tx_axis_mosi,
+      saxis_miso   => emac_tx_axis_miso,
+      rgmii_rx_clk => eth_rxck,
+      rgmii_rx_ctl => eth_rxctl,
+      rgmii_rx_d   => eth_rxd,
+      rgmii_tx_clk => eth_txck,
+      rgmii_tx_ctl => eth_txctl,
+      rgmii_tx_d   => eth_txd,
+      smi_clk      => eth_mdc,
+      smi_dio      => eth_mdio
+    );
 
   --------------------------------------------------------------------------------
   -- I/O primitives

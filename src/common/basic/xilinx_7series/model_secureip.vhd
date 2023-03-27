@@ -16,7 +16,6 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
--- TODO: IDELAYE2 and ISERDESE2
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -201,6 +200,11 @@ begin
 
 end architecture model;
 
+--------------------------------------------------------------------------------
+
+library ieee;
+  use ieee.std_logic_1164.all;
+
 entity iserdese2 is
   generic (
     serdes_mode       : string;
@@ -249,10 +253,74 @@ entity iserdese2 is
     shiftin1          : in    std_ulogic;
     shiftin2          : in    std_ulogic;
     shiftout1         : out   std_ulogic;
-    shiftout2         : out   std_ulogic;
+    shiftout2         : out   std_ulogic
   );
 end entity iserdese2;
 
 architecture model of iserdese2 is
 begin
+  -- TODO: complete this model
 end architecture model;
+
+--------------------------------------------------------------------------------
+
+library ieee;
+  use ieee.std_logic_1164.all;
+
+entity idelaye2 is
+  generic (
+     cinvctrl_sel          : string := "false";
+     delay_src             : string := "idatain";
+     high_performance_mode : string := "false";
+     idelay_type           : string := "fixed";
+     idelay_value          : integer := 0;
+     is_c_inverted         : bit := '0';
+     is_datain_inverted    : bit := '0';
+     is_idatain_inverted   : bit := '0';
+     pipe_sel              : string := "false";
+     refclk_frequency      : real := 200.0;
+     signal_pattern        : string := "data"
+  );
+  port (
+     cntvalueout : out   std_logic_vector(4 downto 0);
+     dataout     : out   std_ulogic;
+     c           : in    std_ulogic;
+     ce          : in    std_ulogic;
+     cinvctrl    : in    std_ulogic;
+     cntvaluein  : in    std_logic_vector(4 downto 0);
+     datain      : in    std_ulogic;
+     idatain     : in    std_ulogic;
+     inc         : in    std_ulogic;
+     ld          : in    std_ulogic;
+     ldpipeen    : in    std_ulogic;
+     regrst      : in    std_ulogic
+  );
+end entity idelaye2;
+
+architecture model of idelaye2 is
+begin
+  -- TODO: complete this model
+end architecture model;
+
+--------------------------------------------------------------------------------
+
+library ieee;
+  use ieee.std_logic_1164.all;
+
+entity idelayctrl is
+  generic (
+    sim_device : string := "7SERIES"
+  );
+  port (
+    rdy    : out   std_ulogic;
+    refclk : in    std_ulogic;
+    rst    : in    std_ulogic
+  );
+end entity idelayctrl;
+
+architecture model of idelayctrl is
+begin
+  -- TODO: complete this model
+end architecture model;
+
+--------------------------------------------------------------------------------

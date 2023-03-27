@@ -6,12 +6,19 @@ REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
 endif
 MAKE_FPGA:=$(REPO_ROOT)/submodules/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
+BUILD:=$(REPO_ROOT)/build
 
 FPGA_VENDOR?=$(word 1,$(FPGA))
 FPGA_FAMILY?=$(word 2,$(FPGA))
 FPGA_DEVICE?=$(word 3,$(FPGA))
 
 FPGA_TOOL:=vivado
+
+ifneq (,$(findstring xc7z,$(FPGA_DEVICE)))
+CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_z7ps.vhd
+else
+CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb.vhd
+endif
 
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
 VIVADO_DSN_VHDL:=\
@@ -23,8 +30,9 @@ VIVADO_DSN_VHDL:=\
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
 	$(SRC)/common/axi/axi_pkg.vhd \
-	$(if $(findstring xc7z,$(FPGA_DEVICE)),$(SRC)/designs/$(DESIGN)/$(DESIGN)_z7ps.vhd,$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb.vhd) \
-	$(SRC)/designs/$(DESIGN)/tmds_cap_regs_axi.vhd \
+	$(CORE_VHD) \
+	$(SRC)/designs/$(DESIGN)/tmds_cap_stream.vhd \
+    $(if $(filter digilent_nexys_video,$(BOARD)),$(SRC)/common/ethernet/memac_axi4_rgmii.vhd) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
 ifneq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VIVADO_DSN_BD_TCL:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_z7ps_sys.tcl
@@ -50,5 +58,20 @@ VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/microblaze \
 	$(SRC)/common/basic/microblaze
 endif
+
+VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
+VSCODE_SRC:=\
+    $(VIVADO_DSN_VHDL) \
+    $(BUILD)/$(DESIGN)/$(DESIGN)_$(BOARD)/.vivado/fpga.gen/sources_1/bd/axi_ddr3/synth/axi_ddr3.vhd \
+    $(BUILD)/$(DESIGN)/$(DESIGN)_$(BOARD)/.vivado/fpga.gen/sources_1/bd/tmds_cap_mb_cpu/synth/tmds_cap_mb_cpu.vhd \
+    $(BUILD)/$(DESIGN)/$(DESIGN)_$(BOARD)/.vivado/fpga.gen/sources_1/bd/tmds_cap_mb_sys/synth/tmds_cap_mb_sys.vhd
+VSCODE_XLIB:=unisim
+VSCODE_XSRC.unisim:=\
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/IBUFDS.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd \
+    $(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/model_secureip.vhd
 
 include $(MAKE_FPGA)
