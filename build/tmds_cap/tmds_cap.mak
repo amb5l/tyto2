@@ -31,6 +31,7 @@ VIVADO_DSN_VHDL:=\
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
 	$(SRC)/common/axi/axi_pkg.vhd \
 	$(CORE_VHD) \
+	$(SRC)/designs/$(DESIGN)/tmds_cap_csr.vhd \
 	$(SRC)/designs/$(DESIGN)/tmds_cap_stream.vhd \
     $(if $(filter digilent_nexys_video,$(BOARD)),$(SRC)/common/ethernet/memac_axi4_rgmii.vhd) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
@@ -60,11 +61,13 @@ VITIS_INCLUDE:=\
 endif
 
 VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
-VSCODE_SRC:=\
-    $(VIVADO_DSN_VHDL) \
+VSCODE_SRC:=$(VIVADO_DSN_VHDL)
+ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
+VSCODE_SRC+=
     $(BUILD)/$(DESIGN)/$(DESIGN)_$(BOARD)/.vivado/fpga.gen/sources_1/bd/axi_ddr3/synth/axi_ddr3.vhd \
     $(BUILD)/$(DESIGN)/$(DESIGN)_$(BOARD)/.vivado/fpga.gen/sources_1/bd/tmds_cap_mb_cpu/synth/tmds_cap_mb_cpu.vhd \
     $(BUILD)/$(DESIGN)/$(DESIGN)_$(BOARD)/.vivado/fpga.gen/sources_1/bd/tmds_cap_mb_sys/synth/tmds_cap_mb_sys.vhd
+endif
 VSCODE_XLIB:=unisim
 VSCODE_XSRC.unisim:=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \

@@ -28,7 +28,8 @@ library work;
   use work.hdmi_rx_selectio_pkg.all;
   use work.hdmi_tx_selectio_pkg.all;
   use work.tmds_cap_z7ps_pkg.all;
-  use work.tmds_cap_regs_axi_pkg.all;
+  use work.tmds_cap_csr_pkg.all;
+  use work.tmds_cap_stream_pkg.all;
 
 -- entity copied from src/boards/digilent_zybo_z7_20/digilent_zybo_z7_20.vhd
 -- if it needs fixing, then so does the above file
@@ -159,15 +160,21 @@ architecture synth of tmds_cap_digilent_zybo_z7_20 is
   signal hdmi_tx_d      : std_logic_vector(0 to 2);
 
   -- controller
-  signal axi_clk         : std_logic;
-  signal axi_rst_n       : std_logic;
-  signal gpio_i          : std_logic_vector( 31 downto 0 );
-  signal gpio_o          : std_logic_vector( 31 downto 0 );
-  signal gpio_t          : std_logic_vector( 31 downto 0 );  
-  signal tmds_maxi_mosi  : axi4_mosi_a32d32_t;
-  signal tmds_maxi_miso  : axi4_miso_a32d32_t;
-  signal tmds_saxis_mosi : axi4s_mosi_64_t;
-  signal tmds_saxis_miso : axi4s_miso_64_t;
+  signal axi_clk        : std_logic;
+  signal axi_rst_n      : std_logic;
+  signal gpio_i         : std_logic_vector( 31 downto 0 );
+  signal gpio_o         : std_logic_vector( 31 downto 0 );
+  signal gpio_t         : std_logic_vector( 31 downto 0 );
+  signal tmds_axi_mosi  : axi4_mosi_a32d32_t;
+  signal tmds_axi_miso  : axi4_miso_a32d32_t;
+  signal tmds_axis_mosi : axi4s_mosi_64_t;
+  signal tmds_axis_miso : axi4s_miso_64_t;
+
+  signal cap_rst        : std_logic;                     -- capture reset
+  signal cap_size       : std_logic_vector(31 downto 0); -- capture size (pixels)
+  signal cap_go         : std_logic;                     -- capture start
+  signal cap_done       : std_logic;                     -- capture done
+  signal cap_error      : std_logic;                     -- capture error
 
 begin
 
@@ -209,7 +216,7 @@ begin
 
   U_HDMI_RX: component hdmi_rx_selectio
     generic map (
-      fclk        => 100.0
+      fclk   => 100.0
     )
     port map (
       rst    => not axi_rst_n,
@@ -234,6 +241,7 @@ begin
     );
 
   --------------------------------------------------------------------------------
+  -- controller
 
   U_CTRL: component tmds_cap_z7ps
     port map (
@@ -242,10 +250,10 @@ begin
       gpio_i          => gpio_i,
       gpio_o          => gpio_o,
       gpio_t          => gpio_t,
-      tmds_maxi_mosi  => tmds_maxi_mosi,
-      tmds_maxi_miso  => tmds_maxi_miso,
-      tmds_saxis_mosi => tmds_saxis_mosi,
-      tmds_saxis_miso => tmds_saxis_miso
+      tmds_maxi_mosi  => tmds_axi_mosi,
+      tmds_maxi_miso  => tmds_axi_miso,
+      tmds_saxis_mosi => tmds_axis_mosi,
+      tmds_saxis_miso => tmds_axis_miso
     );
 
   gpio_i <= (
@@ -253,14 +261,37 @@ begin
     others => '0'
     );
 
-  -- this will be replaced by the TMDS => AXI4-Stream FIFO IP
-  U_REGS: component tmds_cap_regs_axi
+  --------------------------------------------------------------------------------
+  -- TMDS capture - control/status registers and streaming
+
+  U_CSR: component tmds_cap_csr
     port map (
-      rst       => not axi_rst_n,
-      clk       => axi_clk,
-      rx_status => rx_status,
-      axi_mosi  => tmds_maxi_mosi,
-      axi_miso  => tmds_maxi_miso
+      axi_clk     => axi_clk,
+      axi_rst_n   => axi_rst_n,
+      saxi_mosi   => tmds_axi_mosi,
+      saxi_miso   => tmds_axi_miso,
+      tmds_status => rx_status,
+      cap_rst     => cap_rst,
+      cap_size    => cap_size,
+      cap_go      => cap_go,
+      cap_done    => cap_done,
+      cap_error   => cap_error
+    );
+
+  U_STREAM: component tmds_cap_stream
+    port map (
+      prst       => prst,
+      pclk       => pclk,
+      tmds       => tmds,
+      cap_rst    => cap_rst,
+      cap_size   => cap_size,
+      cap_go     => cap_go,
+      cap_done   => cap_done,
+      cap_error  => cap_error,
+      axi_clk    => axi_clk,
+      axi_rst_n  => axi_rst_n,
+      maxis_mosi => tmds_axis_mosi,
+      maxis_miso => tmds_axis_miso
     );
 
   --------------------------------------------------------------------------------

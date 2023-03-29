@@ -21,33 +21,9 @@ library ieee;
 library work;
   use work.tyto_types_pkg.all;
   use work.axi_pkg.all;
-  use work.hdmi_rx_selectio_pkg.all;
+
 
 package tmds_cap_stream_pkg is
-
-  constant RA_FREQ      : std_logic_vector(7 downto 0) := x"00"; -- pixel clock frequency count
-  constant RA_ASTAT     : std_logic_vector(7 downto 0) := x"04"; -- alignment status
-  constant RA_ATAPMASK0 : std_logic_vector(7 downto 0) := x"10"; -- alignment tap mask (channel 0)
-  constant RA_ATAPMASK1 : std_logic_vector(7 downto 0) := x"14"; -- alignment tap mask (channel 1)
-  constant RA_ATAPMASK2 : std_logic_vector(7 downto 0) := x"18"; -- alignment tap mask (channel 2)
-  constant RA_ATAP      : std_logic_vector(7 downto 0) := x"20"; -- alignment: chosen taps
-  constant RA_ABITSLIP  : std_logic_vector(7 downto 0) := x"24"; -- alignment: bit slip positions
-  constant RA_ACYCLE0   : std_logic_vector(7 downto 0) := x"30"; -- alignment cycle count (channel 0)
-  constant RA_ACYCLE1   : std_logic_vector(7 downto 0) := x"34"; -- alignment cycle count (channel 1)
-  constant RA_ACYCLE2   : std_logic_vector(7 downto 0) := x"38"; -- alignment cycle count (channel 2)
-  constant RA_ATAPOK0   : std_logic_vector(7 downto 0) := x"40"; -- alignment tap OK count (channel 0)
-  constant RA_ATAPOK1   : std_logic_vector(7 downto 0) := x"44"; -- alignment tap OK count (channel 1)
-  constant RA_ATAPOK2   : std_logic_vector(7 downto 0) := x"48"; -- alignment tap OK count (channel 2)
-  constant RA_AGAIN0    : std_logic_vector(7 downto 0) := x"50"; -- serial alignment gain count (channel 0)
-  constant RA_AGAIN1    : std_logic_vector(7 downto 0) := x"54"; -- serial alignment gain count (channel 1)
-  constant RA_AGAIN2    : std_logic_vector(7 downto 0) := x"58"; -- serial alignment gain count (channel 2)
-  constant RA_AGAINP    : std_logic_vector(7 downto 0) := x"5C"; -- parallel alignment gain count
-  constant RA_ALOSS0    : std_logic_vector(7 downto 0) := x"60"; -- serial alignment loss count (channel 0)
-  constant RA_ALOSS1    : std_logic_vector(7 downto 0) := x"64"; -- serial alignment loss count (channel 1)
-  constant RA_ALOSS2    : std_logic_vector(7 downto 0) := x"68"; -- serial alignment loss count (channel 2)
-  constant RA_ALOSSP    : std_logic_vector(7 downto 0) := x"6C"; -- parallel alignment loss count
-  constant RA_CAPCTRL   : std_logic_vector(7 downto 0) := x"70"; -- capture control
-  constant RA_CAPSTAT   : std_logic_vector(7 downto 0) := x"74"; -- capture status
 
   component tmds_cap_stream is
     port (
@@ -55,14 +31,17 @@ package tmds_cap_stream_pkg is
       prst       : in    std_logic;
       pclk       : in    std_logic;
       tmds       : in    slv10_vector(0 to 2);
-      rx_status  : in    hdmi_rx_selectio_status_t;
+
+      cap_rst    : in    std_logic;
+      cap_size   : in    std_logic_vector(31 downto 0);
+      cap_go     : in    std_logic;
+      cap_done   : out   std_logic;
+      cap_error  : out   std_logic;
 
       axi_clk    : in    std_logic;
       axi_rst_n  : in    std_logic;
-      saxi_mosi  : in    axi4_mosi_a32d32_t;
-      saxi_miso  : out   axi4_miso_a32d32_t;
       maxis_mosi : out   axi4s_mosi_64_t;
-      maxis_miso : out   axi4s_miso_64_t
+      maxis_miso : in    axi4s_miso_64_t
 
     );
   end component tmds_cap_stream;
@@ -73,161 +52,211 @@ end package tmds_cap_stream_pkg;
 
 library ieee;
   use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 library work;
   use work.tyto_types_pkg.all;
   use work.axi_pkg.all;
-  use work.hdmi_rx_selectio_pkg.all;
-  use work.tmds_cap_stream_pkg.all;
+
+library unisim;
+  use unisim.vcomponents.all;
 
 entity tmds_cap_stream is
   port (
 
-      prst       : in    std_logic;
-      pclk       : in    std_logic;
-      tmds       : in    slv10_vector(0 to 2);
-      rx_status  : in    hdmi_rx_selectio_status_t;
+    prst       : in    std_logic;
+    pclk       : in    std_logic;
+    tmds       : in    slv10_vector(0 to 2);
 
-      axi_clk    : in    std_logic;
-      axi_rst_n  : in    std_logic;
-      saxi_mosi  : in    axi4_mosi_a32d32_t;
-      saxi_miso  : out   axi4_miso_a32d32_t;
-      maxis_mosi : out   axi4s_mosi_64_t;
-      maxis_miso : out   axi4s_miso_64_t
+    cap_rst    : in    std_logic;
+    cap_size   : in    std_logic_vector(31 downto 0);
+    cap_go     : in    std_logic;
+    cap_done   : out   std_logic;
+    cap_error  : out   std_logic;
+
+    axi_clk    : in    std_logic;
+    axi_rst_n  : in    std_logic;
+    maxis_mosi : out   axi4s_mosi_64_t;
+    maxis_miso : in    axi4s_miso_64_t
 
   );
 end entity tmds_cap_stream;
 
 architecture synth of tmds_cap_stream is
 
-  signal rx_status_s1 : hdmi_rx_selectio_status_t;
-  signal rx_status_s2 : hdmi_rx_selectio_status_t;
-  signal rstb         : std_logic;
-  signal fifo_ef      : std_logic;
-  signal fifo_wstb    : std_logic;
-  signal fifo_rstb    : std_logic;
+  constant PAUSE_COUNT : integer := 4; -- cycles to pause after reading FIFO when almost empty
 
-  alias s : hdmi_rx_selectio_status_t     is rx_status_s2;
-  alias r : std_logic_vector(31 downto 0) is saxi_miso.rdata;
+  signal fifo_we       : std_logic;                        -- FIFO write enable
+  signal fifo_wd       : std_logic_vector( 63 downto 0 );  -- FIFO write data
+  signal fifo_wx       : std_logic_vector(  7 downto 0 );  -- FIFO write extras
+  signal fifo_re       : std_logic;                        -- FIFO read enable
+  signal fifo_rd       : std_logic_vector( 63 downto 0 );  -- FIFO read data
+  signal fifo_rx       : std_logic_vector(  7 downto 0 );  -- FIFO read extras
+  signal fifo_ef       : std_logic;                        -- FIFO empty flag
+  signal fifo_aef      : std_logic;                        -- FIFO almost empty flag
+  signal fifo_werr     : std_logic;                        -- FIFO write error
+  signal fifo_rerr     : std_logic;                        -- FIFO read error
+
+  signal cap_counter   : std_logic_vector( 31 downto 0 );  -- transfer count
+
+  signal cap_go_s      : std_logic_vector( 0 to 1 );       -- capture go, synchronized
+  signal fifo_werr_s   : std_logic_vector( 0 to 1 );       -- fifo write error, synchronized
+
+  signal cap_run_i     : std_logic;                        -- capture running
+  signal cap_done_i    : std_logic;                        -- capture done, internal
+  signal fifo_wsel     : std_logic;                        -- fifo write select (lo/hi)
+
+  signal pause_counter : integer range 0 to PAUSE_COUNT-1;
+
+  type state_t is (IDLE, PREFETCH, VALID, PAUSE);
+  signal state : state_t;
+
+  alias fifo_wd_lo   : std_logic_vector( 31 downto 0 ) is fifo_wd( 31 downto  0 );
+  alias fifo_wd_hi   : std_logic_vector( 31 downto 0 ) is fifo_wd( 63 downto 32 );
+  alias fifo_wx_lo   : std_logic is fifo_wx(0);
+  alias fifo_wx_hi   : std_logic is fifo_wx(1);
+  alias fifo_wx_last : std_logic is fifo_wx(2);
+  alias fifo_rx_lo   : std_logic is fifo_rx(0);
+  alias fifo_rx_hi   : std_logic is fifo_rx(1);
+  alias fifo_rx_last : std_logic is fifo_rx(2);
 
 begin
 
-  -- should we be registering these outputs? probably...
-  saxi_miso.bresp   <= (others => '0');
-  saxi_miso.arready <= rstb;
-  saxi_miso.rresp   <= (others => '0');
-  saxi_miso.rlast   <= '1';
-  saxi_miso.rvalid  <= rstb;
+  -- TODO handle loss of HDMI signal
 
-  -- register reads
+  cap_done <= cap_done_i;
+  cap_error <= fifo_werr_s(1) or fifo_rerr; -- TODO improve error handling
+
+  -- TMDS stream ---> FIFO
+  process(prst,pclk)
+    variable d : std_logic_vector(31 downto 0);
+  begin
+    if prst = '1' then
+      cap_go_s    <= (others => '0');
+      cap_run_i   <= '0';
+      cap_done_i  <= '0';
+      fifo_we     <= '0';
+      fifo_wd     <= (others => '0');
+      cap_counter <= (others => '0');
+    elsif rising_edge(pclk) then
+      d := "00" & tmds(2) & tmds(1) & tmds(0);
+      cap_go_s <= cap_go & cap_go_s(0 to cap_go_s'right-1);
+      fifo_we  <= '0';
+      fifo_wd  <= (others => '0');
+      fifo_wx  <= (others => '0');
+      if cap_run_i = '1' and cap_done_i = '0' then
+        fifo_wx_last <= '0';
+        if fifo_wsel = '0' then
+          fifo_wd_lo <= d;
+          fifo_wx_lo <= '1';
+          fifo_wx_hi <= '0';
+          fifo_wsel  <= '1';
+        else
+          fifo_wd_hi <= d;
+          fifo_wx_hi <= '1';
+          fifo_wsel  <= '0';
+          fifo_we    <= '1';
+        end if;
+        if unsigned(cap_counter) = 1 or cap_go_s(1) = '0' then
+          cap_run_i    <= '0';
+          cap_done_i   <= '1';
+          fifo_wx_last <= '1';
+          fifo_we      <= '1'; -- in case of odd number of pixels
+        end if;
+        cap_counter <= std_logic_vector(unsigned(cap_counter)-1);
+      elsif cap_run_i = '0' and cap_done_i = '1' and cap_go_s(1) = '0' then
+        cap_done_i <= '0';
+      elsif cap_run_i = '0' and cap_done_i = '0' and cap_go_s(1) = '1' then
+        cap_counter <= cap_size;
+        cap_run_i <= '1';
+        fifo_wsel   <= '0';
+      end if;
+    end if;
+  end process;
+
+  -- FIFO
+  FIFO : fifo36e1
+    generic map (
+      almost_empty_offset     => to_bitvector(std_logic_vector(to_unsigned(PAUSE_COUNT,16))),
+      almost_full_offset      => x"01FC",
+      data_width              => 72,
+      do_reg                  => 1,
+      en_ecc_read             => false,
+      en_ecc_write            => false,
+      en_syn                  => false,
+      fifo_mode               => "FIFO36_72",
+      first_word_fall_through => true,
+      init                    => x"000000000000000000",
+      sim_device              => "7SERIES",
+      srval                   => x"000000000000000000"
+    )
+    port map (
+      wrclk         => pclk,
+      wren          => fifo_we,
+      di            => fifo_wd,
+      dip           => fifo_wx,
+      rdclk         => axi_clk,
+      rden          => fifo_re,
+      regce         => '1',
+      rst           => cap_rst,
+      rstreg        => not axi_rst_n,
+      do            => fifo_rd,
+      dop           => fifo_rx,
+      almostempty   => fifo_aef,
+      almostfull    => open,
+      empty         => fifo_ef,
+      full          => open,
+      rdcount       => open,
+      rderr         => fifo_rerr,
+      wrcount       => open,
+      wrerr         => fifo_werr,
+      injectdbiterr => '0',
+      injectsbiterr => '0',
+      dbiterr       => open,
+      eccparity     => open,
+      sbiterr       => open
+    );
+
+  -- FIFO ---> AXI stream
   process(axi_rst_n,axi_clk)
   begin
     if axi_rst_n = '0' then
-
-      rx_status_s1      <= (others => '0');
-      rx_status_s2      <= (others => '0');
-      r                 <= (others => '0');
-      rstb              <= '0';
-      saxi_miso.awready <= '0';
-      saxi_miso.wready  <= '0';
-      saxi_miso.bvalid  <= '0';
-
+      fifo_werr_s <= (others => '0');
+      fifo_re     <= '0';
     elsif rising_edge(axi_clk) then
-
-      -- synchronisers
-      rx_status_s1 <= rx_status;
-      rx_status_s2 <= rx_status_s1;
-
-      -- register reads and writes
-      saxi_miso.awready <= saxi_mosi.awvalid and saxi_mosi.wvalid;
-      saxi_miso.wready  <= saxi_mosi.awvalid and saxi_mosi.wvalid;
-      saxi_miso.bvalid  <= saxi_mosi.awvalid and saxi_mosi.wvalid;
-
-      -- register reads
-      r <= (others => '0'); -- default
-      case saxi_mosi.araddr(7 downto 0) is
-        when RA_FREQ      => r(31 downto 0) <= s.count_freq;
-        when RA_ASTAT     => r( 7 downto 0) <=
-          s.skew_p(2) & s.skew_p(1) &
-          s.align_p & s.align_s(2) & s.align_s(1) & s.align_s(0) &
-          s.band & s.lock;
-        when RA_ATAPMASK0 => r(31 downto 0) <= s.tap_mask(0);
-        when RA_ATAPMASK1 => r(31 downto 0) <= s.tap_mask(1);
-        when RA_ATAPMASK2 => r(31 downto 0) <= s.tap_mask(2);
-        when RA_ATAP      => r(23 downto 0) <= "000" & s.tap(2) & "000" & s.tap(1) & "000" & s.tap(0);
-        when RA_ABITSLIP  => r(11 downto 0) <= s.bitslip(2) & s.bitslip(1) & s.bitslip(0);
-        when RA_ACYCLE0   => r(31 downto 0) <= s.count_acycle(0);
-        when RA_ACYCLE1   => r(31 downto 0) <= s.count_acycle(1);
-        when RA_ACYCLE2   => r(31 downto 0) <= s.count_acycle(2);
-        when RA_ATAPOK0   => r(31 downto 0) <= s.count_tap_ok(0);
-        when RA_ATAPOK1   => r(31 downto 0) <= s.count_tap_ok(1);
-        when RA_ATAPOK2   => r(31 downto 0) <= s.count_tap_ok(2);
-        when RA_AGAIN0    => r(31 downto 0) <= s.count_again_s(0);
-        when RA_AGAIN1    => r(31 downto 0) <= s.count_again_s(1);
-        when RA_AGAIN2    => r(31 downto 0) <= s.count_again_s(2);
-        when RA_AGAINP    => r(31 downto 0) <= s.count_again_p;
-        when RA_ALOSS0    => r(31 downto 0) <= s.count_aloss_s(0);
-        when RA_ALOSS1    => r(31 downto 0) <= s.count_aloss_s(1);
-        when RA_ALOSS2    => r(31 downto 0) <= s.count_aloss_s(2);
-        when RA_ALOSSP    => r(31 downto 0) <= s.count_aloss_p;
-        when RA_CAPCTRL   => r(31 downto 0) <= (others => '0'); -- TODO
-        when RA_CAPSTAT   => r(31 downto 0) <= (others => '0'); -- TODO
-        when others       => null;
+      fifo_werr_s <= fifo_werr & fifo_werr_s(0 to fifo_werr_s'right-1);
+      pause_counter <= 0;
+      fifo_re <= '0';
+      case state is
+        when IDLE =>
+          if fifo_ef = '0' then
+            state <= PREFETCH;
+            fifo_re <= '1';
+          end if;
+        when PREFETCH =>
+          state <= VALID;
+        when VALID =>
+          if fifo_aef = '1' and maxis_miso.tready = '1' then
+            state <= PAUSE;
+          end if;
+        when PAUSE => -- pause to allow empty flag to update
+          pause_counter <= pause_counter + 1;
+          if pause_counter = PAUSE_COUNT-1 then
+            state <= IDLE;
+          end if;
+        when others => -- should never happen
+          state <= IDLE;
       end case;
-      rstb <= saxi_mosi.arvalid and saxi_mosi.rready;
-
-      -- register writes
-      -- TODO: create register: capture size (up to 2^24 pixels)
-      -- control register (start capture)
-      -- status register (pixels captured, finished yes/no)
 
     end if;
   end process;
 
-  -- TMDS stream ---> FIFO
-  -- TODO: implement counter, loaded from capture size register
+  fifo_re <= '1' when (state = PREFETCH) or (state = VALID and maxis_miso.tready = '1') else '0';
 
---  process(prst,pclk)
---    variable d : std_logic_vector(31 downto 0);
---  begin
---    if prst = '1' then
---      fifo_wdata <= (others => '0');
---      fifo_wstb  <= '0';
---    elsif rising_edge(pclk) then
---      d := "00" & tmds(2) & tmds(1) & tmds(0);
---      fifo_wstb <= '0';
---      if (count > 0) then -- TODO implement counter properly
---        if count(0) = '0' then
---          fifo_wdata( 31 downto  0 ) <= d;
---        else
---          fifo_wdata( 63 downto 32 ) <= d;
---          fifo_wstb <= '1';
---        end if;
---      end if;
---    end if;
---  end process;
-
-  -- FIFO
-
---  U_FIFO: fifo_tbd -- FIFO, to be decided
---    port map(
---      wrst  => prst,
---      wclk  => pclk,
---      wstb  => fifo_wstb,
---      wdata => fifo_wdata,
---      ef    => fifo_ef,
---      rrst  => not axi_rst_n,
---      rclk  => axi_clk,
---      rstb  => fifo_rstb,
---      rdata => fifo_rdata
---    );
-
-  -- FIFO ---> FIFO AXI stream
-
-  fifo_rstb        <= maxis_mosi.tvalid and maxis_miso.tready;
---  maxis_mosi.tdata  <= fifo_rdata;
-  maxis_mosi.tkeep  <= (others => '0');
-  maxis_mosi.tvalid <= not fifo_ef;
-  maxis_mosi.tlast  <= '0'; -- don't think we need this
+  maxis_mosi.tdata             <= fifo_rd;
+  maxis_mosi.tkeep(3 downto 0) <= (others => fifo_rx_lo);
+  maxis_mosi.tkeep(7 downto 4) <= (others => fifo_rx_hi);
+  maxis_mosi.tvalid            <= '1' when state = VALID else '0';
+  maxis_mosi.tlast             <= fifo_rx_last;
 
 end architecture synth;
