@@ -222,16 +222,13 @@ begin
   begin
     if axi_rst_n = '0' then
       fifo_werr_s <= (others => '0');
-      fifo_re     <= '0';
     elsif rising_edge(axi_clk) then
       fifo_werr_s <= fifo_werr & fifo_werr_s(0 to fifo_werr_s'right-1);
       pause_counter <= 0;
-      fifo_re <= '0';
       case state is
         when IDLE =>
           if fifo_ef = '0' then
             state <= PREFETCH;
-            fifo_re <= '1';
           end if;
         when PREFETCH =>
           state <= VALID;
