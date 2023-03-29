@@ -15,117 +15,129 @@
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
 
-create_clock -add -name sysclk -period 8.00 -waveform {0 4} [get_ports sysclk_i]
+create_clock -add -name sysclk -period 8.00 -waveform {0 4} [get_ports sysclk]
 
-if {[llength [get_ports { sysclk_i              }]]}     {set_property -dict { PACKAGE_PIN K17   IOSTANDARD LVCMOS33              } [get_ports { sysclk_i            }]}
-if {[llength [get_ports { sw_i[0]               }]]}     {set_property -dict { PACKAGE_PIN G15   IOSTANDARD LVCMOS33              } [get_ports { sw_i[0]             }]}
-if {[llength [get_ports { sw_i[1]               }]]}     {set_property -dict { PACKAGE_PIN P15   IOSTANDARD LVCMOS33              } [get_ports { sw_i[1]             }]}
-if {[llength [get_ports { sw_i[2]               }]]}     {set_property -dict { PACKAGE_PIN W13   IOSTANDARD LVCMOS33              } [get_ports { sw_i[2]             }]}
-if {[llength [get_ports { sw_i[3]               }]]}     {set_property -dict { PACKAGE_PIN T16   IOSTANDARD LVCMOS33              } [get_ports { sw_i[3]             }]}
-if {[llength [get_ports { btn_i[0]              }]]}     {set_property -dict { PACKAGE_PIN K18   IOSTANDARD LVCMOS33              } [get_ports { btn_i[0]            }]}
-if {[llength [get_ports { btn_i[1]              }]]}     {set_property -dict { PACKAGE_PIN P16   IOSTANDARD LVCMOS33              } [get_ports { btn_i[1]            }]}
-if {[llength [get_ports { btn_i[2]              }]]}     {set_property -dict { PACKAGE_PIN K19   IOSTANDARD LVCMOS33              } [get_ports { btn_i[2]            }]}
-if {[llength [get_ports { btn_i[3]              }]]}     {set_property -dict { PACKAGE_PIN Y16   IOSTANDARD LVCMOS33              } [get_ports { btn_i[3]            }]}
-if {[llength [get_ports { led_o[0]              }]]}     {set_property -dict { PACKAGE_PIN M14   IOSTANDARD LVCMOS33              } [get_ports { led_o[0]            }]}
-if {[llength [get_ports { led_o[1]              }]]}     {set_property -dict { PACKAGE_PIN M15   IOSTANDARD LVCMOS33              } [get_ports { led_o[1]            }]}
-if {[llength [get_ports { led_o[2]              }]]}     {set_property -dict { PACKAGE_PIN G14   IOSTANDARD LVCMOS33              } [get_ports { led_o[2]            }]}
-if {[llength [get_ports { led_o[3]              }]]}     {set_property -dict { PACKAGE_PIN D18   IOSTANDARD LVCMOS33              } [get_ports { led_o[3]            }]}
-if {[llength [get_ports { led5_r_o              }]]}     {set_property -dict { PACKAGE_PIN Y11   IOSTANDARD LVCMOS33              } [get_ports { led5_r_o            }]}
-if {[llength [get_ports { led5_g_o              }]]}     {set_property -dict { PACKAGE_PIN T5    IOSTANDARD LVCMOS33              } [get_ports { led5_g_o            }]}
-if {[llength [get_ports { led5_b_o              }]]}     {set_property -dict { PACKAGE_PIN Y12   IOSTANDARD LVCMOS33              } [get_ports { led5_b_o            }]}
-if {[llength [get_ports { led6_r_o              }]]}     {set_property -dict { PACKAGE_PIN V16   IOSTANDARD LVCMOS33              } [get_ports { led6_r_o            }]}
-if {[llength [get_ports { led6_g_o              }]]}     {set_property -dict { PACKAGE_PIN F17   IOSTANDARD LVCMOS33              } [get_ports { led6_g_o            }]}
-if {[llength [get_ports { led6_b_o              }]]}     {set_property -dict { PACKAGE_PIN M17   IOSTANDARD LVCMOS33              } [get_ports { led6_b_o            }]}
-if {[llength [get_ports { ac_bclk_io            }]]}     {set_property -dict { PACKAGE_PIN R19   IOSTANDARD LVCMOS33              } [get_ports { ac_bclk_io          }]}
-if {[llength [get_ports { ac_mclk_i             }]]}     {set_property -dict { PACKAGE_PIN R17   IOSTANDARD LVCMOS33              } [get_ports { ac_mclk_i           }]}
-if {[llength [get_ports { ac_muten_o            }]]}     {set_property -dict { PACKAGE_PIN P18   IOSTANDARD LVCMOS33              } [get_ports { ac_muten_o          }]}
-if {[llength [get_ports { ac_pbdat_o            }]]}     {set_property -dict { PACKAGE_PIN R18   IOSTANDARD LVCMOS33              } [get_ports { ac_pbdat_o          }]}
-if {[llength [get_ports { ac_pblrc_io           }]]}     {set_property -dict { PACKAGE_PIN T19   IOSTANDARD LVCMOS33              } [get_ports { ac_pblrc_io         }]}
-if {[llength [get_ports { ac_recdat_i           }]]}     {set_property -dict { PACKAGE_PIN R16   IOSTANDARD LVCMOS33              } [get_ports { ac_recdat_i         }]}
-if {[llength [get_ports { ac_reclrc_io          }]]}     {set_property -dict { PACKAGE_PIN Y18   IOSTANDARD LVCMOS33              } [get_ports { ac_reclrc_io        }]}
-if {[llength [get_ports { ac_scl_o              }]]}     {set_property -dict { PACKAGE_PIN N18   IOSTANDARD LVCMOS33              } [get_ports { ac_scl_o            }]}
-if {[llength [get_ports { ac_sda_io             }]]}     {set_property -dict { PACKAGE_PIN N17   IOSTANDARD LVCMOS33              } [get_ports { ac_sda_io           }]}
-if {[llength [get_ports { eth_int_pu_b_i        }]]}     {set_property -dict { PACKAGE_PIN F16   IOSTANDARD LVCMOS33  PULLUP true } [get_ports { eth_int_pu_b_i      }]}
-if {[llength [get_ports { eth_rst_b_o           }]]}     {set_property -dict { PACKAGE_PIN E17   IOSTANDARD LVCMOS33              } [get_ports { eth_rst_b_o         }]}
-if {[llength [get_ports { fan_fb_pu_i           }]]}     {set_property -dict { PACKAGE_PIN Y13   IOSTANDARD LVCMOS33  PULLUP true } [get_ports { fan_fb_pu_i         }]}
-if {[llength [get_ports { hdmi_rx_hpd_o         }]]}     {set_property -dict { PACKAGE_PIN W19   IOSTANDARD LVCMOS33              } [get_ports { hdmi_rx_hpd_o       }]}
-if {[llength [get_ports { hdmi_rx_scl_io        }]]}     {set_property -dict { PACKAGE_PIN W18   IOSTANDARD LVCMOS33              } [get_ports { hdmi_rx_scl_io      }]}
-if {[llength [get_ports { hdmi_rx_sda_io        }]]}     {set_property -dict { PACKAGE_PIN Y19   IOSTANDARD LVCMOS33              } [get_ports { hdmi_rx_sda_io      }]}
-if {[llength [get_ports { hdmi_rx_clk_n_i       }]]}     {set_property -dict { PACKAGE_PIN U19   IOSTANDARD TMDS_33               } [get_ports { hdmi_rx_clk_n_i     }]}
-if {[llength [get_ports { hdmi_rx_clk_p_i       }]]}     {set_property -dict { PACKAGE_PIN U18   IOSTANDARD TMDS_33               } [get_ports { hdmi_rx_clk_p_i     }]}
-if {[llength [get_ports { hdmi_rx_n_i[0]        }]]}     {set_property -dict { PACKAGE_PIN W20   IOSTANDARD TMDS_33               } [get_ports { hdmi_rx_n_i[0]      }]}
-if {[llength [get_ports { hdmi_rx_p_i[0]        }]]}     {set_property -dict { PACKAGE_PIN V20   IOSTANDARD TMDS_33               } [get_ports { hdmi_rx_p_i[0]      }]}
-if {[llength [get_ports { hdmi_rx_n_i[1]        }]]}     {set_property -dict { PACKAGE_PIN U20   IOSTANDARD TMDS_33               } [get_ports { hdmi_rx_n_i[1]      }]}
-if {[llength [get_ports { hdmi_rx_p_i[1]        }]]}     {set_property -dict { PACKAGE_PIN T20   IOSTANDARD TMDS_33               } [get_ports { hdmi_rx_p_i[1]      }]}
-if {[llength [get_ports { hdmi_rx_n_i[2]        }]]}     {set_property -dict { PACKAGE_PIN P20   IOSTANDARD TMDS_33               } [get_ports { hdmi_rx_n_i[2]      }]}
-if {[llength [get_ports { hdmi_rx_p_i[2]        }]]}     {set_property -dict { PACKAGE_PIN N20   IOSTANDARD TMDS_33               } [get_ports { hdmi_rx_p_i[2]      }]}
-if {[llength [get_ports { hdmi_rx_cec_i         }]]}     {set_property -dict { PACKAGE_PIN Y8    IOSTANDARD LVCMOS33              } [get_ports { hdmi_rx_cec_i       }]}
-if {[llength [get_ports { hdmi_tx_hpd_i         }]]}     {set_property -dict { PACKAGE_PIN E18   IOSTANDARD LVCMOS33              } [get_ports { hdmi_tx_hpd_i       }]}
-if {[llength [get_ports { hdmi_tx_scl_io        }]]}     {set_property -dict { PACKAGE_PIN G17   IOSTANDARD LVCMOS33              } [get_ports { hdmi_tx_scl_io      }]}
-if {[llength [get_ports { hdmi_tx_sda_io        }]]}     {set_property -dict { PACKAGE_PIN G18   IOSTANDARD LVCMOS33              } [get_ports { hdmi_tx_sda_io      }]}
-if {[llength [get_ports { hdmi_tx_clk_n_o       }]]}     {set_property -dict { PACKAGE_PIN H17   IOSTANDARD TMDS_33               } [get_ports { hdmi_tx_clk_n_o     }]}
-if {[llength [get_ports { hdmi_tx_clk_p_o       }]]}     {set_property -dict { PACKAGE_PIN H16   IOSTANDARD TMDS_33               } [get_ports { hdmi_tx_clk_p_o     }]}
-if {[llength [get_ports { hdmi_tx_n_o[0]        }]]}     {set_property -dict { PACKAGE_PIN D20   IOSTANDARD TMDS_33               } [get_ports { hdmi_tx_n_o[0]      }]}
-if {[llength [get_ports { hdmi_tx_p_o[0]        }]]}     {set_property -dict { PACKAGE_PIN D19   IOSTANDARD TMDS_33               } [get_ports { hdmi_tx_p_o[0]      }]}
-if {[llength [get_ports { hdmi_tx_n_o[1]        }]]}     {set_property -dict { PACKAGE_PIN B20   IOSTANDARD TMDS_33               } [get_ports { hdmi_tx_n_o[1]      }]}
-if {[llength [get_ports { hdmi_tx_p_o[1]        }]]}     {set_property -dict { PACKAGE_PIN C20   IOSTANDARD TMDS_33               } [get_ports { hdmi_tx_p_o[1]      }]}
-if {[llength [get_ports { hdmi_tx_n_o[2]        }]]}     {set_property -dict { PACKAGE_PIN A20   IOSTANDARD TMDS_33               } [get_ports { hdmi_tx_n_o[2]      }]}
-if {[llength [get_ports { hdmi_tx_p_o[2]        }]]}     {set_property -dict { PACKAGE_PIN B19   IOSTANDARD TMDS_33               } [get_ports { hdmi_tx_p_o[2]      }]}
-if {[llength [get_ports { hdmi_tx_cec_o         }]]}     {set_property -dict { PACKAGE_PIN E19   IOSTANDARD LVCMOS33              } [get_ports { hdmi_tx_cec_o       }]}
-if {[llength [get_ports { ja_io[0]              }]]}     {set_property -dict { PACKAGE_PIN N15   IOSTANDARD LVCMOS33              } [get_ports { ja_io[0]            }]}
-if {[llength [get_ports { ja_io[1]              }]]}     {set_property -dict { PACKAGE_PIN L14   IOSTANDARD LVCMOS33              } [get_ports { ja_io[1]            }]}
-if {[llength [get_ports { ja_io[2]              }]]}     {set_property -dict { PACKAGE_PIN K16   IOSTANDARD LVCMOS33              } [get_ports { ja_io[2]            }]}
-if {[llength [get_ports { ja_io[3]              }]]}     {set_property -dict { PACKAGE_PIN K14   IOSTANDARD LVCMOS33              } [get_ports { ja_io[3]            }]}
-if {[llength [get_ports { ja_io[4]              }]]}     {set_property -dict { PACKAGE_PIN N16   IOSTANDARD LVCMOS33              } [get_ports { ja_io[4]            }]}
-if {[llength [get_ports { ja_io[5]              }]]}     {set_property -dict { PACKAGE_PIN L15   IOSTANDARD LVCMOS33              } [get_ports { ja_io[5]            }]}
-if {[llength [get_ports { ja_io[6]              }]]}     {set_property -dict { PACKAGE_PIN J16   IOSTANDARD LVCMOS33              } [get_ports { ja_io[6]            }]}
-if {[llength [get_ports { ja_io[7]              }]]}     {set_property -dict { PACKAGE_PIN J14   IOSTANDARD LVCMOS33              } [get_ports { ja_io[7]            }]}
-if {[llength [get_ports { jb_io[0]              }]]}     {set_property -dict { PACKAGE_PIN V8    IOSTANDARD LVCMOS33              } [get_ports { jb_io[0]            }]}
-if {[llength [get_ports { jb_io[1]              }]]}     {set_property -dict { PACKAGE_PIN W8    IOSTANDARD LVCMOS33              } [get_ports { jb_io[1]            }]}
-if {[llength [get_ports { jb_io[2]              }]]}     {set_property -dict { PACKAGE_PIN U7    IOSTANDARD LVCMOS33              } [get_ports { jb_io[2]            }]}
-if {[llength [get_ports { jb_io[3]              }]]}     {set_property -dict { PACKAGE_PIN V7    IOSTANDARD LVCMOS33              } [get_ports { jb_io[3]            }]}
-if {[llength [get_ports { jb_io[4]              }]]}     {set_property -dict { PACKAGE_PIN Y7    IOSTANDARD LVCMOS33              } [get_ports { jb_io[4]            }]}
-if {[llength [get_ports { jb_io[5]              }]]}     {set_property -dict { PACKAGE_PIN Y6    IOSTANDARD LVCMOS33              } [get_ports { jb_io[5]            }]}
-if {[llength [get_ports { jb_io[6]              }]]}     {set_property -dict { PACKAGE_PIN V6    IOSTANDARD LVCMOS33              } [get_ports { jb_io[6]            }]}
-if {[llength [get_ports { jb_io[7]              }]]}     {set_property -dict { PACKAGE_PIN W6    IOSTANDARD LVCMOS33              } [get_ports { jb_io[7]            }]}
-if {[llength [get_ports { jc_io[0]              }]]}     {set_property -dict { PACKAGE_PIN V15   IOSTANDARD LVCMOS33              } [get_ports { jc_io[0]            }]}
-if {[llength [get_ports { jc_io[1]              }]]}     {set_property -dict { PACKAGE_PIN W15   IOSTANDARD LVCMOS33              } [get_ports { jc_io[1]            }]}
-if {[llength [get_ports { jc_io[2]              }]]}     {set_property -dict { PACKAGE_PIN T11   IOSTANDARD LVCMOS33              } [get_ports { jc_io[2]            }]}
-if {[llength [get_ports { jc_io[3]              }]]}     {set_property -dict { PACKAGE_PIN T10   IOSTANDARD LVCMOS33              } [get_ports { jc_io[3]            }]}
-if {[llength [get_ports { jc_io[4]              }]]}     {set_property -dict { PACKAGE_PIN W14   IOSTANDARD LVCMOS33              } [get_ports { jc_io[4]            }]}
-if {[llength [get_ports { jc_io[5]              }]]}     {set_property -dict { PACKAGE_PIN Y14   IOSTANDARD LVCMOS33              } [get_ports { jc_io[5]            }]}
-if {[llength [get_ports { jc_io[6]              }]]}     {set_property -dict { PACKAGE_PIN T12   IOSTANDARD LVCMOS33              } [get_ports { jc_io[6]            }]}
-if {[llength [get_ports { jc_io[7]              }]]}     {set_property -dict { PACKAGE_PIN U12   IOSTANDARD LVCMOS33              } [get_ports { jc_io[7]            }]}
-if {[llength [get_ports { jd_io[0]              }]]}     {set_property -dict { PACKAGE_PIN T14   IOSTANDARD LVCMOS33              } [get_ports { jd_io[0]            }]}
-if {[llength [get_ports { jd_io[1]              }]]}     {set_property -dict { PACKAGE_PIN T15   IOSTANDARD LVCMOS33              } [get_ports { jd_io[1]            }]}
-if {[llength [get_ports { jd_io[2]              }]]}     {set_property -dict { PACKAGE_PIN P14   IOSTANDARD LVCMOS33              } [get_ports { jd_io[2]            }]}
-if {[llength [get_ports { jd_io[3]              }]]}     {set_property -dict { PACKAGE_PIN R14   IOSTANDARD LVCMOS33              } [get_ports { jd_io[3]            }]}
-if {[llength [get_ports { jd_io[4]              }]]}     {set_property -dict { PACKAGE_PIN U14   IOSTANDARD LVCMOS33              } [get_ports { jd_io[4]            }]}
-if {[llength [get_ports { jd_io[5]              }]]}     {set_property -dict { PACKAGE_PIN U15   IOSTANDARD LVCMOS33              } [get_ports { jd_io[5]            }]}
-if {[llength [get_ports { jd_io[6]              }]]}     {set_property -dict { PACKAGE_PIN V17   IOSTANDARD LVCMOS33              } [get_ports { jd_io[6]            }]}
-if {[llength [get_ports { jd_io[7]              }]]}     {set_property -dict { PACKAGE_PIN V18   IOSTANDARD LVCMOS33              } [get_ports { jd_io[7]            }]}
-if {[llength [get_ports { je_io[0]              }]]}     {set_property -dict { PACKAGE_PIN V12   IOSTANDARD LVCMOS33              } [get_ports { je_io[0]            }]}
-if {[llength [get_ports { je_io[1]              }]]}     {set_property -dict { PACKAGE_PIN W16   IOSTANDARD LVCMOS33              } [get_ports { je_io[1]            }]}
-if {[llength [get_ports { je_io[2]              }]]}     {set_property -dict { PACKAGE_PIN J15   IOSTANDARD LVCMOS33              } [get_ports { je_io[2]            }]}
-if {[llength [get_ports { je_io[3]              }]]}     {set_property -dict { PACKAGE_PIN H15   IOSTANDARD LVCMOS33              } [get_ports { je_io[3]            }]}
-if {[llength [get_ports { je_io[4]              }]]}     {set_property -dict { PACKAGE_PIN V13   IOSTANDARD LVCMOS33              } [get_ports { je_io[4]            }]}
-if {[llength [get_ports { je_io[5]              }]]}     {set_property -dict { PACKAGE_PIN U17   IOSTANDARD LVCMOS33              } [get_ports { je_io[5]            }]}
-if {[llength [get_ports { je_io[6]              }]]}     {set_property -dict { PACKAGE_PIN T17   IOSTANDARD LVCMOS33              } [get_ports { je_io[6]            }]}
-if {[llength [get_ports { je_io[7]              }]]}     {set_property -dict { PACKAGE_PIN Y17   IOSTANDARD LVCMOS33              } [get_ports { je_io[7]            }]}
-if {[llength [get_ports { dphy_clk_lp_n         }]]}     {set_property -dict { PACKAGE_PIN J19   IOSTANDARD HSUL_12               } [get_ports { dphy_clk_lp_n       }]}
-if {[llength [get_ports { dphy_clk_lp_p         }]]}     {set_property -dict { PACKAGE_PIN H20   IOSTANDARD HSUL_12               } [get_ports { dphy_clk_lp_p       }]}
-if {[llength [get_ports { dphy_data_lp_n[0]     }]]}     {set_property -dict { PACKAGE_PIN M18   IOSTANDARD HSUL_12               } [get_ports { dphy_data_lp_n[0]   }]}
-if {[llength [get_ports { dphy_data_lp_p[0]     }]]}     {set_property -dict { PACKAGE_PIN L19   IOSTANDARD HSUL_12               } [get_ports { dphy_data_lp_p[0]   }]}
-if {[llength [get_ports { dphy_data_lp_n[1]     }]]}     {set_property -dict { PACKAGE_PIN L20   IOSTANDARD HSUL_12               } [get_ports { dphy_data_lp_n[1]   }]}
-if {[llength [get_ports { dphy_data_lp_p[1]     }]]}     {set_property -dict { PACKAGE_PIN J20   IOSTANDARD HSUL_12               } [get_ports { dphy_data_lp_p[1]   }]}
-if {[llength [get_ports { dphy_hs_clock_clk_n   }]]}     {set_property -dict { PACKAGE_PIN H18   IOSTANDARD LVDS_25               } [get_ports { dphy_hs_clock_clk_n }]}
-if {[llength [get_ports { dphy_hs_clock_clk_p   }]]}     {set_property -dict { PACKAGE_PIN J18   IOSTANDARD LVDS_25               } [get_ports { dphy_hs_clock_clk_p }]}
-if {[llength [get_ports { dphy_data_hs_n[0]     }]]}     {set_property -dict { PACKAGE_PIN M20   IOSTANDARD LVDS_25               } [get_ports { dphy_data_hs_n[0]   }]}
-if {[llength [get_ports { dphy_data_hs_p[0]     }]]}     {set_property -dict { PACKAGE_PIN M19   IOSTANDARD LVDS_25               } [get_ports { dphy_data_hs_p[0]   }]}
-if {[llength [get_ports { dphy_data_hs_n[1]     }]]}     {set_property -dict { PACKAGE_PIN L17   IOSTANDARD LVDS_25               } [get_ports { dphy_data_hs_n[1]   }]}
-if {[llength [get_ports { dphy_data_hs_p[1]     }]]}     {set_property -dict { PACKAGE_PIN L16   IOSTANDARD LVDS_25               } [get_ports { dphy_data_hs_p[1]   }]}
-if {[llength [get_ports { cam_clk_i             }]]}     {set_property -dict { PACKAGE_PIN G19   IOSTANDARD LVCMOS33              } [get_ports { cam_clk_i           }]}
-if {[llength [get_ports { cam_gpio_i            }]]}     {set_property -dict { PACKAGE_PIN G20   IOSTANDARD LVCMOS33  PULLUP true } [get_ports { cam_gpio_i          }]}
-if {[llength [get_ports { cam_scl_io            }]]}     {set_property -dict { PACKAGE_PIN F20   IOSTANDARD LVCMOS33              } [get_ports { cam_scl_io          }]}
-if {[llength [get_ports { cam_sda_io            }]]}     {set_property -dict { PACKAGE_PIN F19   IOSTANDARD LVCMOS33              } [get_ports { cam_sda_io          }]}
-if {[llength [get_ports { crypto_sda_io         }]]}     {set_property -dict { PACKAGE_PIN P19   IOSTANDARD LVCMOS33              } [get_ports { crypto_sda_io       }]}
+set pins {
+    { sysclk               K17  LVCMOS33              }
+    { sw_i[0]              G15  LVCMOS33              }
+    { sw_i[1]              P15  LVCMOS33              }
+    { sw_i[2]              W13  LVCMOS33              }
+    { sw_i[3]              T16  LVCMOS33              }
+    { btn_i[0]             K18  LVCMOS33              }
+    { btn_i[1]             P16  LVCMOS33              }
+    { btn_i[2]             K19  LVCMOS33              }
+    { btn_i[3]             Y16  LVCMOS33              }
+    { led_o[0]             M14  LVCMOS33              }
+    { led_o[1]             M15  LVCMOS33              }
+    { led_o[2]             G14  LVCMOS33              }
+    { led_o[3]             D18  LVCMOS33              }
+    { led5_r_o             Y11  LVCMOS33              }
+    { led5_g_o             T5   LVCMOS33              }
+    { led5_b_o             Y12  LVCMOS33              }
+    { led6_r_o             V16  LVCMOS33              }
+    { led6_g_o             F17  LVCMOS33              }
+    { led6_b_o             M17  LVCMOS33              }
+    { ac_bclk_io           R19  LVCMOS33              }
+    { ac_mclk_i            R17  LVCMOS33              }
+    { ac_muten_o           P18  LVCMOS33              }
+    { ac_pbdat_o           R18  LVCMOS33              }
+    { ac_pblrc_io          T19  LVCMOS33              }
+    { ac_recdat_i          R16  LVCMOS33              }
+    { ac_reclrc_io         Y18  LVCMOS33              }
+    { ac_scl_o             N18  LVCMOS33              }
+    { ac_sda_io            N17  LVCMOS33              }
+    { eth_int_pu_b_i       F16  LVCMOS33  PULLUP true }
+    { eth_rst_b_o          E17  LVCMOS33              }
+    { fan_fb_pu_i          Y13  LVCMOS33  PULLUP true }
+    { hdmi_rx_hpd_o        W19  LVCMOS33              }
+    { hdmi_rx_scl_io       W18  LVCMOS33              }
+    { hdmi_rx_sda_io       Y19  LVCMOS33              }
+    { hdmi_rx_clk_n_i      U19  TMDS_33               }
+    { hdmi_rx_clk_p_i      U18  TMDS_33               }
+    { hdmi_rx_n_i[0]       W20  TMDS_33               }
+    { hdmi_rx_p_i[0]       V20  TMDS_33               }
+    { hdmi_rx_n_i[1]       U20  TMDS_33               }
+    { hdmi_rx_p_i[1]       T20  TMDS_33               }
+    { hdmi_rx_n_i[2]       P20  TMDS_33               }
+    { hdmi_rx_p_i[2]       N20  TMDS_33               }
+    { hdmi_rx_cec_i        Y8   LVCMOS33              }
+    { hdmi_tx_hpd_i        E18  LVCMOS33              }
+    { hdmi_tx_scl_io       G17  LVCMOS33              }
+    { hdmi_tx_sda_io       G18  LVCMOS33              }
+    { hdmi_tx_clk_n_o      H17  TMDS_33               }
+    { hdmi_tx_clk_p_o      H16  TMDS_33               }
+    { hdmi_tx_n_o[0]       D20  TMDS_33               }
+    { hdmi_tx_p_o[0]       D19  TMDS_33               }
+    { hdmi_tx_n_o[1]       B20  TMDS_33               }
+    { hdmi_tx_p_o[1]       C20  TMDS_33               }
+    { hdmi_tx_n_o[2]       A20  TMDS_33               }
+    { hdmi_tx_p_o[2]       B19  TMDS_33               }
+    { hdmi_tx_cec_o        E19  LVCMOS33              }
+    { ja_io[0]             N15  LVCMOS33              }
+    { ja_io[1]             L14  LVCMOS33              }
+    { ja_io[2]             K16  LVCMOS33              }
+    { ja_io[3]             K14  LVCMOS33              }
+    { ja_io[4]             N16  LVCMOS33              }
+    { ja_io[5]             L15  LVCMOS33              }
+    { ja_io[6]             J16  LVCMOS33              }
+    { ja_io[7]             J14  LVCMOS33              }
+    { jb_io[0]             V8   LVCMOS33              }
+    { jb_io[1]             W8   LVCMOS33              }
+    { jb_io[2]             U7   LVCMOS33              }
+    { jb_io[3]             V7   LVCMOS33              }
+    { jb_io[4]             Y7   LVCMOS33              }
+    { jb_io[5]             Y6   LVCMOS33              }
+    { jb_io[6]             V6   LVCMOS33              }
+    { jb_io[7]             W6   LVCMOS33              }
+    { jc_io[0]             V15  LVCMOS33              }
+    { jc_io[1]             W15  LVCMOS33              }
+    { jc_io[2]             T11  LVCMOS33              }
+    { jc_io[3]             T10  LVCMOS33              }
+    { jc_io[4]             W14  LVCMOS33              }
+    { jc_io[5]             Y14  LVCMOS33              }
+    { jc_io[6]             T12  LVCMOS33              }
+    { jc_io[7]             U12  LVCMOS33              }
+    { jd_io[0]             T14  LVCMOS33              }
+    { jd_io[1]             T15  LVCMOS33              }
+    { jd_io[2]             P14  LVCMOS33              }
+    { jd_io[3]             R14  LVCMOS33              }
+    { jd_io[4]             U14  LVCMOS33              }
+    { jd_io[5]             U15  LVCMOS33              }
+    { jd_io[6]             V17  LVCMOS33              }
+    { jd_io[7]             V18  LVCMOS33              }
+    { je_io[0]             V12  LVCMOS33              }
+    { je_io[1]             W16  LVCMOS33              }
+    { je_io[2]             J15  LVCMOS33              }
+    { je_io[3]             H15  LVCMOS33              }
+    { je_io[4]             V13  LVCMOS33              }
+    { je_io[5]             U17  LVCMOS33              }
+    { je_io[6]             T17  LVCMOS33              }
+    { je_io[7]             Y17  LVCMOS33              }
+    { dphy_clk_lp_n        J19  HSUL_12               }
+    { dphy_clk_lp_p        H20  HSUL_12               }
+    { dphy_data_lp_n[0]    M18  HSUL_12               }
+    { dphy_data_lp_p[0]    L19  HSUL_12               }
+    { dphy_data_lp_n[1]    L20  HSUL_12               }
+    { dphy_data_lp_p[1]    J20  HSUL_12               }
+    { dphy_hs_clock_clk_n  H18  LVDS_25               }
+    { dphy_hs_clock_clk_p  J18  LVDS_25               }
+    { dphy_data_hs_n[0]    M20  LVDS_25               }
+    { dphy_data_hs_p[0]    M19  LVDS_25               }
+    { dphy_data_hs_n[1]    L17  LVDS_25               }
+    { dphy_data_hs_p[1]    L16  LVDS_25               }
+    { cam_clk_i            G19  LVCMOS33              }
+    { cam_gpio_i           G20  LVCMOS33  PULLUP true }
+    { cam_scl_io           F20  LVCMOS33              }
+    { cam_sda_io           F19  LVCMOS33              }
+    { crypto_sda_io        P19  LVCMOS33              }
+}
+
+foreach pin $pins {
+    set name [lindex $pin 0]
+    if  {[llength [get_ports -quiet $name]]} {
+        set number [lindex $pin 1]
+        set iostandard [lindex $pin 2]
+        set misc [lrange $pin 3 end]
+        set_property -dict "PACKAGE_PIN $number IOSTANDARD $iostandard $misc" [get_ports $name]
+    }
+}
