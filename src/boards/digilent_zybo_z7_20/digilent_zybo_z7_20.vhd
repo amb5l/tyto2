@@ -21,38 +21,35 @@ library ieee;
 entity digilent_zybo_z7_20 is
   port (
 
-    -- clock 125 MHz
-    sysclk              : in    std_logic;
+    -- clock
+    clki_125m           : in    std_logic;
 
     -- LEDs, buttons and switches
     sw                  : in    std_logic_vector(3 downto 0);
     btn                 : in    std_logic_vector(3 downto 0);
     led                 : out   std_logic_vector(3 downto 0);
-    led5_r              : out   std_logic;
-    led5_g              : out   std_logic;
-    led5_b              : out   std_logic;
-    led6_r              : out   std_logic;
-    led6_g              : out   std_logic;
-    led6_b              : out   std_logic;
+    led_r               : out   std_logic_vector(6 downto 5);
+    led_g               : out   std_logic_vector(6 downto 5);
+    led_b               : out   std_logic_vector(6 downto 5);
 
     -- HDMI RX
     hdmi_rx_hpd         : out   std_logic;
     hdmi_rx_scl         : inout std_logic;
     hdmi_rx_sda         : inout std_logic;
-    hdmi_rx_clk_n       : in    std_logic;
     hdmi_rx_clk_p       : in    std_logic;
-    hdmi_rx_n           : in    std_logic_vector(0 to 2);
-    hdmi_rx_p           : in    std_logic_vector(0 to 2);
+    hdmi_rx_clk_n       : in    std_logic;
+    hdmi_rx_d_p         : in    std_logic_vector(0 to 2);
+    hdmi_rx_d_n         : in    std_logic_vector(0 to 2);
     hdmi_rx_cec         : in    std_logic;
 
     -- HDMI TX
     hdmi_tx_hpd         : in    std_logic;
     hdmi_tx_scl         : inout std_logic;
     hdmi_tx_sda         : inout std_logic;
-    hdmi_tx_clk_n       : out   std_logic;
     hdmi_tx_clk_p       : out   std_logic;
-    hdmi_tx_n           : out   std_logic_vector(0 to 2);
-    hdmi_tx_p           : out   std_logic_vector(0 to 2);
+    hdmi_tx_clk_n       : out   std_logic;
+    hdmi_tx_d_p         : out   std_logic_vector(0 to 2);
+    hdmi_tx_d_n         : out   std_logic_vector(0 to 2);
     hdmi_tx_cec         : out   std_logic;
 
     -- PMODs
@@ -62,9 +59,7 @@ entity digilent_zybo_z7_20 is
     jd                  : inout std_logic_vector(7 downto 0);
     je                  : inout std_logic_vector(7 downto 0);
 
-    -- Audio codex
-    -- SSM2603CPZ
-    -- I2C address 0011010
+    -- Audio codec (SSM2603CPZ, I2C address 0011010)
     ac_bclk             : inout std_logic;
     ac_mclk             : in    std_logic;
     ac_muten            : out   std_logic;
@@ -91,31 +86,19 @@ entity digilent_zybo_z7_20 is
     -- ATSHA204A-SSHCZ-T
     crypto_sda          : inout std_logic;
 
-    -- Not connected
+    -- USB OTG
     otg_oc              : in    std_logic;
 
-    -- Not present in schematic
-    dphy_clk_lp_n       : in    std_logic;
+    -- MIPI
     dphy_clk_lp_p       : in    std_logic;
-    dphy_data_lp_n      : in    std_logic_vector(1 downto 0);
+    dphy_clk_lp_n       : in    std_logic;
     dphy_data_lp_p      : in    std_logic_vector(1 downto 0);
-    dphy_hs_clock_clk_n : in    std_logic;
+    dphy_data_lp_n      : in    std_logic_vector(1 downto 0);
     dphy_hs_clock_clk_p : in    std_logic;
-    dphy_data_hs_n      : in    std_logic_vector(1 downto 0);
+    dphy_hs_clock_clk_n : in    std_logic;
     dphy_data_hs_p      : in    std_logic_vector(1 downto 0);
+    dphy_data_hs_n      : in    std_logic_vector(1 downto 0)
 
-    netic19_t9          : in    std_logic;
-    netic19_u10         : in    std_logic;
-    netic19_u5          : in    std_logic;
-    netic19_u8          : in    std_logic;
-    netic19_u9          : in    std_logic;
-    netic19_v10         : in    std_logic;
-    netic19_v11         : in    std_logic;
-    netic19_v5          : in    std_logic;
-    netic19_w10         : in    std_logic;
-    netic19_w11         : in    std_logic;
-    netic19_w9          : in    std_logic;
-    netic19_y9          : in    std_logic
   );
 end entity digilent_zybo_z7_20;
 
@@ -123,6 +106,7 @@ architecture synth of digilent_zybo_z7_20 is
 
 begin
 
+  -- safe states
   led           <= "0000";
   led5_r        <= '0';
   led5_g        <= '0';
@@ -130,38 +114,14 @@ begin
   led6_r        <= '0';
   led6_g        <= '0';
   led6_b        <= '0';
-
-  hdmi_rx_hpd   <= '0';
-  hdmi_rx_scl   <= 'Z';
-  hdmi_rx_sda   <= 'Z';
-
-  hdmi_tx_scl   <= 'Z';
-  hdmi_tx_sda   <= 'Z';
   hdmi_tx_clk_n <= '1';
   hdmi_tx_clk_p <= '0';
-  hdmi_tx_n     <= "111";
-  hdmi_tx_p     <= "000";
+  hdmi_tx_n     <= (others => '1');
+  hdmi_tx_p     <= (others => '0');
   hdmi_tx_cec   <= '0';
-
-  ja            <= (others => 'Z');
-  jb            <= (others => 'Z');
-  jc            <= (others => 'Z');
-  jd            <= (others => 'Z');
-  je            <= (others => 'Z');
-
-  ac_bclk       <= 'Z';
   ac_muten      <= '0';
   ac_pbdat      <= '0';
-  ac_pblrc      <= 'Z';
-  ac_reclrc     <= 'Z';
-  ac_scl        <= 'Z';
-  ac_sda        <= 'Z';
-
-  eth_rst_b     <= '1';
-
-  cam_sda       <= 'Z';
-
-  crypto_sda    <= 'Z';
+  eth_rst_b     <= '1'; -- beware: reset will stop clki_125m
 
 end architecture synth;
 

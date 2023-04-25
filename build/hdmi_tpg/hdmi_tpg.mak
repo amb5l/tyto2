@@ -15,6 +15,8 @@ FPGA_FAMILY:=$(word 2,$(FPGA))
 
 FPGA_TOOL:=vivado
 
+NEEDS_MMCM:=qmtech_wukong digilent_zybo_z7_20
+
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
 VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
@@ -30,7 +32,7 @@ VIVADO_DSN_VHDL:=\
 	$(SRC)/common/audio_io/audio_out_test_tone.vhd \
 	$(SRC)/common/video/xilinx_7series/hdmi_tx_selectio.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
-	$(if $(filter qmtech_wukong,$(BOARD)),$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd) \
+	$(if $(filter $(NEEDS_MMCM),$(BOARD)),$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd) \
 	$(if $(filter mega65r3,$(BOARD)),$(SRC)/contrib/mega65/keyboard.vhd) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
 VIVADO_DSN_XDC_IMPL:=\
