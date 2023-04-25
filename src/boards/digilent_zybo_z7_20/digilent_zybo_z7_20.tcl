@@ -54,12 +54,12 @@ set pins {
     { hdmi_rx_sda          Y19  LVCMOS33              }
     { hdmi_rx_clk_p        U18  TMDS_33               }
     { hdmi_rx_clk_n        U19  TMDS_33               }
-    { hdmi_d_rx_p[0]       V20  TMDS_33               }
-    { hdmi_d_rx_n[0]       W20  TMDS_33               }
-    { hdmi_d_rx_p[1]       T20  TMDS_33               }
-    { hdmi_d_rx_n[1]       U20  TMDS_33               }
-    { hdmi_d_rx_p[2]       N20  TMDS_33               }
-    { hdmi_d_rx_n[2]       P20  TMDS_33               }
+    { hdmi_rx_d_p[0]       V20  TMDS_33               }
+    { hdmi_rx_d_n[0]       W20  TMDS_33               }
+    { hdmi_rx_d_p[1]       T20  TMDS_33               }
+    { hdmi_rx_d_n[1]       U20  TMDS_33               }
+    { hdmi_rx_d_p[2]       N20  TMDS_33               }
+    { hdmi_rx_d_n[2]       P20  TMDS_33               }
     { hdmi_rx_cec          Y8   LVCMOS33              }
     { hdmi_tx_hpd          E18  LVCMOS33              }
     { hdmi_tx_scl          G17  LVCMOS33              }
