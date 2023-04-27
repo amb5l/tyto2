@@ -25,8 +25,9 @@ library work;
 
 package tmds_cap_csr_pkg is
 
-  constant RA_FREQ      : std_logic_vector(7 downto 0) := x"00"; -- pixel clock frequency count
-  constant RA_ASTAT     : std_logic_vector(7 downto 0) := x"04"; -- alignment status
+  constant RA_SIGNATURE : std_logic_vector(7 downto 0) := x"00"; -- signature value
+  constant RA_FREQ      : std_logic_vector(7 downto 0) := x"04"; -- pixel clock frequency count
+  constant RA_ASTAT     : std_logic_vector(7 downto 0) := x"08"; -- alignment status
   constant RA_ATAPMASK0 : std_logic_vector(7 downto 0) := x"10"; -- alignment tap mask (channel 0)
   constant RA_ATAPMASK1 : std_logic_vector(7 downto 0) := x"14"; -- alignment tap mask (channel 1)
   constant RA_ATAPMASK2 : std_logic_vector(7 downto 0) := x"18"; -- alignment tap mask (channel 2)
@@ -82,31 +83,31 @@ library work;
 entity tmds_cap_csr is
   port (
 
-    axi_clk     : in    std_logic;                     -- AXI clock
-    axi_rst_n   : in    std_logic;                     -- AXI reset (active low)
-    saxi_mosi   : in    axi4_mosi_a32d32_t;            -- AXI slave interface (inputs)
-    saxi_miso   : out   axi4_miso_a32d32_t;            -- AXI slave interface (outputs)
+    axi_clk     : in    std_logic;                                      -- AXI clock
+    axi_rst_n   : in    std_logic;                                      -- AXI reset (active low)
+    saxi_mosi   : in    axi4_mosi_a32d32_t := AXI4_MOSI_A32D32_DEFAULT; -- AXI4 slave interface (inputs)
+    saxi_miso   : out   axi4_miso_a32d32_t := AXI4_MISO_A32D32_DEFAULT; -- AXI4 slave interface (outputs)
 
-    tmds_status : in    hdmi_rx_selectio_status_t;     -- TMDS receive (alignment) status
+    tmds_status : in    hdmi_rx_selectio_status_t;                      -- TMDS receive (alignment) status
 
-    cap_rst     : out    std_logic;                    -- capture reset
-    cap_size    : out   std_logic_vector(31 downto 0); -- capture size (pixels)
-    cap_go      : out   std_logic;                     -- capture start
-    cap_done    : in    std_logic;                     -- capture done
-    cap_error   : in    std_logic                      -- capture error
+    cap_rst     : out    std_logic;                                     -- capture reset
+    cap_size    : out   std_logic_vector(31 downto 0);                  -- capture size (pixels)
+    cap_go      : out   std_logic;                                      -- capture start
+    cap_done    : in    std_logic;                                      -- capture done
+    cap_error   : in    std_logic                                       -- capture error
 
   );
 end entity tmds_cap_csr;
 
 architecture synth of tmds_cap_csr is
 
-  signal tmds_status_s1 : hdmi_rx_selectio_status_t;        -- tmds_status synchroniser registers (first level)
-  signal tmds_status_s2 : hdmi_rx_selectio_status_t;        -- tmds_status synchroniser registers (second level)
+  signal tmds_status_s1 : hdmi_rx_selectio_status_t;     -- tmds_status synchroniser registers (first level)
+  signal tmds_status_s2 : hdmi_rx_selectio_status_t;     -- tmds_status synchroniser registers (second level)
 
-  signal reg_cap_ctrl   : std_logic_vector(31 downto 0);   -- capture control register
-  signal reg_cap_stat   : std_logic_vector(31 downto 0);   -- capture status register
-  signal reg_cap_size   : std_logic_vector(31 downto 0);   -- capture status register
-  signal reg_scratch    : std_logic_vector(31 downto 0);   -- scratch register
+  signal reg_cap_ctrl   : std_logic_vector(31 downto 0); -- capture control register
+  signal reg_cap_stat   : std_logic_vector(31 downto 0); -- capture status register
+  signal reg_cap_size   : std_logic_vector(31 downto 0); -- capture status register
+  signal reg_scratch    : std_logic_vector(31 downto 0); -- scratch register
 
   alias s  : hdmi_rx_selectio_status_t     is tmds_status_s2;
   alias rd : std_logic_vector(31 downto 0) is saxi_miso.rdata;
@@ -114,9 +115,13 @@ architecture synth of tmds_cap_csr is
 
 begin
 
-  saxi_miso.bresp   <= (others => '0');
-  saxi_miso.rresp   <= (others => '0');
-  saxi_miso.rlast   <= '1';
+  -- optional AXI4 signals that are ignored:
+  --  awregion, awcache, awprot, awqos, wlast
+  --  arregion, arcache, arprot, arqos
+
+  saxi_miso.bresp <= (others => '0');
+  saxi_miso.rresp <= (others => '0');
+  saxi_miso.rlast <= '1';
 
   process(axi_clk) -- synchronisers
   begin
@@ -133,8 +138,10 @@ begin
       rd                <= (others => '0');
       saxi_miso.awready <= '0';
       saxi_miso.wready  <= '0';
+      saxi_miso.bid     <= (others => '0');
       saxi_miso.bvalid  <= '0';
       saxi_miso.arready <= '0';
+      saxi_miso.rid     <= (others => '0');
       saxi_miso.rvalid  <= '0';
       reg_cap_ctrl      <= (31 => '1', others => '0');
       reg_cap_size      <= (others => '0');
@@ -142,10 +149,12 @@ begin
 
     elsif rising_edge(axi_clk) then
 
-      -- reads
-      saxi_miso.arready <= saxi_mosi.arvalid and saxi_mosi.rready;
-      saxi_miso.rvalid  <= saxi_mosi.arvalid and saxi_mosi.rready;
+      -- reads    
+      saxi_miso.arready <= saxi_mosi.arvalid and saxi_mosi.rready and not saxi_miso.arready;
+      saxi_miso.rid     <= saxi_mosi.arid;
+      saxi_miso.rvalid  <= saxi_mosi.arvalid and saxi_mosi.rready and not saxi_miso.rvalid;
       case saxi_mosi.araddr(7 downto 0) is
+        when RA_SIGNATURE => rd <= x"53444D54"; -- "TMDS" (little endian)
         when RA_FREQ      => rd <= s.count_freq;
         when RA_ASTAT     => rd <= x"00000" & '0' &
                                   s.skew_p(2) & s.skew_p(1) &
@@ -180,6 +189,7 @@ begin
       -- writes
       saxi_miso.awready <= saxi_mosi.awvalid and saxi_mosi.wvalid;
       saxi_miso.wready  <= saxi_mosi.awvalid and saxi_mosi.wvalid;
+      saxi_miso.bid     <= saxi_mosi.awid;
       saxi_miso.bvalid  <= saxi_mosi.awvalid and saxi_mosi.wvalid;
       if saxi_mosi.awvalid = '1' and saxi_mosi.wvalid = '1' then
         case saxi_mosi.awaddr(7 downto 0) is
