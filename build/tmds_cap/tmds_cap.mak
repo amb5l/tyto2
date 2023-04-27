@@ -52,12 +52,11 @@ VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc
 
 ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
-VITIS_APP:=microblaze
+VITIS_APP:=tmds_cap
 VITIS_SRC:=\
-	$(SRC)/designs/$(DESIGN)/microblaze/main.c
+	$(SRC)/designs/$(DESIGN)/software/main.c
 VITIS_INCLUDE:=\
-	$(SRC)/designs/$(DESIGN)/microblaze \
-	$(SRC)/common/basic/microblaze
+	$(SRC)/designs/$(DESIGN)/software
 endif
 
 VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)

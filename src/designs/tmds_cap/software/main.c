@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 #include "peekpoke.h"
-#include "tmds_cap_regs_axi.h"
+#include "tmds_cap_csr.h"
 
 int main()
 {
