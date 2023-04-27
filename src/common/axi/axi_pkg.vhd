@@ -77,7 +77,7 @@ package axi_pkg is
     );
 
   type axi4_mosi_a32d32_t is record
-    awid     : std_logic_vector(  3 downto 0 );
+    awid     : std_logic_vector(  7 downto 0 );
     awregion : std_logic_vector(  3 downto 0 );
     awaddr   : std_logic_vector( 31 downto 0 );
     awlen    : std_logic_vector(  7 downto 0 );
@@ -92,7 +92,7 @@ package axi_pkg is
     wlast    : std_logic;
     wvalid   : std_logic;
     bready   : std_logic;
-    arid     : std_logic_vector(  3 downto 0 );
+    arid     : std_logic_vector(  7 downto 0 );
     arregion : std_logic_vector(  3 downto 0 );
     araddr   : std_logic_vector( 31 downto 0 );
     arlen    : std_logic_vector(  7 downto 0 );
@@ -138,11 +138,11 @@ package axi_pkg is
   type axi4_miso_a32d32_t is record
     awready : std_logic;
     wready  : std_logic;
-    bid     : std_logic_vector(  3 downto 0 );
+    bid     : std_logic_vector(  7 downto 0 );
     bresp   : std_logic_vector(  1 downto 0 );
     bvalid  : std_logic;
     arready : std_logic;
-    rid     : std_logic_vector(  3 downto 0 );
+    rid     : std_logic_vector(  7 downto 0 );
     rdata   : std_logic_vector( 31 downto 0 );
     rresp   : std_logic_vector(  1 downto 0 );
     rlast   : std_logic;
@@ -165,7 +165,7 @@ package axi_pkg is
     );
 
   type axi4_mosi_a32d64_t is record
-    awid     : std_logic_vector(  3 downto 0 );
+    awid     : std_logic_vector(  7 downto 0 );
     awregion : std_logic_vector(  3 downto 0 );
     awaddr   : std_logic_vector( 31 downto 0 );
     awlen    : std_logic_vector(  7 downto 0 );
@@ -180,7 +180,7 @@ package axi_pkg is
     wlast    : std_logic;
     wvalid   : std_logic;
     bready   : std_logic;
-    arid     : std_logic_vector(  3 downto 0 );
+    arid     : std_logic_vector(  7 downto 0 );
     arregion : std_logic_vector(  3 downto 0 );
     araddr   : std_logic_vector( 31 downto 0 );
     arlen    : std_logic_vector(  7 downto 0 );
@@ -196,11 +196,11 @@ package axi_pkg is
   type axi4_miso_a32d64_t is record
     awready : std_logic;
     wready  : std_logic;
-    bid     : std_logic_vector(  3 downto 0 );
+    bid     : std_logic_vector(  7 downto 0 );
     bresp   : std_logic_vector(  1 downto 0 );
     bvalid  : std_logic;
     arready : std_logic;
-    rid     : std_logic_vector(  3 downto 0 );
+    rid     : std_logic_vector(  7 downto 0 );
     rdata   : std_logic_vector( 63 downto 0 );
     rresp   : std_logic_vector(  1 downto 0 );
     rlast   : std_logic;
@@ -208,7 +208,7 @@ package axi_pkg is
   end record axi4_miso_a32d64_t;
 
   type axi4_mosi_a32d128_t is record
-    awid     : std_logic_vector(   3 downto 0 );
+    awid     : std_logic_vector(   7 downto 0 );
     awregion : std_logic_vector(   3 downto 0 );
     awaddr   : std_logic_vector(  31 downto 0 );
     awlen    : std_logic_vector(   7 downto 0 );
@@ -223,7 +223,7 @@ package axi_pkg is
     wlast    : std_logic;
     wvalid   : std_logic;
     bready   : std_logic;
-    arid     : std_logic_vector(   3 downto 0 );
+    arid     : std_logic_vector(   7 downto 0 );
     arregion : std_logic_vector(   3 downto 0 );
     araddr   : std_logic_vector(  31 downto 0 );
     arlen    : std_logic_vector(   7 downto 0 );
@@ -239,11 +239,11 @@ package axi_pkg is
   type axi4_miso_a32d128_t is record
     awready : std_logic;
     wready  : std_logic;
-    bid     : std_logic_vector(   3 downto 0 );
+    bid     : std_logic_vector(   7 downto 0 );
     bresp   : std_logic_vector(   1 downto 0 );
     bvalid  : std_logic;
     arready : std_logic;
-    rid     : std_logic_vector(   3 downto 0 );
+    rid     : std_logic_vector(   7 downto 0 );
     rdata   : std_logic_vector( 127 downto 0 );
     rresp   : std_logic_vector(   1 downto 0 );
     rlast   : std_logic;
