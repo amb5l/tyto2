@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- tmds_cap_z7ps.vhd                                                          --
--- Zync 7 Processor System based controller module                            --
+-- Zynq 7 Processor System based controller module                            --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
