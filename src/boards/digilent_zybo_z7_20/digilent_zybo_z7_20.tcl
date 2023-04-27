@@ -15,7 +15,9 @@
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
 
-create_clock -add -name clki_125m -period 8.00 -waveform {0 4} [get_ports clki_125m]
+if  {[llength [get_ports -quiet clki_125m]]} {
+    create_clock -add -name clki_125m -period 8.00 -waveform {0 4} [get_ports clki_125m]
+}
 
 set pins {
     { clki_125m            K17  LVCMOS33              }
