@@ -108,16 +108,12 @@ begin
 
   -- safe states
   led           <= "0000";
-  led5_r        <= '0';
-  led5_g        <= '0';
-  led5_b        <= '0';
-  led6_r        <= '0';
-  led6_g        <= '0';
-  led6_b        <= '0';
-  hdmi_tx_clk_n <= '1';
-  hdmi_tx_clk_p <= '0';
-  hdmi_tx_n     <= (others => '1');
-  hdmi_tx_p     <= (others => '0');
+  led_r(5)      <= '0';
+  led_g(5)      <= '0';
+  led_b(5)      <= '0';
+  led_r(6)      <= '0';
+  led_g(6)      <= '0';
+  led_b(6)      <= '0';
   hdmi_tx_cec   <= '0';
   ac_muten      <= '0';
   ac_pbdat      <= '0';
