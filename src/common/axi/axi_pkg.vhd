@@ -20,7 +20,7 @@ library ieee;
 
 package axi_pkg is
 
-  type axi4lite_mosi_a32d32_t is record
+  type axi4lite_a32d32_mosi_t is record
     awaddr  : std_logic_vector( 31 downto 0 );
     awcache : std_logic_vector(  3 downto 0 );
     awprot  : std_logic_vector(  2 downto 0 );
@@ -34,9 +34,9 @@ package axi_pkg is
     arprot  : std_logic_vector(  2 downto 0 );
     arvalid : std_logic;
     rready  : std_logic;
-  end record axi4lite_mosi_a32d32_t;
+  end record axi4lite_a32d32_mosi_t;
 
-  constant AXI4LITE_MOSI_A32D32_DEFAULT : axi4lite_mosi_a32d32_t :=
+  constant AXI4LITE_A32D32_MOSI_DEFAULT : axi4lite_a32d32_mosi_t :=
     (
       awaddr  => (others => 'U'),
       awcache => (others => '0'), -- device non bufferable
@@ -53,7 +53,7 @@ package axi_pkg is
       rready  => 'U'
     );
 
-  type axi4lite_miso_a32d32_t is record
+  type axi4lite_a32d32_miso_t is record
     awready : std_logic;
     wready  : std_logic;
     bresp   : std_logic_vector(  1 downto 0 );
@@ -62,9 +62,9 @@ package axi_pkg is
     rdata   : std_logic_vector( 31 downto 0 );
     rresp   : std_logic_vector(  1 downto 0 );
     rvalid  : std_logic;
-  end record axi4lite_miso_a32d32_t;
+  end record axi4lite_a32d32_miso_t;
 
-  constant AXI4LITE_MISO_A32D32_DEFAULT : axi4lite_miso_a32d32_t :=
+  constant AXI4LITE_A32D32_MISO_DEFAULT : axi4lite_a32d32_miso_t :=
     (
       awready => 'U',
       wready  => 'U',
@@ -76,7 +76,7 @@ package axi_pkg is
       rvalid  => 'U'
     );
 
-  type axi4_mosi_a32d32_t is record
+  type axi4_a32d32_mosi_t is record
     awid     : std_logic_vector(  7 downto 0 );
     awregion : std_logic_vector(  3 downto 0 );
     awaddr   : std_logic_vector( 31 downto 0 );
@@ -103,9 +103,9 @@ package axi_pkg is
     arqos    : std_logic_vector(  3 downto 0 );
     arvalid  : std_logic;
     rready   : std_logic;
-  end record axi4_mosi_a32d32_t;
+  end record axi4_a32d32_mosi_t;
 
-  constant AXI4_MOSI_A32D32_DEFAULT : axi4_mosi_a32d32_t :=
+  constant AXI4_A32D32_MOSI_DEFAULT : axi4_a32d32_mosi_t :=
     (
       awid     => (others => '0'),
       awregion => (others => '0'),
@@ -135,7 +135,7 @@ package axi_pkg is
       rready   => 'U'
     );
 
-  type axi4_miso_a32d32_t is record
+  type axi4_a32d32_miso_t is record
     awready : std_logic;
     wready  : std_logic;
     bid     : std_logic_vector(  7 downto 0 );
@@ -147,9 +147,9 @@ package axi_pkg is
     rresp   : std_logic_vector(  1 downto 0 );
     rlast   : std_logic;
     rvalid  : std_logic;
-  end record axi4_miso_a32d32_t;
+  end record axi4_a32d32_miso_t;
 
-  constant AXI4_MISO_A32D32_DEFAULT : axi4_miso_a32d32_t :=
+  constant AXI4_A32D32_MISO_DEFAULT : axi4_a32d32_miso_t :=
     (
       awready => 'U',
       wready  => 'U',
@@ -164,7 +164,7 @@ package axi_pkg is
       rvalid  => 'U'
     );
 
-  type axi4_mosi_a32d64_t is record
+  type axi4_a32d64_mosi_t is record
     awid     : std_logic_vector(  7 downto 0 );
     awregion : std_logic_vector(  3 downto 0 );
     awaddr   : std_logic_vector( 31 downto 0 );
@@ -191,9 +191,9 @@ package axi_pkg is
     arqos    : std_logic_vector(  3 downto 0 );
     arvalid  : std_logic;
     rready   : std_logic;
-  end record axi4_mosi_a32d64_t;
+  end record axi4_a32d64_mosi_t;
 
-  type axi4_miso_a32d64_t is record
+  type axi4_a32d64_miso_t is record
     awready : std_logic;
     wready  : std_logic;
     bid     : std_logic_vector(  7 downto 0 );
@@ -205,9 +205,9 @@ package axi_pkg is
     rresp   : std_logic_vector(  1 downto 0 );
     rlast   : std_logic;
     rvalid  : std_logic;
-  end record axi4_miso_a32d64_t;
+  end record axi4_a32d64_miso_t;
 
-  type axi4_mosi_a32d128_t is record
+  type axi4_a32d128_mosi_t is record
     awid     : std_logic_vector(   7 downto 0 );
     awregion : std_logic_vector(   3 downto 0 );
     awaddr   : std_logic_vector(  31 downto 0 );
@@ -234,9 +234,9 @@ package axi_pkg is
     arqos    : std_logic_vector(   3 downto 0 );
     arvalid  : std_logic;
     rready   : std_logic;
-  end record axi4_mosi_a32d128_t;
+  end record axi4_a32d128_mosi_t;
 
-  type axi4_miso_a32d128_t is record
+  type axi4_a32d128_miso_t is record
     awready : std_logic;
     wready  : std_logic;
     bid     : std_logic_vector(   7 downto 0 );
@@ -248,39 +248,39 @@ package axi_pkg is
     rresp   : std_logic_vector(   1 downto 0 );
     rlast   : std_logic;
     rvalid  : std_logic;
-  end record axi4_miso_a32d128_t;
+  end record axi4_a32d128_miso_t;
 
-  type axi4s_mosi_32_t is record
+  type axi4s_32_mosi_t is record
     tdata   : std_logic_vector( 31 downto 0 );
     tkeep   : std_logic_vector(  3 downto 0 );
     tlast   : std_logic;
     tvalid  : std_logic;
-  end record axi4s_mosi_32_t;
+  end record axi4s_32_mosi_t;
 
-  type axi4s_miso_32_t is record
+  type axi4s_32_miso_t is record
     tready  : std_logic;
-  end record axi4s_miso_32_t;
+  end record axi4s_32_miso_t;
 
-  type axi4s_mosi_64_t is record
+  type axi4s_64_mosi_t is record
     tdata   : std_logic_vector( 63 downto 0 );
     tkeep   : std_logic_vector(  7 downto 0 );
     tlast   : std_logic;
     tvalid  : std_logic;
-  end record axi4s_mosi_64_t;
+  end record axi4s_64_mosi_t;
 
-  type axi4s_miso_64_t is record
+  type axi4s_64_miso_t is record
     tready  : std_logic;
-  end record axi4s_miso_64_t;
+  end record axi4s_64_miso_t;
 
-  type axi4s_mosi_128_t is record
+  type axi4s_128_mosi_t is record
     tdata   : std_logic_vector( 127 downto 0 );
     tkeep   : std_logic_vector(  15 downto 0 );
     tlast   : std_logic;
     tvalid  : std_logic;
-  end record axi4s_mosi_128_t;
+  end record axi4s_128_mosi_t;
 
-  type axi4s_miso_128_t is record
+  type axi4s_128_miso_t is record
     tready  : std_logic;
-  end record axi4s_miso_128_t;
+  end record axi4s_128_miso_t;
 
 end package axi_pkg;
