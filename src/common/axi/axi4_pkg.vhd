@@ -21,7 +21,7 @@ library ieee;
 package axi4_pkg is
 
   --------------------------------------------------------------------------------
-  -- hierarchicial separate (MOSI/MISO)
+  -- hierarchical separate (MOSI/MISO)
 
   type axi4_aw_mosi_t is record
     id     : std_logic_vector(7 downto 0);
