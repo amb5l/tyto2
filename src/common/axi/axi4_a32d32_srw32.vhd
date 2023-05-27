@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
--- axi4_a32d32_srw32.vhd
--- AXI4 (32 bit address, 32 bit data) to simple read and write (32 bit) bridge
+-- axi4_a32d32_srw32.vhd                                                      --
+-- AXI4 (32 bit address & data) to simple read and write (32 bit) bridge.     --
+--------------------------------------------------------------------------------
+-- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
+-- This file is part of The Tyto Project. The Tyto Project is free software:  --
+-- you can redistribute it and/or modify it under the terms of the GNU Lesser --
+-- General Public License as published by the Free Software Foundation,       --
+-- either version 3 of the License, or(at your option) any later version.    --
+-- The Tyto Project is distributed in the hope that it will be useful, but    --
+-- WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY --
+-- or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public     --
+-- License for more details. You should have received a copy of the GNU       --
+-- Lesser General Public License along with The Tyto Project. If not, see     --
+-- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -22,11 +34,11 @@ package axi4_a32d32_srw32_pkg is
     );
     port (
 
-      clk     : in    std_logic;                                      -- clock
-      rst_n   : in    std_logic;                                      -- reset (active low
+      clk     : in    std_logic;
+      rst_n   : in    std_logic;
 
-      axi4_si : in    axi4_a32d32_h_mosi_t := AXI4_A32D32_H_MOSI_DEFAULT; -- AXI4 slave inputs
-      axi4_so : out   axi4_a32d32_h_miso_t := AXI4_A32D32_H_MISO_DEFAULT; -- AXI4 slave output
+      axi4_si : in    axi4_a32d32_h_mosi_t := AXI4_A32D32_H_MOSI_DEFAULT;
+      axi4_so : out   axi4_a32d32_h_miso_t := AXI4_A32D32_H_MISO_DEFAULT;
 
       sw_en   : out   std_logic;
       sw_addr : out   std_logic_vector(addr_width-1 downto 0);
@@ -64,22 +76,22 @@ entity axi4_a32d32_srw32 is
   );
   port (
 
-    clk     : in    std_logic;                                      -- clock
-    rst_n   : in    std_logic;                                      -- reset (active low
+    clk     : in    std_logic;                                          -- clock
+    rst_n   : in    std_logic;                                          -- reset (active low
 
     axi4_si : in    axi4_a32d32_h_mosi_t := AXI4_A32D32_H_MOSI_DEFAULT; -- AXI4 slave inputs
     axi4_so : out   axi4_a32d32_h_miso_t := AXI4_A32D32_H_MISO_DEFAULT; -- AXI4 slave output
 
-    sw_en   : out   std_logic;
-    sw_addr : out   std_logic_vector(addr_width-1 downto 0);
-    sw_be   : out   std_logic_vector(3 downto 0);
-    sw_data : out   std_logic_vector(31 downto 0);
-    sw_rdy  : in    std_logic;
+    sw_en   : out   std_logic;                                          -- simple write enable
+    sw_addr : out   std_logic_vector(addr_width-1 downto 0);            -- simple write address
+    sw_be   : out   std_logic_vector(3 downto 0);                       -- simple write byte enables
+    sw_data : out   std_logic_vector(31 downto 0);                      -- simple write data
+    sw_rdy  : in    std_logic;                                          -- simple write ready
 
-    sr_en   : out   std_logic;
-    sr_addr : out   std_logic_vector(addr_width-1 downto 0);
-    sr_data : in    std_logic_vector(31 downto 0);
-    sr_rdy  : in    std_logic
+    sr_en   : out   std_logic;                                          -- simple read enable
+    sr_addr : out   std_logic_vector(addr_width-1 downto 0);            -- simple read address
+    sr_data : in    std_logic_vector(31 downto 0);                      -- simple read data
+    sr_rdy  : in    std_logic                                           -- simple read ready
 
   );
 end entity axi4_a32d32_srw32;
@@ -511,7 +523,7 @@ begin
       v_ra_available := (arvalid = '1' and arready = '1') or not v_qra_ef;
       v_rd_available := (rvalid = '1' and rready = '1')   or not v_qrd_ef;
 
-      v_sr_beat_end    := sr_en = '1' and sr_rdy = '1' and sr_last = '0';
+      v_sr_beat_end    := sr_en = '1' and sr_rdy = '1';
       v_sr_burst_end   := sr_en = '1' and sr_rdy = '1' and sr_last = '1';
       v_sr_beat_ready  := sr_busy = '0' or v_sr_beat_end;
       v_sr_burst_ready := sr_busy = '0' or v_sr_burst_end;
