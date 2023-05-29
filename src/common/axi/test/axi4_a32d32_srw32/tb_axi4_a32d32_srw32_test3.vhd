@@ -1,6 +1,6 @@
-architecture tb_axi4_a32d32_srw32_test1 of TestCtrl is
+architecture tb_axi4_a32d32_srw32_test3 of TestCtrl is
 
-  constant TestName : string := "tb_axi4_a32d32_srw32_test1";
+  constant TestName : string := "tb_axi4_a32d32_srw32_test3";
 
   signal TestDone : integer_barrier := 1;
 
@@ -46,31 +46,30 @@ begin
   --   Generate transactions for AxiManager
   ------------------------------------------------------------
   ManagerProc : process
-    variable amax      : integer;
-    variable d32_start : std_logic_vector( 31 downto 0 );
-    variable d32_incr  : std_logic_vector( 31 downto 0 );
-    variable d32       : std_logic_vector( 31 downto 0 );
-    variable r32       : std_logic_vector( 31 downto 0 );
+    variable amax     : integer;
+    variable d8_start : std_logic_vector( 7 downto 0 );
+    variable d8_incr  : std_logic_vector( 7 downto 0 );
+    variable d8       : std_logic_vector( 7 downto 0 );
+    variable r8       : std_logic_vector( 7 downto 0 );
   begin
     wait until nReset = '1';
     WaitForClock(ManagerRec, 2);
 
-    amax      := (2**(addr_width-2))-1;
-    d32_start := x"31415926";
-    d32_incr  := x"27182817";
+    amax      := (2**addr_width)-1;
+    d8_start := x"00";
+    d8_incr  := x"01";
 
-    log("32 bit fill then check (incrementing data)");
-    d32 := d32_start;
+    log("8 bit fill then check (incrementing data)");
+    d8 := d8_start;
     for i in 0 to amax loop
-      Write(ManagerRec, std_logic_vector(to_unsigned(i*4,32)), d32);
-      d32 := std_logic_vector(unsigned(d32)+unsigned(d32_incr));
+      Write(ManagerRec, std_logic_vector(to_unsigned(i,32)), d8);
+      d8 := std_logic_vector(unsigned(d8)+unsigned(d8_incr));
     end loop;
-    d32 := d32_start;
+    d8 := d8_start;
     for i in 0 to amax loop
-      Read(ManagerRec,  std_logic_vector(to_unsigned(i*4,32)), r32);
-      r32 := x"FFFFFFFF";
-      AffirmIfEqual(r32, d32, "Manager Read Data: ");
-      d32 := std_logic_vector(unsigned(d32)+unsigned(d32_incr));
+      Read(ManagerRec,  std_logic_vector(to_unsigned(i,32)), r8);
+      AffirmIfEqual(r8, d8, "Manager Read Data: ");
+      d8 := std_logic_vector(unsigned(d8)+unsigned(d8_incr));
     end loop;
 
     -- Wait for outputs to propagate and signal TestDone
@@ -79,12 +78,12 @@ begin
     wait;
   end process ManagerProc;
 
-end architecture tb_axi4_a32d32_srw32_test1;
+end architecture tb_axi4_a32d32_srw32_test3;
 
-configuration cfg_tb_axi4_a32d32_srw32_test1 of tb_axi4_a32d32_srw32 is
+configuration cfg_tb_axi4_a32d32_srw32_test3 of tb_axi4_a32d32_srw32 is
   for sim
     for TestCtrl_1 : TestCtrl
-      use entity work.TestCtrl(tb_axi4_a32d32_srw32_test1);
+      use entity work.TestCtrl(tb_axi4_a32d32_srw32_test3);
     end for;
   end for;
-end cfg_tb_axi4_a32d32_srw32_test1;
+end cfg_tb_axi4_a32d32_srw32_test3;

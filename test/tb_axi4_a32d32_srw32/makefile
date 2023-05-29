@@ -13,17 +13,25 @@ include $(TEST)/osvvm_common.mak
 include $(TEST)/osvvm_axi4common.mak
 include $(TEST)/osvvm_axi4.mak
 
+TESTDIR:=$(SRC)/common/axi/test/axi4_a32d32_srw32
+TESTBENCH:=tb_axi4_a32d32_srw32
+TESTSRC:=$(wildcard $(TESTDIR)/$(TESTBENCH)_test*.vhd)
+TESTS:=$(foreach f,$(TESTSRC),$(subst $(TESTDIR)/$(TESTBENCH)_,,$(subst .vhd,,$f)))
+
 SIM_LIB:=$(SIM_LIB) work
 SIM_SRC.work:=\
     $(SRC)/common/axi/axi4_pkg.vhd \
 	$(SRC)/common/axi/axi4_a32d32_srw32.vhd \
-	$(SRC)/common/axi/test/axi4_a32d32_srw32/OsvvmTestCommonPkg.vhd \
-	$(SRC)/common/axi/test/axi4_a32d32_srw32/TestCtrl_e.vhd \
-	$(SRC)/common/axi/test/axi4_a32d32_srw32/tb_axi4_a32d32_srw32.vhd \
-	$(SRC)/common/axi/test/axi4_a32d32_srw32/tb_axi4_a32d32_srw32_test1.vhd
-SIM_TOP:=cfg_tb_axi4_a32d32_srw32_test1
-SIM_RUN:=cfg_tb_axi4_a32d32_srw32_test1
+	$(TESTDIR)/OsvvmTestCommonPkg.vhd \
+	$(TESTDIR)/TestCtrl_e.vhd \
+	$(TESTDIR)/tb_axi4_a32d32_srw32.vhd \
+	$(TESTSRC)
+SIM_TOP:=tb_axi4_a32d32_srw32
+SIM_RUN:=$(foreach t,$(TESTS),$t,cfg_tb_axi4_a32d32_srw32_$t)
 
 NVC_GOPTS:=-H 32m
 
 include $(MAKE_FPGA)
+
+sim::
+	@grep -q ERROR $(wildcard $(SIM_DIR)/*test*.txt) && echo "errors found!" && exit 1 || echo "all tests passed!"

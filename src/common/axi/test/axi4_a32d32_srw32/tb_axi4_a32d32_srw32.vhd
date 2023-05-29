@@ -63,7 +63,7 @@ architecture sim of tb_axi4_a32d32_srw32 is
   ) ;
 
   -- DUT
-  constant addr_width : integer := 10; -- 256 x 32 bits
+  constant addr_width : integer := 8; -- 256 bytes
   signal axi4_si : axi4_a32d32_h_mosi_t;
   signal axi4_so : axi4_a32d32_h_miso_t;
   signal sw_en   : std_logic;
@@ -98,7 +98,7 @@ begin
 
   DUT: component axi4_a32d32_srw32
     generic map (
-      addr_width => 10
+      addr_width => addr_width
     )
     port map (
       clk     => Clk,
@@ -135,7 +135,7 @@ begin
           s(waddr)((i*8)+7 downto i*8) <= sw_data((i*8)+7 downto i*8) when sw_be(i) = '1';
         end loop;
       end if;
-      sr_rdy <= sr_en;
+      sr_rdy <= sr_en and not sr_rdy;
       sr_data <= s(raddr) when sr_en = '1' else (others => '0');
     end if;
   end process;
@@ -195,10 +195,13 @@ begin
     );
 
   TestCtrl_1: component TestCtrl
+    generic map (
+      addr_width => addr_width
+    )
     port map (
-      Clk            => Clk,
-      nReset         => nReset,
-      ManagerRec     => ManagerRec
+      Clk        => Clk,
+      nReset     => nReset,
+      ManagerRec => ManagerRec
     );
 
 end architecture sim;

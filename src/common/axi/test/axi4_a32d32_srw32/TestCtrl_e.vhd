@@ -1,12 +1,16 @@
 library ieee;
   use ieee.std_logic_1164.all;
 
+
 library osvvm_common;
   context osvvm_common.OsvvmCommonContext;
 
 package TestCtrl_pkg is
 
   component TestCtrl is
+    generic (
+      addr_width : integer
+    );
     port (
       Clk        : in    std_logic;
       nReset     : in    std_logic;
@@ -20,6 +24,7 @@ end package TestCtrl_pkg;
 
 library ieee;
   use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 library osvvm;
   context osvvm.OsvvmContext;
@@ -31,11 +36,12 @@ library work;
   use work.OsvvmTestCommonPkg.all;
 
 entity TestCtrl is
+  generic (
+    addr_width : integer
+  );
   port (
     Clk        : in    std_logic;
     nReset     : in    std_logic;
     ManagerRec : inout AddressBusRecType
   );
-  constant AXI_ADDR_WIDTH : integer := ManagerRec.Address'length;
-  constant AXI_DATA_WIDTH : integer := ManagerRec.DataToModel'length;
 end entity TestCtrl;
