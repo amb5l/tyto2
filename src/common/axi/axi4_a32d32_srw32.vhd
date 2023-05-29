@@ -238,12 +238,11 @@ architecture synth of axi4_a32d32_srw32 is
 
 begin
 
-  sim_axi4 <= axi4_a32d32_hs2f(axi4_si,axi4_so);
+  p_sim_axi4: sim_axi4 <= axi4_a32d32_hs2f(axi4_si,axi4_so);
+  p_bresp:    bresp <= (others => '0'); -- } response is always OK
+  p_rresp:    rresp <= (others => '0'); -- }
 
-  bresp <= (others => '0'); -- } response is always OK
-  rresp <= (others => '0'); -- }
-
-  process(rst_n,clk)
+  p_main: process(rst_n,clk)
 
       procedure q_status(
                  rptr  : in    integer;
@@ -422,7 +421,7 @@ begin
       v_wa_available := (awvalid = '1' and awready = '1') or not v_qwa_ef;
       v_wd_available := (wvalid = '1' and wready = '1')   or not v_qwd_ef;
 
-      v_sw_beat_end    := sw_en = '1' and sw_rdy = '1' and sw_last = '0';
+      v_sw_beat_end    := sw_en = '1' and sw_rdy = '1';
       v_sw_burst_end   := sw_en = '1' and sw_rdy = '1' and sw_last = '1';
       v_sw_beat_ready  := sw_busy = '0' or v_sw_beat_end;
       v_sw_burst_ready := sw_busy = '0' or v_sw_burst_end;
