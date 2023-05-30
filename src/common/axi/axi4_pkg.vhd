@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- axi4_pkg.vhd                                                               --
--- AXI4 type definitions.                                                     --
+-- AXI4 types, constants and functions.                                       --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
