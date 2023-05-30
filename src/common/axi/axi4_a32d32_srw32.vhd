@@ -63,6 +63,7 @@ library ieee;
   use ieee.numeric_std.all;
 
 library work;
+  use work.fifo_pkg.all;
   use work.axi4_pkg.all;
 
 entity axi4_a32d32_srw32 is
@@ -101,6 +102,7 @@ architecture synth of axi4_a32d32_srw32 is
   -- optional AXI4 inputs that are ignored:
   -- awregion, awcache, awprot, awqos, arregion, arcache, arprot, arqos
 
+  -- aliases to tidy code
   alias awid    is axi4_si.aw.id;
   alias awaddr  is axi4_si.aw.addr;
   alias awlen   is axi4_si.aw.len;
@@ -132,6 +134,34 @@ architecture synth of axi4_a32d32_srw32 is
   alias rvalid  is axi4_so.r.valid;
   alias rready  is axi4_si.r.ready;
 
+  -- write related
+  signal wa_available   : std_logic;
+  signal wd_available   : std_logic;
+  signal sw_beat_end    : std_logic;
+  signal sw_burst_end   : std_logic;
+  signal sw_beat_ready  : std_logic;
+  signal sw_burst_ready : std_logic;
+  signal sw_busy        : std_logic;
+  signal sw_len         : std_logic_vector(7 downto 0);
+  signal sw_size        : std_logic_vector(2 downto 0);
+  signal sw_burst       : std_logic_vector(1 downto 0);
+  signal sw_last        : std_logic;
+
+  -- read related
+  signal ra_available   : std_logic;
+  signal rd_available   : std_logic;
+  signal sr_beat_end    : std_logic;
+  signal sr_burst_end   : std_logic;
+  signal sr_beat_ready  : std_logic;
+  signal sr_burst_ready : std_logic;
+  signal sr_count       : std_logic_vector(7 downto 0);
+  signal sr_id          : std_logic_vector(7 downto 0);
+  signal sr_busy        : std_logic;
+  signal sr_len         : std_logic_vector(7 downto 0);
+  signal sr_size        : std_logic_vector(2 downto 0);
+  signal sr_burst       : std_logic_vector(1 downto 0);
+  signal sr_last        : std_logic;
+
   -- queue: write address
   type qwa_entry_t is record
     addr  : std_logic_vector(addr_width-1 downto 0);
@@ -139,16 +169,28 @@ architecture synth of axi4_a32d32_srw32 is
     size  : std_logic_vector(2 downto 0);
     burst : std_logic_vector(1 downto 0);
   end record;
-  constant QWA_INIT : qwa_entry_t := (
-      addr  => (others => '0'),
-      len   => (others => '0'),
-      size  => (others => '0'),
-      burst => (others => '0')
-    );
-  type qwa_t is array(0 to qwa_depth-1) of qwa_entry_t;
-  signal qwa      : qwa_t;
-  signal qwa_wptr : integer := 0;
-  signal qwa_rptr : integer := 0;
+  constant qwa_width : integer := addr_width+8+3+2;
+  signal qwa_tail : qwa_entry_t;
+  signal qwa_head : qwa_entry_t;
+  signal qwa_enq  : std_logic;
+  signal qwa_deq  : std_logic;
+  signal qwa_d    : std_logic_vector(qwa_width-1 downto 0);
+  signal qwa_q    : std_logic_vector(qwa_width-1 downto 0);
+  signal qwa_ef   : std_logic;
+  signal qwa_aff  : std_logic;
+  function to_slv( i : qwa_entry_t ) return std_logic_vector is
+  begin
+    return i.burst & i.size & i.len & i.addr;
+  end function to_slv;
+  function from_slv( i : std_logic_vector ) return qwa_entry_t is
+    variable r : qwa_entry_t;
+  begin
+    r.addr  := i(addr_width-1 downto 0);
+    r.len   := i(addr_width+7 downto addr_width);
+    r.size  := i(addr_width+10 downto addr_width+8);
+    r.burst := i(addr_width+12 downto addr_width+11);
+    return r;
+  end function from_slv;
 
   -- queue: write data
   type qwd_entry_t is record
@@ -156,223 +198,353 @@ architecture synth of axi4_a32d32_srw32 is
     strb : std_logic_vector(3 downto 0);
     last : std_logic;
   end record;
-  constant QWD_INIT : qwd_entry_t := (
-      data => (others => '0'),
-      strb => (others => '0'),
-      last => '0'
-    );
-  type qwd_t is array(0 to qwd_depth-1) of qwd_entry_t;
-  signal qwd      : qwd_t;
-  signal qwd_wptr : integer := 0;
-  signal qwd_rptr : integer := 0;
+  constant qwd_width : integer := 32+4+1;
+  signal qwd_tail : qwd_entry_t;
+  signal qwd_head : qwd_entry_t;
+  signal qwd_enq  : std_logic;
+  signal qwd_deq  : std_logic;
+  signal qwd_d    : std_logic_vector(qwd_width-1 downto 0);
+  signal qwd_q    : std_logic_vector(qwd_width-1 downto 0);
+  signal qwd_ef   : std_logic;
+  signal qwd_aff  : std_logic;
+  function to_slv( i : qwd_entry_t ) return std_logic_vector is
+  begin
+    return i.last & i.strb & i.data;
+  end function to_slv;
+  function from_slv( i : std_logic_vector ) return qwd_entry_t is
+    variable r : qwd_entry_t;
+  begin
+    r.data := i(31 downto 0);
+    r.strb := i(35 downto 32);
+    r.last := i(36);
+    return r;
+  end function from_slv;
 
-  -- queues: write pending cycles and write completed
+  -- queues: writes pending and writes completed
   type qwb_entry_t is record
     id : std_logic_vector(7 downto 0);
   end record;
-  constant QWB_INIT : qwb_entry_t := (
-      id => (others => '0')
-    );
-  type qwb_t is array(0 to qwb_depth-1) of qwb_entry_t;
-  signal qwp      : qwb_t;
-  signal qwp_wptr : integer := 0;
-  signal qwp_rptr : integer := 0;
-  signal qwc      : qwb_t;
-  signal qwc_wptr : integer := 0;
-  signal qwc_rptr : integer := 0;
+  constant qwb_width : integer := 8;
+  signal qwp_tail : qwb_entry_t;
+  signal qwp_head : qwb_entry_t;
+  signal qwp_enq  : std_logic;
+  signal qwp_deq  : std_logic;
+  signal qwp_d    : std_logic_vector(qwb_width-1 downto 0);
+  signal qwp_q    : std_logic_vector(qwb_width-1 downto 0);
+  signal qwp_aff  : std_logic;
+  signal qwc_tail : qwb_entry_t;
+  signal qwc_head : qwb_entry_t;
+  signal qwc_enq  : std_logic;
+  signal qwc_deq  : std_logic;
+  signal qwc_d    : std_logic_vector(qwb_width-1 downto 0);
+  signal qwc_q    : std_logic_vector(qwb_width-1 downto 0);
+  signal qwc_ef   : std_logic;
+  function to_slv( i : qwb_entry_t ) return std_logic_vector is
+  begin
+    return i.id;
+  end function to_slv;
+  function from_slv( i : std_logic_vector ) return qwb_entry_t is
+    variable r : qwb_entry_t;
+  begin
+    r.id := i(7 downto 0);
+    return r;
+  end function from_slv;
 
   -- queue: read address
   type qra_entry_t is record
-    id    : std_logic_vector(7 downto 0);
     addr  : std_logic_vector(addr_width-1 downto 0);
+    id    : std_logic_vector(7 downto 0);
     len   : std_logic_vector(7 downto 0);
     size  : std_logic_vector(2 downto 0);
     burst : std_logic_vector(1 downto 0);
   end record;
-  constant QRA_INIT : qra_entry_t := (
-      id    => (others => '0'),
-      addr  => (others => '0'),
-      len   => (others => '0'),
-      size  => (others => '0'),
-      burst => (others => '0')
-    );
-  type qra_t is array(0 to qra_depth-1) of qra_entry_t;
-  signal qra      : qra_t;
-  signal qra_wptr : integer := 0;
-  signal qra_rptr : integer := 0;
+  constant qra_width : integer := addr_width+8+8+3+2;
+  signal qra_tail : qra_entry_t;
+  signal qra_head : qra_entry_t;
+  signal qra_enq  : std_logic;
+  signal qra_deq  : std_logic;
+  signal qra_d    : std_logic_vector(qra_width-1 downto 0);
+  signal qra_q    : std_logic_vector(qra_width-1 downto 0);
+  signal qra_ef   : std_logic;
+  signal qra_aff  : std_logic;
+  function to_slv( i : qra_entry_t ) return std_logic_vector is
+  begin
+    return i.burst & i.size & i.len & i.id & i.addr;
+  end function to_slv;
+  function from_slv( i : std_logic_vector ) return qra_entry_t is
+    variable r : qra_entry_t;
+  begin
+    r.addr  := i(addr_width-1 downto 0);
+    r.id    := i(addr_width+7 downto addr_width);
+    r.len   := i(addr_width+15 downto addr_width+8);
+    r.size  := i(addr_width+18 downto addr_width+16);
+    r.burst := i(addr_width+20 downto addr_width+19);
+    return r;
+  end function from_slv;
 
   -- queue: read data
   type qrd_entry_t is record
-    id   : std_logic_vector(7 downto 0);
     data : std_logic_vector(31 downto 0);
+    id   : std_logic_vector(7 downto 0);
     last : std_logic;
   end record;
-  constant QRD_INIT : qrd_entry_t := (
-      id   => (others => '0'),
-      data => (others => '0'),
-      last => '0'
-    );
-  type qrd_t is array(0 to qrd_depth-1) of qrd_entry_t;
-  signal qrd      : qrd_t;
-  signal qrd_wptr : integer := 0;
-  signal qrd_rptr : integer := 0;
-
-  -- SW state
-  signal sw_busy  : std_logic;
-  signal sw_len   : std_logic_vector(7 downto 0);
-  signal sw_size  : std_logic_vector(2 downto 0);
-  signal sw_burst : std_logic_vector(1 downto 0);
-  signal sw_last  : std_logic;
-
-  -- SR state
-  signal sr_count : std_logic_vector(7 downto 0);
-  signal sr_id    : std_logic_vector(7 downto 0);
-  signal sr_busy  : std_logic;
-  signal sr_len   : std_logic_vector(7 downto 0);
-  signal sr_size  : std_logic_vector(2 downto 0);
-  signal sr_burst : std_logic_vector(1 downto 0);
-  signal sr_last  : std_logic;
+  constant qrd_width : integer := 32+8+1;
+  signal qrd_tail : qrd_entry_t;
+  signal qrd_head : qrd_entry_t;
+  signal qrd_enq  : std_logic;
+  signal qrd_deq  : std_logic;
+  signal qrd_d    : std_logic_vector(qrd_width-1 downto 0);
+  signal qrd_q    : std_logic_vector(qrd_width-1 downto 0);
+  signal qrd_ef   : std_logic;
+  signal qrd_ff   : std_logic;
+  function to_slv( i : qrd_entry_t ) return std_logic_vector is
+  begin
+    return i.last & i.id & i.data;
+  end function to_slv;
+  function from_slv( i : std_logic_vector ) return qrd_entry_t is
+    variable r : qrd_entry_t;
+  begin
+    r.data := i(31 downto 0);
+    r.id   := i(39 downto 32);
+    r.last := i(40);
+    return r;
+  end function from_slv;
 
   -- simulation/debug
   signal sim_axi4 : axi4_a32d32_t;
 
 begin
 
-  p_sim_axi4: sim_axi4 <= axi4_a32d32_hs2f(axi4_si,axi4_so);
-  p_bresp:    bresp <= (others => '0'); -- } response is always OK
-  p_rresp:    rresp <= (others => '0'); -- }
+  --------------------------------------------------------------------------------
 
-  p_main: process(rst_n,clk)
+  sim_axi4       <= axi4_a32d32_hs2f(axi4_si,axi4_so);
 
-      procedure q_status(
-                 rptr  : in    integer;
-                 wptr  : in    integer;
-                 depth : in    integer;
-        variable ef    : out   boolean;          -- empty
-        variable aff   : out   boolean;          -- almost full (N-2 entries)
-        variable ff    : out   boolean           -- full (N-1 entries)
-      ) is
-      begin
-        ef  := rptr = wptr;
-        aff := (wptr+2) mod depth = rptr;
-        ff  := (wptr+1) mod depth = rptr;
-      end procedure q_status;
+  bresp          <= (others => '0'); -- } response is always OK
+  rresp          <= (others => '0'); -- }
 
-      procedure q_update(
-        signal   rptr  : inout integer;
-        signal   wptr  : inout integer;
-                 depth : in    integer;
-        variable enq   : in    boolean;          -- enqueue
-        variable deq   : in    boolean;          -- dequeue
-        variable cut   : out   boolean           -- cut through
-      ) is
-      begin
-        cut := enq and deq and rptr = wptr;
-        if enq then
-          wptr <= (wptr+1) mod depth;
-        end if;
-        if deq then
-          rptr <= (rptr+1) mod depth;
-        end if;
-      end procedure q_update;
+  wa_available   <= (awvalid and awready) or not qwa_ef;
+  wd_available   <= (wvalid and wready) or not qwd_ef;
 
-    variable v_qwa_enq        : boolean;     -- enqueue write address
-    variable v_qwa_deq        : boolean;     -- dequeue write address
-    variable v_qwa_ef         : boolean;     -- QWA is empty
-    variable v_qwa_aff        : boolean;     -- QWA is almost full
-    variable v_qwa_ff         : boolean;     -- QWA is full
-    variable v_qwa_cut        : boolean;     -- cut through write address queue
-    variable v_qwa_new        : qwa_entry_t; -- next entry for write address queue
-    variable v_qwa_head       : qwa_entry_t; -- head of write address queue
+  sw_beat_end    <= sw_en and sw_rdy;
+  sw_burst_end   <= sw_en and sw_rdy and sw_last;
+  sw_beat_ready  <= sw_beat_end or not sw_busy;
+  sw_burst_ready <= sw_burst_end or not sw_busy;
 
-    variable v_qwd_enq        : boolean;     -- enqueue write data
-    variable v_qwd_deq        : boolean;     -- dequeue write data
-    variable v_qwd_ef         : boolean;     -- QWD is empty
-    variable v_qwd_aff        : boolean;     -- QWD is almost full
-    variable v_qwd_ff         : boolean;     -- QWD is full
-    variable v_qwd_cut        : boolean;     -- cut through write data queue
-    variable v_qwd_new        : qwd_entry_t; -- next entry for write data queue
-    variable v_qwd_head       : qwd_entry_t; -- head of write data queue
+  ra_available   <= (arvalid and arready) or not qra_ef;
+  rd_available   <= (rvalid and rready) or not qrd_ef;
 
-    variable v_qwp_enq        : boolean;     -- enqueue write pending cycle
-    variable v_qwp_deq        : boolean;     -- dequeue write pending cycle
-    variable v_qwp_ef         : boolean;     -- QWP is empty
-    variable v_qwp_aff        : boolean;     -- QWP is almost full
-    variable v_qwp_ff         : boolean;     -- QWP is full
-    variable v_qwp_cut        : boolean;     -- cut through write pending queue
-    variable v_qwp_new        : qwb_entry_t; -- next entry for write pending queue
-    variable v_qwp_head       : qwb_entry_t; -- head of write pending queue
+  sr_beat_end    <= sr_en and sr_rdy;
+  sr_burst_end   <= sr_en and sr_rdy and sr_last;
+  sr_beat_ready  <= sr_beat_end or not sr_busy;
+  sr_burst_ready <= sr_burst_end or not sr_busy;
 
-    variable v_qwc_enq        : boolean;     -- enqueue write completed cycle
-    variable v_qwc_deq        : boolean;     -- dequeue write completed cycle
-    variable v_qwc_ef         : boolean;     -- QWC is empty
-    variable v_qwc_aff        : boolean;     -- QWC is almost full
-    variable v_qwc_ff         : boolean;     -- QWC is full
-    variable v_qwc_cut        : boolean;     -- cut through write complete queue
-    variable v_qwc_new        : qwb_entry_t; -- next entry for write complete queue
-    variable v_qwc_head       : qwb_entry_t; -- head of write complete queue
+  --------------------------------------------------------------------------------
+  -- QWA
 
-    variable v_qra_enq        : boolean;     -- enqueue read address
-    variable v_qra_deq        : boolean;     -- dequeue read address
-    variable v_qra_ef         : boolean;     -- QRA is empty
-    variable v_qra_aff        : boolean;     -- QRA is almost full
-    variable v_qra_ff         : boolean;     -- QRA is full
-    variable v_qra_cut        : boolean;     -- cut through read address queue
-    variable v_qra_new        : qra_entry_t; -- next entry for read address queue
-    variable v_qra_head       : qra_entry_t; -- head of read address queue
+  qwa_enq        <= awvalid and awready;
+  qwa_deq        <= sw_burst_ready and wa_available and wd_available;
+  qwa_tail.addr  <= awaddr(addr_width-1 downto 0);
+  qwa_tail.len   <= awlen;
+  qwa_tail.size  <= awsize;
+  qwa_tail.burst <= awburst;
+  qwa_d          <= to_slv(qwa_tail);
+  qwa_head       <= from_slv(qwa_q);
 
-    variable v_qrd_enq        : boolean;     -- enqueue read data
-    variable v_qrd_deq        : boolean;     -- dequeue read data
-    variable v_qrd_ef         : boolean;     -- QRD is empty
-    variable v_qrd_aff        : boolean;     -- QRD is almost full
-    variable v_qrd_ff         : boolean;     -- QRD is full
-    variable v_qrd_cut        : boolean;     -- cut through read data queue
-    variable v_qrd_new        : qrd_entry_t; -- next entry for read data queue
-    variable v_qrd_head       : qrd_entry_t; -- head of read data queue
+  QWA: component fifo_sft
+    generic map (
+      width   => qwa_width,
+      depth   => qwa_depth,
+      aef_lvl => 1,
+      aff_lvl => 1,
+      en_cut  => true
+    )
+    port map (
+      rst  => not rst_n,
+      clk  => clk,
+      ld   => qwa_enq,
+      unld => qwa_deq,
+      d    => qwa_d,
+      q    => qwa_q,
+      ef   => qwa_ef,
+      aef  => open,
+      aff  => qwa_aff,
+      ff   => open,
+      err  => open
+    );
 
-    variable v_wa_available   : boolean;     -- address available for SW cycle
-    variable v_wd_available   : boolean;     -- data available for SW cycle
-    variable v_ra_available   : boolean;     -- address available for SR cycle
-    variable v_rd_available   : boolean;     -- AXI or QRD can accept SR data
+  --------------------------------------------------------------------------------
+  -- QWD
 
-    variable v_sw_beat_end    : boolean;     -- SW cycle is at end of data beat
-    variable v_sw_beat_ready  : boolean;     -- SW is ready for a new data beat
-    variable v_sw_burst_end   : boolean;     -- SW cycle is at end of burst
-    variable v_sw_burst_ready : boolean;     -- SW is ready for a new burst
-    variable v_sw_addr_next   : std_logic_vector(addr_width-1 downto 0);
+  qwd_enq       <= wvalid and wready;
+  qwd_deq       <= sw_beat_ready and wd_available;
+  qwd_tail.data <= wdata;
+  qwd_tail.strb <= wstrb;
+  qwd_tail.last <= wlast;
+  qwd_d         <= to_slv(qwd_tail);
+  qwd_head      <= from_slv(qwd_q);
 
-    variable v_sr_beat_end    : boolean;     -- SR cycle is at end of data beat
-    variable v_sr_beat_ready  : boolean;     -- SR is ready for a new data beat
-    variable v_sr_burst_end   : boolean;     -- SR cycle is at end of burst
-    variable v_sr_burst_ready : boolean;     -- SR is ready for a new burst
-    variable v_sr_addr_next   : std_logic_vector(addr_width-1 downto 0);
-    variable v_sr_count_next  : std_logic_vector(7 downto 0);
+  QWD: component fifo_sft
+    generic map (
+      width   => qwd_width,
+      depth   => qwd_depth,
+      aef_lvl => 1,
+      aff_lvl => 1,
+      en_cut  => true
+    )
+    port map (
+      rst  => not rst_n,
+      clk  => clk,
+      ld   => qwd_enq,
+      unld => qwd_deq,
+      d    => qwd_d,
+      q    => qwd_q,
+      ef   => qwd_ef,
+      aef  => open,
+      aff  => qwd_aff,
+      ff   => open,
+      err  => open
+    );
 
+  --------------------------------------------------------------------------------
+  -- QWP
+
+  qwp_enq     <= qwa_enq;
+  qwp_deq     <= sw_burst_end;
+  qwp_tail.id <= awid;
+  qwp_d       <= to_slv(qwp_tail);
+  qwp_head    <= from_slv(qwp_q);
+
+  QWP: component fifo_sft
+    generic map (
+      width   => qwb_width,
+      depth   => qwb_depth,
+      aef_lvl => 1,
+      aff_lvl => 1,
+      en_cut  => true
+    )
+    port map (
+      rst  => not rst_n,
+      clk  => clk,
+      ld   => qwp_enq,
+      unld => qwp_deq,
+      d    => qwp_d,
+      q    => qwp_q,
+      ef   => open,
+      aef  => open,
+      aff  => qwp_aff,
+      ff   => open,
+      err  => open
+    );
+
+  --------------------------------------------------------------------------------
+  -- QWC
+
+  qwc_enq     <= sw_burst_end;
+  qwc_deq     <= (qwc_enq or not qwc_ef) and (bready or not bvalid);
+  qwc_tail    <= qwp_head;
+  qwc_d       <= to_slv(qwc_tail);
+  qwc_head    <= from_slv(qwc_q);
+
+  QWC: component fifo_sft
+    generic map (
+      width   => qwb_width,
+      depth   => qwb_depth,
+      aef_lvl => 1,
+      aff_lvl => 1,
+      en_cut  => true
+    )
+    port map (
+      rst  => not rst_n,
+      clk  => clk,
+      ld   => qwc_enq,
+      unld => qwc_deq,
+      d    => qwc_d,
+      q    => qwc_q,
+      ef   => qwc_ef,
+      aef  => open,
+      aff  => open,
+      ff   => open,
+      err  => open
+    );
+
+  --------------------------------------------------------------------------------
+  -- QRA
+
+  qra_enq        <= arvalid and arready;
+  qra_deq        <= sr_burst_ready and ra_available and not qrd_ff;
+  qra_tail.addr  <= araddr(addr_width-1 downto 0);
+  qra_tail.id    <= arid;
+  qra_tail.len   <= arlen;
+  qra_tail.size  <= arsize;
+  qra_tail.burst <= arburst;
+  qra_d          <= to_slv(qra_tail);
+  qra_head       <= from_slv(qra_q);
+
+  QRA: component fifo_sft
+    generic map (
+      width   => qra_width,
+      depth   => qra_depth,
+      aef_lvl => 1,
+      aff_lvl => 1,
+      en_cut  => true
+    )
+    port map (
+      rst  => not rst_n,
+      clk  => clk,
+      ld   => qra_enq,
+      unld => qra_deq,
+      d    => qra_d,
+      q    => qra_q,
+      ef   => qra_ef,
+      aef  => open,
+      aff  => qra_aff,
+      ff   => open,
+      err  => open
+    );
+
+  --------------------------------------------------------------------------------
+  -- QRD
+
+  qrd_enq       <= sr_en and sr_rdy;
+  qrd_deq       <= (qrd_enq or not qrd_ef) and (rready or not rvalid);
+  qrd_tail.data <= sr_data;
+  qrd_tail.id   <= sr_id;
+  qrd_tail.last <= sr_last;
+  qrd_d         <= to_slv(qrd_tail);
+  qrd_head      <= from_slv(qrd_q);
+
+  QRD: component fifo_sft
+    generic map (
+      width   => qrd_width,
+      depth   => qrd_depth,
+      aef_lvl => 1,
+      aff_lvl => 1,
+      en_cut  => true
+    )
+    port map (
+      rst  => not rst_n,
+      clk  => clk,
+      ld   => qrd_enq,
+      unld => qrd_deq,
+      d    => qrd_d,
+      q    => qrd_q,
+      ef   => qrd_ef,
+      aef  => open,
+      aff  => open,
+      ff   => qrd_ff,
+      err  => open
+    );
+
+  --------------------------------------------------------------------------------
+
+  process(rst_n,clk)
+    variable v_sw_addr_next : std_logic_vector(sw_addr'range);
+    variable v_sr_addr_next : std_logic_vector(sr_addr'range);
   begin
     if rst_n = '0' then
 
       --------------------------------------------------------------------------------
       -- reset
-
-      -- queues
-      qwa      <= (others => QWA_INIT);
-      qwa_wptr <= 0;
-      qwa_rptr <= 0;
-      qwd      <= (others => QWD_INIT);
-      qwd_wptr <= 0;
-      qwd_rptr <= 0;
-      qwp      <= (others => QWB_INIT);
-      qwp_wptr <= 0;
-      qwp_rptr <= 0;
-      qwc      <= (others => QWB_INIT);
-      qwc_wptr <= 0;
-      qwc_rptr <= 0;
-      qra      <= (others => QRA_INIT);
-      qra_wptr <= 0;
-      qra_rptr <= 0;
-      qrd      <= (others => QRD_INIT);
-      qrd_wptr <= 0;
-      qrd_rptr <= 0;
 
       -- SW interface
       sw_en    <= '0';
@@ -413,53 +585,6 @@ begin
       --------------------------------------------------------------------------------
       -- write
 
-      q_status( qwa_rptr, qwa_wptr, qwa_depth, v_qwa_ef, v_qwa_aff, v_qwa_ff );
-      q_status( qwd_rptr, qwd_wptr, qwd_depth, v_qwd_ef, v_qwd_aff, v_qwd_ff );
-      q_status( qwp_rptr, qwp_wptr, qwb_depth, v_qwp_ef, v_qwp_aff, v_qwp_ff );
-      q_status( qwc_rptr, qwc_wptr, qwb_depth, v_qwc_ef, v_qwc_aff, v_qwc_ff );
-
-      v_wa_available := (awvalid = '1' and awready = '1') or not v_qwa_ef;
-      v_wd_available := (wvalid = '1' and wready = '1')   or not v_qwd_ef;
-
-      v_sw_beat_end    := sw_en = '1' and sw_rdy = '1';
-      v_sw_burst_end   := sw_en = '1' and sw_rdy = '1' and sw_last = '1';
-      v_sw_beat_ready  := sw_busy = '0' or v_sw_beat_end;
-      v_sw_burst_ready := sw_busy = '0' or v_sw_burst_end;
-
-      v_qwa_enq := awvalid = '1' and awready = '1';
-      v_qwa_deq := v_sw_burst_ready and v_wa_available and v_wd_available;
-      v_qwd_enq := wvalid = '1' and wready = '1';
-      v_qwd_deq := v_sw_beat_ready and v_wd_available;
-      v_qwp_enq := v_qwa_enq;
-      v_qwp_deq := v_sw_burst_end;
-      v_qwc_enq := v_sw_burst_end;
-      v_qwc_deq := (v_qwc_enq or not v_qwc_ef) and (bvalid = '0' or bready = '1');
-
-      q_update(  qwa_rptr, qwa_wptr, qwa_depth, v_qwa_enq, v_qwa_deq, v_qwa_cut );
-      q_update(  qwd_rptr, qwd_wptr, qwd_depth, v_qwd_enq, v_qwd_deq, v_qwd_cut );
-      q_update(  qwp_rptr, qwp_wptr, qwb_depth, v_qwp_enq, v_qwp_deq, v_qwp_cut );
-      q_update(  qwc_rptr, qwc_wptr, qwb_depth, v_qwc_enq, v_qwc_deq, v_qwc_cut );
-
-      v_qwa_new.addr  := awaddr(addr_width-1 downto 0);
-      v_qwa_new.len   := awlen;
-      v_qwa_new.size  := awsize;
-      v_qwa_new.burst := awburst;
-      v_qwd_new.data  := wdata;
-      v_qwd_new.strb  := wstrb;
-      v_qwd_new.last  := wlast;
-      v_qwp_new.id    := awid;
-      v_qwc_new       := v_qwp_head;
-
-      qwa(qwa_wptr) <= v_qwa_new when v_qwa_enq;
-      qwd(qwd_wptr) <= v_qwd_new when v_qwd_enq;
-      qwp(qwp_wptr) <= v_qwp_new when v_qwp_enq;
-      qwc(qwc_wptr) <= v_qwc_new when v_qwc_enq;
-
-      v_qwa_head := v_qwa_new when v_qwa_cut else qwa(qwa_rptr);
-      v_qwd_head := v_qwd_new when v_qwd_cut else qwd(qwd_rptr);
-      v_qwp_head := v_qwp_new when v_qwp_cut else qwp(qwp_rptr);
-      v_qwc_head := v_qwc_new when v_qwc_cut else qwc(qwp_rptr);
-
       if sw_burst = "01" or sw_burst = "10" then -- incrementing or wrapping burst
         if sw_size = "000" then -- burst of bytes
           v_sw_addr_next := std_logic_vector(unsigned(sw_addr)+1);
@@ -493,62 +618,28 @@ begin
       end if;
 
       -- SW: per burst
-      sw_busy  <= '1' when v_qwa_deq else '0' when v_sw_burst_end;
-      sw_len   <= v_qwa_head.len   when v_qwa_deq else (others => '0') when v_sw_burst_end;
-      sw_size  <= v_qwa_head.size  when v_qwa_deq else (others => '0') when v_sw_burst_end;
-      sw_burst <= v_qwa_head.burst when v_qwa_deq else (others => '0') when v_sw_burst_end;
+      sw_busy  <= '1'            when qwa_deq = '1' else '0'             when sw_burst_end = '1';
+      sw_len   <= qwa_head.len   when qwa_deq = '1' else (others => '0') when sw_burst_end = '1';
+      sw_size  <= qwa_head.size  when qwa_deq = '1' else (others => '0') when sw_burst_end = '1';
+      sw_burst <= qwa_head.burst when qwa_deq = '1' else (others => '0') when sw_burst_end = '1';
 
       -- SW: per burst and per beat
-      sw_addr  <= v_qwa_head.addr  when v_qwa_deq else v_sw_addr_next when v_qwd_deq else (others => '0') when v_sw_burst_end;
+      sw_addr  <= qwa_head.addr  when qwa_deq = '1' else v_sw_addr_next when qwd_deq = '1' else (others => '0') when sw_burst_end = '1';
 
       -- SW: per beat
-      sw_en    <= '1'              when v_qwd_deq else '0'             when v_sw_beat_end or v_sw_burst_end;
-      sw_be    <= v_qwd_head.strb  when v_qwd_deq else (others => '0') when v_sw_beat_end or v_sw_burst_end;
-      sw_data  <= v_qwd_head.data  when v_qwd_deq else (others => '0') when v_sw_beat_end or v_sw_burst_end;
-      sw_last  <= v_qwd_head.last  when v_qwd_deq else '0'             when v_sw_beat_end or v_sw_burst_end;
+      sw_en    <= '1'            when qwd_deq = '1' else '0'             when sw_beat_end = '1';
+      sw_be    <= qwd_head.strb  when qwd_deq = '1' else (others => '0') when sw_beat_end = '1';
+      sw_data  <= qwd_head.data  when qwd_deq = '1' else (others => '0') when sw_beat_end = '1';
+      sw_last  <= qwd_head.last  when qwd_deq = '1' else '0'             when sw_beat_end = '1';
 
       -- AXI outputs
-      awready  <= '0' when (v_qwa_aff and not v_qwa_deq) or (v_qwp_aff and not v_qwp_deq) else '1';
-      wready   <= '0' when v_qwd_aff else '1';
-      bid      <= v_qwc_head.id when v_qwc_deq else (others => '0') when bready = '1';
-      bvalid   <= '1' when v_qwc_deq else '0' when bready = '1';
+      awready  <= '0' when (qwa_aff = '1' and qwa_deq = '0') or (qwp_aff = '1' and qwp_deq = '0') else '1';
+      wready   <= not qwd_aff;
+      bid      <= qwc_head.id when qwc_deq = '1' else (others => '0') when bready = '1';
+      bvalid   <= '1' when qwc_deq = '1' else '0' when bready = '1';
 
       --------------------------------------------------------------------------------
       -- read
-
-      q_status( qra_rptr, qra_wptr, qra_depth, v_qra_ef, v_qra_aff, v_qra_ff );
-      q_status( qrd_rptr, qrd_wptr, qrd_depth, v_qrd_ef, v_qrd_aff, v_qrd_ff );
-
-      v_ra_available := (arvalid = '1' and arready = '1') or not v_qra_ef;
-      v_rd_available := (rvalid = '1' and rready = '1')   or not v_qrd_ef;
-
-      v_sr_beat_end    := sr_en = '1' and sr_rdy = '1';
-      v_sr_burst_end   := sr_en = '1' and sr_rdy = '1' and sr_last = '1';
-      v_sr_beat_ready  := sr_busy = '0' or v_sr_beat_end;
-      v_sr_burst_ready := sr_busy = '0' or v_sr_burst_end;
-
-      v_qra_enq := arvalid = '1' and arready = '1';
-      v_qra_deq := v_sr_burst_ready and v_ra_available and not v_qrd_ff;
-      v_qrd_enq := sr_en = '1' and sr_rdy = '1';
-      v_qrd_deq := (v_qrd_enq or not v_qrd_ef) and (rvalid = '0' or rready = '1');
-
-      q_update( qra_rptr, qra_wptr, qra_depth, v_qra_enq, v_qra_deq, v_qra_cut );
-      q_update( qrd_rptr, qrd_wptr, qrd_depth, v_qrd_enq, v_qrd_deq, v_qrd_cut );
-
-      v_qra_new.id    := arid;
-      v_qra_new.addr  := araddr(addr_width-1 downto 0);
-      v_qra_new.len   := arlen;
-      v_qra_new.size  := arsize;
-      v_qra_new.burst := arburst;
-      v_qrd_new.id    := sr_id;
-      v_qrd_new.data  := sr_data;
-      v_qrd_new.last  := sr_last;
-
-      qra(qra_wptr) <= v_qra_new when v_qra_enq;
-      qrd(qrd_wptr) <= v_qrd_new when v_qrd_enq;
-
-      v_qra_head := v_qra_new when v_qra_cut else qra(qra_rptr);
-      v_qrd_head := v_qrd_new when v_qrd_cut else qrd(qrd_rptr);
 
       if sr_burst = "01" or sr_burst = "10" then -- incrementing or wrapping burst
         if sr_size = "000" then -- burst of bytes
@@ -581,39 +672,38 @@ begin
             null;
         end case;
       end if;
-      v_sr_count_next := std_logic_vector(unsigned(sr_count)+1);
 
       -- SR: per burst
-      sr_busy  <= '1'              when v_qra_deq else '0'             when v_sr_burst_end;
-      sr_id    <= v_qra_head.id    when v_qra_deq else (others => '0') when v_sr_burst_end;
-      sr_len   <= v_qra_head.len   when v_qra_deq else (others => '0') when v_sr_burst_end;
-      sr_size  <= v_qra_head.size  when v_qra_deq else (others => '0') when v_sr_burst_end;
-      sr_burst <= v_qra_head.burst when v_qra_deq else (others => '0') when v_sr_burst_end;
+      sr_busy  <= '1'            when qra_deq = '1' else '0'             when sr_burst_end = '1';
+      sr_id    <= qra_head.id    when qra_deq = '1' else (others => '0') when sr_burst_end = '1';
+      sr_len   <= qra_head.len   when qra_deq = '1' else (others => '0') when sr_burst_end = '1';
+      sr_size  <= qra_head.size  when qra_deq = '1' else (others => '0') when sr_burst_end = '1';
+      sr_burst <= qra_head.burst when qra_deq = '1' else (others => '0') when sr_burst_end = '1';
 
       -- SR: per burst and per beat
-      if v_qra_deq then -- new burst
+      if qra_deq then -- new burst
         sr_count <= (others => '0');
-        sr_addr  <= v_qra_head.addr;
-        sr_last  <= '1' when v_qra_head.len = x"00" else '0';
-      elsif v_sr_beat_ready then -- new beat
-        sr_count <= v_sr_count_next;
+        sr_addr  <= qra_head.addr;
+        sr_last  <= '1' when qra_head.len = x"00" else '0';
+      elsif sr_beat_ready then -- new beat
+        sr_count <= std_logic_vector(unsigned(sr_count)+1);
         sr_addr  <= v_sr_addr_next;
         sr_last  <= '1' when std_logic_vector(unsigned(sr_count)+1) = sr_len else '0';
-      elsif v_sr_burst_end then -- end of burst
+      elsif sr_burst_end then -- end of burst
         sr_count <= (others => '0');
         sr_addr  <= (others => '0');
         sr_last  <= '0';
       end if;
 
       -- SR: per beat
-      sr_en    <= '1' when v_qra_deq or (sr_busy = '1' and v_rd_available) else '0' when v_sr_beat_end;
+      sr_en    <= '1' when qra_deq = '1' or (sr_busy = '1' and rd_available = '1') else '0' when sr_beat_end = '1';
 
       -- AXI outputs
-      arready  <= '0' when v_qra_aff and not v_qra_deq else '1';
-      rid      <= v_qrd_head.id   when v_qrd_deq else (others => '0') when rready = '1';
-      rdata    <= v_qrd_head.data when v_qrd_deq else (others => '0') when rready = '1';
-      rlast    <= v_qrd_head.last when v_qrd_deq else '0'             when rready = '1';
-      rvalid   <= '1'             when v_qrd_deq else '0'             when rready = '1';
+      arready  <= '0' when qra_aff = '1' and qra_deq = '0' else '1';
+      rid      <= qrd_head.id   when qrd_deq = '1' else (others => '0') when rready = '1';
+      rdata    <= qrd_head.data when qrd_deq = '1' else (others => '0') when rready = '1';
+      rlast    <= qrd_head.last when qrd_deq = '1' else '0'             when rready = '1';
+      rvalid   <= '1'           when qrd_deq = '1' else '0'             when rready = '1';
 
       --------------------------------------------------------------------------------
 
