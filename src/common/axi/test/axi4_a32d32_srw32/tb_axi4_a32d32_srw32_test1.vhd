@@ -68,7 +68,6 @@ begin
     d32 := d32_start;
     for i in 0 to amax loop
       Read(ManagerRec,  std_logic_vector(to_unsigned(i*4,32)), r32);
-      r32 := x"FFFFFFFF";
       AffirmIfEqual(r32, d32, "Manager Read Data: ");
       d32 := std_logic_vector(unsigned(d32)+unsigned(d32_incr));
     end loop;
