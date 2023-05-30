@@ -20,6 +20,7 @@ TESTS:=$(foreach f,$(TESTSRC),$(subst $(TESTDIR)/$(TESTBENCH)_,,$(subst .vhd,,$f
 
 SIM_LIB:=$(SIM_LIB) work
 SIM_SRC.work:=\
+    $(SRC)/common/basic/fifo_pkg.vhd \
     $(SRC)/common/axi/axi4_pkg.vhd \
 	$(SRC)/common/axi/axi4_a32d32_srw32.vhd \
 	$(TESTDIR)/OsvvmTestCommonPkg.vhd \
