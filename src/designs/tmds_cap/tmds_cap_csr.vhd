@@ -19,41 +19,10 @@ library ieee;
   use ieee.std_logic_1164.all;
 
 library work;
-  --use work.tyto_types_pkg.all;
   use work.axi4_pkg.all;
   use work.hdmi_rx_selectio_pkg.all;
 
 package tmds_cap_csr_pkg is
-
-  constant RA_SIGNATURE : std_logic_vector(7 downto 0) := x"00"; -- signature value
-  constant RA_FREQ      : std_logic_vector(7 downto 0) := x"04"; -- pixel clock frequency count
-  constant RA_ASTAT     : std_logic_vector(7 downto 0) := x"08"; -- alignment status
-  constant RA_ATAPMASK0 : std_logic_vector(7 downto 0) := x"10"; -- alignment tap mask (channel 0)
-  constant RA_ATAPMASK1 : std_logic_vector(7 downto 0) := x"14"; -- alignment tap mask (channel 1)
-  constant RA_ATAPMASK2 : std_logic_vector(7 downto 0) := x"18"; -- alignment tap mask (channel 2)
-  constant RA_ATAP      : std_logic_vector(7 downto 0) := x"20"; -- alignment: chosen taps
-  constant RA_ABITSLIP  : std_logic_vector(7 downto 0) := x"24"; -- alignment: bit slip positions
-  constant RA_ACYCLE0   : std_logic_vector(7 downto 0) := x"30"; -- alignment cycle count (channel 0)
-  constant RA_ACYCLE1   : std_logic_vector(7 downto 0) := x"34"; -- alignment cycle count (channel 1)
-  constant RA_ACYCLE2   : std_logic_vector(7 downto 0) := x"38"; -- alignment cycle count (channel 2)
-  constant RA_ATAPOK0   : std_logic_vector(7 downto 0) := x"40"; -- alignment tap OK count (channel 0)
-  constant RA_ATAPOK1   : std_logic_vector(7 downto 0) := x"44"; -- alignment tap OK count (channel 1)
-  constant RA_ATAPOK2   : std_logic_vector(7 downto 0) := x"48"; -- alignment tap OK count (channel 2)
-  constant RA_AGAIN0    : std_logic_vector(7 downto 0) := x"50"; -- serial alignment gain count (channel 0)
-  constant RA_AGAIN1    : std_logic_vector(7 downto 0) := x"54"; -- serial alignment gain count (channel 1)
-  constant RA_AGAIN2    : std_logic_vector(7 downto 0) := x"58"; -- serial alignment gain count (channel 2)
-  constant RA_AGAINP    : std_logic_vector(7 downto 0) := x"5C"; -- parallel alignment gain count
-  constant RA_ALOSS0    : std_logic_vector(7 downto 0) := x"60"; -- serial alignment loss count (channel 0)
-  constant RA_ALOSS1    : std_logic_vector(7 downto 0) := x"64"; -- serial alignment loss count (channel 1)
-  constant RA_ALOSS2    : std_logic_vector(7 downto 0) := x"68"; -- serial alignment loss count (channel 2)
-  constant RA_ALOSSP    : std_logic_vector(7 downto 0) := x"6C"; -- parallel alignment loss count
-
-  constant RA_CAPCTRL   : std_logic_vector(7 downto 0) := x"80"; -- capture control (reset, go)
-  constant RA_CAPSIZE   : std_logic_vector(7 downto 0) := x"84"; -- capture size (pixels)
-  constant RA_CAPSTAT   : std_logic_vector(7 downto 0) := x"88"; -- capture status (run, loss, ovf, unf)
-  constant RA_CAPCOUNT  : std_logic_vector(7 downto 0) := x"8C"; -- capture count (pixels)
-
-  constant RA_SCRATCH   : std_logic_vector(7 downto 0) := x"FC"; -- scratch register
 
   component tmds_cap_csr is
     port (
@@ -90,7 +59,7 @@ library work;
   use work.axi4_pkg.all;
   use work.axi4_a32d32_srw32_pkg.all;
   use work.hdmi_rx_selectio_pkg.all;
-  use work.tmds_cap_csr_pkg.all;
+  use work.tmds_cap_csr_ra_pkg.all;
 
 entity tmds_cap_csr is
   port (
@@ -244,41 +213,6 @@ begin
         sr_rdy  <= '0';
         sr_data <= (others => '0');
       end if;
-
-      -- saxi_miso.rid     <= saxi_mosi.arid;
-      -- saxi_miso.rvalid  <= saxi_mosi.arvalid and saxi_mosi.rready and not saxi_miso.rvalid;
-      -- case saxi_mosi.araddr(7 downto 0) is
-        -- when RA_SIGNATURE => rd <= x"53444D54"; -- "TMDS" (little endian)
-        -- when RA_FREQ      => rd <= s.count_freq;
-        -- when RA_ASTAT     => rd <= x"00000" & '0' &
-                                  -- s.skew_p(2) & s.skew_p(1) &
-                                  -- s.align_p & s.align_s(2) & s.align_s(1) & s.align_s(0) &
-                                  -- s.band & s.lock;
-        -- when RA_ATAPMASK0 => rd <= s.tap_mask(0);
-        -- when RA_ATAPMASK1 => rd <= s.tap_mask(1);
-        -- when RA_ATAPMASK2 => rd <= s.tap_mask(2);
-        -- when RA_ATAP      => rd <= x"00" & "000" & s.tap(2) & "000" & s.tap(1) & "000" & s.tap(0);
-        -- when RA_ABITSLIP  => rd <= x"00000" & s.bitslip(2) & s.bitslip(1) & s.bitslip(0);
-        -- when RA_ACYCLE0   => rd <= s.count_acycle(0);
-        -- when RA_ACYCLE1   => rd <= s.count_acycle(1);
-        -- when RA_ACYCLE2   => rd <= s.count_acycle(2);
-        -- when RA_ATAPOK0   => rd <= s.count_tap_ok(0);
-        -- when RA_ATAPOK1   => rd <= s.count_tap_ok(1);
-        -- when RA_ATAPOK2   => rd <= s.count_tap_ok(2);
-        -- when RA_AGAIN0    => rd <= s.count_again_s(0);
-        -- when RA_AGAIN1    => rd <= s.count_again_s(1);
-        -- when RA_AGAIN2    => rd <= s.count_again_s(2);
-        -- when RA_AGAINP    => rd <= s.count_again_p;
-        -- when RA_ALOSS0    => rd <= s.count_aloss_s(0);
-        -- when RA_ALOSS1    => rd <= s.count_aloss_s(1);
-        -- when RA_ALOSS2    => rd <= s.count_aloss_s(2);
-        -- when RA_ALOSSP    => rd <= s.count_aloss_p;
-        -- when RA_CAPCTRL   => rd <= reg_cap_ctrl;
-        -- when RA_CAPSTAT   => rd <= reg_cap_stat;
-        -- when RA_CAPSIZE   => rd <= reg_cap_size;
-        -- when RA_SCRATCH   => rd <= reg_scratch;
-        -- when others       => rd <= (others => '0');
-      -- end case;
 
     end if;
   end process;

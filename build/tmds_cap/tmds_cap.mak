@@ -1,12 +1,20 @@
 # tmds_cap.mak
 
 REPO_ROOT:=$(shell git rev-parse --show-toplevel)
+MAKE_DIR:=$(shell pwd)
 ifeq ($(OS),Windows_NT)
 REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
+MAKE_DIR:=$(shell cygpath -m $(MAKE_DIR))
 endif
 MAKE_FPGA:=$(REPO_ROOT)/submodules/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
-BUILD:=$(REPO_ROOT)/build
+GEN_DIR:=gen
+GEN:=$(MAKE_DIR)/$(GEN_DIR)
+
+CSR_RA_PY:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_csr_ra.py
+CSR_RA_CSV:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_csr_ra.csv
+CSR_RA_VHD:=$(GEN)/$(DESIGN)_csr_ra_pkg.vhd
+CSR_RA_H:=$(GEN)/$(DESIGN)_csr_ra.h
 
 FPGA_VENDOR?=$(word 1,$(FPGA))
 FPGA_FAMILY?=$(word 2,$(FPGA))
@@ -34,8 +42,9 @@ VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/common/basic/fifo_pkg.vhd \
 	$(SRC)/common/axi/axi4_a32d32_srw32.vhd \
 	$(CORE_VHD) \
-	$(SRC)/designs/$(DESIGN)/tmds_cap_csr.vhd \
-	$(SRC)/designs/$(DESIGN)/tmds_cap_stream.vhd \
+	$(CSR_RA_VHD) \
+	$(SRC)/designs/$(DESIGN)/$(DESIGN)_csr.vhd \
+	$(SRC)/designs/$(DESIGN)/$(DESIGN)_stream.vhd \
     $(if $(filter digilent_nexys_video,$(BOARD)),$(SRC)/common/ethernet/memac_axi4_rgmii.vhd) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
 ifneq (,$(findstring xc7z,$(FPGA_DEVICE)))
@@ -55,8 +64,9 @@ VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc
 
 ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
-VITIS_APP:=tmds_cap
+VITIS_APP:=$(DESIGN)
 VITIS_SRC:=\
+	$(CSR_RA_H) \
 	$(SRC)/designs/$(DESIGN)/software/main.c
 VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/software
@@ -66,9 +76,9 @@ VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
 VSCODE_SRC:=$(VIVADO_DSN_VHDL_2008)
 ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VSCODE_SRC+=
-    $(BUILD)/$(DESIGN)/$(DESIGN)_$(BOARD)/.vivado/fpga.gen/sources_1/bd/axi_ddr3/synth/axi_ddr3.vhd \
-    $(BUILD)/$(DESIGN)/$(DESIGN)_$(BOARD)/.vivado/fpga.gen/sources_1/bd/tmds_cap_mb_cpu/synth/tmds_cap_mb_cpu.vhd \
-    $(BUILD)/$(DESIGN)/$(DESIGN)_$(BOARD)/.vivado/fpga.gen/sources_1/bd/tmds_cap_mb_sys/synth/tmds_cap_mb_sys.vhd
+    $(MAKE_DIR)/.vivado/fpga.gen/sources_1/bd/axi_ddr3/synth/axi_ddr3.vhd \
+    $(MAKE_DIR)/.vivado/fpga.gen/sources_1/bd/$(DESIGN)_mb_cpu/synth/$(DESIGN)_mb_cpu.vhd \
+    $(MAKE_DIR)/.vivado/fpga.gen/sources_1/bd/$(DESIGN)_mb_sys/synth/$(DESIGN)_mb_sys.vhd
 endif
 VSCODE_XLIB:=unisim
 VSCODE_XSRC.unisim:=\
@@ -80,3 +90,9 @@ VSCODE_XSRC.unisim:=\
     $(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/model_secureip.vhd
 
 include $(MAKE_FPGA)
+
+$(GEN_DIR):
+	$(BASH) -c "mkdir -p $@"
+
+$(CSR_RA_VHD) $(CSR_RA_H): $(CSR_RA_CSV) | $(GEN_DIR)
+	python $(CSR_RA_PY) 8 $(CSR_RA_CSV) $(CSR_RA_VHD) $(CSR_RA_H)
