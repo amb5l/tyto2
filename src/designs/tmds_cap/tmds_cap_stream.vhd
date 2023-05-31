@@ -97,8 +97,6 @@ end entity tmds_cap_stream;
 
 architecture synth of tmds_cap_stream is
 
-  constant PAUSE_COUNT : integer := 4; -- cycles to pause after reading FIFO when almost empty
-
   signal tmds_loss     : std_logic;                        -- loss of TMDS lock
   signal cap_rst_s     : std_logic_vector( 0 to 1 );       -- capture reset, synchronized
   signal cap_en_s      : std_logic_vector( 0 to 2 );       -- capture enable, synchronized
@@ -201,8 +199,8 @@ begin
 
   FIFO : fifo36e1
     generic map (
-      almost_empty_offset     => to_bitvector(std_logic_vector(to_unsigned(PAUSE_COUNT,16))),
-      almost_full_offset      => x"01FC",
+      almost_empty_offset     => x"0010",
+      almost_full_offset      => x"01F0",
       data_width              => 72,
       do_reg                  => 1,
       en_ecc_read             => false,
