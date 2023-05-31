@@ -23,7 +23,8 @@ library unisim;
 
 library work;
   use work.tyto_types_pkg.all;
-  use work.axi_pkg.all;
+  use work.axi4_pkg.all;
+  use work.axi4s_pkg.all;
   use work.mmcm_pkg.all;
   use work.hdmi_rx_selectio_pkg.all;
   use work.hdmi_tx_selectio_pkg.all;
@@ -37,101 +38,83 @@ library work;
 entity tmds_cap_digilent_zybo_z7_20 is
   port (
 
-    -- clock 125 MHz
-    sysclk              : in    std_logic;
+    -- clock
+    clki_125m           : in    std_logic;
 
     -- LEDs, buttons and switches
-    sw                  : in    std_logic_vector(3 downto 0);
+--  sw                  : in    std_logic_vector(3 downto 0);
     btn                 : in    std_logic_vector(3 downto 0);
     led                 : out   std_logic_vector(3 downto 0);
-    led5_r              : out   std_logic;
-    led5_g              : out   std_logic;
-    led5_b              : out   std_logic;
-    led6_r              : out   std_logic;
-    led6_g              : out   std_logic;
-    led6_b              : out   std_logic;
+    led_r               : out   std_logic_vector(6 downto 5);
+    led_g               : out   std_logic_vector(6 downto 5);
+    led_b               : out   std_logic_vector(6 downto 5);
 
     -- HDMI RX
-    hdmi_rx_hpd         : out   std_logic;
-    hdmi_rx_scl         : inout std_logic;
-    hdmi_rx_sda         : inout std_logic;
-    hdmi_rx_clk_n       : in    std_logic;
+--  hdmi_rx_hpd         : out   std_logic;
+--  hdmi_rx_scl         : inout std_logic;
+--  hdmi_rx_sda         : inout std_logic;
     hdmi_rx_clk_p       : in    std_logic;
-    hdmi_rx_n           : in    std_logic_vector(0 to 2);
-    hdmi_rx_p           : in    std_logic_vector(0 to 2);
-    hdmi_rx_cec         : in    std_logic;
+    hdmi_rx_clk_n       : in    std_logic;
+    hdmi_rx_d_p         : in    std_logic_vector(0 to 2);
+    hdmi_rx_d_n         : in    std_logic_vector(0 to 2);
+--  hdmi_rx_cec         : in    std_logic;
 
     -- HDMI TX
-    hdmi_tx_hpd         : in    std_logic;
-    hdmi_tx_scl         : inout std_logic;
-    hdmi_tx_sda         : inout std_logic;
-    hdmi_tx_clk_n       : out   std_logic;
+--  hdmi_tx_hpd         : in    std_logic;
+--  hdmi_tx_scl         : inout std_logic;
+--  hdmi_tx_sda         : inout std_logic;
     hdmi_tx_clk_p       : out   std_logic;
-    hdmi_tx_n           : out   std_logic_vector(0 to 2);
-    hdmi_tx_p           : out   std_logic_vector(0 to 2);
+    hdmi_tx_clk_n       : out   std_logic;
+    hdmi_tx_d_p         : out   std_logic_vector(0 to 2);
+    hdmi_tx_d_n         : out   std_logic_vector(0 to 2);
     hdmi_tx_cec         : out   std_logic;
 
     -- PMODs
-    ja                  : inout std_logic_vector(7 downto 0);
-    jb                  : inout std_logic_vector(7 downto 0);
-    jc                  : inout std_logic_vector(7 downto 0);
-    jd                  : inout std_logic_vector(7 downto 0);
-    je                  : inout std_logic_vector(7 downto 0);
+--  ja                  : inout std_logic_vector(7 downto 0);
+--  jb                  : inout std_logic_vector(7 downto 0);
+--  jc                  : inout std_logic_vector(7 downto 0);
+--  jd                  : inout std_logic_vector(7 downto 0);
+--  je                  : inout std_logic_vector(7 downto 0);
 
-    -- Audio codex
-    -- SSM2603CPZ
-    -- I2C address 0011010
-    ac_bclk             : inout std_logic;
-    ac_mclk             : in    std_logic;
+    -- Audio codec (SSM2603CPZ, I2C address 0011010)
+--  ac_bclk             : inout std_logic;
+--  ac_mclk             : in    std_logic;
     ac_muten            : out   std_logic;
     ac_pbdat            : out   std_logic;
-    ac_pblrc            : inout std_logic;
-    ac_recdat           : in    std_logic;
-    ac_reclrc           : inout std_logic;
-    ac_scl              : out   std_logic;
-    ac_sda              : inout std_logic;
+--  ac_pblrc            : inout std_logic;
+--  ac_recdat           : in    std_logic;
+--  ac_reclrc           : inout std_logic;
+--  ac_scl              : out   std_logic;
+--  ac_sda              : inout std_logic;
 
     -- RTL8211E-VL
-    eth_int_pu_b        : in    std_logic; -- pin 20, INTB
-    eth_rst_b           : out   std_logic; -- pin 29, PHYRSTB
+--  eth_int_pu_b        : in    std_logic; -- pin 20, INTB
+    eth_rst_b           : out   std_logic  -- pin 29, PHYRSTB
 
     -- Jumper J14
-    fan_fb_pu           : in    std_logic;
+--  fan_fb_pu           : in    std_logic;
 
     -- Jumper J2
-    cam_clk             : in    std_logic;
-    cam_gpio            : in    std_logic;
-    cam_scl             : in    std_logic;
-    cam_sda             : inout std_logic;
+--  cam_clk             : in    std_logic;
+--  cam_gpio            : in    std_logic;
+--  cam_scl             : in    std_logic;
+--  cam_sda             : inout std_logic;
 
     -- ATSHA204A-SSHCZ-T
-    crypto_sda          : inout std_logic;
+--  crypto_sda          : inout std_logic;
 
-    -- Not connected
-    otg_oc              : in    std_logic;
+    -- USB OTG
+--  otg_oc              : in    std_logic;
 
-    -- Not present in schematic
-    dphy_clk_lp_n       : in    std_logic;
-    dphy_clk_lp_p       : in    std_logic;
-    dphy_data_lp_n      : in    std_logic_vector(1 downto 0);
-    dphy_data_lp_p      : in    std_logic_vector(1 downto 0);
-    dphy_hs_clock_clk_n : in    std_logic;
-    dphy_hs_clock_clk_p : in    std_logic;
-    dphy_data_hs_n      : in    std_logic_vector(1 downto 0);
-    dphy_data_hs_p      : in    std_logic_vector(1 downto 0);
-
-    netic19_t9          : in    std_logic;
-    netic19_u10         : in    std_logic;
-    netic19_u5          : in    std_logic;
-    netic19_u8          : in    std_logic;
-    netic19_u9          : in    std_logic;
-    netic19_v10         : in    std_logic;
-    netic19_v11         : in    std_logic;
-    netic19_v5          : in    std_logic;
-    netic19_w10         : in    std_logic;
-    netic19_w11         : in    std_logic;
-    netic19_w9          : in    std_logic;
-    netic19_y9          : in    std_logic
+    -- MIPI
+--  dphy_clk_lp_p       : in    std_logic;
+--  dphy_clk_lp_n       : in    std_logic;
+--  dphy_data_lp_p      : in    std_logic_vector(1 downto 0);
+--  dphy_data_lp_n      : in    std_logic_vector(1 downto 0);
+--  dphy_hs_clock_clk_p : in    std_logic;
+--  dphy_hs_clock_clk_n : in    std_logic;
+--  dphy_data_hs_p      : in    std_logic_vector(1 downto 0);
+--  dphy_data_hs_n      : in    std_logic_vector(1 downto 0)
 
   );
 end entity tmds_cap_digilent_zybo_z7_20;
@@ -140,41 +123,43 @@ architecture synth of tmds_cap_digilent_zybo_z7_20 is
 
   -- basics
 
-  signal rst_a          : std_logic;
-  signal clk_200m       : std_logic;
-  signal rst_200m_s     : std_logic_vector(0 to 1);
-  signal rst_200m       : std_logic;
-  signal idelayctrl_rdy : std_logic;
+  signal rst_a           : std_logic;
+  signal clk_200m        : std_logic;
+  signal rst_200m_s      : std_logic_vector(0 to 1);
+  signal rst_200m        : std_logic;
+  signal idelayctrl_rdy  : std_logic;
 
   -- HDMI I/O
 
-  signal hdmi_rx_clku   : std_logic;
-  signal hdmi_rx_clk    : std_logic;
-  signal hdmi_rx_d      : std_logic_vector(0 to 2);
-  signal prst           : std_logic;
-  signal pclk           : std_logic;
-  signal sclk           : std_logic;
-  signal tmds           : slv10_vector(0 to 2);
-  signal rx_status      : hdmi_rx_selectio_status_t;
-  signal hdmi_tx_clk    : std_logic;
-  signal hdmi_tx_d      : std_logic_vector(0 to 2);
+  signal hdmi_rx_clku    : std_logic;
+  signal hdmi_rx_clk     : std_logic;
+  signal hdmi_rx_d       : std_logic_vector(0 to 2);
+  signal prst            : std_logic;
+  signal pclk            : std_logic;
+  signal sclk            : std_logic;
+  signal tmds            : slv10_vector(0 to 2);
+  signal rx_status       : hdmi_rx_selectio_status_t;
+  signal hdmi_tx_clk     : std_logic;
+  signal hdmi_tx_d       : std_logic_vector(0 to 2);
 
   -- controller
-  signal axi_clk        : std_logic;
-  signal axi_rst_n      : std_logic;
-  signal gpio_i         : std_logic_vector( 31 downto 0 );
-  signal gpio_o         : std_logic_vector( 31 downto 0 );
-  signal gpio_t         : std_logic_vector( 31 downto 0 );
-  signal tmds_axi_mosi  : axi4_mosi_a32d32_t;
-  signal tmds_axi_miso  : axi4_miso_a32d32_t;
-  signal tmds_axis_mosi : axi4s_mosi_64_t;
-  signal tmds_axis_miso : axi4s_miso_64_t;
+  signal axi_clk         : std_logic;
+  signal axi_rst_n       : std_logic;
+  signal gpio_i          : std_logic_vector( 31 downto 0 );
+  signal tmds_axi4_mosi  : axi4_a32d32_h_mosi_t;
+  signal tmds_axi4_miso  : axi4_a32d32_h_miso_t;
+  signal tmds_axi4s_mosi : axi4s_64_mosi_t;
+  signal tmds_axi4s_miso : axi4s_64_miso_t;
 
-  signal cap_rst        : std_logic;                     -- capture reset
-  signal cap_size       : std_logic_vector(31 downto 0); -- capture size (pixels)
-  signal cap_go         : std_logic;                     -- capture start
-  signal cap_done       : std_logic;                     -- capture done
-  signal cap_error      : std_logic;                     -- capture error
+  signal cap_rst         : std_logic;                     -- capture reset
+  signal cap_size        : std_logic_vector(31 downto 0); -- capture size (pixels)
+  signal cap_en          : std_logic;                     -- capture enable
+  signal cap_test        : std_logic;                     -- capture test
+  signal cap_run         : std_logic;                     -- capture running
+  signal cap_loss        : std_logic;                     -- capture loss of TMDS lock
+  signal cap_ovf         : std_logic;                     -- capture FIFO overflow
+  signal cap_unf         : std_logic;                     -- capture FIFO underflow
+  signal cap_count       : std_logic_vector(31 downto 0); -- capture count (pixels)
 
 begin
 
@@ -195,12 +180,12 @@ begin
     )
     port map (
       rsti    => btn(0),
-      clki    => sysclk,
+      clki    => clki_125m,
       rsto    => rst_a,
       clko(0) => clk_200m
     );
 
-  rst_200_proc : process (rst_a, clk_200m)
+  process (rst_a, clk_200m)
   begin
     if rst_a = '1' then
       rst_200m_s(0 to 1) <= (others => '1');
@@ -209,7 +194,7 @@ begin
       rst_200m_s(0 to 1) <= rst_a & rst_200m_s(0);
       rst_200m           <= rst_200m_s(1);
     end if;
-  end process rst_200_proc;
+  end process;
 
   --------------------------------------------------------------------------------
   -- HDMI I/O
@@ -245,21 +230,18 @@ begin
 
   U_CTRL: component tmds_cap_z7ps
     port map (
-      axi_clk         => axi_clk,
-      axi_rst_n       => axi_rst_n,
-      gpio_i          => gpio_i,
-      gpio_o          => gpio_o,
-      gpio_t          => gpio_t,
-      tmds_maxi_mosi  => tmds_axi_mosi,
-      tmds_maxi_miso  => tmds_axi_miso,
-      tmds_saxis_mosi => tmds_axis_mosi,
-      tmds_saxis_miso => tmds_axis_miso
+      axi_clk          => axi_clk,
+      axi_rst_n        => axi_rst_n,
+      gpio_i           => gpio_i,
+      gpio_o           => open,
+      gpio_t           => open,
+      tmds_maxi4_mosi  => tmds_axi4_mosi,
+      tmds_maxi4_miso  => tmds_axi4_miso,
+      tmds_saxi4s_mosi => tmds_axi4s_mosi,
+      tmds_saxi4s_miso => tmds_axi4s_miso
     );
 
-  gpio_i <= (
-    0 => idelayctrl_rdy,
-    others => '0'
-    );
+  gpio_i <= (0 => idelayctrl_rdy, others => '0');
 
   --------------------------------------------------------------------------------
   -- TMDS capture - control/status registers and streaming
@@ -268,30 +250,39 @@ begin
     port map (
       axi_clk     => axi_clk,
       axi_rst_n   => axi_rst_n,
-      saxi_mosi   => tmds_axi_mosi,
-      saxi_miso   => tmds_axi_miso,
+      saxi_mosi   => tmds_axi4_mosi,
+      saxi_miso   => tmds_axi4_miso,
       tmds_status => rx_status,
       cap_rst     => cap_rst,
       cap_size    => cap_size,
-      cap_go      => cap_go,
-      cap_done    => cap_done,
-      cap_error   => cap_error
-    );
+      cap_en      => cap_en,
+      cap_test    => cap_test,
+      cap_run     => cap_run,
+      cap_loss    => cap_loss,
+      cap_ovf     => cap_ovf,
+      cap_unf     => cap_unf,
+      cap_count   => cap_count
+   );
 
   U_STREAM: component tmds_cap_stream
     port map (
-      prst       => prst,
-      pclk       => pclk,
-      tmds       => tmds,
-      cap_rst    => cap_rst,
-      cap_size   => cap_size,
-      cap_go     => cap_go,
-      cap_done   => cap_done,
-      cap_error  => cap_error,
-      axi_clk    => axi_clk,
-      axi_rst_n  => axi_rst_n,
-      maxis_mosi => tmds_axis_mosi,
-      maxis_miso => tmds_axis_miso
+      prst        => prst,
+      pclk        => pclk,
+      tmds        => tmds,
+      tmds_status => rx_status,
+      cap_rst     => cap_rst,
+      cap_size    => cap_size,
+      cap_en      => cap_en,
+      cap_test    => cap_test,
+      cap_run     => cap_run,
+      cap_loss    => cap_loss,
+      cap_ovf     => cap_ovf,
+      cap_unf     => cap_unf,
+      cap_count   => cap_count,
+      axi_clk     => axi_clk,
+      axi_rst_n   => axi_rst_n,
+      maxi4s_mosi => tmds_axi4s_mosi,
+      maxi4s_miso => tmds_axi4s_miso
     );
 
   --------------------------------------------------------------------------------
@@ -332,22 +323,34 @@ begin
 
     U_IBUFDS: component ibufds
       port map (
-        i  => hdmi_rx_p(i),
-        ib => hdmi_rx_n(i),
+        i  => hdmi_rx_d_p(i),
+        ib => hdmi_rx_d_n(i),
         o  => hdmi_rx_d(i)
       );
 
     U_OBUFDS: component obufds
       port map (
         i  => hdmi_tx_d(i),
-        o  => hdmi_tx_p(i),
-        ob => hdmi_tx_n(i)
+        o  => hdmi_tx_d_p(i),
+        ob => hdmi_tx_d_n(i)
       );
 
   end generate GEN_CH;
 
   --------------------------------------------------------------------------------
-  -- TODO: drive unused I/Os to safe states
+  -- safe states
+
+  led           <= "0000";
+  led_r(5)      <= '0';
+  led_g(5)      <= '0';
+  led_b(5)      <= '0';
+  led_r(6)      <= '0';
+  led_g(6)      <= '0';
+  led_b(6)      <= '0';
+  hdmi_tx_cec   <= '0';
+  ac_muten      <= '0';
+  ac_pbdat      <= '0';
+  eth_rst_b     <= '1'; -- beware: reset will stop clki_125m
 
   --------------------------------------------------------------------------------
 

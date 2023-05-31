@@ -19,24 +19,25 @@ library ieee;
   use ieee.std_logic_1164.all;
 
 library work;
-  use work.axi_pkg.all;
+  use work.axi4_pkg.all;
+  use work.axi4s_pkg.all;
 
 package tmds_cap_z7ps_pkg is
 
   component tmds_cap_z7ps is
     port (
 
-      axi_clk         : out   std_logic;
-      axi_rst_n       : out   std_logic;
+      axi_clk          : out   std_logic;
+      axi_rst_n        : out   std_logic;
 
-      gpio_i          : in    std_logic_vector( 31 downto 0 );
-      gpio_o          : out   std_logic_vector( 31 downto 0 );
-      gpio_t          : out   std_logic_vector( 31 downto 0 );
+      gpio_i           : in    std_logic_vector( 31 downto 0 );
+      gpio_o           : out   std_logic_vector( 31 downto 0 );
+      gpio_t           : out   std_logic_vector( 31 downto 0 );
 
-      tmds_maxi_mosi  : out   axi4_mosi_a32d32_t;
-      tmds_maxi_miso  : in    axi4_miso_a32d32_t;
-      tmds_saxis_mosi : in    axi4s_mosi_64_t;
-      tmds_saxis_miso : out   axi4s_miso_64_t
+      tmds_maxi4_mosi  : out   axi4_a32d32_h_mosi_t;
+      tmds_maxi4_miso  : in    axi4_a32d32_h_miso_t;
+      tmds_saxi4s_mosi : in    axi4s_64_mosi_t;
+      tmds_saxi4s_miso : out   axi4s_64_miso_t
 
     );
   end component tmds_cap_z7ps;
@@ -49,22 +50,23 @@ library ieee;
   use ieee.std_logic_1164.all;
 
 library work;
-  use work.axi_pkg.all;
+  use work.axi4_pkg.all;
+  use work.axi4s_pkg.all;
 
 entity tmds_cap_z7ps is
   port (
 
-    axi_clk         : out   std_logic;
-    axi_rst_n       : out   std_logic;
+    axi_clk          : out   std_logic;
+    axi_rst_n        : out   std_logic;
 
-    gpio_i          : in    std_logic_vector( 31 downto 0 );
-    gpio_o          : out   std_logic_vector( 31 downto 0 );
-    gpio_t          : out   std_logic_vector( 31 downto 0 );
+    gpio_i           : in    std_logic_vector( 31 downto 0 );
+    gpio_o           : out   std_logic_vector( 31 downto 0 );
+    gpio_t           : out   std_logic_vector( 31 downto 0 );
 
-    tmds_maxi_mosi  : out   axi4_mosi_a32d32_t;
-    tmds_maxi_miso  : in    axi4_miso_a32d32_t;
-    tmds_saxis_mosi : in    axi4s_mosi_64_t;
-    tmds_saxis_miso : out   axi4s_miso_64_t
+    tmds_maxi4_mosi  : out   axi4_a32d32_h_mosi_t;
+    tmds_maxi4_miso  : in    axi4_a32d32_h_miso_t;
+    tmds_saxi4s_mosi : in    axi4s_64_mosi_t;
+    tmds_saxi4s_miso : out   axi4s_64_miso_t
 
   );
 end entity tmds_cap_z7ps;
@@ -137,45 +139,45 @@ begin
       gpio_tri_o            => gpio_o,
       gpio_tri_t            => gpio_t,
 
-      tmds_maxi32_awaddr    => tmds_maxi_mosi.awaddr,
-      tmds_maxi32_awlen     => tmds_maxi_mosi.awlen,
-      tmds_maxi32_awsize    => tmds_maxi_mosi.awsize,
-      tmds_maxi32_awburst   => tmds_maxi_mosi.awburst,
-      tmds_maxi32_awlock(0) => tmds_maxi_mosi.awlock,
-      tmds_maxi32_awcache   => tmds_maxi_mosi.awcache,
-      tmds_maxi32_awprot    => tmds_maxi_mosi.awprot,
-      tmds_maxi32_awqos     => tmds_maxi_mosi.awqos,
-      tmds_maxi32_awvalid   => tmds_maxi_mosi.awvalid,
-      tmds_maxi32_awready   => tmds_maxi_miso.awready,
-      tmds_maxi32_wdata     => tmds_maxi_mosi.wdata,
-      tmds_maxi32_wstrb     => tmds_maxi_mosi.wstrb,
-      tmds_maxi32_wlast     => tmds_maxi_mosi.wlast,
-      tmds_maxi32_wvalid    => tmds_maxi_mosi.wvalid,
-      tmds_maxi32_wready    => tmds_maxi_miso.wready,
-      tmds_maxi32_bready    => tmds_maxi_mosi.bready,
-      tmds_maxi32_bresp     => tmds_maxi_miso.bresp,
-      tmds_maxi32_bvalid    => tmds_maxi_miso.bvalid,
-      tmds_maxi32_araddr    => tmds_maxi_mosi.araddr,
-      tmds_maxi32_arlen     => tmds_maxi_mosi.arlen,
-      tmds_maxi32_arsize    => tmds_maxi_mosi.arsize,
-      tmds_maxi32_arburst   => tmds_maxi_mosi.arburst,
-      tmds_maxi32_arlock(0) => tmds_maxi_mosi.arlock,
-      tmds_maxi32_arcache   => tmds_maxi_mosi.arcache,
-      tmds_maxi32_arprot    => tmds_maxi_mosi.arprot,
-      tmds_maxi32_arqos     => tmds_maxi_mosi.arqos,
-      tmds_maxi32_arvalid   => tmds_maxi_mosi.arvalid,
-      tmds_maxi32_arready   => tmds_maxi_miso.arready,
-      tmds_maxi32_rdata     => tmds_maxi_miso.rdata,
-      tmds_maxi32_rresp     => tmds_maxi_miso.rresp,
-      tmds_maxi32_rlast     => tmds_maxi_miso.rlast,
-      tmds_maxi32_rvalid    => tmds_maxi_miso.rvalid,
-      tmds_maxi32_rready    => tmds_maxi_mosi.rready,
+      tmds_maxi32_awaddr    => tmds_maxi4_mosi.aw.addr,
+      tmds_maxi32_awlen     => tmds_maxi4_mosi.aw.len,
+      tmds_maxi32_awsize    => tmds_maxi4_mosi.aw.size,
+      tmds_maxi32_awburst   => tmds_maxi4_mosi.aw.burst,
+      tmds_maxi32_awlock(0) => open,
+      tmds_maxi32_awcache   => tmds_maxi4_mosi.aw.cache,
+      tmds_maxi32_awprot    => tmds_maxi4_mosi.aw.prot,
+      tmds_maxi32_awqos     => tmds_maxi4_mosi.aw.qos,
+      tmds_maxi32_awvalid   => tmds_maxi4_mosi.aw.valid,
+      tmds_maxi32_awready   => tmds_maxi4_miso.aw.ready,
+      tmds_maxi32_wdata     => tmds_maxi4_mosi.w.data,
+      tmds_maxi32_wstrb     => tmds_maxi4_mosi.w.strb,
+      tmds_maxi32_wlast     => tmds_maxi4_mosi.w.last,
+      tmds_maxi32_wvalid    => tmds_maxi4_mosi.w.valid,
+      tmds_maxi32_wready    => tmds_maxi4_miso.w.ready,
+      tmds_maxi32_bready    => tmds_maxi4_mosi.b.ready,
+      tmds_maxi32_bresp     => tmds_maxi4_miso.b.resp,
+      tmds_maxi32_bvalid    => tmds_maxi4_miso.b.valid,
+      tmds_maxi32_araddr    => tmds_maxi4_mosi.ar.addr,
+      tmds_maxi32_arlen     => tmds_maxi4_mosi.ar.len,
+      tmds_maxi32_arsize    => tmds_maxi4_mosi.ar.size,
+      tmds_maxi32_arburst   => tmds_maxi4_mosi.ar.burst,
+      tmds_maxi32_arlock(0) => open,
+      tmds_maxi32_arcache   => tmds_maxi4_mosi.ar.cache,
+      tmds_maxi32_arprot    => tmds_maxi4_mosi.ar.prot,
+      tmds_maxi32_arqos     => tmds_maxi4_mosi.ar.qos,
+      tmds_maxi32_arvalid   => tmds_maxi4_mosi.ar.valid,
+      tmds_maxi32_arready   => tmds_maxi4_miso.ar.ready,
+      tmds_maxi32_rdata     => tmds_maxi4_miso.r.data,
+      tmds_maxi32_rresp     => tmds_maxi4_miso.r.resp,
+      tmds_maxi32_rlast     => tmds_maxi4_miso.r.last,
+      tmds_maxi32_rvalid    => tmds_maxi4_miso.r.valid,
+      tmds_maxi32_rready    => tmds_maxi4_mosi.r.ready,
 
-      tmds_saxis64_tdata    => tmds_saxis_mosi.tdata,
-      tmds_saxis64_tkeep    => tmds_saxis_mosi.tkeep,
-      tmds_saxis64_tlast    => tmds_saxis_mosi.tlast,
-      tmds_saxis64_tvalid   => tmds_saxis_mosi.tvalid,
-      tmds_saxis64_tready   => tmds_saxis_miso.tready
+      tmds_saxis64_tdata    => tmds_saxi4s_mosi.tdata,
+      tmds_saxis64_tkeep    => tmds_saxi4s_mosi.tkeep,
+      tmds_saxis64_tlast    => tmds_saxi4s_mosi.tlast,
+      tmds_saxis64_tvalid   => tmds_saxi4s_mosi.tvalid,
+      tmds_saxis64_tready   => tmds_saxi4s_miso.tready
 
     );
 

@@ -21,7 +21,7 @@ CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb.vhd
 endif
 
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
-VIVADO_DSN_VHDL:=\
+VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_fm.vhd \
@@ -29,7 +29,10 @@ VIVADO_DSN_VHDL:=\
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_align.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
-	$(SRC)/common/axi/axi_pkg.vhd \
+	$(SRC)/common/axi/axi4_pkg.vhd \
+	$(SRC)/common/axi/axi4s_pkg.vhd \
+	$(SRC)/common/basic/fifo_pkg.vhd \
+	$(SRC)/common/axi/axi4_a32d32_srw32.vhd \
 	$(CORE_VHD) \
 	$(SRC)/designs/$(DESIGN)/tmds_cap_csr.vhd \
 	$(SRC)/designs/$(DESIGN)/tmds_cap_stream.vhd \
@@ -60,7 +63,7 @@ VITIS_INCLUDE:=\
 endif
 
 VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
-VSCODE_SRC:=$(VIVADO_DSN_VHDL)
+VSCODE_SRC:=$(VIVADO_DSN_VHDL_2008)
 ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VSCODE_SRC+=
     $(BUILD)/$(DESIGN)/$(DESIGN)_$(BOARD)/.vivado/fpga.gen/sources_1/bd/axi_ddr3/synth/axi_ddr3.vhd \
