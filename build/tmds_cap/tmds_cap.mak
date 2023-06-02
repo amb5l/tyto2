@@ -63,14 +63,15 @@ VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc
 
-ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
+#ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
+VITIS_ARCH:=arm
 VITIS_APP:=$(DESIGN)
 VITIS_SRC:=\
 	$(CSR_RA_H) \
 	$(SRC)/designs/$(DESIGN)/software/main.c
 VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/software
-endif
+#endif
 
 VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
 VSCODE_SRC:=$(VIVADO_DSN_VHDL_2008)
