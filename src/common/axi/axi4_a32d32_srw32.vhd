@@ -25,7 +25,6 @@ package axi4_a32d32_srw32_pkg is
 
   component axi4_a32d32_srw32 is
     generic (
-      addr_width : integer;
       qwa_depth  : integer := 16;
       qwd_depth  : integer := 16;
       qwb_depth  : integer := 16;
@@ -41,13 +40,13 @@ package axi4_a32d32_srw32_pkg is
       axi4_so : out   axi4_a32d32_h_miso_t := AXI4_A32D32_H_MISO_DEFAULT;
 
       sw_en   : out   std_logic;
-      sw_addr : out   std_logic_vector(addr_width-1 downto 0);
+      sw_addr : out   std_logic_vector(31 downto 0);
       sw_be   : out   std_logic_vector(3 downto 0);
       sw_data : out   std_logic_vector(31 downto 0);
       sw_rdy  : in    std_logic;
 
       sr_en   : out   std_logic;
-      sr_addr : out   std_logic_vector(addr_width-1 downto 0);
+      sr_addr : out   std_logic_vector(31 downto 0);
       sr_data : in    std_logic_vector(31 downto 0);
       sr_rdy  : in    std_logic
 
@@ -68,7 +67,6 @@ library work;
 
 entity axi4_a32d32_srw32 is
   generic (
-    addr_width : integer;
     qwa_depth  : integer := 16;
     qwd_depth  : integer := 16;
     qwb_depth  : integer := 16;
@@ -84,13 +82,13 @@ entity axi4_a32d32_srw32 is
     axi4_so : out   axi4_a32d32_h_miso_t := AXI4_A32D32_H_MISO_DEFAULT; -- AXI4 slave output
 
     sw_en   : out   std_logic;                                          -- simple write enable
-    sw_addr : out   std_logic_vector(addr_width-1 downto 0);            -- simple write address
+    sw_addr : out   std_logic_vector(31 downto 0);            -- simple write address
     sw_be   : out   std_logic_vector(3 downto 0);                       -- simple write byte enables
     sw_data : out   std_logic_vector(31 downto 0);                      -- simple write data
     sw_rdy  : in    std_logic;                                          -- simple write ready
 
     sr_en   : out   std_logic;                                          -- simple read enable
-    sr_addr : out   std_logic_vector(addr_width-1 downto 0);            -- simple read address
+    sr_addr : out   std_logic_vector(31 downto 0);            -- simple read address
     sr_data : in    std_logic_vector(31 downto 0);                      -- simple read data
     sr_rdy  : in    std_logic                                           -- simple read ready
 
@@ -164,12 +162,12 @@ architecture synth of axi4_a32d32_srw32 is
 
   -- queue: write address
   type qwa_entry_t is record
-    addr  : std_logic_vector(addr_width-1 downto 0);
+    addr  : std_logic_vector(31 downto 0);
     len   : std_logic_vector(7 downto 0);
     size  : std_logic_vector(2 downto 0);
     burst : std_logic_vector(1 downto 0);
   end record;
-  constant qwa_width : integer := addr_width+8+3+2;
+  constant qwa_width : integer := 32+8+3+2;
   signal qwa_tail : qwa_entry_t;
   signal qwa_head : qwa_entry_t;
   signal qwa_enq  : std_logic;
@@ -185,10 +183,10 @@ architecture synth of axi4_a32d32_srw32 is
   function from_slv( i : std_logic_vector ) return qwa_entry_t is
     variable r : qwa_entry_t;
   begin
-    r.addr  := i(addr_width-1 downto 0);
-    r.len   := i(addr_width+7 downto addr_width);
-    r.size  := i(addr_width+10 downto addr_width+8);
-    r.burst := i(addr_width+12 downto addr_width+11);
+    r.addr  := i(31 downto 0);
+    r.len   := i(39 downto 32);
+    r.size  := i(42 downto 40);
+    r.burst := i(44 downto 43);
     return r;
   end function from_slv;
 
@@ -252,13 +250,13 @@ architecture synth of axi4_a32d32_srw32 is
 
   -- queue: read address
   type qra_entry_t is record
-    addr  : std_logic_vector(addr_width-1 downto 0);
+    addr  : std_logic_vector(31 downto 0);
     id    : std_logic_vector(7 downto 0);
     len   : std_logic_vector(7 downto 0);
     size  : std_logic_vector(2 downto 0);
     burst : std_logic_vector(1 downto 0);
   end record;
-  constant qra_width : integer := addr_width+8+8+3+2;
+  constant qra_width : integer := 32+8+8+3+2;
   signal qra_tail : qra_entry_t;
   signal qra_head : qra_entry_t;
   signal qra_enq  : std_logic;
@@ -274,11 +272,11 @@ architecture synth of axi4_a32d32_srw32 is
   function from_slv( i : std_logic_vector ) return qra_entry_t is
     variable r : qra_entry_t;
   begin
-    r.addr  := i(addr_width-1 downto 0);
-    r.id    := i(addr_width+7 downto addr_width);
-    r.len   := i(addr_width+15 downto addr_width+8);
-    r.size  := i(addr_width+18 downto addr_width+16);
-    r.burst := i(addr_width+20 downto addr_width+19);
+    r.addr  := i(31 downto 0);
+    r.id    := i(39 downto 32);
+    r.len   := i(47 downto 40);
+    r.size  := i(50 downto 48);
+    r.burst := i(52 downto 51);
     return r;
   end function from_slv;
 
@@ -343,7 +341,7 @@ begin
 
   qwa_enq        <= awvalid and awready;
   qwa_deq        <= sw_burst_ready and wa_available and wd_available;
-  qwa_tail.addr  <= awaddr(addr_width-1 downto 0);
+  qwa_tail.addr  <= awaddr(31 downto 0);
   qwa_tail.len   <= awlen;
   qwa_tail.size  <= awsize;
   qwa_tail.burst <= awburst;
@@ -472,7 +470,7 @@ begin
 
   qra_enq        <= arvalid and arready;
   qra_deq        <= sr_burst_ready and ra_available and not qrd_ff;
-  qra_tail.addr  <= araddr(addr_width-1 downto 0);
+  qra_tail.addr  <= araddr(31 downto 0);
   qra_tail.id    <= arid;
   qra_tail.len   <= arlen;
   qra_tail.size  <= arsize;
@@ -597,21 +595,13 @@ begin
       if sw_burst = "10" then -- wrapping burst
         case sw_len(3 downto 0) is
           when x"1" => -- burst of 2
-            if addr_width >= 3 then
-              v_sw_addr_next(addr_width-1 downto 3) := sw_addr(addr_width-1 downto 3);
-            end if;
+            v_sw_addr_next(31 downto 3) := sw_addr(31 downto 3);
           when x"3" => -- burst of 4
-            if addr_width >= 4 then
-              v_sw_addr_next(addr_width-1 downto 4) := sw_addr(addr_width-1 downto 4);
-            end if;
+            v_sw_addr_next(31 downto 4) := sw_addr(31 downto 4);
           when x"7" => -- burst of 8
-            if addr_width >= 5 then
-              v_sw_addr_next(addr_width-1 downto 5) := sw_addr(addr_width-1 downto 5);
-            end if;
+            v_sw_addr_next(31 downto 5) := sw_addr(31 downto 5);
           when x"F" => -- burst of 16
-            if addr_width >= 6 then
-              v_sw_addr_next(addr_width-1 downto 6) := sw_addr(addr_width-1 downto 6);
-            end if;
+            v_sw_addr_next(31 downto 6) := sw_addr(31 downto 6);
           when others =>
             null;
         end case;
@@ -653,21 +643,13 @@ begin
       if sr_burst = "10" then -- wrapping burst
         case sr_len(3 downto 0) is
           when x"1" => -- burst of 2
-            if addr_width >= 3 then
-              v_sr_addr_next(addr_width-1 downto 3) := sr_addr(addr_width-1 downto 3);
-            end if;
+            v_sr_addr_next(31 downto 3) := sr_addr(31 downto 3);
           when x"3" => -- burst of 4
-            if addr_width >= 4 then
-              v_sr_addr_next(addr_width-1 downto 4) := sr_addr(addr_width-1 downto 4);
-            end if;
+            v_sr_addr_next(31 downto 4) := sr_addr(31 downto 4);
           when x"7" => -- burst of 8
-            if addr_width >= 5 then
-              v_sr_addr_next(addr_width-1 downto 5) := sr_addr(addr_width-1 downto 5);
-            end if;
+            v_sr_addr_next(31 downto 5) := sr_addr(31 downto 5);
           when x"F" => -- burst of 16
-            if addr_width >= 6 then
-              v_sr_addr_next(addr_width-1 downto 6) := sr_addr(addr_width-1 downto 6);
-            end if;
+            v_sr_addr_next(31 downto 6) := sr_addr(31 downto 6);
           when others =>
             null;
         end case;

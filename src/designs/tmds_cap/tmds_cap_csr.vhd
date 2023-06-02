@@ -86,15 +86,13 @@ end entity tmds_cap_csr;
 
 architecture synth of tmds_cap_csr is
 
-  constant addr_width: integer := 8;
-
   signal sw_en   : std_logic;
-  signal sw_addr : std_logic_vector(addr_width-1 downto 0);
+  signal sw_addr : std_logic_vector(31 downto 0);
   signal sw_be   : std_logic_vector(3 downto 0);
   signal sw_data : std_logic_vector(31 downto 0);
   signal sw_rdy  : std_logic;
   signal sr_en   : std_logic;
-  signal sr_addr : std_logic_vector(addr_width-1 downto 0);
+  signal sr_addr : std_logic_vector(31 downto 0);
   signal sr_data : std_logic_vector(31 downto 0);
   signal sr_rdy  : std_logic;
 
@@ -108,9 +106,6 @@ begin
 
   -- AXI4 to simple read/write bridge
   U_BRIDGE: component axi4_a32d32_srw32
-    generic map (
-      addr_width => addr_width
-    )
     port map (
       clk     => axi_clk,
       rst_n   => axi_rst_n,
@@ -154,7 +149,7 @@ begin
 
       -- write
       if sw_en = '1' then
-        case sw_addr is
+        case sw_addr(7 downto 0) is
           when RA_CAPCTRL =>
             cap_en   <= sw_data(0)  when sw_be(0) = '1';
             cap_test <= sw_data(1)  when sw_be(0) = '1';
@@ -177,7 +172,7 @@ begin
       -- read
       if sr_en = '1' and sr_rdy = '0' then
         sr_rdy <= '1';
-        with sr_addr select sr_data <=
+        with sr_addr(7 downto 0) select sr_data <=
           x"53444D54"                                                    when RA_SIGNATURE,
           s.count_freq                                                   when RA_FREQ,
           x"00000" & '0' &
