@@ -203,5 +203,19 @@ set pins {
 	{ ddr3_dqs_n[1]  A24                         } # net DDR_DQS1-
 }
 
+foreach pin $pins {
+    set name [lindex $pin 0]
+    if  {[llength [get_ports -quiet $name]]} {
+        set number [lindex $pin 1]
+		if {[llength $pin] == 2} {
+			set_property -dict "PACKAGE_PIN $number" [get_ports $name]
+		} else {
+			set iostandard [lindex $pin 2]
+			set misc [lrange $pin 3 end]
+			set_property -dict "PACKAGE_PIN $number IOSTANDARD $iostandard $misc" [get_ports $name]
+		}
+    }
+}
+
 set_property CONFIG_VOLTAGE 3.3 [current_design]
 set_property CFGBVS VCCO [current_design]
