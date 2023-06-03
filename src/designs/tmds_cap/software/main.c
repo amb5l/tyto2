@@ -16,39 +16,45 @@
 *******************************************************************************/
 
 #include <stdio.h>
-#include "peekpoke.h"
+#include "xil_printf.h"
+#include "sleep.h"
 #include "tmds_cap_csr.h"
 
 int main()
 {
-    printf("tmds_cap_digilent_nexys_video\n");
     while(1) {
-		printf("\n");
-		printf("     COUNT_FREQ : %08X\n", peek32(RA_COUNT_FREQ		));
-		printf("           LOCK : %08X\n", peek32(RA_LOCK			));
-		printf("          ALIGN : %08X\n", peek32(RA_ALIGN 			));
-		printf("     TAP_MASK_0 : %08X\n", peek32(RA_TAP_MASK_0		));
-		printf("     TAP_MASK_1 : %08X\n", peek32(RA_TAP_MASK_1		));
-		printf("     TAP_MASK_2 : %08X\n", peek32(RA_TAP_MASK_2		));
-		printf("          TAP_0 : %08X\n", peek32(RA_TAP_0			));
-		printf("          TAP_1 : %08X\n", peek32(RA_TAP_4			));
-		printf("          TAP_2 : %08X\n", peek32(RA_TAP_8			));
-		printf("      BITSLIP_0 : %08X\n", peek32(RA_BITSLIP_0		));
-		printf("      BITSLIP_1 : %08X\n", peek32(RA_BITSLIP_1		));
-		printf("      BITSLIP_2 : %08X\n", peek32(RA_BITSLIP_2		));
-        printf(" COUNT_ACYCLE_0 : %08X\n", peek32(RA_COUNT_ACYCLE_0 ));
-        printf(" COUNT_ACYCLE_1 : %08X\n", peek32(RA_COUNT_ACYCLE_1 ));
-        printf(" COUNT_ACYCLE_2 : %08X\n", peek32(RA_COUNT_ACYCLE_2 ));
-        printf(" COUNT_TAP_OK_0 : %08X\n", peek32(RA_COUNT_TAP_OK_0 ));
-        printf(" COUNT_TAP_OK_1 : %08X\n", peek32(RA_COUNT_TAP_OK_1 ));
-        printf(" COUNT_TAP_OK_2 : %08X\n", peek32(RA_COUNT_TAP_OK_2 ));
-        printf("COUNT_AGAIN_S_0 : %08X\n", peek32(RA_COUNT_AGAIN_S_0));
-        printf("COUNT_AGAIN_S_1 : %08X\n", peek32(RA_COUNT_AGAIN_S_1));
-        printf("COUNT_AGAIN_S_2 : %08X\n", peek32(RA_COUNT_AGAIN_S_2));
-        printf("  COUNT_AGAIN_P : %08X\n", peek32(RA_COUNT_AGAIN_P  ));
-        printf("COUNT_ALOSS_S_0 : %08X\n", peek32(RA_COUNT_ALOSS_S_0));
-        printf("COUNT_ALOSS_S_1 : %08X\n", peek32(RA_COUNT_ALOSS_S_1));
-        printf("COUNT_ALOSS_S_2 : %08X\n", peek32(RA_COUNT_ALOSS_S_2));
-        printf("  COUNT_ALOSS_P : %08X\n", peek32(RA_COUNT_ALOSS_P  ));
+    	usleep(1000000);
+        print("tmds_cap\r\n");
     }
 }
+
+/*
+ * 		print("\n");
+        print("  SIGNATURE    : %08X\n", TMDS_CAP_CSR_PEEK( RA_SIGNATURE ));
+        print("  FREQ         : %08X\n", TMDS_CAP_CSR_PEEK( RA_FREQ      ));
+        print("  ASTAT        : %08X\n", TMDS_CAP_CSR_PEEK( RA_ASTAT     ));
+        print("  ATAPMASK0    : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPMASK0 ));
+        print("  ATAPMASK1    : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPMASK1 ));
+        print("  ATAPMASK2    : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPMASK2 ));
+        print("  ATAP         : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAP      ));
+        print("  ABITSLIP     : %08X\n", TMDS_CAP_CSR_PEEK( RA_ABITSLIP  ));
+        print("  ACYCLE0      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ACYCLE0   ));
+        print("  ACYCLE1      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ACYCLE1   ));
+        print("  ACYCLE2      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ACYCLE2   ));
+        print("  ATAPOK0      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPOK0   ));
+        print("  ATAPOK1      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPOK1   ));
+        print("  ATAPOK2      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPOK2   ));
+        print("  AGAIN0       : %08X\n", TMDS_CAP_CSR_PEEK( RA_AGAIN0    ));
+        print("  AGAIN1       : %08X\n", TMDS_CAP_CSR_PEEK( RA_AGAIN1    ));
+        print("  AGAIN2       : %08X\n", TMDS_CAP_CSR_PEEK( RA_AGAIN2    ));
+        print("  AGAINP       : %08X\n", TMDS_CAP_CSR_PEEK( RA_AGAINP    ));
+        print("  ALOSS0       : %08X\n", TMDS_CAP_CSR_PEEK( RA_ALOSS0    ));
+        print("  ALOSS1       : %08X\n", TMDS_CAP_CSR_PEEK( RA_ALOSS1    ));
+        print("  ALOSS2       : %08X\n", TMDS_CAP_CSR_PEEK( RA_ALOSS2    ));
+        print("  ALOSSP       : %08X\n", TMDS_CAP_CSR_PEEK( RA_ALOSSP    ));
+        print("  CAPCTRL      : %08X\n", TMDS_CAP_CSR_PEEK( RA_CAPCTRL   ));
+        print("  CAPSIZE      : %08X\n", TMDS_CAP_CSR_PEEK( RA_CAPSIZE   ));
+        print("  CAPSTAT      : %08X\n", TMDS_CAP_CSR_PEEK( RA_CAPSTAT   ));
+        print("  CAPCOUNT     : %08X\n", TMDS_CAP_CSR_PEEK( RA_CAPCOUNT  ));
+        print("  SCRATCH      : %08X\n", TMDS_CAP_CSR_PEEK( RA_SCRATCH   ));
+ */
