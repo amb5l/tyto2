@@ -32,6 +32,8 @@ package tmds_cap_csr_pkg is
       saxi_mosi   : in    axi4_a32d32_h_mosi_t := AXI4_A32D32_H_MOSI_DEFAULT;
       saxi_miso   : out   axi4_a32d32_h_miso_t := AXI4_A32D32_H_MISO_DEFAULT;
 
+      led         : out   std_logic_vector(3 downto 0);
+
       tmds_status : in    hdmi_rx_selectio_status_t;
 
       cap_rst     : out   std_logic;
@@ -68,6 +70,8 @@ entity tmds_cap_csr is
     axi_rst_n   : in    std_logic;                                          -- AXI reset (active low)
     saxi_mosi   : in    axi4_a32d32_h_mosi_t := AXI4_A32D32_H_MOSI_DEFAULT; -- AXI4 subordinate inputs
     saxi_miso   : out   axi4_a32d32_h_miso_t := AXI4_A32D32_H_MISO_DEFAULT; -- AXI4 subordinate outputs
+    
+    led         : out   std_logic_vector(3 downto 0);
 
     tmds_status : in    hdmi_rx_selectio_status_t;                          -- TMDS receive (alignment) status
 
@@ -159,6 +163,8 @@ begin
             cap_size( 15 downto  7 ) <= sw_data( 15 downto  7 ) when sw_be(1) = '1';
             cap_size( 23 downto 16 ) <= sw_data( 23 downto 16 ) when sw_be(2) = '1';
             cap_size( 31 downto 24 ) <= sw_data( 31 downto 24 ) when sw_be(3) = '1';
+          when RA_LED =>
+            led(3 downto 0) <= sw_data(3 downto 0) when sw_be(0) = '1';
           when RA_SCRATCH =>
             scratch(  7 downto  0 ) <= sw_data(  7 downto  0 ) when sw_be(0) = '1';
             scratch( 15 downto  7 ) <= sw_data( 15 downto  7 ) when sw_be(1) = '1';
@@ -202,6 +208,7 @@ begin
           cap_size                                                       when RA_CAPSIZE,
           x"0000000" & cap_unf & cap_ovf & cap_loss & cap_run            when RA_CAPSTAT,
           cap_count                                                      when RA_CAPCOUNT,
+          x"0000000" & led                                               when RA_LED,
           scratch                                                        when RA_SCRATCH,
           (others => '0')                                                when others;
       else

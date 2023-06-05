@@ -163,11 +163,6 @@ architecture synth of tmds_cap_digilent_zybo_z7_20 is
 
 begin
 
-  led(0) <= rx_status.align_s(0);
-  led(1) <= rx_status.align_s(1);
-  led(2) <= rx_status.align_s(2);
-  led(3) <= rx_status.align_p;
-
   --------------------------------------------------------------------------------
   -- clock and reset generation
 
@@ -252,6 +247,7 @@ begin
       axi_rst_n   => axi_rst_n,
       saxi_mosi   => tmds_axi4_mosi,
       saxi_miso   => tmds_axi4_miso,
+      led         => led,
       tmds_status => rx_status,
       cap_rst     => cap_rst,
       cap_size    => cap_size,
@@ -340,7 +336,6 @@ begin
   --------------------------------------------------------------------------------
   -- safe states
 
-  led           <= "0000";
   led_r(5)      <= '0';
   led_g(5)      <= '0';
   led_b(5)      <= '0';
