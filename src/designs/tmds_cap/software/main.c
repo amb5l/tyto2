@@ -16,45 +16,47 @@
 *******************************************************************************/
 
 #include <stdio.h>
-#include "xil_printf.h"
 #include "sleep.h"
 #include "tmds_cap_csr.h"
 
 int main()
 {
+    unsigned int led;
+    
+    led = 0;
     while(1) {
     	usleep(1000000);
-        print("tmds_cap\r\n");
+        printf("tmds_cap\r\n");
+ 		printf("\r\n");
+        printf("  SIGNATURE    : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_SIGNATURE ));
+        printf("  FREQ         : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_FREQ      ));
+        printf("  ASTAT        : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ASTAT     ));
+        printf("  ATAPMASK0    : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ATAPMASK0 ));
+        printf("  ATAPMASK1    : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ATAPMASK1 ));
+        printf("  ATAPMASK2    : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ATAPMASK2 ));
+        printf("  ATAP         : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ATAP      ));
+        printf("  ABITSLIP     : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ABITSLIP  ));
+        printf("  ACYCLE0      : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ACYCLE0   ));
+        printf("  ACYCLE1      : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ACYCLE1   ));
+        printf("  ACYCLE2      : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ACYCLE2   ));
+        printf("  ATAPOK0      : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ATAPOK0   ));
+        printf("  ATAPOK1      : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ATAPOK1   ));
+        printf("  ATAPOK2      : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ATAPOK2   ));
+        printf("  AGAIN0       : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_AGAIN0    ));
+        printf("  AGAIN1       : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_AGAIN1    ));
+        printf("  AGAIN2       : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_AGAIN2    ));
+        printf("  AGAINP       : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_AGAINP    ));
+        printf("  ALOSS0       : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ALOSS0    ));
+        printf("  ALOSS1       : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ALOSS1    ));
+        printf("  ALOSS2       : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ALOSS2    ));
+        printf("  ALOSSP       : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_ALOSSP    ));
+        printf("  CAPCTRL      : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_CAPCTRL   ));
+        printf("  CAPSIZE      : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_CAPSIZE   ));
+        printf("  CAPSTAT      : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_CAPSTAT   ));
+        printf("  CAPCOUNT     : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_CAPCOUNT  ));
+        printf("  SCRATCH      : %08X\r\n", TMDS_CAP_CSR_PEEK( RA_SCRATCH   ));
+        TMDS_CAP_CSR_POKE( RA_LED, led );
+        led = (led+1) & 0xF;
     }
 }
 
-/*
- * 		print("\n");
-        print("  SIGNATURE    : %08X\n", TMDS_CAP_CSR_PEEK( RA_SIGNATURE ));
-        print("  FREQ         : %08X\n", TMDS_CAP_CSR_PEEK( RA_FREQ      ));
-        print("  ASTAT        : %08X\n", TMDS_CAP_CSR_PEEK( RA_ASTAT     ));
-        print("  ATAPMASK0    : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPMASK0 ));
-        print("  ATAPMASK1    : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPMASK1 ));
-        print("  ATAPMASK2    : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPMASK2 ));
-        print("  ATAP         : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAP      ));
-        print("  ABITSLIP     : %08X\n", TMDS_CAP_CSR_PEEK( RA_ABITSLIP  ));
-        print("  ACYCLE0      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ACYCLE0   ));
-        print("  ACYCLE1      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ACYCLE1   ));
-        print("  ACYCLE2      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ACYCLE2   ));
-        print("  ATAPOK0      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPOK0   ));
-        print("  ATAPOK1      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPOK1   ));
-        print("  ATAPOK2      : %08X\n", TMDS_CAP_CSR_PEEK( RA_ATAPOK2   ));
-        print("  AGAIN0       : %08X\n", TMDS_CAP_CSR_PEEK( RA_AGAIN0    ));
-        print("  AGAIN1       : %08X\n", TMDS_CAP_CSR_PEEK( RA_AGAIN1    ));
-        print("  AGAIN2       : %08X\n", TMDS_CAP_CSR_PEEK( RA_AGAIN2    ));
-        print("  AGAINP       : %08X\n", TMDS_CAP_CSR_PEEK( RA_AGAINP    ));
-        print("  ALOSS0       : %08X\n", TMDS_CAP_CSR_PEEK( RA_ALOSS0    ));
-        print("  ALOSS1       : %08X\n", TMDS_CAP_CSR_PEEK( RA_ALOSS1    ));
-        print("  ALOSS2       : %08X\n", TMDS_CAP_CSR_PEEK( RA_ALOSS2    ));
-        print("  ALOSSP       : %08X\n", TMDS_CAP_CSR_PEEK( RA_ALOSSP    ));
-        print("  CAPCTRL      : %08X\n", TMDS_CAP_CSR_PEEK( RA_CAPCTRL   ));
-        print("  CAPSIZE      : %08X\n", TMDS_CAP_CSR_PEEK( RA_CAPSIZE   ));
-        print("  CAPSTAT      : %08X\n", TMDS_CAP_CSR_PEEK( RA_CAPSTAT   ));
-        print("  CAPCOUNT     : %08X\n", TMDS_CAP_CSR_PEEK( RA_CAPCOUNT  ));
-        print("  SCRATCH      : %08X\n", TMDS_CAP_CSR_PEEK( RA_SCRATCH   ));
- */
