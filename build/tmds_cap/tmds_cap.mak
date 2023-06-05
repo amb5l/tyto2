@@ -45,7 +45,7 @@ VIVADO_DSN_VHDL_2008:=\
 	$(CSR_RA_VHD) \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN)_csr.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN)_stream.vhd \
-    $(if $(filter digilent_nexys_video,$(BOARD)),$(SRC)/common/ethernet/memac_axi4_rgmii.vhd) \
+    $(if $(findstring xc7z,$(FPGA_DEVICE)),,$(SRC)/common/ethernet/memac_axi4_rgmii.vhd) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
 ifneq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VIVADO_DSN_BD_TCL:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_z7ps_sys.tcl
