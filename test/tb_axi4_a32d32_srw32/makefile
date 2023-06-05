@@ -30,6 +30,7 @@ SIM_SRC.work:=\
 SIM_TOP:=tb_axi4_a32d32_srw32
 SIM_RUN:=$(foreach t,$(TESTS),$t,cfg_tb_axi4_a32d32_srw32_$t)
 
+NVC_EOPTS:=--no-collapse
 NVC_GOPTS:=-H 32m
 
 include $(MAKE_FPGA)
