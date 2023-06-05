@@ -63,16 +63,16 @@ architecture sim of tb_axi4_a32d32_srw32 is
   ) ;
 
   -- DUT
-  constant addr_width : integer := 8; -- 256 bytes
+  constant addr_width : integer := 8; -- simple slave address width c.w. 256 bytes
   signal axi4_si : axi4_a32d32_h_mosi_t;
   signal axi4_so : axi4_a32d32_h_miso_t;
   signal sw_en   : std_logic;
-  signal sw_addr : std_logic_vector(addr_width-1 downto 0);
+  signal sw_addr : std_logic_vector(31 downto 0);
   signal sw_be   : std_logic_vector(3 downto 0);
   signal sw_data : std_logic_vector(31 downto 0);
   signal sw_rdy  : std_logic;
   signal sr_en   : std_logic;
-  signal sr_addr : std_logic_vector(addr_width-1 downto 0);
+  signal sr_addr : std_logic_vector(31 downto 0);
   signal sr_data : std_logic_vector(31 downto 0);
   signal sr_rdy  : std_logic;
 
@@ -97,9 +97,6 @@ begin
   );
 
   DUT: component axi4_a32d32_srw32
-    generic map (
-      addr_width => addr_width
-    )
     port map (
       clk     => Clk,
       rst_n   => nReset,
@@ -123,8 +120,8 @@ begin
     variable waddr : integer;
     variable raddr : integer;
   begin
-    waddr := to_integer(unsigned(sw_addr));
-    raddr := to_integer(unsigned(sr_addr));
+    waddr := to_integer(unsigned(sw_addr(addr_width-1 downto 0)));
+    raddr := to_integer(unsigned(sr_addr(addr_width-1 downto 0)));
     if nReset = '0' then
       s       <= (others => (others => '0'));
       sr_data <= (others => '0');
