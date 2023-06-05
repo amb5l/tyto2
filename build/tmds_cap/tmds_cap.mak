@@ -70,7 +70,8 @@ VITIS_SRC:=\
 	$(CSR_RA_H) \
 	$(SRC)/designs/$(DESIGN)/software/main.c
 VITIS_INCLUDE:=\
-	$(SRC)/designs/$(DESIGN)/software
+	$(SRC)/designs/$(DESIGN)/software \
+	$(GEN)
 #endif
 
 VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
