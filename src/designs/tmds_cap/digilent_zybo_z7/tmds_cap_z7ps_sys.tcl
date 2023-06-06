@@ -23,13 +23,12 @@ set script_folder [_tcl::get_script_folder]
 set scripts_vivado_version 2023.1
 set current_vivado_version [version -short]
 
-# skip version check
-#if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
-#   puts ""
-#   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
-#
-#   return 1
-#}
+if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
+   puts ""
+   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+
+   return 1
+}
 
 ################################################################
 # START
@@ -45,7 +44,6 @@ set current_vivado_version [version -short]
 set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
    create_project project_1 myproj -part xc7z020clg400-1
-   set_property BOARD_PART digilentinc.com:zybo-z7-20:part0:1.1 [current_project]
 }
 
 
@@ -126,7 +124,6 @@ set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
 xilinx.com:ip:axi_dma:7.1\
-xilinx.com:ip:axi_gpio:2.0\
 xilinx.com:ip:proc_sys_reset:5.0\
 xilinx.com:ip:smartconnect:1.0\
 xilinx.com:ip:processing_system7:5.5\
@@ -193,16 +190,14 @@ proc create_root_design { parentCell } {
 
 
   # Create interface ports
-  set gpio [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:gpio_rtl:1.0 gpio ]
-
-  set tmds_maxi32 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 tmds_maxi32 ]
+  set maxi32 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 maxi32 ]
   set_property -dict [ list \
    CONFIG.ADDR_WIDTH {32} \
    CONFIG.DATA_WIDTH {32} \
    CONFIG.PROTOCOL {AXI4} \
-   ] $tmds_maxi32
+   ] $maxi32
 
-  set tmds_saxis64 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 tmds_saxis64 ]
+  set saxis64 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 saxis64 ]
   set_property -dict [ list \
    CONFIG.HAS_TKEEP {1} \
    CONFIG.HAS_TLAST {1} \
@@ -213,17 +208,13 @@ proc create_root_design { parentCell } {
    CONFIG.TDEST_WIDTH {0} \
    CONFIG.TID_WIDTH {0} \
    CONFIG.TUSER_WIDTH {0} \
-   ] $tmds_saxis64
-
-  set DDR [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 DDR ]
-
-  set FIXED_IO [ create_bd_intf_port -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 FIXED_IO ]
+   ] $saxis64
 
 
   # Create ports
   set axi_clk [ create_bd_port -dir O -type clk axi_clk ]
   set_property -dict [ list \
-   CONFIG.ASSOCIATED_BUSIF {tmds_saxis64:tmds_maxi32} \
+   CONFIG.ASSOCIATED_BUSIF {saxis64:maxi32} \
    CONFIG.ASSOCIATED_RESET {axi_rst_n} \
  ] $axi_clk
   set axi_rst_n [ create_bd_port -dir O -from 0 -to 0 -type rst axi_rst_n ]
@@ -249,9 +240,6 @@ proc create_root_design { parentCell } {
   set axi_mem_intercon2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_mem_intercon2 ]
   set_property CONFIG.NUM_MI {1} $axi_mem_intercon2
 
-
-  # Create instance: axi_gpio, and set properties
-  set axi_gpio [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio ]
 
   # Create instance: ps_reset, and set properties
   set ps_reset [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 ps_reset ]
@@ -745,65 +733,56 @@ proc create_root_design { parentCell } {
 
 
   # Create interface connections
-  connect_bd_intf_net -intf_net S_AXIS_S2MM_0_1 [get_bd_intf_ports tmds_saxis64] [get_bd_intf_pins axi_dma/S_AXIS_S2MM]
+  connect_bd_intf_net -intf_net S_AXIS_S2MM_0_1 [get_bd_intf_ports saxis64] [get_bd_intf_pins axi_dma/S_AXIS_S2MM]
   connect_bd_intf_net -intf_net axi_dma_0_M_AXI_S2MM [get_bd_intf_pins axi_dma/M_AXI_S2MM] [get_bd_intf_pins axi_mem_intercon2/S00_AXI]
-  connect_bd_intf_net -intf_net axi_gpio_0_GPIO [get_bd_intf_ports gpio] [get_bd_intf_pins axi_gpio/GPIO]
   connect_bd_intf_net -intf_net axi_mem_intercon2_M00_AXI [get_bd_intf_pins axi_mem_intercon2/M00_AXI] [get_bd_intf_pins z7ps/S_AXI_HP0]
   connect_bd_intf_net -intf_net axi_mem_intercon3_M00_AXI [get_bd_intf_pins axi_dma/S_AXI_LITE] [get_bd_intf_pins axi_mem_intercon1/M00_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins z7ps/M_AXI_GP0] [get_bd_intf_pins smartconnect/S00_AXI]
-  connect_bd_intf_net -intf_net smartconnect_0_M00_AXI [get_bd_intf_pins axi_gpio/S_AXI] [get_bd_intf_pins smartconnect/M00_AXI]
   connect_bd_intf_net -intf_net smartconnect_0_M01_AXI [get_bd_intf_pins axi_mem_intercon1/S00_AXI] [get_bd_intf_pins smartconnect/M01_AXI]
-  connect_bd_intf_net -intf_net smartconnect_0_M02_AXI [get_bd_intf_ports tmds_maxi32] [get_bd_intf_pins smartconnect/M02_AXI]
-  connect_bd_intf_net -intf_net z7ps_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins z7ps/DDR]
-  connect_bd_intf_net -intf_net z7ps_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins z7ps/FIXED_IO]
+  connect_bd_intf_net -intf_net smartconnect_0_M02_AXI [get_bd_intf_ports maxi32] [get_bd_intf_pins smartconnect/M02_AXI]
 
   # Create port connections
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins z7ps/FCLK_RESET0_N] [get_bd_pins ps_reset/ext_reset_in]
-  connect_bd_net -net z7ps_FCLK_CLK0 [get_bd_pins z7ps/FCLK_CLK0] [get_bd_ports axi_clk] [get_bd_pins axi_dma/m_axi_s2mm_aclk] [get_bd_pins axi_dma/s_axi_lite_aclk] [get_bd_pins axi_mem_intercon1/ACLK] [get_bd_pins axi_mem_intercon1/M00_ACLK] [get_bd_pins axi_mem_intercon1/S00_ACLK] [get_bd_pins axi_mem_intercon2/ACLK] [get_bd_pins axi_mem_intercon2/M00_ACLK] [get_bd_pins axi_mem_intercon2/S00_ACLK] [get_bd_pins axi_gpio/s_axi_aclk] [get_bd_pins ps_reset/slowest_sync_clk] [get_bd_pins smartconnect/aclk] [get_bd_pins z7ps/S_AXI_HP0_ACLK] [get_bd_pins z7ps/M_AXI_GP0_ACLK]
-  connect_bd_net -net z7ps_FCLK_RESET0_N [get_bd_pins ps_reset/peripheral_aresetn] [get_bd_ports axi_rst_n] [get_bd_pins axi_dma/axi_resetn] [get_bd_pins axi_mem_intercon1/ARESETN] [get_bd_pins axi_mem_intercon1/M00_ARESETN] [get_bd_pins axi_mem_intercon1/S00_ARESETN] [get_bd_pins axi_mem_intercon2/ARESETN] [get_bd_pins axi_mem_intercon2/M00_ARESETN] [get_bd_pins axi_mem_intercon2/S00_ARESETN] [get_bd_pins axi_gpio/s_axi_aresetn] [get_bd_pins smartconnect/aresetn]
+  connect_bd_net -net z7ps_FCLK_CLK0 [get_bd_pins z7ps/FCLK_CLK0] [get_bd_ports axi_clk] [get_bd_pins axi_dma/m_axi_s2mm_aclk] [get_bd_pins axi_dma/s_axi_lite_aclk] [get_bd_pins axi_mem_intercon1/ACLK] [get_bd_pins axi_mem_intercon1/M00_ACLK] [get_bd_pins axi_mem_intercon1/S00_ACLK] [get_bd_pins axi_mem_intercon2/ACLK] [get_bd_pins axi_mem_intercon2/M00_ACLK] [get_bd_pins axi_mem_intercon2/S00_ACLK] [get_bd_pins ps_reset/slowest_sync_clk] [get_bd_pins smartconnect/aclk] [get_bd_pins z7ps/S_AXI_HP0_ACLK] [get_bd_pins z7ps/M_AXI_GP0_ACLK]
+  connect_bd_net -net z7ps_FCLK_RESET0_N [get_bd_pins ps_reset/peripheral_aresetn] [get_bd_ports axi_rst_n] [get_bd_pins axi_dma/axi_resetn] [get_bd_pins axi_mem_intercon1/ARESETN] [get_bd_pins axi_mem_intercon1/M00_ARESETN] [get_bd_pins axi_mem_intercon1/S00_ARESETN] [get_bd_pins axi_mem_intercon2/ARESETN] [get_bd_pins axi_mem_intercon2/M00_ARESETN] [get_bd_pins axi_mem_intercon2/S00_ARESETN] [get_bd_pins smartconnect/aresetn]
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces axi_dma/Data_S2MM] [get_bd_addr_segs z7ps/S_AXI_HP0/HP0_DDR_LOWOCM] -force
   assign_bd_address -offset 0x40010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces z7ps/Data] [get_bd_addr_segs axi_dma/S_AXI_LITE/Reg] -force
-  assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces z7ps/Data] [get_bd_addr_segs axi_gpio/S_AXI/Reg] -force
-  assign_bd_address -offset 0x40020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces z7ps/Data] [get_bd_addr_segs tmds_maxi32/Reg] -force
+  assign_bd_address -offset 0x40020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces z7ps/Data] [get_bd_addr_segs maxi32/Reg] -force
 
   # Perform GUI Layout
   regenerate_bd_layout -layout_string {
    "ActiveEmotionalView":"Default View",
    "Default View_ScaleFactor":"1.0",
-   "Default View_TopLeft":"-488,-100",
+   "Default View_TopLeft":"-463,-14",
    "ExpandedHierarchyInLayout":"",
-   "PinnedBlocks":"/axi_dma|/axi_mem_intercon2|/ps_reset|/axi_mem_intercon1|/axi_gpio|/smartconnect|/z7ps|",
-   "PinnedPorts":"axi_clk|axi_rst_n|tmds_saxis64|gpio|tmds_maxi32|",
+   "PinnedBlocks":"/axi_dma|/axi_mem_intercon1|/axi_mem_intercon2|/ps_reset|/smartconnect|/z7ps|",
+   "PinnedPorts":"axi_clk|axi_rst_n|maxi32|saxis64|",
    "guistr":"# # String gsaved with Nlview 7.5.8 2022-09-21 7111 VDI=41 GEI=38 GUI=JA:10.0
 #  -string -flagsOSRD
-preplace port gpio -pg 1 -lvl 6 -x 1810 -y 220 -defaultsOSRD
-preplace port tmds_maxi32 -pg 1 -lvl 6 -x 1810 -y 400 -defaultsOSRD
-preplace port tmds_saxis64 -pg 1 -lvl 0 -x -50 -y 270 -defaultsOSRD
-preplace port port-id_axi_clk -pg 1 -lvl 6 -x 1810 -y 490 -defaultsOSRD
-preplace portBus axi_rst_n -pg 1 -lvl 6 -x 1810 -y 640 -defaultsOSRD
-preplace inst axi_dma -pg 1 -lvl 2 -x 510 -y 290 -defaultsOSRD
-preplace inst axi_mem_intercon1 -pg 1 -lvl 1 -x 130 -y 90 -defaultsOSRD
+preplace port maxi32 -pg 1 -lvl 6 -x 1850 -y 410 -defaultsOSRD
+preplace port saxis64 -pg 1 -lvl 0 -x -70 -y 380 -defaultsOSRD
+preplace port port-id_axi_clk -pg 1 -lvl 6 -x 1850 -y 470 -defaultsOSRD
+preplace portBus axi_rst_n -pg 1 -lvl 6 -x 1850 -y 620 -defaultsOSRD
+preplace inst axi_dma -pg 1 -lvl 2 -x 510 -y 310 -defaultsOSRD
+preplace inst axi_mem_intercon1 -pg 1 -lvl 1 -x 130 -y 240 -defaultsOSRD
 preplace inst axi_mem_intercon2 -pg 1 -lvl 3 -x 860 -y 350 -defaultsOSRD -resize 230 194
-preplace inst axi_gpio -pg 1 -lvl 5 -x 1640 -y 220 -defaultsOSRD
-preplace inst ps_reset -pg 1 -lvl 4 -x 1240 -y 600 -defaultsOSRD
-preplace inst smartconnect -pg 1 -lvl 5 -x 1640 -y 380 -defaultsOSRD
-preplace inst z7ps -pg 1 -lvl 4 -x 1240 -y 360 -defaultsOSRD
-preplace netloc processing_system7_0_FCLK_RESET0_N 1 3 2 1010 470 1470
-preplace netloc z7ps_FCLK_CLK0 1 0 6 -20 210 330 180 720 470 1000 460 1480 490 NJ
-preplace netloc z7ps_FCLK_RESET0_N 1 0 6 -30 220 340 190 700 480 NJ 480 1490 640 NJ
-preplace netloc S_AXIS_S2MM_0_1 1 0 2 NJ 270 NJ
-preplace netloc axi_dma_0_M_AXI_S2MM 1 2 1 710 270n
-preplace netloc axi_gpio_0_GPIO 1 5 1 N 220
+preplace inst ps_reset -pg 1 -lvl 4 -x 1250 -y 580 -defaultsOSRD
+preplace inst smartconnect -pg 1 -lvl 5 -x 1660 -y 390 -defaultsOSRD
+preplace inst z7ps -pg 1 -lvl 4 -x 1250 -y 360 -defaultsOSRD
+preplace netloc processing_system7_0_FCLK_RESET0_N 1 3 2 1020 480 1480
+preplace netloc z7ps_FCLK_CLK0 1 0 6 -30 370 320 200 720 230 1010 470 1490 470 NJ
+preplace netloc z7ps_FCLK_RESET0_N 1 0 6 -20 360 330 210 700 680 NJ 680 1500 620 NJ
+preplace netloc S_AXIS_S2MM_0_1 1 0 2 N 380 340J
+preplace netloc axi_dma_0_M_AXI_S2MM 1 2 1 710 290n
 preplace netloc axi_mem_intercon2_M00_AXI 1 3 1 N 350
-preplace netloc axi_mem_intercon3_M00_AXI 1 1 1 280 90n
-preplace netloc processing_system7_0_M_AXI_GP0 1 4 1 N 360
-preplace netloc smartconnect_0_M00_AXI 1 4 2 1500 300 1780
-preplace netloc smartconnect_0_M01_AXI 1 0 6 -20 -30 N -30 N -30 N -30 N -30 1790
-preplace netloc smartconnect_0_M02_AXI 1 5 1 N 400
-levelinfo -pg 1 -50 130 510 860 1240 1640 1810
-pagesize -pg 1 -db -bbox -sgen -190 -40 1960 730
+preplace netloc axi_mem_intercon3_M00_AXI 1 1 1 340 240n
+preplace netloc processing_system7_0_M_AXI_GP0 1 4 1 N 370
+preplace netloc smartconnect_0_M01_AXI 1 0 6 -20 120 N 120 N 120 N 120 N 120 1800
+preplace netloc smartconnect_0_M02_AXI 1 5 1 N 410
+levelinfo -pg 1 -70 130 510 860 1250 1660 1850
+pagesize -pg 1 -db -bbox -sgen -200 -40 1990 810
 "
 }
 

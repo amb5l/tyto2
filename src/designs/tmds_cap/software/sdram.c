@@ -19,13 +19,13 @@ void sdram_test(uint32_t baseaddr, uint32_t highaddr, uint32_t start, uint32_t i
     d = start;
     for (a = baseaddr; a <= highaddr; a += 4) {
         r = *(uint32_t *)a;
-        if r != d {
+        if (r != d) {
             printf("sdram_test: at %08X read %08X expected %08X\r\n", a, r, d);
             e++;
         }
         d += incr;
     }
-    if e
+    if (e)
         printf("sdram_test: %u errors\r\n", e);
     else
         printf("sdram_test: no errors!\r\n", e);

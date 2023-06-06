@@ -24,5 +24,6 @@ CAPCTRL    ,80 ,capture control (reset/go)
 CAPSIZE    ,84 ,capture size (pixels)
 CAPSTAT    ,88 ,capture status (run/loss/ovf/unf)
 CAPCOUNT   ,8C ,capture count (pixels)
-LED        ,F8 ,LEDs 0..3
+GPI        ,F0 ,general purpose in
+GPO        ,F4 ,general purpose out
 SCRATCH    ,FC ,scratch register

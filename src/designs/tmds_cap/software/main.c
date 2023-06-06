@@ -66,7 +66,7 @@ int main()
         r = CSR_PEEK( RA_CAPSTAT   ); printf("  CAPSTAT      : %08X\r\n", r);
         r = CSR_PEEK( RA_CAPCOUNT  ); printf("  CAPCOUNT     : %08X\r\n", r);
         r = CSR_PEEK( RA_SCRATCH   ); printf("  SCRATCH      : %08X\r\n", r);
-        CSR_POKE( RA_LED, led );
+        CSR_POKE( RA_GPO, led );
         led = (led+1) & 0xF;
     }
 }

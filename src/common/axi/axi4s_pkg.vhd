@@ -20,37 +20,48 @@ library ieee;
 
 package axi4s_pkg is
 
-  type axi4s_32_mosi_t is record
-    tdata  : std_logic_vector(  31 downto 0 );
-    tkeep  : std_logic_vector(   3 downto 0 );
+  type axi4s_mosi_t is record
+    tid    : std_logic_vector;
+    tdest  : std_logic_vector;
+    tuser  : std_logic_vector;
+    tdata  : std_logic_vector;
+    tkeep  : std_logic_vector;
     tlast  : std_logic;
     tvalid : std_logic;
-  end record axi4s_32_mosi_t;
+  end record axi4s_mosi_t;
 
-  type axi4s_32_miso_t is record
+  type axi4s_miso_t is record
     tready : std_logic;
-  end record axi4s_32_miso_t;
+  end record axi4s_miso_t;
 
-  type axi4s_64_mosi_t is record
-    tdata  : std_logic_vector(  63 downto 0 );
-    tkeep  : std_logic_vector(   7 downto 0 );
-    tlast  : std_logic;
-    tvalid : std_logic;
-  end record axi4s_64_mosi_t;
+  subtype axi4s_32_mosi_t is axi4s_mosi_t (
+    tid(7 downto 0),
+    tdest(7 downto 0),
+    tuser(7 downto 0),
+    tdata(31 downto 0),
+    tkeep(3 downto 0)
+  );
 
-  type axi4s_64_miso_t is record
-    tready  : std_logic;
-  end record axi4s_64_miso_t;
+  subtype axi4s_32_miso_t is axi4s_miso_t;
 
-  type axi4s_128_mosi_t is record
-    tdata  : std_logic_vector( 127 downto 0 );
-    tkeep  : std_logic_vector(  15 downto 0 );
-    tlast  : std_logic;
-    tvalid : std_logic;
-  end record axi4s_128_mosi_t;
+  subtype axi4s_64_mosi_t is axi4s_mosi_t (
+    tid(7 downto 0),
+    tdest(7 downto 0),
+    tuser(7 downto 0),
+    tdata(63 downto 0),
+    tkeep(7 downto 0)
+  );
 
-  type axi4s_128_miso_t is record
-    tready : std_logic;
-  end record axi4s_128_miso_t;
+  subtype axi4s_64_miso_t is axi4s_miso_t;
+
+  subtype axi4s_128_mosi_t is axi4s_mosi_t (
+    tid(7 downto 0),
+    tdest(7 downto 0),
+    tuser(7 downto 0),
+    tdata(127 downto 0),
+    tkeep(15 downto 0)
+  );
+
+  subtype axi4s_128_miso_t is axi4s_miso_t;
 
 end package axi4s_pkg;

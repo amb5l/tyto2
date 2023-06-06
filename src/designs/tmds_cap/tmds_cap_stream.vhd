@@ -21,7 +21,6 @@ library ieee;
 library work;
   use work.tyto_types_pkg.all;
   use work.axi4s_pkg.all;
-  use work.hdmi_rx_selectio_pkg.all;
 
 package tmds_cap_stream_pkg is
 
@@ -30,19 +29,20 @@ package tmds_cap_stream_pkg is
 
       prst        : in    std_logic;
       pclk        : in    std_logic;
+      tmds_lock   : in    std_logic;
       tmds        : in    slv10_vector(0 to 2);
-      tmds_status : in    hdmi_rx_selectio_status_t;
 
-      cap_rst     : in    std_logic;                     -- capture reset
-      cap_size    : in    std_logic_vector(31 downto 0); -- capture size (pixels)
-      cap_en      : in    std_logic;                     -- capture enable
-      cap_test    : in    std_logic;                     -- capture test
+      cap_rst     : in    std_logic;
+      cap_size    : in    std_logic_vector(31 downto 0);
+      cap_en      : in    std_logic;
+      cap_test    : in    std_logic;
 
-      cap_run     : out   std_logic;                     -- capture running
-      cap_loss    : out   std_logic;                     -- loss of TMDS lock
-      cap_ovf     : out   std_logic;                     -- FIFO overflow
-      cap_unf     : out   std_logic;                     -- FIFO underflow
-      cap_count   : out   std_logic_vector(31 downto 0); -- capture count (pixels)
+      cap_run     : out   std_logic;
+      cap_stop    : out   std_logic;
+      cap_loss    : out   std_logic;
+      cap_ovf     : out   std_logic;
+      cap_unf     : out   std_logic;
+      cap_count   : out   std_logic_vector(31 downto 0);
 
       axi_clk     : in    std_logic;
       axi_rst_n   : in    std_logic;
@@ -63,7 +63,6 @@ library ieee;
 library work;
   use work.tyto_types_pkg.all;
   use work.axi4s_pkg.all;
-  use work.hdmi_rx_selectio_pkg.all;
 
 library unisim;
   use unisim.vcomponents.all;
@@ -73,8 +72,8 @@ entity tmds_cap_stream is
 
     prst        : in    std_logic;
     pclk        : in    std_logic;
+    tmds_lock   : in    std_logic;
     tmds        : in    slv10_vector(0 to 2);
-    tmds_status : in    hdmi_rx_selectio_status_t;
 
     cap_rst     : in    std_logic;                     -- capture reset
     cap_size    : in    std_logic_vector(31 downto 0); -- capture size (pixels)
@@ -82,6 +81,7 @@ entity tmds_cap_stream is
     cap_test    : in    std_logic;                     -- capture test
 
     cap_run     : out   std_logic;                     -- capture running
+    cap_stop    : out   std_logic;                     -- capture stopped
     cap_loss    : out   std_logic;                     -- loss of TMDS lock
     cap_ovf     : out   std_logic;                     -- FIFO overflow
     cap_unf     : out   std_logic;                     -- FIFO underflow
@@ -121,12 +121,7 @@ begin
 
   -- loss latch
 
-  tmds_loss <= '1' when
-    prst = '1' or
-    tmds_status.lock = '0' or
-    tmds_status.align_s /= "111" or
-    tmds_status.align_p /= '1'
-  else '0';
+  tmds_loss <= prst or not tmds_lock;
 
   process(cap_rst,tmds_loss)
   begin
@@ -156,6 +151,7 @@ begin
   begin
     if cap_rst_s(cap_rst_s'right) = '1' then
       cap_run      <= '0';
+      cap_stop     <= '0';
       cap_count    <= (others => '0');
       fifo_we      <= '0';
       fifo_wd      <= (others => '0');
@@ -165,6 +161,7 @@ begin
     elsif rising_edge(pclk) then
       if cap_en_s(cap_en_s'right-1) = '1' and cap_en_s(cap_en_s'right) = '0' then
         cap_run   <= '1';
+        cap_stop  <= '0';
         cap_count <= (others => '0');
       end if;
       if cap_run = '1' then
@@ -183,6 +180,7 @@ begin
           fifo_wx_last <= '1';
           fifo_we      <= '1';
           cap_run      <= '0';
+          cap_stop     <= '1';
         end if;
         cap_count <= std_logic_vector(unsigned(cap_count)+1);
       else

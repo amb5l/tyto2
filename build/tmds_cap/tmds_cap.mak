@@ -16,6 +16,7 @@ CSR_RA_CSV:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_csr_ra.csv
 CSR_RA_VHD:=$(GEN)/$(DESIGN)_csr_ra_pkg.vhd
 CSR_RA_H:=$(GEN)/$(DESIGN)_csr_ra.h
 
+BOARD_VARIANT:=$(BOARD)$(addprefix _,$(BOARD_VARIANT))
 FPGA_VENDOR?=$(word 1,$(FPGA))
 FPGA_FAMILY?=$(word 2,$(FPGA))
 FPGA_DEVICE?=$(word 3,$(FPGA))
@@ -23,12 +24,12 @@ FPGA_DEVICE?=$(word 3,$(FPGA))
 FPGA_TOOL:=vivado
 
 ifneq (,$(findstring xc7z,$(FPGA_DEVICE)))
-CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_z7ps.vhd
+CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_z7ps.vhd
 else
-CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb.vhd
+CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_mb.vhd
 endif
 
-VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
+VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD_VARIANT)
 VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
@@ -41,27 +42,28 @@ VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/common/axi/axi4s_pkg.vhd \
 	$(SRC)/common/basic/fifo_pkg.vhd \
 	$(SRC)/common/axi/axi4_a32d32_srw32.vhd \
-	$(CORE_VHD) \
 	$(CSR_RA_VHD) \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN)_csr.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN)_stream.vhd \
+	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_io.vhd \
     $(if $(findstring xc7z,$(FPGA_DEVICE)),,$(SRC)/common/ethernet/memac_axi4_rgmii.vhd) \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
+	$(CORE_VHD) \
+	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD_VARIANT).vhd
 ifneq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VIVADO_DSN_BD_TCL:=$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_z7ps_sys.tcl
 else
 VIVADO_DSN_BD_TCL:=\
 	$(SRC)/common/ddr3/$(BOARD)/axi_ddr3.tcl \
-	$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb_cpu.tcl \
-	$(SRC)/designs/$(DESIGN)/$(DESIGN)_mb_sys.tcl
+	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_mb_cpu.tcl \
+	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_mb_sys.tcl
 endif
 ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VIVADO_DSN_PROC_INST:=cpu
 VIVADO_DSN_PROC_REF:=microblaze
 endif
 VIVADO_DSN_XDC_IMPL:=\
-	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc
+	$(SRC)/boards/$(BOARD)/$(BOARD_VARIANT).tcl \
+	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).xdc
 
 ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VITIS_ARCH:=microblaze
@@ -71,6 +73,8 @@ endif
 VITIS_APP:=$(DESIGN)
 VITIS_SRC:=\
 	$(CSR_RA_H) \
+	$(SRC)/designs/$(DESIGN)/software/sdram.c
+	$(SRC)/designs/$(DESIGN)/software/cap.c
 	$(SRC)/designs/$(DESIGN)/software/main.c
 VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/software \
