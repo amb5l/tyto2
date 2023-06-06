@@ -70,7 +70,7 @@ entity tmds_cap_csr is
     axi_rst_n   : in    std_logic;                                          -- AXI reset (active low)
     saxi_mosi   : in    axi4_a32d32_h_mosi_t := AXI4_A32D32_H_MOSI_DEFAULT; -- AXI4 subordinate inputs
     saxi_miso   : out   axi4_a32d32_h_miso_t := AXI4_A32D32_H_MISO_DEFAULT; -- AXI4 subordinate outputs
-    
+
     led         : out   std_logic_vector(3 downto 0);
 
     tmds_status : in    hdmi_rx_selectio_status_t;                          -- TMDS receive (alignment) status
@@ -104,6 +104,7 @@ architecture synth of tmds_cap_csr is
   signal tmds_status_s2 : hdmi_rx_selectio_status_t;      -- tmds_status synchroniser registers (second level)
   alias  s : hdmi_rx_selectio_status_t is tmds_status_s2;
 
+  signal astat   : std_logic_vector(31 downto 0);        -- alignment status register
   signal scratch : std_logic_vector(31 downto 0);        -- scratch register
 
 begin
@@ -176,15 +177,18 @@ begin
       end if;
 
       -- read
+
+      astat <=
+        x"00000" & s.skew_p(2) & s.skew_p(1) &
+        s.align_p & s.align_s(2) & s.align_s(1) & s.align_s(0) &
+        '0' & s.band & s.lock;
+
       if sr_en = '1' and sr_rdy = '0' then
         sr_rdy <= '1';
         with sr_addr(7 downto 0) select sr_data <=
           x"53444D54"                                                    when RA_SIGNATURE,
           s.count_freq                                                   when RA_FREQ,
-          x"00000" & '0' &
-          s.skew_p(2) & s.skew_p(1) &
-          s.align_p & s.align_s(2) & s.align_s(1) & s.align_s(0) &
-          s.band & s.lock                                                when RA_ASTAT,
+          astat                                                          when RA_ASTAT,
           s.tap_mask(0)                                                  when RA_ATAPMASK0,
           s.tap_mask(1)                                                  when RA_ATAPMASK1,
           s.tap_mask(2)                                                  when RA_ATAPMASK2,
