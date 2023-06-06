@@ -32,9 +32,6 @@ library work;
   use work.tmds_cap_csr_pkg.all;
   use work.tmds_cap_stream_pkg.all;
 
--- entity copied from src/boards/digilent_zybo_z7_20/digilent_zybo_z7_20.vhd
--- if it needs fixing, then so does the above file
-
 entity tmds_cap_digilent_zybo_z7_20 is
   port (
 
