@@ -1,6 +1,6 @@
 
 ################################################################
-# This is a generated script based on design: tmds_cap_z7ps_sys_digilent_zybo_z7_20
+# This is a generated script based on design: tmds_cap_z7ps_sys
 #
 # Though there are limitations about the generated script,
 # the main purpose of this utility is to make learning
@@ -36,7 +36,7 @@ set current_vivado_version [version -short]
 ################################################################
 
 # To test this script, run the following commands from Vivado Tcl console:
-# source tmds_cap_z7ps_sys_digilent_zybo_z7_20_script.tcl
+# source tmds_cap_z7ps_sys_script.tcl
 
 # If there is no project opened, this script will create a
 # project, but make sure you do not have an existing project
@@ -51,7 +51,7 @@ if { $list_projs eq "" } {
 
 # CHANGE DESIGN NAME HERE
 variable design_name
-set design_name tmds_cap_z7ps_sys_digilent_zybo_z7_20
+set design_name tmds_cap_z7ps_sys
 
 # If you do not already have an existing IP Integrator design open,
 # you can create a design using the following command:
