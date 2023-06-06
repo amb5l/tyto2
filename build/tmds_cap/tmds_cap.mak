@@ -48,7 +48,7 @@ VIVADO_DSN_VHDL_2008:=\
     $(if $(findstring xc7z,$(FPGA_DEVICE)),,$(SRC)/common/ethernet/memac_axi4_rgmii.vhd) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
 ifneq (,$(findstring xc7z,$(FPGA_DEVICE)))
-VIVADO_DSN_BD_TCL:=$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_z7ps_sys.tcl
+VIVADO_DSN_BD_TCL:=$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_z7ps_sys_$(BOARD).tcl
 else
 VIVADO_DSN_BD_TCL:=\
 	$(SRC)/common/ddr3/$(BOARD)/axi_ddr3.tcl \
