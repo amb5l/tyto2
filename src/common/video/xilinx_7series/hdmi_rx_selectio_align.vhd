@@ -45,6 +45,7 @@ package hdmi_rx_selectio_align_pkg is
       interval     : integer := 2048
     );
     port (
+      rst          : in    std_logic;
       prst         : in    std_logic;
       pclk         : in    std_logic;
       iserdes_q    : in    slv10_vector(0 to 2);
@@ -73,6 +74,7 @@ entity hdmi_rx_selectio_align is
     interval     : integer := 2048                     -- can reduce for simulation
   );
   port (
+    rst          : in    std_logic;
     prst         : in    std_logic;
     pclk         : in    std_logic;
     iserdes_q    : in    slv10_vector(0 to 2);           -- raw TMDS input
@@ -137,6 +139,11 @@ architecture synth of hdmi_rx_selectio_align is
   signal iserdes_q2       : slv10_vector(1 to 2);               -- iserdes_q delayed by 2 clocks
   signal count_acycle     : slv32_vector(0 to 2);               -- count alignment cycles per channel
   signal count_tap_ok     : slv32_vector(0 to 2);               -- count tap ok occurrences per channel
+  
+  signal again_s          : std_logic_vector(0 to 2);           -- pulse on gain of serial alignment per channel
+  signal again_p          : std_logic;                          -- pulse on gain of parallel alignment
+  signal aloss_s          : std_logic_vector(0 to 2);           -- pulse on loss of serial alignment per channel
+  signal aloss_p          : std_logic;                          -- pulse on loss of parallel alignment
   signal count_again_s    : slv32_vector(0 to 2);               -- count gain of serial alignment per channel
   signal count_again_p    : std_logic_vector(31 downto 0);      -- count gain of parallel alignment
   signal count_aloss_s    : slv32_vector(0 to 2);               -- count loss of serial alignment per channel
@@ -167,7 +174,7 @@ begin
   process(prst,pclk)
   begin
     if prst = '1' then
-
+    
       iserdes_cc       <= (others => (others => '0'));
       pcount           <= 0;
       ccount           <= 0;
@@ -195,20 +202,24 @@ begin
       iserdes_q2       <= (others => (others => '0'));
       count_acycle     <= (others => (others => '0'));
       count_tap_ok     <= (others => (others => '0'));
-      count_again_s    <= (others => (others => '0'));
-      count_again_p    <= (others => '0');
-      count_aloss_s    <= (others => (others => '0'));
-      count_aloss_p    <= (others => '0');
       status.tap_mask  <= (others => (others => '0'));
       status.tap       <= (others => (others => '0'));
       status.bitslip   <= (others => (others => '0'));
+      again_s          <= (others => '0');
+      again_p          <= '0';
+      aloss_s          <= (others => '0');
+      aloss_p          <= '0';
 
     elsif rising_edge(pclk) then
 
       -- defaults
       idelay_ld_i    <= (others => '0');
       iserdes_slip_i <= (others => '0');
-
+      again_s        <= (others => '0');
+      again_p        <= '0';
+      aloss_s        <= (others => '0');
+      aloss_p        <= '0';
+      
       -- control character detection
       for i in 0 to 2 loop -- for each channel
         iserdes_cc(i)(0) <= '0';
@@ -420,9 +431,9 @@ begin
         end if;
       end if;
       if align_p = '1' and align_p1 = '0' then -- count alignment gain
-        count_again_p <= std_logic_vector(unsigned(count_again_p)+1);
+        again_p <= '1';
       elsif align_p = '0' and align_p1 = '1' then -- count alignment loss
-        count_aloss_p <= std_logic_vector(unsigned(count_aloss_p)+1);
+        aloss_p <= '1';
       end if;
       align_p1 <= align_p;
 
@@ -447,17 +458,42 @@ begin
       align_s1 <= align_s;
       for i in 0 to 2 loop
         if align_s(i) = '1' and align_s1(i) = '0' then -- alignment gained
-          count_again_s(i)   <= std_logic_vector(unsigned(count_again_s(i))+1);
+          again_s(i)         <= '1';
           status.tap_mask(i) <= tap_ok_mask;
           status.tap(i)      <= idelay_tap_i;
         elsif align_s(i) = '0' and align_s1(i) = '1' then -- alignment lost
-          count_aloss_s(i)   <= std_logic_vector(unsigned(count_aloss_s(i))+1);
+          aloss_s(i)         <= '1';
         end if;
         if iserdes_slip_i(i) = '1' then
           status.bitslip(i) <= std_logic_vector(to_unsigned(bitslip,4));
         end if;
       end loop;
 
+    end if;
+  end process;
+
+  process(rst,pclk)
+  begin
+    if rst = '1' then
+      count_again_s <= (others => (others => '0'));
+      count_again_p <= (others => '0');
+      count_aloss_s <= (others => (others => '0'));
+      count_aloss_p <= (others => '0');    
+    elsif rising_edge(pclk) then
+      for i in 0 to 2 loop
+        if again_s(i) = '1' then
+          count_again_s(i) <= std_logic_vector(unsigned(count_again_s(i))+1);
+        end if;
+        if aloss_s(i) = '1' then
+          count_aloss_s(i) <= std_logic_vector(unsigned(count_aloss_s(i))+1);
+        end if;
+      end loop;
+      if again_p = '1' then
+        count_again_p <= std_logic_vector(unsigned(count_again_p)+1);
+      end if;
+      if aloss_p = '1' then
+        count_aloss_p <= std_logic_vector(unsigned(count_aloss_p)+1);
+      end if;
     end if;
   end process;
 
