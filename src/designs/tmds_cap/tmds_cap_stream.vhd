@@ -46,8 +46,8 @@ package tmds_cap_stream_pkg is
 
       axi_clk     : in    std_logic;
       axi_rst_n   : in    std_logic;
-      maxi4s_mosi : out   axi4s_64_mosi_t;
-      maxi4s_miso : in    axi4s_64_miso_t
+      maxi4s_mosi : out   axi4s_64_mosi_t := AXI4S_64_MOSI_DEFAULT;
+      maxi4s_miso : in    axi4s_64_miso_t := AXI4S_64_MISO_DEFAULT
 
     );
   end component tmds_cap_stream;
@@ -89,8 +89,8 @@ entity tmds_cap_stream is
 
     axi_clk     : in    std_logic;
     axi_rst_n   : in    std_logic;
-    maxi4s_mosi : out   axi4s_64_mosi_t;
-    maxi4s_miso : in    axi4s_64_miso_t
+    maxi4s_mosi : out   axi4s_64_mosi_t := AXI4S_64_MOSI_DEFAULT;
+    maxi4s_miso : in    axi4s_64_miso_t := AXI4S_64_MISO_DEFAULT
 
   );
 end entity tmds_cap_stream;
