@@ -191,13 +191,11 @@ begin
       scan_ok_start    <= 0;
       scan_ok_len      <= 0;
       align_s          <= (others => '0');
-      align_s1         <= (others => '0');
       iserdes_slip_i   <= (others => '0');
       idelay_tap_i     <= (others => '0');
       idelay_ld_i      <= (others => '0');
       ch_skew          <= (others => SKEW_BAD);
       align_p          <= '0';
-      align_p1         <= '0';
       iserdes_q1       <= (others => (others => '0'));
       iserdes_q2       <= (others => (others => '0'));
       count_acycle     <= (others => (others => '0'));
