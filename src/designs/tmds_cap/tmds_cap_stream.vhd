@@ -137,7 +137,7 @@ begin
   process(prst,pclk)
   begin
     if prst = '1' then
-      cap_rst_s <= (others => '0');
+      cap_rst_s <= (others => '1');
       cap_en_s  <= (others => '0');
     elsif rising_edge(pclk) then
       cap_rst_s <= cap_rst & cap_rst_s(0 to cap_rst_s'right-1);
