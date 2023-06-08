@@ -168,11 +168,11 @@ begin
         fifo_we      <= '0';
         fifo_wx_last <= '0';
         if cap_count(0) = '0' then
-          fifo_wd_lo <= cap_count when cap_test = '1' else "00" & tmds(2) & tmds(1) & tmds(0);
+          fifo_wd_lo <= not cap_count when cap_test = '1' else "00" & tmds(2) & tmds(1) & tmds(0);
           fifo_wx_lo <= '1';
           fifo_wx_hi <= '0';
         else
-          fifo_wd_hi <= cap_count when cap_test = '1' else "00" & tmds(2) & tmds(1) & tmds(0);
+          fifo_wd_hi <= not cap_count when cap_test = '1' else "00" & tmds(2) & tmds(1) & tmds(0);
           fifo_wx_hi <= '1';
           fifo_we    <= '1';
         end if;

@@ -12,6 +12,8 @@ architecture tb_tmds_cap_stream_odd of TestCtrl is
 
 begin
 
+  cap_test <= '0';
+
   ControlProc: process
   begin
     SetTestName(TestName);

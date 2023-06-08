@@ -1,7 +1,7 @@
 
-architecture tb_tmds_cap_stream_even of TestCtrl is
+architecture tb_tmds_cap_stream_test of TestCtrl is
 
-  constant TestName : string := "tb_tmds_cap_stream_even";
+  constant TestName : string := "tb_tmds_cap_stream_test";
 
   constant TxPixels : integer := 16;
   constant TxWords  : integer := integer(ceil(real(TxPixels)/2.0));
@@ -12,7 +12,7 @@ architecture tb_tmds_cap_stream_even of TestCtrl is
 
 begin
 
-  cap_test <= '0';
+  cap_test <= '1';
 
   ControlProc: process
   begin
@@ -61,7 +61,7 @@ begin
     TxData := FirstWord;
     for i in 0 to TxWords-1 loop
       RxData := Pop(RxRec.BurstFifo);
-      AffirmIfEqual(RxData, TxData & User, "RxData");
+      AffirmIfEqual(RxData, (not TxData) & User, "RxData");
       TxData := std_logic_vector(unsigned(TxData)+unsigned(IncrWord));
     end loop ;
 
@@ -70,12 +70,12 @@ begin
     wait;
   end process RxProc;
 
-end architecture tb_tmds_cap_stream_even;
+end architecture tb_tmds_cap_stream_test;
 
-configuration cfg_tb_tmds_cap_stream_even of tb_tmds_cap_stream is
+configuration cfg_tb_tmds_cap_stream_test of tb_tmds_cap_stream is
   for sim
     for CTRL: TestCtrl
-      use entity work.TestCtrl(tb_tmds_cap_stream_even);
+      use entity work.TestCtrl(tb_tmds_cap_stream_test);
     end for;
   end for;
-end cfg_tb_tmds_cap_stream_even;
+end cfg_tb_tmds_cap_stream_test;

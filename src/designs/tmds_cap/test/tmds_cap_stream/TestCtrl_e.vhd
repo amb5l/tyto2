@@ -20,6 +20,7 @@ package TestCtrl_pkg is
       rst_n    : in    std_logic;
       tpclk    : out   time := 10 ns;
       cap_size : out   std_logic_vector(31 downto 0);
+      cap_test : out   std_logic;
       RxRec    : inout StreamRecType
     );
   end component TestCtrl;
@@ -53,6 +54,7 @@ entity TestCtrl is
     rst_n    : in    std_logic;
     tpclk    : out   time := 10 ns;
     cap_size : out   std_logic_vector(31 downto 0);
+    cap_test : out   std_logic;
     RxRec    : inout StreamRecType
   );
 

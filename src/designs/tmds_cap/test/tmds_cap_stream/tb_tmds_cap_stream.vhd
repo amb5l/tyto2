@@ -102,7 +102,6 @@ begin
   tmds(1) <= tmds_count( 19 downto 10 );
   tmds(2) <= tmds_count( 29 downto 20 );
 
-  cap_test <= '0';
   DO_CAP: process
   begin
     cap_en <= '0';
@@ -163,6 +162,7 @@ begin
       rst_n    => axi_rst_n,
       tpclk    => tpclk,
       cap_size => cap_size,
+      cap_test => cap_test,
       RxRec    => RxRec
     ) ;
 
