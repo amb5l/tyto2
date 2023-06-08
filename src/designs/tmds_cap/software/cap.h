@@ -1,3 +1,8 @@
 // cap.h
 
-void cap(uint32_t baseaddr, uint32_t pixels);
+#ifndef _CSR_H_
+#define _CSR_H_
+
+void capture(uint32_t addr, uint32_t pixels);
+
+#endif

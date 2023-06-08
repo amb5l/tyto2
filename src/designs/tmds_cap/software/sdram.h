@@ -1,5 +1,8 @@
 // sdram.h
 
+#ifndef _SDRAM_H_
+#define _SDRAM_H_
+
 #include "xparameters.h"
 
 #ifdef __arm__
@@ -9,3 +12,5 @@
 
 void sdram_fill(uint32_t baseaddr, uint32_t highaddr, uint32_t start, uint32_t incr);
 void sdram_test(uint32_t baseaddr, uint32_t highaddr, uint32_t start, uint32_t incr);
+
+#endif

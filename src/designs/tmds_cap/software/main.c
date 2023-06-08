@@ -20,6 +20,9 @@
 
 #include "csr.h"
 #include "sdram.h"
+#include "cap.h"
+
+#define PIXELS 16
 
 int main()
 {
@@ -31,6 +34,9 @@ int main()
     	usleep(1000000);
         printf("tmds_cap\r\n");
  		printf("\r\n");
+        capture(SDRAM_BASEADDR, PIXELS);
+        sdram_test(SDRAM_BASEADDR, PIXELS, 0xFFFFFFFF, 0xFFFFFFFF);
+/*
  		printf("SDRAM fill (base = %08X)\r\n", SDRAM_BASEADDR);
         sdram_fill(0x10000000, 0x11000000, 0x31415926, 0x27182817);
  		printf("SDRAM test\r\n");
@@ -66,6 +72,7 @@ int main()
         r = CSR_PEEK( RA_CAPSTAT   ); printf("  CAPSTAT      : %08X\r\n", r);
         r = CSR_PEEK( RA_CAPCOUNT  ); printf("  CAPCOUNT     : %08X\r\n", r);
         r = CSR_PEEK( RA_SCRATCH   ); printf("  SCRATCH      : %08X\r\n", r);
+*/
         CSR_POKE( RA_GPO, led );
         led = (led+1) & 0xF;
     }
