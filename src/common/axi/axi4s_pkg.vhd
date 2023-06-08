@@ -36,11 +36,12 @@ package axi4s_pkg is
   end record axi4s_miso_t;
 
   subtype axi4s_32_mosi_t is axi4s_mosi_t (
-    tid(7 downto 0),
-    tdest(7 downto 0),
-    tuser(7 downto 0),
-    tdata(31 downto 0),
-    tkeep(3 downto 0)
+    tid   (  7 downto 0 ),
+    tdest (  7 downto 0 ),
+    tuser (  7 downto 0 ),
+    tdata ( 31 downto 0 ),
+    tkeep (  3 downto 0 ),
+    tstrb (  3 downto 0 )
   );
 
   subtype axi4s_32_miso_t is axi4s_miso_t;
@@ -56,16 +57,17 @@ package axi4s_pkg is
     tvalid => 'U'
   );
 
-  constant AXI4S_32_MISO_DEFAULT : axi4s_128_miso_t := (
+  constant AXI4S_32_MISO_DEFAULT : axi4s_32_miso_t := (
     tready => 'U'
   );
 
   subtype axi4s_64_mosi_t is axi4s_mosi_t (
-    tid(7 downto 0),
-    tdest(7 downto 0),
-    tuser(7 downto 0),
-    tdata(63 downto 0),
-    tkeep(7 downto 0)
+    tid   (  7 downto 0 ),
+    tdest (  7 downto 0 ),
+    tuser (  7 downto 0 ),
+    tdata ( 63 downto 0 ),
+    tkeep (  7 downto 0 ),
+    tstrb (  7 downto 0 )
   );
 
   subtype axi4s_64_miso_t is axi4s_miso_t;
@@ -81,16 +83,17 @@ package axi4s_pkg is
     tvalid => 'U'
   );
 
-  constant AXI4S_64_MISO_DEFAULT : axi4s_128_miso_t := (
+  constant AXI4S_64_MISO_DEFAULT : axi4s_64_miso_t := (
     tready => 'U'
   );
 
   subtype axi4s_128_mosi_t is axi4s_mosi_t (
-    tid(7 downto 0),
-    tdest(7 downto 0),
-    tuser(7 downto 0),
-    tdata(127 downto 0),
-    tkeep(15 downto 0)
+    tid   (   7 downto 0 ),
+    tdest (   7 downto 0 ),
+    tuser (   7 downto 0 ),
+    tdata ( 127 downto 0 ),
+    tkeep (  15 downto 0 ),
+    tstrb (  15 downto 0 )
   );
 
   subtype axi4s_128_miso_t is axi4s_miso_t;
