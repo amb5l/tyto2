@@ -126,8 +126,8 @@ if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
 xilinx.com:ip:axi_dma:7.1\
 xilinx.com:ip:proc_sys_reset:5.0\
-xilinx.com:ip:smartconnect:1.0\
 xilinx.com:ip:processing_system7:5.5\
+xilinx.com:ip:smartconnect:1.0\
 "
 
    set list_ips_missing ""
@@ -191,13 +191,6 @@ proc create_root_design { parentCell } {
 
 
   # Create interface ports
-  set maxi32 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 maxi32 ]
-  set_property -dict [ list \
-   CONFIG.ADDR_WIDTH {32} \
-   CONFIG.DATA_WIDTH {32} \
-   CONFIG.PROTOCOL {AXI4} \
-   ] $maxi32
-
   set saxis64 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:axis_rtl:1.0 saxis64 ]
   set_property -dict [ list \
    CONFIG.HAS_TKEEP {1} \
@@ -210,6 +203,13 @@ proc create_root_design { parentCell } {
    CONFIG.TID_WIDTH {0} \
    CONFIG.TUSER_WIDTH {0} \
    ] $saxis64
+
+  set maxi32 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 maxi32 ]
+  set_property -dict [ list \
+   CONFIG.ADDR_WIDTH {32} \
+   CONFIG.DATA_WIDTH {32} \
+   CONFIG.PROTOCOL {AXI4} \
+   ] $maxi32
 
 
   # Create ports
@@ -232,26 +232,8 @@ proc create_root_design { parentCell } {
   ] $axi_dma
 
 
-  # Create instance: axi_mem_intercon1, and set properties
-  set axi_mem_intercon1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_mem_intercon1 ]
-  set_property CONFIG.NUM_MI {1} $axi_mem_intercon1
-
-
-  # Create instance: axi_mem_intercon2, and set properties
-  set axi_mem_intercon2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_mem_intercon2 ]
-  set_property CONFIG.NUM_MI {1} $axi_mem_intercon2
-
-
   # Create instance: ps_reset, and set properties
   set ps_reset [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 ps_reset ]
-
-  # Create instance: smartconnect, and set properties
-  set smartconnect [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect ]
-  set_property -dict [list \
-    CONFIG.NUM_MI {3} \
-    CONFIG.NUM_SI {1} \
-  ] $smartconnect
-
 
   # Create instance: z7ps, and set properties
   set z7ps [ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 z7ps ]
@@ -726,6 +708,7 @@ proc create_root_design { parentCell } {
     CONFIG.PCW_USE_AXI_NONSECURE {0} \
     CONFIG.PCW_USE_CROSS_TRIGGER {0} \
     CONFIG.PCW_USE_M_AXI_GP0 {1} \
+    CONFIG.PCW_USE_M_AXI_GP1 {0} \
     CONFIG.PCW_USE_S_AXI_HP0 {1} \
     CONFIG.PCW_WDT_PERIPHERAL_CLKSRC {CPU_1X} \
     CONFIG.PCW_WDT_PERIPHERAL_DIVISOR0 {1} \
@@ -733,19 +716,34 @@ proc create_root_design { parentCell } {
   ] $z7ps
 
 
+  # Create instance: smartconnect32, and set properties
+  set smartconnect32 [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect32 ]
+  set_property -dict [list \
+    CONFIG.NUM_MI {2} \
+    CONFIG.NUM_SI {1} \
+  ] $smartconnect32
+
+
+  # Create instance: smartconnect64, and set properties
+  set smartconnect64 [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect64 ]
+  set_property -dict [list \
+    CONFIG.HAS_ARESETN {1} \
+    CONFIG.NUM_SI {1} \
+  ] $smartconnect64
+
+
   # Create interface connections
   connect_bd_intf_net -intf_net S_AXIS_S2MM_0_1 [get_bd_intf_ports saxis64] [get_bd_intf_pins axi_dma/S_AXIS_S2MM]
-  connect_bd_intf_net -intf_net axi_dma_0_M_AXI_S2MM [get_bd_intf_pins axi_dma/M_AXI_S2MM] [get_bd_intf_pins axi_mem_intercon2/S00_AXI]
-  connect_bd_intf_net -intf_net axi_mem_intercon2_M00_AXI [get_bd_intf_pins axi_mem_intercon2/M00_AXI] [get_bd_intf_pins z7ps/S_AXI_HP0]
-  connect_bd_intf_net -intf_net axi_mem_intercon3_M00_AXI [get_bd_intf_pins axi_dma/S_AXI_LITE] [get_bd_intf_pins axi_mem_intercon1/M00_AXI]
-  connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins z7ps/M_AXI_GP0] [get_bd_intf_pins smartconnect/S00_AXI]
-  connect_bd_intf_net -intf_net smartconnect_0_M01_AXI [get_bd_intf_pins axi_mem_intercon1/S00_AXI] [get_bd_intf_pins smartconnect/M01_AXI]
-  connect_bd_intf_net -intf_net smartconnect_0_M02_AXI [get_bd_intf_ports maxi32] [get_bd_intf_pins smartconnect/M02_AXI]
+  connect_bd_intf_net -intf_net axi_dma_M_AXI_S2MM [get_bd_intf_pins axi_dma/M_AXI_S2MM] [get_bd_intf_pins smartconnect64/S00_AXI]
+  connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins z7ps/M_AXI_GP0] [get_bd_intf_pins smartconnect32/S00_AXI]
+  connect_bd_intf_net -intf_net smartconnect64_M00_AXI [get_bd_intf_pins smartconnect64/M00_AXI] [get_bd_intf_pins z7ps/S_AXI_HP0]
+  connect_bd_intf_net -intf_net smartconnect_M00_AXI [get_bd_intf_pins smartconnect32/M00_AXI] [get_bd_intf_pins axi_dma/S_AXI_LITE]
+  connect_bd_intf_net -intf_net smartconnect_M01_AXI [get_bd_intf_ports maxi32] [get_bd_intf_pins smartconnect32/M01_AXI]
 
   # Create port connections
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins z7ps/FCLK_RESET0_N] [get_bd_pins ps_reset/ext_reset_in]
-  connect_bd_net -net z7ps_FCLK_CLK0 [get_bd_pins z7ps/FCLK_CLK0] [get_bd_ports axi_clk] [get_bd_pins axi_dma/m_axi_s2mm_aclk] [get_bd_pins axi_dma/s_axi_lite_aclk] [get_bd_pins axi_mem_intercon1/ACLK] [get_bd_pins axi_mem_intercon1/M00_ACLK] [get_bd_pins axi_mem_intercon1/S00_ACLK] [get_bd_pins axi_mem_intercon2/ACLK] [get_bd_pins axi_mem_intercon2/M00_ACLK] [get_bd_pins axi_mem_intercon2/S00_ACLK] [get_bd_pins ps_reset/slowest_sync_clk] [get_bd_pins smartconnect/aclk] [get_bd_pins z7ps/S_AXI_HP0_ACLK] [get_bd_pins z7ps/M_AXI_GP0_ACLK]
-  connect_bd_net -net z7ps_FCLK_RESET0_N [get_bd_pins ps_reset/peripheral_aresetn] [get_bd_ports axi_rst_n] [get_bd_pins axi_dma/axi_resetn] [get_bd_pins axi_mem_intercon1/ARESETN] [get_bd_pins axi_mem_intercon1/M00_ARESETN] [get_bd_pins axi_mem_intercon1/S00_ARESETN] [get_bd_pins axi_mem_intercon2/ARESETN] [get_bd_pins axi_mem_intercon2/M00_ARESETN] [get_bd_pins axi_mem_intercon2/S00_ARESETN] [get_bd_pins smartconnect/aresetn]
+  connect_bd_net -net z7ps_FCLK_CLK0 [get_bd_pins z7ps/FCLK_CLK0] [get_bd_ports axi_clk] [get_bd_pins axi_dma/m_axi_s2mm_aclk] [get_bd_pins axi_dma/s_axi_lite_aclk] [get_bd_pins ps_reset/slowest_sync_clk] [get_bd_pins z7ps/S_AXI_HP0_ACLK] [get_bd_pins z7ps/M_AXI_GP0_ACLK] [get_bd_pins smartconnect32/aclk] [get_bd_pins smartconnect64/aclk]
+  connect_bd_net -net z7ps_FCLK_RESET0_N [get_bd_pins ps_reset/peripheral_aresetn] [get_bd_ports axi_rst_n] [get_bd_pins axi_dma/axi_resetn] [get_bd_pins smartconnect32/aresetn] [get_bd_pins smartconnect64/aresetn]
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces axi_dma/Data_S2MM] [get_bd_addr_segs z7ps/S_AXI_HP0/HP0_DDR_LOWOCM] -force
@@ -756,34 +754,32 @@ proc create_root_design { parentCell } {
   regenerate_bd_layout -layout_string {
    "ActiveEmotionalView":"Default View",
    "Default View_ScaleFactor":"1.0",
-   "Default View_TopLeft":"-463,-14",
+   "Default View_TopLeft":"-578,-69",
    "ExpandedHierarchyInLayout":"",
-   "PinnedBlocks":"/axi_dma|/axi_mem_intercon1|/axi_mem_intercon2|/ps_reset|/smartconnect|/z7ps|",
-   "PinnedPorts":"axi_clk|axi_rst_n|maxi32|saxis64|",
+   "PinnedBlocks":"",
+   "PinnedPorts":"",
    "guistr":"# # String gsaved with Nlview 7.5.8 2022-09-21 7111 VDI=41 GEI=38 GUI=JA:10.0
 #  -string -flagsOSRD
-preplace port maxi32 -pg 1 -lvl 6 -x 1850 -y 410 -defaultsOSRD
-preplace port saxis64 -pg 1 -lvl 0 -x -70 -y 380 -defaultsOSRD
-preplace port port-id_axi_clk -pg 1 -lvl 6 -x 1850 -y 470 -defaultsOSRD
-preplace portBus axi_rst_n -pg 1 -lvl 6 -x 1850 -y 620 -defaultsOSRD
-preplace inst axi_dma -pg 1 -lvl 2 -x 510 -y 310 -defaultsOSRD
-preplace inst axi_mem_intercon1 -pg 1 -lvl 1 -x 130 -y 240 -defaultsOSRD
-preplace inst axi_mem_intercon2 -pg 1 -lvl 3 -x 860 -y 350 -defaultsOSRD -resize 230 194
-preplace inst ps_reset -pg 1 -lvl 4 -x 1250 -y 580 -defaultsOSRD
-preplace inst smartconnect -pg 1 -lvl 5 -x 1660 -y 390 -defaultsOSRD
-preplace inst z7ps -pg 1 -lvl 4 -x 1250 -y 360 -defaultsOSRD
-preplace netloc processing_system7_0_FCLK_RESET0_N 1 3 2 1020 480 1480
-preplace netloc z7ps_FCLK_CLK0 1 0 6 -30 370 320 200 720 230 1010 470 1490 470 NJ
-preplace netloc z7ps_FCLK_RESET0_N 1 0 6 -20 360 330 210 700 680 NJ 680 1500 620 NJ
-preplace netloc S_AXIS_S2MM_0_1 1 0 2 N 380 340J
-preplace netloc axi_dma_0_M_AXI_S2MM 1 2 1 710 290n
-preplace netloc axi_mem_intercon2_M00_AXI 1 3 1 N 350
-preplace netloc axi_mem_intercon3_M00_AXI 1 1 1 340 240n
-preplace netloc processing_system7_0_M_AXI_GP0 1 4 1 N 370
-preplace netloc smartconnect_0_M01_AXI 1 0 6 -20 120 N 120 N 120 N 120 N 120 1800
-preplace netloc smartconnect_0_M02_AXI 1 5 1 N 410
-levelinfo -pg 1 -70 130 510 860 1250 1660 1850
-pagesize -pg 1 -db -bbox -sgen -200 -40 1990 810
+preplace port saxis64 -pg 1 -lvl 0 -x -90 -y 230 -defaultsOSRD
+preplace port maxi32 -pg 1 -lvl 5 -x 1640 -y 300 -defaultsOSRD
+preplace port port-id_axi_clk -pg 1 -lvl 5 -x 1640 -y 210 -defaultsOSRD
+preplace portBus axi_rst_n -pg 1 -lvl 5 -x 1640 -y 490 -defaultsOSRD
+preplace inst axi_dma -pg 1 -lvl 1 -x 310 -y 250 -defaultsOSRD
+preplace inst ps_reset -pg 1 -lvl 4 -x 1450 -y 450 -defaultsOSRD
+preplace inst z7ps -pg 1 -lvl 3 -x 1030 -y 260 -defaultsOSRD
+preplace inst smartconnect32 -pg 1 -lvl 4 -x 1450 -y 290 -defaultsOSRD
+preplace inst smartconnect64 -pg 1 -lvl 2 -x 640 -y 250 -defaultsOSRD
+preplace netloc processing_system7_0_FCLK_RESET0_N 1 3 1 1260 310n
+preplace netloc z7ps_FCLK_CLK0 1 0 5 140 150 500 150 800 150 1280 210 N
+preplace netloc z7ps_FCLK_RESET0_N 1 0 5 140 350 500 370 N 370 1270 550 1620
+preplace netloc S_AXIS_S2MM_0_1 1 0 1 N 230
+preplace netloc axi_dma_M_AXI_S2MM 1 1 1 N 230
+preplace netloc processing_system7_0_M_AXI_GP0 1 3 1 N 270
+preplace netloc smartconnect64_M00_AXI 1 2 1 N 250
+preplace netloc smartconnect_M00_AXI 1 0 5 130 140 N 140 NJ 140 NJ 140 1620
+preplace netloc smartconnect_M01_AXI 1 4 1 N 300
+levelinfo -pg 1 -90 310 640 1030 1450 1640
+pagesize -pg 1 -db -bbox -sgen -190 -280 1900 840
 "
 }
 

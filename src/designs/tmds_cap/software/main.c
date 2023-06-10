@@ -16,25 +16,61 @@
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdint.h>
 #include "sleep.h"
+
+#include "xil_cache.h"
 
 #include "csr.h"
 #include "sdram.h"
 #include "cap.h"
 
-#define PIXELS 16
+#define PIXELS 2048
 
 int main()
 {
-    unsigned int led;
-    unsigned int r;
-    
-    led = 0;
+    uint32_t r;
+    uint8_t led;
+    uint32_t btn_init;
+
+    Xil_DCacheDisable();
+
+    printf("tmds_cap\r\n");
+
+    cap_init();
+
+    btn_init = CSR_PEEK(RA_GPI) & 1;
+    printf("btn_init = %d\r\n", btn_init);
+    btn_init = CSR_PEEK(RA_GPI) & 1;
+    printf("btn_init = %d\r\n", btn_init);
+    // wait for button 0
+    CSR_POKE( RA_GPO, 0 );
+    while(1) {
+    	r = CSR_PEEK(RA_GPI) & 1;
+    	printf("r = %d", r);
+    	if (btn_init == r)
+    		printf("button not yet pressed, r = %d\r\n", r);
+    	else {
+    		printf("button pressed! r = %d\r\n", r);
+    		break;
+    	}
+    	usleep(1000000);
+    	fflush(stdout);
+    }
+    led = 15;
+    CSR_POKE( RA_GPO, led );
+
     while(1) {
     	usleep(1000000);
-        printf("tmds_cap\r\n");
  		printf("\r\n");
-        capture(SDRAM_BASEADDR, PIXELS);
+ 		printf("SDRAM fill (base = %08X)\r\n", SDRAM_BASEADDR);
+        sdram_fill(SDRAM_BASEADDR, PIXELS, 0xFFFFFFFF, 0xFFFFFFFF);
+ 		printf("SDRAM test\r\n");
+        sdram_test(SDRAM_BASEADDR, PIXELS, 0xFFFFFFFF, 0xFFFFFFFF);
+        *(uint32_t *)SDRAM_BASEADDR = 0xDEADBEEF;
+ 		printf("capture\r\n");
+        cap_wait(SDRAM_BASEADDR, PIXELS);
+ 		printf("SDRAM test\r\n");
         sdram_test(SDRAM_BASEADDR, PIXELS, 0xFFFFFFFF, 0xFFFFFFFF);
 /*
  		printf("SDRAM fill (base = %08X)\r\n", SDRAM_BASEADDR);
@@ -74,7 +110,7 @@ int main()
         r = CSR_PEEK( RA_SCRATCH   ); printf("  SCRATCH      : %08X\r\n", r);
 */
         CSR_POKE( RA_GPO, led );
-        led = (led+1) & 0xF;
+        led = (led-1) & 0xF;
     }
 }
 

@@ -1,6 +1,6 @@
 ################################################################################
-## tmds_cap_digilent_zybo_z7.xdc                                              ##
-## Digilent Zybo Z7 board constraints for the tmds_cap design.                ##
+## tmds_cap_z7.xdc                                                            ##
+## AMD/Xilinx Zynq 7 constraints for the tmds_cap design.                     ##
 ################################################################################
 ## (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        ##
 ## This file is part of The Tyto Project. The Tyto Project is free software:  ##
@@ -15,4 +15,8 @@
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
 
-create_generated_clock -name clk_200m [get_pins U_MMCM/MMCM/CLKOUT0]
+set axi_clk clk_fpga_0
+set_false_path -from [get_clocks $axi_clk] -to [get_clocks pclk]
+set_false_path -from [get_clocks pclk] -to [get_clocks $axi_clk]
+set_false_path -from [get_clocks $axi_clk] -to [get_clocks hdmi_rx_clk]
+set_false_path -from [get_clocks hdmi_rx_clk] -to [get_clocks $axi_clk]

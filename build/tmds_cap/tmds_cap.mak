@@ -32,6 +32,7 @@ endif
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD_VARIANT)
 VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
+	$(SRC)/common/basic/sync_reg.vhd \
 	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_fm.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_clk.vhd \
@@ -63,7 +64,12 @@ VIVADO_DSN_PROC_REF:=microblaze
 endif
 VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD_VARIANT).tcl \
+	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_x7.xdc \
+	$(if $(findstring xc7z,$(FPGA_DEVICE)),$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_z7.xdc) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).xdc
+
+# workaround for synthesis crashes
+VIVADO_BD_SCP_MODE:=Singular
 
 ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VITIS_ARCH:=microblaze

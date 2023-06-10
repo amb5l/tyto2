@@ -67,6 +67,7 @@ library ieee;
 
 library work;
   use work.tyto_types_pkg.all;
+  use work.sync_reg_pkg.all;
   use work.hdmi_rx_selectio_align_pkg.all;
 
 entity hdmi_rx_selectio_align is
@@ -109,6 +110,8 @@ architecture synth of hdmi_rx_selectio_align is
   type skew_t is (SKEW_BAD, SKEW_0, SKEW_P1, SKEW_N1);
   type ch_skew_t is array(1 to 2) of skew_t;
 
+  signal rst_s            : std_logic;                          -- rst, synchronised
+
   signal iserdes_slip_i   : std_logic_vector(0 to 2);           -- internal copies of external signals
   signal idelay_tap_i     : std_logic_vector(4 downto 0);       -- "
   signal idelay_ld_i      : std_logic_vector(0 to 2);           -- "
@@ -139,7 +142,7 @@ architecture synth of hdmi_rx_selectio_align is
   signal iserdes_q2       : slv10_vector(1 to 2);               -- iserdes_q delayed by 2 clocks
   signal count_acycle     : slv32_vector(0 to 2);               -- count alignment cycles per channel
   signal count_tap_ok     : slv32_vector(0 to 2);               -- count tap ok occurrences per channel
-  
+
   signal again_s          : std_logic_vector(0 to 2);           -- pulse on gain of serial alignment per channel
   signal again_p          : std_logic;                          -- pulse on gain of parallel alignment
   signal aloss_s          : std_logic_vector(0 to 2);           -- pulse on loss of serial alignment per channel
@@ -174,7 +177,7 @@ begin
   process(prst,pclk)
   begin
     if prst = '1' then
-    
+
       iserdes_cc       <= (others => (others => '0'));
       pcount           <= 0;
       ccount           <= 0;
@@ -217,7 +220,7 @@ begin
       again_p        <= '0';
       aloss_s        <= (others => '0');
       aloss_p        <= '0';
-      
+
       -- control character detection
       for i in 0 to 2 loop -- for each channel
         iserdes_cc(i)(0) <= '0';
@@ -470,13 +473,21 @@ begin
     end if;
   end process;
 
-  process(rst,pclk)
+  U_SYNC: component sync_reg
+    port map(
+      rst  => rst,
+      clk  => pclk,
+      d(0) => rst,
+      q(0) => rst_s
+    );
+
+  process(rst_s,pclk)
   begin
-    if rst = '1' then
+    if rst_s = '1' then
       count_again_s <= (others => (others => '0'));
       count_again_p <= (others => '0');
       count_aloss_s <= (others => (others => '0'));
-      count_aloss_p <= (others => '0');    
+      count_aloss_p <= (others => '0');
     elsif rising_edge(pclk) then
       for i in 0 to 2 loop
         if again_s(i) = '1' then

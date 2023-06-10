@@ -37,7 +37,8 @@ package tmds_cap_io_pkg is
       maxi4s_mosi    : out   axi4s_64_mosi_t;
       maxi4s_miso    : in    axi4s_64_miso_t;
 
-      led            : out   std_logic_vector(3 downto 0);
+      gpo            : out   std_logic_vector(7 downto 0);
+      gpi            : in    std_logic_vector(7 downto 0);
 
       hdmi_rx_clk_p  : in    std_logic;
       hdmi_rx_clk_n  : in    std_logic;
@@ -84,7 +85,8 @@ entity tmds_cap_io is
     maxi4s_mosi    : out   axi4s_64_mosi_t;
     maxi4s_miso    : in    axi4s_64_miso_t;
 
-    led            : out   std_logic_vector(3 downto 0);
+    gpo            : out   std_logic_vector(7 downto 0);
+    gpi            : in    std_logic_vector(7 downto 0);
 
     hdmi_rx_clk_p  : in    std_logic;
     hdmi_rx_clk_n  : in    std_logic;
@@ -102,8 +104,8 @@ end entity tmds_cap_io;
 architecture synth of tmds_cap_io is
 
   signal idelayctrl_rdy : std_logic;
-  signal gpi            : std_logic_vector(31 downto 0);
-  signal gpo            : std_logic_vector(31 downto 0);
+  signal gpi_i          : std_logic_vector(31 downto 0);
+  signal gpo_i          : std_logic_vector(31 downto 0);
 
   signal hdmi_rx_clku   : std_logic;
   signal hdmi_rx_clk    : std_logic;
@@ -133,8 +135,8 @@ begin
   --------------------------------------------------------------------------------
   -- TMDS capture - control/status registers and streaming
 
-  gpi <= (0 => idelayctrl_rdy, others => '0');
-  led <= gpo(3 downto 0);
+  gpi_i <= (31 => idelayctrl_rdy, 7 downto 0 => gpi, others => '0');
+  gpo <= gpo_i(7 downto 0);
 
   U_CSR: component tmds_cap_csr
     port map (
@@ -142,8 +144,8 @@ begin
       axi_rst_n      => axi_rst_n,
       saxi_mosi      => saxi4_mosi,
       saxi_miso      => saxi4_miso,
-      gpi            => gpi,
-      gpo            => gpo,
+      gpi            => gpi_i,
+      gpo            => gpo_i,
       tmds_status    => rx_status,
       cap_rst        => cap_rst,
       cap_size       => cap_size,

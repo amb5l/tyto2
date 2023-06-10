@@ -3,6 +3,8 @@
 #ifndef _CSR_H_
 #define _CSR_H_
 
+#include <stdint.h>
+
 #include "xparameters.h"
 #include "tmds_cap_csr_ra.h"
 
@@ -15,7 +17,7 @@
 #define CSR_CAPSTAT_RUN  1<<0
 #define CSR_CAPSTAT_STOP 1<<1
 
-#define CSR_POKE(a,d) *(unsigned int *)(CSR_BASEADDR+a)=d
-#define CSR_PEEK(a)   *(unsigned int *)(CSR_BASEADDR+a)
+#define CSR_POKE(a,d) *(volatile uint32_t *)(CSR_BASEADDR+a)=d
+#define CSR_PEEK(a)   *(volatile uint32_t *)(CSR_BASEADDR+a)
 
 #endif

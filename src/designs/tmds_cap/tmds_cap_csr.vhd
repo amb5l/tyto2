@@ -114,6 +114,10 @@ architecture synth of tmds_cap_csr is
   signal astat   : std_logic_vector(31 downto 0);
   signal scratch : std_logic_vector(31 downto 0);
 
+  attribute async_reg : string;
+  attribute async_reg of tmds_status_s1 : signal is "TRUE";
+  attribute async_reg of tmds_status_s2 : signal is "TRUE";
+
 begin
 
   -- AXI4 to simple read/write bridge

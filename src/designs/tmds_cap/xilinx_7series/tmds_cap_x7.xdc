@@ -1,6 +1,6 @@
 ################################################################################
-## tmds_cap_digilent_zybo_z7.xdc                                              ##
-## Digilent Zybo Z7 board constraints for the tmds_cap design.                ##
+## tmds_cap_x7.xdc                                                            ##
+## AMD/Xilinx 7 series constraints for the tmds_cap design.                   ##
 ################################################################################
 ## (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        ##
 ## This file is part of The Tyto Project. The Tyto Project is free software:  ##
@@ -15,4 +15,15 @@
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
 
-create_generated_clock -name clk_200m [get_pins U_MMCM/MMCM/CLKOUT0]
+# HDMI input clock set at 100MHz to match fictional recipe for MMCM
+create_clock -add -name hdmi_rx_clk -period 10.00 -waveform {0 5} [get_ports hdmi_rx_clk_p]
+
+# clock renaming
+create_generated_clock -name pclk [get_pins U_IO/U_HDMI_RX/U_CLK/U_MMCM/CLKOUT0]
+create_generated_clock -name sclk [get_pins U_IO/U_HDMI_RX/U_CLK/U_MMCM/CLKOUT1]
+
+# false paths
+set_false_path -through U_IO/U_CSR/cap_size_reg[*]
+set_false_path -through U_IO/U_CSR/cap_test_reg
+set_false_path -through U_IO/U_STREAM/cap_loss_reg
+set_false_path -through U_IO/U_CSR/capstat_reg[*]

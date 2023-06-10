@@ -36,7 +36,7 @@ entity tmds_cap_digilent_zybo_z7_20 is
     clki_125m           : in    std_logic;
 
     -- LEDs, buttons and switches
---  sw                  : in    std_logic_vector(3 downto 0);
+    sw                  : in    std_logic_vector(3 downto 0);
     btn                 : in    std_logic_vector(3 downto 0);
     led                 : out   std_logic_vector(3 downto 0);
     led_r               : out   std_logic_vector(6 downto 5);
@@ -125,6 +125,9 @@ architecture synth of tmds_cap_digilent_zybo_z7_20 is
   signal axi4s_mosi : axi4s_64_mosi_t;
   signal axi4s_miso : axi4s_64_miso_t;
 
+  signal gpo        : std_logic_vector(7 downto 0);
+  signal gpi        : std_logic_vector(7 downto 0);
+
 begin
 
   -- board specific clocking
@@ -136,7 +139,7 @@ begin
       odiv0       => 5.0
     )
     port map (
-      rsti    => btn(0),
+      rsti    => btn(3),
       clki    => clki_125m,
       rsto    => rst,
       clko(0) => clk_200m
@@ -158,7 +161,8 @@ begin
     port map (
       rst           => rst,
       clk_200m      => clk_200m,
-      led           => led,
+      gpo           => gpo,
+      gpi           => gpi,
       axi_rst_n     => axi_rst_n,
       axi_clk       => axi_clk,
       saxi4_mosi    => axi4_mosi,
@@ -174,6 +178,8 @@ begin
       hdmi_tx_d_p   => hdmi_tx_d_p,
       hdmi_tx_d_n   => hdmi_tx_d_n
     );
+  led <= gpo(3 downto 0);
+  gpi <= sw & btn;
 
   -- safe states for unused outputs
   led_r(5)      <= '0';

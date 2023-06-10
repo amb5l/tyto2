@@ -62,6 +62,7 @@ library ieee;
 
 library work;
   use work.tyto_types_pkg.all;
+  use work.sync_reg_pkg.all;
   use work.axi4s_pkg.all;
 
 library unisim;
@@ -98,8 +99,9 @@ end entity tmds_cap_stream;
 architecture synth of tmds_cap_stream is
 
   signal tmds_loss     : std_logic;                        -- loss of TMDS lock
-  signal cap_rst_s     : std_logic_vector( 0 to 1 );       -- capture reset, synchronized
-  signal cap_en_s      : std_logic_vector( 0 to 2 );       -- capture enable, synchronized
+  signal cap_rst_s     : std_logic;                        -- capture reset, synchronized
+  signal cap_en_s      : std_logic;                        -- capture enable, synchronized
+  signal cap_en_s1     : std_logic;                        -- capture enable, synchronized, delayed by 1 clock
   signal fifo_we       : std_logic;                        -- FIFO write enable
   signal fifo_wd       : std_logic_vector( 63 downto 0 );  -- FIFO write data
   signal fifo_wx       : std_logic_vector(  7 downto 0 );  -- FIFO write extras
@@ -134,22 +136,28 @@ begin
 
   -- synchronisers
 
-  process(prst,pclk)
-  begin
-    if prst = '1' then
-      cap_rst_s <= (others => '1');
-      cap_en_s  <= (others => '0');
-    elsif rising_edge(pclk) then
-      cap_rst_s <= cap_rst & cap_rst_s(0 to cap_rst_s'right-1);
-      cap_en_s  <= cap_en & cap_en_s(0 to cap_en_s'right-1);
-    end if;
-  end process;
+  U_SYNC1: component sync_reg
+    port map(
+      rst  => prst,
+      clk  => pclk,
+      d(0) => cap_en,
+      q(0) => cap_en_s
+    );
+
+  U_SYNC2: component sync_reg
+    port map(
+      rst  => prst,
+      clk  => pclk,
+      d(0) => cap_rst,
+      q(0) => cap_rst_s
+    );
 
   -- TMDS stream ---> FIFO
 
-  process(cap_rst_s(cap_rst_s'right),pclk)
+  process(cap_rst_s,pclk)
   begin
-    if cap_rst_s(cap_rst_s'right) = '1' then
+    if cap_rst_s = '1' then
+      cap_en_s1    <= '0';
       cap_run      <= '0';
       cap_stop     <= '0';
       cap_count    <= (others => '0');
@@ -159,7 +167,8 @@ begin
       fifo_wx_hi   <= '0';
       fifo_wx_last <= '0';
     elsif rising_edge(pclk) then
-      if cap_en_s(cap_en_s'right-1) = '1' and cap_en_s(cap_en_s'right) = '0' then
+      cap_en_s1 <= cap_en_s;
+      if cap_en_s = '1' and cap_en_s1 = '0' then
         cap_run   <= '1';
         cap_stop  <= '0';
         cap_count <= (others => '0');
