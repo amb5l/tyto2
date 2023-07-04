@@ -79,9 +79,13 @@ endif
 VITIS_APP:=$(DESIGN)
 VITIS_SRC:=\
 	$(CSR_RA_H) \
+	$(SRC)/designs/$(DESIGN)/software/csr.h \
 	$(SRC)/designs/$(DESIGN)/software/dma.c \
+	$(SRC)/designs/$(DESIGN)/software/dma.h \
 	$(SRC)/designs/$(DESIGN)/software/sdram.c \
+	$(SRC)/designs/$(DESIGN)/software/sdram.h \
 	$(SRC)/designs/$(DESIGN)/software/cap.c \
+	$(SRC)/designs/$(DESIGN)/software/cap.h \
 	$(SRC)/designs/$(DESIGN)/software/main.c
 VITIS_INCLUDE:=\
 	$(SRC)/designs/$(DESIGN)/software \
