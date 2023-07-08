@@ -1,6 +1,9 @@
 // cap.c
 
 #include <stdint.h>
+#include <stdio.h>
+
+#include "sleep.h"
 
 #include "csr.h"
 #include "dma.h"
@@ -28,7 +31,7 @@ void cap_wait(uint32_t addr, uint32_t pixels) {
     }
     CSR_POKE(RA_CAPCTRL, CSR_CAPCTRL_TEST);
     while(!dma_idle()) {
-    	printf("mem0 = %08X\r\n", *(uint32_t *)SDRAM_BASEADDR);
+    	printf("mem0 = %08X\r\n", (unsigned int)*(uint32_t *)SDRAM_BASEADDR);
     	usleep(1000000);
     }
 }

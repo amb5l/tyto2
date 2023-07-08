@@ -19,24 +19,72 @@
 #include <stdint.h>
 #include "sleep.h"
 
-#include "xil_cache.h"
-
+#include "hal.h"
 #include "csr.h"
 #include "sdram.h"
 #include "cap.h"
+
+#include "lwip/tcp.h"
+#include "lwip/dhcp.h"
+#include "lwip/timeouts.h"
+void lwip_init();
+
+struct netif Eth0;
+volatile int countdown;
+
+void print_ip(char *msg, ip_addr_t *ip)
+{
+	print(msg);
+	printf("%d.%d.%d.%d\r\n", ip4_addr1(ip), ip4_addr2(ip), ip4_addr3(ip), ip4_addr4(ip));
+	fflush(stdout);
+}
 
 #define PIXELS 2048
 
 int main()
 {
-    uint32_t r;
-    uint8_t led;
-    uint32_t btn_init;
+    //uint32_t r;
+    //uint8_t led;
+    //uint32_t btn_init;
 
-    Xil_DCacheDisable();
+	printf("tmds_cap\r\n");
 
-    printf("tmds_cap\r\n");
+    // initialise
+    hal_init();   
+    Eth0.ip_addr.addr = Eth0.netmask.addr = Eth0.gw.addr = 0;
+	lwip_init();
+    hal_netif_add(&Eth0,&Eth0.ip_addr,&Eth0.netmask,&Eth0.gw);
+	netif_set_default(&Eth0);
+    hal_enable_interrupts();
+	netif_set_up(&Eth0);
 
+    // DHCP
+	dhcp_start(&Eth0);
+	countdown = COUNTDOWN_SEC * 30; // 30 seconds
+	while((Eth0.ip_addr.addr == 0) && (countdown > 0)) {
+		hal_netif_rx(&Eth0);
+		sys_check_timeouts();
+	}
+	if (countdown <= 0) {
+		if ((Eth0.ip_addr.addr) == 0) {
+			printf("DHCP timeout - configuring defaults\r\n");
+			IP4_ADDR(&Eth0.ip_addr, 192, 168,   1, 123);
+			IP4_ADDR(&Eth0.netmask, 255, 255, 255,   0);
+			IP4_ADDR(&Eth0.gw,      192, 168,   1,   1);
+		}
+	}
+
+    // display IPv4 status
+	print_ip("IPv4 address : ", (ip_addr_t *)&Eth0.ip_addr.addr);
+	print_ip("Subnet Mask  : ", (ip_addr_t *)&Eth0.netmask.addr);
+	print_ip("Gateway      : ", (ip_addr_t *)&Eth0.gw.addr);
+
+	// main loop
+	while (1) {
+		hal_netif_rx(&Eth0);
+		sys_check_timeouts();
+	}
+#if 0
     cap_init();
 
     btn_init = CSR_PEEK(RA_GPI) & 1;
@@ -112,5 +160,6 @@ int main()
         CSR_POKE( RA_GPO, led );
         led = (led-1) & 0xF;
     }
+#endif
 }
 

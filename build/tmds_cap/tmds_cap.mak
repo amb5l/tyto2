@@ -1,12 +1,7 @@
 # tmds_cap.mak
 
-REPO_ROOT:=$(shell git rev-parse --show-toplevel)
-MAKE_DIR:=$(shell pwd)
-ifeq ($(OS),Windows_NT)
-REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
-MAKE_DIR:=$(shell cygpath -m $(MAKE_DIR))
-endif
-MAKE_FPGA:=$(REPO_ROOT)/submodules/make-fpga/make-fpga.mak
+include $(shell realpath --relative-to . $(shell git rev-parse --show-toplevel))/submodules/make-fpga/make-fpga-h.mak
+
 SRC:=$(REPO_ROOT)/src
 GEN_DIR:=gen
 GEN:=$(MAKE_DIR)/$(GEN_DIR)
@@ -71,13 +66,23 @@ VIVADO_DSN_XDC_IMPL:=\
 # workaround for synthesis crashes
 VIVADO_BD_SCP_MODE:=Singular
 
+VITIS_DIR=.vitis
 ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VITIS_ARCH:=microblaze
 else
 VITIS_ARCH:=arm
+VITIS_PROC?=ps7_cortexa9_0
+VITIS_OS?=standalone
+VITIS_DOMAIN?=$(VITIS_OS)_domain
+VITIS_SRC=\
+	$(SRC)/designs/$(DESIGN)/software/z7ps/hal.h \
+	$(SRC)/designs/$(DESIGN)/software/z7ps/hal.c
+VITIS_INCLUDE:=\
+	$(SRC)/designs/$(DESIGN)/software/z7ps \
+	$(MAKE_DIR)/$(VITIS_DIR)/$(VITIS_PROC)/$(VITIS_DOMAIN)/bsp/$(VITIS_PROC)/include/lwip
 endif
 VITIS_APP:=$(DESIGN)
-VITIS_SRC:=\
+VITIS_SRC+=\
 	$(CSR_RA_H) \
 	$(SRC)/designs/$(DESIGN)/software/csr.h \
 	$(SRC)/designs/$(DESIGN)/software/dma.c \
@@ -87,10 +92,13 @@ VITIS_SRC:=\
 	$(SRC)/designs/$(DESIGN)/software/cap.c \
 	$(SRC)/designs/$(DESIGN)/software/cap.h \
 	$(SRC)/designs/$(DESIGN)/software/main.c
-VITIS_INCLUDE:=\
+VITIS_INCLUDE+=\
 	$(SRC)/designs/$(DESIGN)/software \
 	$(GEN)
 VITIS_BSP_LIB:=lwip213
+VITIS_BSP_CFG:=\
+	no_sys_no_timers:false \
+	lwip_dhcp:true
 
 VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
 VSCODE_SRC:=$(VIVADO_DSN_VHDL_2008)
@@ -112,7 +120,7 @@ VSCODE_XSRC.unisim:=\
 include $(MAKE_FPGA)
 
 $(GEN_DIR):
-	$(BASH) -c "mkdir -p $@"
+	bash -c "mkdir -p $@"
 
 $(CSR_RA_VHD) $(CSR_RA_H): $(CSR_RA_CSV) | $(GEN_DIR)
 	python $(CSR_RA_PY) 8 $(CSR_RA_CSV) $(CSR_RA_VHD) $(CSR_RA_H)
