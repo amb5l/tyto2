@@ -1,6 +1,6 @@
 /*******************************************************************************
 ** main.c                                                                     **
-** MicroBlaze demo application for tmds_cap design.                           **
+** tmds_cap embedded CPU application.                                         **
 ********************************************************************************
 ** (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        **
 ** This file is part of The Tyto Project. The Tyto Project is free software:  **
@@ -17,6 +17,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+
 #include "sleep.h"
 
 #include "hal.h"
@@ -29,7 +31,20 @@
 #include "lwip/timeouts.h"
 void lwip_init();
 
+#define MAX_UDP_PAYLOAD 1024
+#define UDP_PORT_BASE   65400
+#define UDP_PORT_RX     (UDP_PORT_BASE+0)
+#define UDP_PORT_TX     (UDP_PORT_BASE+1)
+#define UDP_PORT_BCAST  (UDP_PORT_BASE+2)
+
+char *msg_advert = "tmds_cap server advertisement";
+char *msg_req = "tmds_cap client req";
+char *msg_ack = "tmds_cap server ack";
+
+#define PIXELS 2048
+
 struct netif Eth0;
+ip_addr_t client;
 volatile int countdown;
 
 void print_ip(char *msg, ip_addr_t *ip)
@@ -39,26 +54,44 @@ void print_ip(char *msg, ip_addr_t *ip)
 	fflush(stdout);
 }
 
-#define PIXELS 2048
+void udp_rx(
+	void* arg,             // User argument - udp_recv `arg` parameter
+    struct udp_pcb* upcb,  // Receiving Protocol Control Block
+	struct pbuf* p,        // Pointer to Datagram
+	const ip_addr_t* addr, // Address of sender
+	u16_t port			   // Sender port
+)
+{
+	if (!strcmp(msg_req, p->payload)) {
+		client.addr = addr->addr;
+	}
+	pbuf_free(p);
+}
 
 int main()
 {
-    //uint32_t r;
-    //uint8_t led;
-    //uint32_t btn_init;
-
+	printf("\r\n");
+	printf("-------------------------------------------------------------------------------\r\n");
 	printf("tmds_cap\r\n");
+	printf("-------------------------------------------------------------------------------\r\n");
+	printf("\r\n");
 
-    // initialise
+	/******************************************************************************/
+	// initialise
+
     hal_init();   
     Eth0.ip_addr.addr = Eth0.netmask.addr = Eth0.gw.addr = 0;
 	lwip_init();
-    hal_netif_add(&Eth0,&Eth0.ip_addr,&Eth0.netmask,&Eth0.gw);
+    hal_netif_add(&Eth0, &Eth0.ip_addr, &Eth0.netmask, &Eth0.gw);
 	netif_set_default(&Eth0);
     hal_enable_interrupts();
 	netif_set_up(&Eth0);
 
-    // DHCP
+	/******************************************************************************/
+	// DHCP
+
+	printf("\r\nDHCP: starting... ");
+	fflush(stdout);
 	dhcp_start(&Eth0);
 	countdown = COUNTDOWN_SEC * 30; // 30 seconds
 	while((Eth0.ip_addr.addr == 0) && (countdown > 0)) {
@@ -67,23 +100,90 @@ int main()
 	}
 	if (countdown <= 0) {
 		if ((Eth0.ip_addr.addr) == 0) {
-			printf("DHCP timeout - configuring defaults\r\n");
+			printf("timeout - configuring defaults\r\n");
 			IP4_ADDR(&Eth0.ip_addr, 192, 168,   1, 123);
 			IP4_ADDR(&Eth0.netmask, 255, 255, 255,   0);
 			IP4_ADDR(&Eth0.gw,      192, 168,   1,   1);
 		}
 	}
+	else {
+		printf("done\r\n");
+	}
 
-    // display IPv4 status
+    // display IPv4 setup
 	print_ip("IPv4 address : ", (ip_addr_t *)&Eth0.ip_addr.addr);
 	print_ip("Subnet Mask  : ", (ip_addr_t *)&Eth0.netmask.addr);
 	print_ip("Gateway      : ", (ip_addr_t *)&Eth0.gw.addr);
+	ip_addr_t broadcast = Eth0.ip_addr;
+	broadcast.addr |= ~Eth0.netmask.addr;
+	print_ip("Broadcast    : ", (ip_addr_t *)&broadcast.addr);
+	printf("\r\n");
+
+    /******************************************************************************/
+	// advertise server, wait for client connection
+
+	struct udp_pcb *udp_pcb_rx, *udp_pcb_tx, *udp_pcb_bcast;
+    struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, MAX_UDP_PAYLOAD, PBUF_RAM);
+    err_t err;
+
+    u16_t msg_advert_len = strlen(msg_advert);
+    u16_t msg_ack_len = strlen(msg_ack);
+
+	// UDP RX setup
+	udp_pcb_rx = udp_new();
+    udp_bind(udp_pcb_rx, IP_ADDR_ANY, UDP_PORT_RX ) ;
+    udp_connect(udp_pcb_rx, IP_ADDR_ANY, UDP_PORT_RX);
+    udp_recv(udp_pcb_rx, udp_rx, NULL ) ;
+
+	// UDP TX setup
+	udp_pcb_tx = udp_new();
+    udp_bind(udp_pcb_tx, IP_ADDR_ANY, UDP_PORT_TX ) ;
+    udp_connect(udp_pcb_tx, IP_ADDR_ANY, UDP_PORT_TX);
+    udp_recv(udp_pcb_tx, udp_rx, NULL ) ;
+
+    // UDP broadcast setup
+    udp_pcb_bcast = udp_new();
+    ip_set_option(udp_pcb_bcast, SOF_BROADCAST);
+    udp_bind(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT_BCAST ) ;
+    udp_connect(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT_BCAST);
+
+    // broadcast advertisements until client requests connection
+    printf("advertising... ");
+    fflush(stdout);
+    client.addr = 0;
+    p->payload = msg_advert;
+    p->len = msg_advert_len;
+    p->tot_len = msg_advert_len;
+    while (client.addr == 0) {
+    	err = ERR_TIMEOUT;
+    	while (err != ERR_OK)
+    		err = udp_sendto(udp_pcb_bcast, p, &broadcast, UDP_PORT_BCAST);
+    	countdown = COUNTDOWN_SEC;
+    	while (countdown > 0 && client.addr == 0) {
+    		hal_netif_rx(&Eth0);
+    		sys_check_timeouts();
+    	}
+    }
+    printf("client request received... ");
+    fflush(stdout);
+
+    // acknowledge connection request
+    p->payload = msg_ack;
+    p->len = msg_ack_len;
+    p->tot_len = msg_ack_len;
+	err = ERR_TIMEOUT;
+	while (err != ERR_OK)
+		err = udp_sendto(udp_pcb_tx, p, &client, UDP_PORT_TX);
+    printf("client request acknowledged!\r\n");
+
+    /******************************************************************************/
 
 	// main loop
 	while (1) {
 		hal_netif_rx(&Eth0);
 		sys_check_timeouts();
 	}
+
 #if 0
     cap_init();
 
@@ -121,6 +221,11 @@ int main()
  		printf("SDRAM test\r\n");
         sdram_test(SDRAM_BASEADDR, PIXELS, 0xFFFFFFFF, 0xFFFFFFFF);
 /*
+
+    	uint32_t r;
+    	uint8_t led;
+    	uint32_t btn_init;
+
  		printf("SDRAM fill (base = %08X)\r\n", SDRAM_BASEADDR);
         sdram_fill(0x10000000, 0x11000000, 0x31415926, 0x27182817);
  		printf("SDRAM test\r\n");
