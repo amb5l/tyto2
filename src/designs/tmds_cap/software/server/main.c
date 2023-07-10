@@ -2,7 +2,7 @@
 
 int main()
 {
-    server_banner();    
+    server_banner();
     server_init();
     server_dhcp();
     server_conn();

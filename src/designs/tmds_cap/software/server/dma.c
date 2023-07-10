@@ -26,7 +26,7 @@ void dma_reset() {
 }
 
 void dma_init() {
-	POKE( S2MM_DMACR     , 0 );
+    POKE( S2MM_DMACR     , 0 );
     POKE( S2MM_DMADA_MSB , 0 );
 }
 
@@ -49,5 +49,5 @@ int dma_idle() {
 }
 
 uint32_t dma_status() {
-	return PEEK(S2MM_DMASR);
+    return PEEK(S2MM_DMASR);
 }
