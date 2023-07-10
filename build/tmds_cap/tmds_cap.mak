@@ -66,6 +66,7 @@ VIVADO_DSN_XDC_IMPL:=\
 # workaround for synthesis crashes
 VIVADO_BD_SCP_MODE:=Singular
 
+VITIS_SRC_DIR:=$(SRC)/designs/$(DESIGN)/software/server
 VITIS_DIR=.vitis
 ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VITIS_ARCH:=microblaze
@@ -75,24 +76,24 @@ VITIS_PROC?=ps7_cortexa9_0
 VITIS_OS?=standalone
 VITIS_DOMAIN?=$(VITIS_OS)_domain
 VITIS_SRC=\
-	$(SRC)/designs/$(DESIGN)/software/z7ps/hal.h \
-	$(SRC)/designs/$(DESIGN)/software/z7ps/hal.c
-VITIS_INCLUDE:=\
+	$(VITIS_SRC_DIR)/z7ps/hal.h \
+	$(VITIS_SRC_DIR)/z7ps/hal.c
+VITIS_INCLUDE=$(VITIS_SRC_DIR)/z7ps
 	$(SRC)/designs/$(DESIGN)/software/z7ps \
 	$(MAKE_DIR)/$(VITIS_DIR)/$(VITIS_PROC)/$(VITIS_DOMAIN)/bsp/$(VITIS_PROC)/include/lwip
 endif
 VITIS_APP:=$(DESIGN)
 VITIS_SRC+=\
 	$(CSR_RA_H) \
-	$(SRC)/designs/$(DESIGN)/software/csr.h \
-	$(SRC)/designs/$(DESIGN)/software/dma.c \
-	$(SRC)/designs/$(DESIGN)/software/dma.h \
-	$(SRC)/designs/$(DESIGN)/software/sdram.c \
-	$(SRC)/designs/$(DESIGN)/software/sdram.h \
-	$(SRC)/designs/$(DESIGN)/software/cap.c \
-	$(SRC)/designs/$(DESIGN)/software/cap.h \
-	$(SRC)/designs/$(DESIGN)/software/main.c
-VITIS_INCLUDE+=\
+	$(VITIS_SRC_DIR)/csr.h \
+	$(VITIS_SRC_DIR)/dma.c \
+	$(VITIS_SRC_DIR)/dma.h \
+	$(VITIS_SRC_DIR)/sdram.c \
+	$(VITIS_SRC_DIR)/sdram.h \
+	$(VITIS_SRC_DIR)/cap.c \
+	$(VITIS_SRC_DIR)/cap.h \
+	$(VITIS_SRC_DIR)/main.c
+VITIS_INCLUDE+=$(VITIS_SRC_DIR) $(GEN)
 	$(SRC)/designs/$(DESIGN)/software \
 	$(GEN)
 VITIS_BSP_LIB:=lwip213
