@@ -12,9 +12,10 @@ UDP_PORT_RX = UDP_PORT_BASE+1
 UDP_PORT_BCAST = UDP_PORT_BASE+2
 UDP_MAX_PAYLOAD = 1024
 
-MSG_ADVERT = b'tmds_cap server advertisement';
-MSG_REQ = b'tmds_cap client req';
-MSG_ACK = b'tmds_cap server ack';
+MSG_ADVERT = b'tmds_cap advert';
+MSG_REQ = b'tmds_cap req';
+MSG_ACK = b'tmds_cap ack';
+MSG_CMD_CAP = b'tmds_cap cap';
 
 print("listening for server advertisements on port %d..." % UDP_PORT_BCAST)
 s_bcast = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -51,3 +52,20 @@ while True:
         break
 
 print("CONNECTION ESTABLISHED")
+
+pixels_requested = 192
+
+s_tx.sendto(b'tmds_cap cap '+bytes(str(pixels_requested),'utf-8'), (server_ip, UDP_PORT_TX))
+
+pixels_received = 0
+while pixels_received < pixels_requested:
+    data, addr = s_rx.recvfrom(UDP_MAX_PAYLOAD)
+    pixels = len(data)//4
+    print("from %s:%s received %d pixels" % (addr[0],addr[1],pixels))
+    for i in range(pixels):
+        data32 = int.from_bytes(data[4*i:4+(4*i)],'little')
+        print("%08X  " % data32, end='')
+    print()
+    #data32 = [int.from_bytes(x, byteorder='little', signed = False) for x in data]
+    #print(data32)
+    pixels_received += pixels

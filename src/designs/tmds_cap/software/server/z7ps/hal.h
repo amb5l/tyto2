@@ -10,8 +10,6 @@
 #define LINK_DET_INTERVAL_MSECS 1000
 #define COUNTDOWN_SEC 			(1000/SCUTIMER_INTERVAL_MSECS)
 
-extern volatile int countdown;
-
 void hal_init(void);
 void hal_enable_interrupts(void);
 struct netif * hal_netif_add(struct netif *netif, ip_addr_t *ipaddr, ip_addr_t *netmask, ip_addr_t *gateway);

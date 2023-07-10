@@ -28,18 +28,12 @@ void dma_reset() {
 void dma_init() {
 	POKE( S2MM_DMACR     , 0 );
     POKE( S2MM_DMADA_MSB , 0 );
-    printf(" dma_init: S2MM_DMACR = %08X\r\n", (unsigned int)PEEK(S2MM_DMACR));
-    printf(" dma_init: S2MM_DMADA_MSB = %08X\r\n", (unsigned int)PEEK(S2MM_DMADA_MSB));
-    printf(" dma_init: S2MM_DMASR = %08X\r\n", (unsigned int)PEEK(S2MM_DMASR));
 }
 
 void dma_start(uint32_t addr, uint32_t bytes) {
     POKE( S2MM_DMACR  , S2MM_DMACR_RS );
     POKE( S2MM_DMADA  , addr          );
     POKE( S2MM_LENGTH , bytes         );
-    //printf(" dma_start: S2MM_DMADA = %08X\r\n", PEEK(S2MM_DMADA));
-    //printf(" dma_start: S2MM_LENGTH = %08X\r\n", PEEK(S2MM_LENGTH));
-    //printf(" dma_start: S2MM_DMACR = %08X\r\n", PEEK(S2MM_DMACR));
 }
 
 void dma_stop() {
@@ -51,8 +45,9 @@ int dma_halted() {
 }
 
 int dma_idle() {
-	printf("dma_idle: S2MM_DMASR = %08X\r\n", (unsigned int)PEEK(S2MM_DMASR));
-	printf("dma_idle: S2MM_LENGTH = %08X\r\n", (unsigned int)PEEK(S2MM_LENGTH));
     return PEEK(S2MM_DMASR) & S2MM_DMASR_IDLE;
 }
 
+uint32_t dma_status() {
+	return PEEK(S2MM_DMASR);
+}

@@ -22,9 +22,11 @@
 #include "sleep.h"
 
 #include "hal.h"
-#include "csr.h"
 #include "sdram.h"
 #include "cap.h"
+#include "global.h"
+#include "csr.h" // debug only
+#include "dma.h" // debug only
 
 #include "lwip/tcp.h"
 #include "lwip/dhcp.h"
@@ -37,15 +39,19 @@ void lwip_init();
 #define UDP_PORT_TX     (UDP_PORT_BASE+1)
 #define UDP_PORT_BCAST  (UDP_PORT_BASE+2)
 
-char *msg_advert = "tmds_cap server advertisement";
-char *msg_req = "tmds_cap client req";
-char *msg_ack = "tmds_cap server ack";
+#define BYTES_PER_PIXEL 4
+#define MAX_UDP_PIXELS 128 // 512 bytes (no fragmentation)
 
-#define PIXELS 2048
+const char s_rx_prefix[]  = "tmds_cap";
+const char s_rx_cmd_req[] = "req";
+const char s_rx_cmd_cap[] = "cap";
+const char s_tx_advert[]  = "tmds_cap advert";
+const char s_tx_ack[]     = "tmds_cap ack";
 
-struct netif Eth0;
-ip_addr_t client;
-volatile int countdown;
+ip_addr_t broadcast, client;
+struct udp_pcb *udp_pcb_rx, *udp_pcb_tx, *udp_pcb_bcast;
+struct pbuf *pkt;
+err_t err;
 
 void print_ip(char *msg, ip_addr_t *ip)
 {
@@ -54,18 +60,58 @@ void print_ip(char *msg, ip_addr_t *ip)
 	fflush(stdout);
 }
 
+// handle received UDP packets
 void udp_rx(
 	void* arg,            
     struct udp_pcb* upcb, 
 	struct pbuf* p,       
 	const ip_addr_t* addr,
-	u16_t port			  
+	u16_t port
 )
 {
-	if (!strcmp(msg_req, p->payload)) {
-		client.addr = addr->addr;
+	char *s;
+	long n;
+
+	s = strtok((char *)p->payload, " ");
+	if (!strcmp(s_rx_prefix,s)) {
+		s = strtok(NULL, " ");
+		// handle client request
+		if (!strcmp(s_rx_cmd_req, s)) {
+			client.addr = addr->addr;
+		}
+		// handle other commands
+		else if (!strcmp(s_rx_cmd_cap, s)) {
+			s = strtok(NULL, " ");
+			n = strtol(s, (char **)NULL, 10);
+			printf("udp_rx: cap: n = %ld\r\n", n);
+			cap_start((uint32_t)n);
+		}
+	}
+	else {
+		printf("udp_rx: bad prefix (%s)\r\n", s);
 	}
 	pbuf_free(p);
+}
+
+// transfer captured data
+void transfer(uint32_t pixels)
+{
+	int i;
+
+	printf("transfer\r\n");
+
+	for (i = 0; i < pixels; i += MAX_UDP_PIXELS) {
+		if (pixels-i >= MAX_UDP_PIXELS) {
+			pkt->tot_len = pkt->len = BYTES_PER_PIXEL*MAX_UDP_PIXELS;
+		} else {
+			pkt->tot_len = pkt->len = BYTES_PER_PIXEL*(pixels-i);
+		}
+		pkt->payload = (void *)&cap_buf[i];
+		printf("transfer: sending %d pixels from offset %d\r\n", pkt->len/BYTES_PER_PIXEL, i);
+		err = ERR_TIMEOUT;
+		while (err != ERR_OK)
+			err = udp_sendto(udp_pcb_tx, pkt, &client, UDP_PORT_TX);
+	}
 }
 
 // banner message
@@ -78,16 +124,31 @@ void server_banner()
 	printf("\r\n");
 }
 
-// initialise everything required to bring the ethernet interface up
+// initialise everything
 void server_init()
 {
     hal_init();   
+	cap_init();
     Eth0.ip_addr.addr = Eth0.netmask.addr = Eth0.gw.addr = 0;
 	lwip_init();
     hal_netif_add(&Eth0, &Eth0.ip_addr, &Eth0.netmask, &Eth0.gw);
 	netif_set_default(&Eth0);
     hal_enable_interrupts();
 	netif_set_up(&Eth0);
+
+	// UDP setup
+	udp_pcb_rx = udp_new();
+    udp_bind(udp_pcb_rx, IP_ADDR_ANY, UDP_PORT_RX ) ;
+    udp_connect(udp_pcb_rx, IP_ADDR_ANY, UDP_PORT_RX);
+    udp_recv(udp_pcb_rx, udp_rx, NULL ) ;
+	udp_pcb_tx = udp_new();
+    udp_bind(udp_pcb_tx, IP_ADDR_ANY, UDP_PORT_TX ) ;
+    udp_connect(udp_pcb_tx, IP_ADDR_ANY, UDP_PORT_TX);
+    udp_pcb_bcast = udp_new();
+    ip_set_option(udp_pcb_bcast, SOF_BROADCAST);
+    udp_bind(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT_BCAST ) ;
+    udp_connect(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT_BCAST);
+	pkt = pbuf_alloc(PBUF_TRANSPORT, MAX_UDP_PAYLOAD, PBUF_RAM);
 }
 
 // establish IP address
@@ -117,7 +178,7 @@ void server_dhcp()
 	print_ip("IPv4 address : ", (ip_addr_t *)&Eth0.ip_addr.addr);
 	print_ip("Subnet Mask  : ", (ip_addr_t *)&Eth0.netmask.addr);
 	print_ip("Gateway      : ", (ip_addr_t *)&Eth0.gw.addr);
-	ip_addr_t broadcast = Eth0.ip_addr;
+	broadcast = Eth0.ip_addr;
 	broadcast.addr |= ~Eth0.netmask.addr;
 	print_ip("Broadcast    : ", (ip_addr_t *)&broadcast.addr);
 	printf("\r\n");
@@ -126,42 +187,20 @@ void server_dhcp()
 // advertise and wait for client connection
 void server_conn()
 {
-	struct udp_pcb *udp_pcb_rx, *udp_pcb_tx, *udp_pcb_bcast;
-    struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, MAX_UDP_PAYLOAD, PBUF_RAM);
-    err_t err;
-
-    u16_t msg_advert_len = strlen(msg_advert);
-    u16_t msg_ack_len = strlen(msg_ack);
-
-	// UDP RX setup
-	udp_pcb_rx = udp_new();
-    udp_bind(udp_pcb_rx, IP_ADDR_ANY, UDP_PORT_RX ) ;
-    udp_connect(udp_pcb_rx, IP_ADDR_ANY, UDP_PORT_RX);
-    udp_recv(udp_pcb_rx, udp_rx, NULL ) ;
-
-	// UDP TX setup
-	udp_pcb_tx = udp_new();
-    udp_bind(udp_pcb_tx, IP_ADDR_ANY, UDP_PORT_TX ) ;
-    udp_connect(udp_pcb_tx, IP_ADDR_ANY, UDP_PORT_TX);
-    udp_recv(udp_pcb_tx, udp_rx, NULL ) ;
-
-    // UDP broadcast setup
-    udp_pcb_bcast = udp_new();
-    ip_set_option(udp_pcb_bcast, SOF_BROADCAST);
-    udp_bind(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT_BCAST ) ;
-    udp_connect(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT_BCAST);
+    u16_t s_tx_advert_len = strlen(s_tx_advert);
+    u16_t s_tx_ack_len = strlen(s_tx_ack);
 
     // broadcast advertisements until client requests connection
     printf("advertising... ");
     fflush(stdout);
     client.addr = 0;
-    p->payload = msg_advert;
-    p->len = msg_advert_len;
-    p->tot_len = msg_advert_len;
+    pkt->payload = (void *)s_tx_advert;
+    pkt->len = s_tx_advert_len;
+    pkt->tot_len = s_tx_advert_len;
     while (client.addr == 0) {
     	err = ERR_TIMEOUT;
     	while (err != ERR_OK)
-    		err = udp_sendto(udp_pcb_bcast, p, &broadcast, UDP_PORT_BCAST);
+    		err = udp_sendto(udp_pcb_bcast, pkt, &broadcast, UDP_PORT_BCAST);
     	countdown = COUNTDOWN_SEC;
     	while (countdown > 0 && client.addr == 0) {
     		hal_netif_rx(&Eth0);
@@ -172,105 +211,26 @@ void server_conn()
     fflush(stdout);
 
     // acknowledge connection request
-    p->payload = msg_ack;
-    p->len = msg_ack_len;
-    p->tot_len = msg_ack_len;
+    pkt->payload = (void *)s_tx_ack;
+    pkt->len = s_tx_ack_len;
+    pkt->tot_len = s_tx_ack_len;
 	err = ERR_TIMEOUT;
 	while (err != ERR_OK)
-		err = udp_sendto(udp_pcb_tx, p, &client, UDP_PORT_TX);
+		err = udp_sendto(udp_pcb_tx, pkt, &client, UDP_PORT_TX);
     printf("client request acknowledged!\r\n");
 }
 
 // foreground loop
 void server_run()
 {
+	uint32_t pixels;
+
 	while (1) {
 		hal_netif_rx(&Eth0);
 		sys_check_timeouts();
+		pixels = cap_rdy();
+		if (pixels) { // capture data is ready to transfer
+			transfer(pixels);
+		}
 	}
 }
-
-#if 0
-    cap_init();
-
-    btn_init = CSR_PEEK(RA_GPI) & 1;
-    printf("btn_init = %d\r\n", btn_init);
-    btn_init = CSR_PEEK(RA_GPI) & 1;
-    printf("btn_init = %d\r\n", btn_init);
-    // wait for button 0
-    CSR_POKE( RA_GPO, 0 );
-    while(1) {
-    	r = CSR_PEEK(RA_GPI) & 1;
-    	printf("r = %d", r);
-    	if (btn_init == r)
-    		printf("button not yet pressed, r = %d\r\n", r);
-    	else {
-    		printf("button pressed! r = %d\r\n", r);
-    		break;
-    	}
-    	usleep(1000000);
-    	fflush(stdout);
-    }
-    led = 15;
-    CSR_POKE( RA_GPO, led );
-
-    while(1) {
-    	usleep(1000000);
- 		printf("\r\n");
- 		printf("SDRAM fill (base = %08X)\r\n", SDRAM_BASEADDR);
-        sdram_fill(SDRAM_BASEADDR, PIXELS, 0xFFFFFFFF, 0xFFFFFFFF);
- 		printf("SDRAM test\r\n");
-        sdram_test(SDRAM_BASEADDR, PIXELS, 0xFFFFFFFF, 0xFFFFFFFF);
-        *(uint32_t *)SDRAM_BASEADDR = 0xDEADBEEF;
- 		printf("capture\r\n");
-        cap_wait(SDRAM_BASEADDR, PIXELS);
- 		printf("SDRAM test\r\n");
-        sdram_test(SDRAM_BASEADDR, PIXELS, 0xFFFFFFFF, 0xFFFFFFFF);
-/*
-
-    	uint32_t r;
-    	uint8_t led;
-    	uint32_t btn_init;
-
- 		printf("SDRAM fill (base = %08X)\r\n", SDRAM_BASEADDR);
-        sdram_fill(0x10000000, 0x11000000, 0x31415926, 0x27182817);
- 		printf("SDRAM test\r\n");
-        sdram_test(0x10000000, 0x11000000, 0x31415926, 0x27182817);
- 		printf("\r\n");
-        r = CSR_PEEK( RA_SIGNATURE ); printf("  SIGNATURE    : %08X\r\n", r);
-        r = CSR_PEEK( RA_FREQ      ); printf("  FREQ         : %08X (%.2f MHz)\r\n", r, r/100.0);
-        r = CSR_PEEK( RA_ASTAT     ); printf("  ASTAT        : %08X\r\n", r);
-                                      printf("                 SKEW2 = %d, SKEW1 = %d\r\n", (r>>10)&3, (r>>8)&3);
-                                      printf("                 ALIGNP = %d, ALIGNS2 = %d, ALIGNS1 = %d, ALIGNS0 = %d\r\n", (r>>7)&1, (r>>6)&1, (r>>5)&1, (r>>4)&1);
-                                      printf("                 BAND = %d, LOCK = %d\r\n", (r>>1)&3, r&1);
-        r = CSR_PEEK( RA_ATAPMASK0 ); printf("  ATAPMASK0    : %08X\r\n", r);
-        r = CSR_PEEK( RA_ATAPMASK1 ); printf("  ATAPMASK1    : %08X\r\n", r);
-        r = CSR_PEEK( RA_ATAPMASK2 ); printf("  ATAPMASK2    : %08X\r\n", r);
-        r = CSR_PEEK( RA_ATAP      ); printf("  ATAP         : %08X (%d,%d,%d)\r\n", r, (r>>16)&31, (r>>8)&31, r&31);
-        r = CSR_PEEK( RA_ABITSLIP  ); printf("  ABITSLIP     : %08X (%d,%d,%d)\r\n", r, (r>>8)&15, (r>>4)&15, r&15);
-        r = CSR_PEEK( RA_ACYCLE0   ); printf("  ACYCLE0      : %08X\r\n", r);
-        r = CSR_PEEK( RA_ACYCLE1   ); printf("  ACYCLE1      : %08X\r\n", r);
-        r = CSR_PEEK( RA_ACYCLE2   ); printf("  ACYCLE2      : %08X\r\n", r);
-        r = CSR_PEEK( RA_ATAPOK0   ); printf("  ATAPOK0      : %08X\r\n", r);
-        r = CSR_PEEK( RA_ATAPOK1   ); printf("  ATAPOK1      : %08X\r\n", r);
-        r = CSR_PEEK( RA_ATAPOK2   ); printf("  ATAPOK2      : %08X\r\n", r);
-        r = CSR_PEEK( RA_AGAIN0    ); printf("  AGAIN0       : %08X\r\n", r);
-        r = CSR_PEEK( RA_AGAIN1    ); printf("  AGAIN1       : %08X\r\n", r);
-        r = CSR_PEEK( RA_AGAIN2    ); printf("  AGAIN2       : %08X\r\n", r);
-        r = CSR_PEEK( RA_AGAINP    ); printf("  AGAINP       : %08X\r\n", r);
-        r = CSR_PEEK( RA_ALOSS0    ); printf("  ALOSS0       : %08X\r\n", r);
-        r = CSR_PEEK( RA_ALOSS1    ); printf("  ALOSS1       : %08X\r\n", r);
-        r = CSR_PEEK( RA_ALOSS2    ); printf("  ALOSS2       : %08X\r\n", r);
-        r = CSR_PEEK( RA_ALOSSP    ); printf("  ALOSSP       : %08X\r\n", r);
-        r = CSR_PEEK( RA_CAPCTRL   ); printf("  CAPCTRL      : %08X\r\n", r);
-        r = CSR_PEEK( RA_CAPSIZE   ); printf("  CAPSIZE      : %08X\r\n", r);
-        r = CSR_PEEK( RA_CAPSTAT   ); printf("  CAPSTAT      : %08X\r\n", r);
-        r = CSR_PEEK( RA_CAPCOUNT  ); printf("  CAPCOUNT     : %08X\r\n", r);
-        r = CSR_PEEK( RA_SCRATCH   ); printf("  SCRATCH      : %08X\r\n", r);
-*/
-        CSR_POKE( RA_GPO, led );
-        led = (led-1) & 0xF;
-    }
-}
-
-#endif
