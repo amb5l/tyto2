@@ -79,8 +79,6 @@ VITIS_SRC=\
 	$(VITIS_SRC_DIR)/z7ps/hal.h \
 	$(VITIS_SRC_DIR)/z7ps/hal.c
 VITIS_INCLUDE=$(VITIS_SRC_DIR)/z7ps
-	$(SRC)/designs/$(DESIGN)/software/z7ps \
-	$(MAKE_DIR)/$(VITIS_DIR)/$(VITIS_PROC)/$(VITIS_DOMAIN)/bsp/$(VITIS_PROC)/include/lwip
 endif
 VITIS_APP:=$(DESIGN)
 VITIS_SRC+=\
@@ -94,8 +92,6 @@ VITIS_SRC+=\
 	$(VITIS_SRC_DIR)/cap.h \
 	$(VITIS_SRC_DIR)/main.c
 VITIS_INCLUDE+=$(VITIS_SRC_DIR) $(GEN)
-	$(SRC)/designs/$(DESIGN)/software \
-	$(GEN)
 VITIS_BSP_LIB:=lwip213
 VITIS_BSP_CFG:=\
 	no_sys_no_timers:false \
@@ -119,6 +115,9 @@ VSCODE_XSRC.unisim:=\
     $(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/model_secureip.vhd
 
 include $(MAKE_FPGA)
+
+run::
+	python $(SRC)/designs/$(DESIGN)/software/client/client.py
 
 $(GEN_DIR):
 	bash -c "mkdir -p $@"
