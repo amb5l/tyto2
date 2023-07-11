@@ -83,6 +83,8 @@ endif
 VITIS_APP:=$(DESIGN)
 VITIS_SRC+=\
 	$(CSR_RA_H) \
+	$(VITIS_SRC_DIR)/global.c \
+	$(VITIS_SRC_DIR)/global.h \
 	$(VITIS_SRC_DIR)/csr.h \
 	$(VITIS_SRC_DIR)/dma.c \
 	$(VITIS_SRC_DIR)/dma.h \
@@ -90,6 +92,8 @@ VITIS_SRC+=\
 	$(VITIS_SRC_DIR)/sdram.h \
 	$(VITIS_SRC_DIR)/cap.c \
 	$(VITIS_SRC_DIR)/cap.h \
+	$(VITIS_SRC_DIR)/server.c \
+	$(VITIS_SRC_DIR)/server.h \
 	$(VITIS_SRC_DIR)/main.c
 VITIS_INCLUDE+=$(VITIS_SRC_DIR) $(GEN)
 VITIS_BSP_LIB:=lwip213
