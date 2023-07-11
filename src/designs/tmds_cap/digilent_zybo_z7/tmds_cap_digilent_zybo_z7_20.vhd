@@ -26,6 +26,7 @@ library work;
   use work.axi4_pkg.all;
   use work.axi4s_pkg.all;
   use work.mmcm_pkg.all;
+  use work.i2c_rep_uni_pkg.all;
   use work.tmds_cap_z7ps_pkg.all;
   use work.tmds_cap_io_pkg.all;
 
@@ -44,19 +45,19 @@ entity tmds_cap_digilent_zybo_z7_20 is
     led_b               : out   std_logic_vector(6 downto 5);
 
     -- HDMI RX
---  hdmi_rx_hpd         : out   std_logic;
---  hdmi_rx_scl         : inout std_logic;
---  hdmi_rx_sda         : inout std_logic;
+    hdmi_rx_hpd         : out   std_logic;
+    hdmi_rx_scl         : inout std_logic;
+    hdmi_rx_sda         : inout std_logic;
     hdmi_rx_clk_p       : in    std_logic;
     hdmi_rx_clk_n       : in    std_logic;
     hdmi_rx_d_p         : in    std_logic_vector(0 to 2);
     hdmi_rx_d_n         : in    std_logic_vector(0 to 2);
---  hdmi_rx_cec         : in    std_logic;
+    hdmi_rx_cec         : in    std_logic;
 
     -- HDMI TX
---  hdmi_tx_hpd         : in    std_logic;
---  hdmi_tx_scl         : inout std_logic;
---  hdmi_tx_sda         : inout std_logic;
+    hdmi_tx_hpd         : in    std_logic;
+    hdmi_tx_scl         : inout std_logic;
+    hdmi_tx_sda         : inout std_logic;
     hdmi_tx_clk_p       : out   std_logic;
     hdmi_tx_clk_n       : out   std_logic;
     hdmi_tx_d_p         : out   std_logic_vector(0 to 2);
@@ -181,6 +182,18 @@ begin
   led <= gpo(3 downto 0);
   gpi <= sw & btn;
 
+  -- HDMI through connections
+  hdmi_rx_hpd <= hdmi_tx_hpd;
+  hdmi_tx_cec <= hdmi_rx_cec;
+  U_I2C_REP: component i2c_rep_uni
+    port map (
+      reset => rst,
+      m_scl => hdmi_rx_scl,
+      m_sda => hdmi_rx_sda,
+      s_scl => hdmi_tx_scl,
+      s_sda => hdmi_tx_sda
+    );
+
   -- safe states for unused outputs
   led_r(5)      <= '0';
   led_g(5)      <= '0';
@@ -188,7 +201,6 @@ begin
   led_r(6)      <= '0';
   led_g(6)      <= '0';
   led_b(6)      <= '0';
-  hdmi_tx_cec   <= '0';
   ac_muten      <= '0';
   ac_pbdat      <= '0';
   eth_rst_b     <= '1'; -- beware: reset will stop clki_125m

@@ -42,6 +42,7 @@ VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/designs/$(DESIGN)/$(DESIGN)_csr.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN)_stream.vhd \
 	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_io.vhd \
+	$(SRC)/common/i2c/i2c_rep_uni.vhd \
     $(if $(findstring xc7z,$(FPGA_DEVICE)),,$(SRC)/common/ethernet/memac_axi4_rgmii.vhd) \
 	$(CORE_VHD) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD_VARIANT).vhd
