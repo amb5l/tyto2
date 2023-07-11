@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- tb_i2c_ram1_pkg.vhd                                                        --
+-- tb_i2c_ram1.vhd                                                        --
 -- Simulation testbench for i2c_ram1.vhd.                                     --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
@@ -23,10 +23,10 @@ library work;
   use work.tyto_types_pkg.all;
   use work.i2c_ram1_pkg.all;
 
-entity tb_i2c_ram1_pkg is
-end entity tb_i2c_ram1_pkg;
+entity tb_i2c_ram1 is
+end entity tb_i2c_ram1;
 
-architecture sim of tb_i2c_ram1_pkg is
+architecture sim of tb_i2c_ram1 is
 
   constant TI2C              : time := 5 us;
   constant I2C_SLAVE_ADDRESS : std_logic_vector(7 downto 1) := "1010000";
