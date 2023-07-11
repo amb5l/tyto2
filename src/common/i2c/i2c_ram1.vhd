@@ -135,16 +135,19 @@ begin
       sri(7 downto 0) <= sri(6 downto 0) & sda_i;
       ack <= '0';
       if count = 7 then
-        ack <= '1';
         if phase = SLAVE_ADDR then
           r_w <= sda_i;
           bsel <= sri(2 downto 0);
-          if sri(6 downto 0) /= addr then
+          if sri(6 downto 0) = addr then
+            ack <= '1';
+          else
             ack <= '0';
           end if;
         elsif phase = SUB_ADDR then
+          ack <= '1';
           subaddr<= sri(6 downto 0) & sda_i;
         else
+          ack <= not r_w; -- don't ack reads
           subaddr <= std_logic_vector(unsigned(subaddr)+1);
         end if;
       end if;
@@ -165,7 +168,7 @@ begin
       end if;
     end if;
   end process;
-  sda_o <= '0' when ack = '1' else sro(7) when phase = READ_DATA else '1';
+  sda_o <= '0' when ack = '1' else sro(7) when (phase = READ_DATA and count /= 8) else '1';
 
   -- synchronous RAM
   ram_we <= '1' when phase = WRITE_DATA and count = 8 else '0';
