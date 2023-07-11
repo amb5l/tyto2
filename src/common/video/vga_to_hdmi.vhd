@@ -727,6 +727,8 @@ begin
       end loop;
 
       -- HDMI encoding pipeline stage 1
+      -- NOTE: we do not currently meet the requirement for
+      --  extended control periods by design...
 
       if s1_pcount /= "11111" then
         s1_pcount <= s1_pcount+1;
@@ -748,8 +750,8 @@ begin
               -- 32       single data packet
               -- 2        data guardband
               -- 12       minimum control period
-              -- 2        video preamble
-              -- 8        video guardband
+              -- 8        video preamble (can be included in above?!)
+              -- 2        video guardband
               -- total: 66
               if data_req /= "0000" then
                 s1_period <= DATA_PRE; s1_enc <= ENC_DVI; s1_ctl <= ctl_pre_data;
