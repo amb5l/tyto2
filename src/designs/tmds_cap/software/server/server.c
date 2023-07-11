@@ -60,6 +60,32 @@ void print_ip(char *msg, ip_addr_t *ip)
     fflush(stdout);
 }
 
+// broadcast advertisement
+void advertise()
+{
+	u16_t s_tx_advert_len = strlen(s_tx_advert);
+
+    pkt->payload = (void *)s_tx_advert;
+    pkt->len = s_tx_advert_len;
+    pkt->tot_len = s_tx_advert_len;
+    err = ERR_TIMEOUT;
+    while (err != ERR_OK)
+        err = udp_sendto(udp_pcb_bcast, pkt, &broadcast, UDP_PORT_BCAST);
+}
+
+// acknowledge connection request
+void acknowledge()
+{
+	u16_t s_tx_ack_len = strlen(s_tx_ack);
+
+	pkt->payload = (void *)s_tx_ack;
+	pkt->len = s_tx_ack_len;
+	pkt->tot_len = s_tx_ack_len;
+	err = ERR_TIMEOUT;
+	while (err != ERR_OK)
+		err = udp_sendto(udp_pcb_tx, pkt, &client, UDP_PORT_TX);
+}
+
 // handle received UDP packets
 void udp_rx(
     void* arg,
@@ -78,6 +104,7 @@ void udp_rx(
         // handle client request
         if (!strcmp(s_rx_cmd_req, s)) {
             client.addr = addr->addr;
+            acknowledge();
         }
         // handle other commands
         else if (!strcmp(s_rx_cmd_cap, s)) {
@@ -97,8 +124,6 @@ void udp_rx(
 void transfer(uint32_t pixels)
 {
     int i;
-
-    printf("transfer\r\n");
 
     for (i = 0; i < pixels; i += MAX_UDP_PIXELS) {
         if (pixels-i >= MAX_UDP_PIXELS) {
@@ -149,6 +174,8 @@ void server_init()
     udp_bind(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT_BCAST ) ;
     udp_connect(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT_BCAST);
     pkt = pbuf_alloc(PBUF_TRANSPORT, MAX_UDP_PAYLOAD, PBUF_RAM);
+
+    client.addr = 0;
 }
 
 // establish IP address
@@ -184,50 +211,24 @@ void server_dhcp()
     printf("\r\n");
 }
 
-// advertise and wait for client connection
-void server_conn()
-{
-    u16_t s_tx_advert_len = strlen(s_tx_advert);
-    u16_t s_tx_ack_len = strlen(s_tx_ack);
-
-    // broadcast advertisements until client requests connection
-    printf("advertising... ");
-    fflush(stdout);
-    client.addr = 0;
-    pkt->payload = (void *)s_tx_advert;
-    pkt->len = s_tx_advert_len;
-    pkt->tot_len = s_tx_advert_len;
-    while (client.addr == 0) {
-        err = ERR_TIMEOUT;
-        while (err != ERR_OK)
-            err = udp_sendto(udp_pcb_bcast, pkt, &broadcast, UDP_PORT_BCAST);
-        countdown = COUNTDOWN_SEC;
-        while (countdown > 0 && client.addr == 0) {
-            hal_netif_rx(&Eth0);
-            sys_check_timeouts();
-        }
-    }
-    printf("client request received... ");
-    fflush(stdout);
-
-    // acknowledge connection request
-    pkt->payload = (void *)s_tx_ack;
-    pkt->len = s_tx_ack_len;
-    pkt->tot_len = s_tx_ack_len;
-    err = ERR_TIMEOUT;
-    while (err != ERR_OK)
-        err = udp_sendto(udp_pcb_tx, pkt, &client, UDP_PORT_TX);
-    printf("client request acknowledged!\r\n");
-}
-
 // foreground loop
 void server_run()
 {
     uint32_t pixels;
 
+    countdown = 0;
     while (1) {
+
         hal_netif_rx(&Eth0);
         sys_check_timeouts();
+
+        // advertise once per second
+        if (countdown <= 0) {
+        	countdown = COUNTDOWN_SEC;
+        	advertise();
+        }
+
+        // transfer pixels as required
         pixels = cap_rdy();
         if (pixels) { // capture data is ready to transfer
             transfer(pixels);
