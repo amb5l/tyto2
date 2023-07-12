@@ -46,7 +46,7 @@ MSG_CMD_CAP = b'tmds_cap cap'
 
 print("listening for server advertisements on port %d..." % UDP_PORT_BCAST)
 s_bcast = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s_bcast.bind((UDP_IP, UDP_PORT_BCAST))
+s_bcast.bind(('', UDP_PORT_BCAST))
 while True:
     data, addr = s_bcast.recvfrom(UDP_MAX_PAYLOAD) # buffer size is 1024 bytes
     if addr[1] != UDP_PORT_BCAST:
