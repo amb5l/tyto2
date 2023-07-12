@@ -17,5 +17,4 @@
 
 create_generated_clock -name clk_200m [get_pins U_MMCM/MMCM/CLKOUT0]
 
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets hdmi_rx_scl_IBUF]
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets hdmi_tx_sda_IBUF]
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets hdmi_tx_scl_TRI]
