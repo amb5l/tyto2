@@ -1026,11 +1026,8 @@ video = [ \
     0b00000000  # 0b1111111111 \
     ]
 
-# TMDS TERC4 characters (reverse lookup) (channel 0, encodes HSYNC and VSYNC)
-terc4_0 = [0b1010001110, 0b1001110001, 0b0101100011, 0b1011000011]
-
-# TMDS TERC4 characters (reverse lookup) (channels 1 & 2)
-terc4_1_2 = [ \
+# TMDS TERC4 characters (reverse lookup)
+terc4 = [ \
     0b1010011100, # 0b0000 \
     0b1001100011, # 0b0001 \
     0b1011100100, # 0b0010 \
@@ -1061,4 +1058,4 @@ ctrl = [ \
 video_gb = [0b1011001100, 0b0100110011, 0b1011001100]
 
 # data guardband (channels 1 & 2)
-data_gb_1_2 = 0b0100110011
+data_gb = 0b0100110011
