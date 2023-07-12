@@ -1,6 +1,28 @@
+################################################################################
+## tmds_cap.py                                                                ##
+## Client application for the tmds_cap design.                                ##
+################################################################################
+## (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        ##
+## This file is part of The Tyto Project. The Tyto Project is free software:  ##
+## you can redistribute it and/or modify it under the terms of the GNU Lesser ##
+## General Public License as published by the Free Software Foundation,       ##
+## either version 3 of the License, or (at your option) any later version.    ##
+## The Tyto Project is distributed in the hope that it will be useful, but    ##
+## WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY ##
+## or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public     ##
+## License for more details. You should have received a copy of the GNU       ##
+## Lesser General Public License along with The Tyto Project. If not, see     ##
+## https://www.gnu.org/licenses/.                                             ##
+################################################################################
+
 import socket, array
 import tmds_spec
 import hdmi_spec
+
+print("-------------------------------------------------------------------------------")
+print("tmds_cap client application")
+print("-------------------------------------------------------------------------------")
+print()
 
 ################################################################################
 # network stuff
@@ -17,10 +39,10 @@ UDP_PORT_RX = UDP_PORT_BASE+1
 UDP_PORT_BCAST = UDP_PORT_BASE+2
 UDP_MAX_PAYLOAD = 1024
 
-MSG_ADVERT = b'tmds_cap advert';
-MSG_REQ = b'tmds_cap req';
-MSG_ACK = b'tmds_cap ack';
-MSG_CMD_CAP = b'tmds_cap cap';
+MSG_ADVERT = b'tmds_cap advert'
+MSG_REQ = b'tmds_cap req'
+MSG_ACK = b'tmds_cap ack'
+MSG_CMD_CAP = b'tmds_cap cap'
 
 print("listening for server advertisements on port %d..." % UDP_PORT_BCAST)
 s_bcast = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -81,8 +103,12 @@ tmds = []
 for ch in range(3):
     tmds.append(array.array('h', BUF_LEN*[-1]))
     for i in range(pcnt):
-        tmds[ch][i] = (tmds_packed[i] >> (10*ch)) & 0x3FF;
+        tmds[ch][i] = (tmds_packed[i] >> (10*ch)) & 0x3FF
 del tmds_packed
+
+print()
+print("TMDS data received")
+print()
 
 ################################################################################
 # analysis: constants and variables
@@ -104,8 +130,24 @@ for ch in range(3):
     tmds_ch_p.append(array.array('B', BUF_LEN*[PERIOD_UNKNOWN]))
     tmds_c.append(array.array('b', BUF_LEN*[-1]))
 tmds_p = array.array('B', BUF_LEN*[PERIOD_UNKNOWN]) # overall period flags
+tmds_sync = array.array('b', BUF_LEN*[-1]) # bit 0 = h_sync, bit 1 = v_sync
+tmds_valid = -1 # offset of first valid pixel
 
-hdmi = False
+# measurements
+m_protocol     = 'DVI'
+m_interlaced   = None
+m_h_sync_count = -1
+m_h_sync_pol   = -1
+m_h_sync_width = -1
+m_v_sync_count = -1
+m_v_sync_pol   = -1
+m_v_sync_width = -1
+m_v_total      = -1
+m_v_active     = -1
+m_v_blank      = -1
+m_h_act_count  = -1
+m_h_act_high   = -1
+m_h_act_low    = -1
 
 ################################################################################
 # detect period types (set tmds_p)
@@ -121,7 +163,7 @@ for i in range(pcnt):
             tmds_c[ch][i] = tmds_spec.ctrl.index(tmds[ch][i])
             if ch > 0:
                 if tmds_c[ch][i] > 0:
-                    hdmi = True
+                    m_protocol = 'HDMI'
         if tmds[ch][i] == tmds_spec.video_gb[ch]:
             p = p | PERIOD_VIDEO_GB
         if tmds_spec.video[tmds[ch][i]] != -1:
@@ -135,12 +177,10 @@ for i in range(pcnt):
             if tmds[ch][i] in tmds_spec.terc4:
                 p = p | PERIOD_DATA
         if p == 0:
-            print("error: illegal TMDS character (offset %d, channel %d)" % (i,ch));
+            print("error: illegal TMDS character (offset %d, channel %d)" % (i,ch))
             stop = True
             # TODO: consider continuing analysis after this error?
         tmds_ch_p[ch][i] = p
-
-print("Protocol is", "HDMI not DVI" if hdmi else "DVI not HDMI")
 
 if not stop:
     print("analysis pass 2 - resolve control periods")
@@ -321,15 +361,163 @@ if not stop:
                 print("error: non-video characters found in video period (offset %d, length %d)" % (i,p_count))
                 stop = True
                 break
-                # TODO: consider continuing analysis after this error?               
+                # TODO: consider continuing analysis after this error?
         tmds_p[i] = p
+
+# assumption - sync states persist after control and data periods
+if not stop:
+    print("analysis pass 6 - resolve syncs")
+    sync = -1
+    for i in range(pcnt):
+        p = tmds_p[i]
+        if p & PERIOD_CTRL:
+            sync = tmds_c[0][i]
+        elif p & (PERIOD_DATA | PERIOD_DATA_GB_LEADING | PERIOD_DATA_GB_TRAILING):
+            sync = tmds_spec.terc4.index(tmds[0][i]) & 3
+        tmds_sync[i] = sync
+        if sync >= 0 and tmds_valid < 0:
+            tmds_valid = i
+
+if not stop:
+    print("analysis pass 7 - video timing measurements")
+    h_sync_prev    = None # previous h_sync state
+    h_sync_rising  = None # index of latest h_sync rising edge
+    h_sync_falling = None # index of latest h_sync falling edge
+    h_sync_high    = None # width of lastest h_sync high period
+    h_sync_low     = None # width of lastest h_sync low period
+    v_sync_prev    = None # previous v_sync state
+    v_sync_rising  = None # index of latest v_sync rising edge
+    v_sync_falling = None # index of latest v_sync falling edge
+    v_sync_high    = None # width of lastest v_sync high period
+    v_sync_low     = None # width of lastest v_sync low period
+    h_act_prev     = None
+    h_act_rising   = None
+    h_act_falling  = None
+    h_act_high     = None
+    h_act_low      = None
+    for i in range(pcnt):
+        if tmds_sync[i] >= 0:
+            h_sync = tmds_sync[i] & 1
+            v_sync = (tmds_sync[i] >> 1) & 1
+            if h_sync_prev != None and h_sync != h_sync_prev:
+                if h_sync == 0:
+                    m_h_sync_count += 1 # assume counting falling edges is OK
+                    h_sync_falling = i
+                    if h_sync_rising:
+                        if h_sync_high:
+                            if h_sync_high != h_sync_falling - h_sync_rising:
+                                print("error: inconsistent h_sync high duration (offset %d, found %d, expected %d)" % (i, h_sync_falling - h_sync_rising, h_sync_high))
+                                stop = True
+                                break
+                        else:
+                            h_sync_high = h_sync_falling - h_sync_rising
+                else:
+                    h_sync_rising = i
+                    if h_sync_falling:
+                        if h_sync_low:
+                            if h_sync_low != h_sync_rising - h_sync_falling:
+                                print("error: inconsistent h_sync low duration (offset %d)" % i)
+                                print("error: inconsistent h_sync low duration (offset %d, found %d, expected %d)" % (i, h_sync_rising - h_sync_falling, h_sync_low))
+                                stop = True
+                                break
+                        else:
+                            h_sync_low = h_sync_rising - h_sync_falling
+            if v_sync_prev != None and v_sync != v_sync_prev:
+                if v_sync == 0:
+                    m_h_sync_count += 1 # assume counting falling edges is OK
+                    v_sync_falling = i
+                    if v_sync_rising:
+                        if v_sync_high:
+                            if v_sync_high != v_sync_falling - v_sync_rising:
+                                print("error: inconsistent v_sync high duration (offset %d)" % i)
+                                stop = True
+                                break
+                        else:
+                            v_sync_high = v_sync_falling - v_sync_rising
+                else:
+                    v_sync_rising = i
+                    if v_sync_falling:
+                        if v_sync_low:
+                            if v_sync_low != v_sync_rising - v_sync_falling:
+                                print("error: inconsistent v_sync low duration (offset %d)" % i)
+                                stop = True
+                                break
+                        else:
+                            v_sync_low = v_sync_rising - v_sync_falling
+            h_sync_prev = h_sync
+            v_sync_prev = v_sync
+            h_act = 1 if tmds_p[i] & PERIOD_VIDEO else 0
+            if h_act_prev != None and h_act != h_act_prev:
+                if h_act == 0:
+                    m_h_act_count += 1
+                    h_act_falling = i
+                    if h_act_rising:
+                        if h_act_high:
+                            if h_act_high != h_act_falling - h_act_rising:
+                                print("error: inconsistent h_act high duration (offset %d)" % i)
+                                stop = True
+                                break
+                        else:
+                            h_act_high = h_act_falling - h_act_rising
+                else:
+                    h_act_rising = i
+                    if h_act_falling:
+                        if h_act_low:
+                            if h_act_low != h_act_rising - h_act_falling:
+                                print("error: inconsistent h_act low duration (offset %d)" % i)
+                                stop = True
+                                break
+                        else:
+                            h_act_low = h_act_rising - h_act_falling
+            h_act_prev = h_act
+    if h_sync_low and h_sync_high:
+        if h_sync_low >= h_sync_high:
+            m_h_sync_pol   = 1
+            m_h_sync_width = h_sync_high
+        else:
+            m_h_sync_pol   = 0
+            m_h_sync_width = h_sync_low
+    if v_sync_low and v_sync_high:
+        if v_sync_low >= v_sync_high:
+            m_v_sync_pol   = 1
+            m_v_sync_width = v_sync_high
+        else:
+            m_v_sync_pol   = 0
+            m_v_sync_width = v_sync_low
+    m_h_act_high = h_act_high
+    m_h_act_low  = h_act_low
 
 ################################################################################
 
+print()
+print("REPORT")
+print("pixels analysed: %d" % pcnt)
+print("first valid pixel: %d" % tmds_valid)
+print("protocol is", m_protocol)
+print()
+#print("          h syncs seen : %d" % m_h_sync_count)
+#print("          v syncs seen : %d" % m_v_sync_count)
+#print(" h active periods seen : %d" % m_h_act_count)
+#print("         h active high : %d" % m_h_act_high)
+#print("          h active low : %d" % m_h_act_low)
+#print()
+
+
+print("horizontal timings:")
+print("   sync polarity : %d" % m_h_sync_pol)
+print("      sync width : %d" % m_h_sync_width)
+print("   active pixels : %d" % m_h_act_high )
+print("    blank pixels : %d" % m_h_act_low  )
+print("    total pixels : %d" % (m_h_act_high+m_h_act_low)  )
+print("vertical timings:")
+print("   sync polarity : %d" % m_v_sync_pol)
+print("      sync width : %d" % m_v_sync_width)
+print("    total pixels : %d" % m_v_total  )
+print("   active pixels : %d" % m_v_active )
+print("    blank pixels : %d" % m_v_blank  )
+
 # TODO:
-# fully resolve H & V sync, including through data islands
 # check consistency of...
-#   sync polarity, width, interval
 #   H & V active, blanking and total periods
 #   field/frame periods
 # check for extended control periods
@@ -338,21 +526,22 @@ if not stop:
 ################################################################################
 # debug - dump TMDS data and period information
 
-if not stop:
-    print("| ...ch 2... | ...ch 1... | ...ch 0... | CTL  V H |")
+if 0:
+    print()
+    print("         | ...ch 2... | ...ch 1... | ...ch 0... | H V |  CTL |")
     for i in range(pcnt):
-        print("|",end=" ")
+        print(f'{i:008d}',end=" | ")
         print(f'{tmds[2][i]:010b}',end=" | ")
         print(f'{tmds[1][i]:010b}',end=" | ")
         print(f'{tmds[0][i]:010b}',end=" | ")
         p = tmds_p[i]
+        print(tmds_sync[i] & 1,end=" ")
+        print((tmds_sync[i] >> 1) & 1,end=" | ")
         if p & PERIOD_CTRL:
             print(format(tmds_c[2][i],'#04b')[2:],end="")
-            print(format(tmds_c[1][i],'#04b')[2:],end=" ")
-            print(format(tmds_c[0][i],'#04b')[2],end=" ")
-            print(format(tmds_c[0][i],'#04b')[3],end=" | ")
+            print(format(tmds_c[1][i],'#04b')[2:],end=" | ")
         else:
-            print(".... . .",end=" | ")
+            print("....",end=" | ")
         if p & PERIOD_VIDEO_PRE:
             print("v_pre",end=" | ")
         else:
