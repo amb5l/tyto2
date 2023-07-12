@@ -22,7 +22,7 @@ package i2c_rep_uni_pkg is
 
   component i2c_rep_uni is
     port (
-      reset : in	  std_logic; -- reset
+      reset : in    std_logic; -- reset
       m_scl : inout std_logic; -- master I2C clock
       m_sda : inout std_logic; -- master I2C data
       s_scl : inout std_logic; -- slave I2C clock
@@ -42,13 +42,13 @@ library work;
   use work.tyto_types_pkg.all;
 
 entity i2c_rep_uni is
-	port (
-    reset : in	  std_logic; -- reset
-		m_scl : inout std_logic; -- master I2C clock
-		m_sda : inout std_logic; -- master I2C data
-		s_scl : inout std_logic; -- slave I2C clock
-		s_sda : inout std_logic  -- slave I2C data
-	);
+  port (
+    reset : in    std_logic; -- reset
+    m_scl : inout std_logic; -- master I2C clock
+    m_sda : inout std_logic; -- master I2C data
+    s_scl : inout std_logic; -- slave I2C clock
+    s_sda : inout std_logic  -- slave I2C data
+  );
 end entity i2c_rep_uni;
 
 architecture synth of i2c_rep_uni is
