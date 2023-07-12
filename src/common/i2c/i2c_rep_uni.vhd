@@ -53,50 +53,86 @@ end entity i2c_rep_uni;
 
 architecture synth of i2c_rep_uni is
 
-  signal m_start_toggle : std_logic;
-  signal m_stop_toggle  : std_logic;
-  signal m_active       : std_logic;
-  signal count          : integer range 0 to 8;
-  signal r_w            : std_logic_vector(0 to 1);
-  signal s2m            : std_logic;
+  signal m_scl_i          : std_logic;
+  signal m_sda_o          : std_logic;
+  signal m_sda_i          : std_logic;
+  signal s_scl_o          : std_logic;
+  signal s_sda_o          : std_logic;
+  signal s_sda_i          : std_logic;
+
+  signal m_start_toggle   : std_logic;
+  signal m_stop_toggle    : std_logic;
+  signal m_active         : std_logic;
+  signal m_restart_toggle : std_logic;
+  signal m_first_toggle   : std_logic;
+  signal count_rst        : std_logic;
+  signal count            : integer range 0 to 8;
+  signal r_w              : std_logic_vector(0 to 1);
+  signal s2m              : std_logic;
 
 begin
 
   m_scl <= 'Z';
-  m_sda <= '0' when s2m = '1' and s_sda = '0' else 'Z';
-  s_scl <= '0' when m_scl = '0' else 'Z';
-  s_sda <= '0' when s2m = '0' and m_sda = '0' else 'Z';
+  m_sda <= '0' when m_sda_o = '0' else 'Z';
+  s_scl <= '0' when s_scl_o = '0' else 'Z';
+  s_sda <= '0' when s_sda_o = '0' else 'Z';
 
-  process(reset,m_sda)
- begin
+  m_scl_i <= m_scl;
+  m_sda_i <= m_sda;
+  m_sda_o <= '0' when s2m = '1' and s_sda_i = '0' else '1';
+  s_scl_o <= m_scl_i;
+  s_sda_i <= s_sda;
+  s_sda_o <= '0' when s2m = '0' and m_sda_i = '0' else '1';
+
+  -- toggles at start only (not restart)
+  process(reset,m_sda_i)
+  begin
     if reset = '1' then
       m_start_toggle <= '0';
-    elsif falling_edge(m_sda) and m_scl >= 'H' then
+    elsif falling_edge(m_sda_i) and m_scl_i >= 'H' then
       m_start_toggle <= not m_stop_toggle;
     end if;
   end process;
 
-  process(reset,m_sda)
+  -- toggles at stop
+  process(reset,m_sda_i)
   begin
     if reset = '1' then
       m_stop_toggle <= '0';
-    elsif rising_edge(m_sda) and m_scl >= 'H' then
+    elsif rising_edge(m_sda_i) and m_scl_i >= 'H' then
       m_stop_toggle <= m_start_toggle;
     end if;
   end process;
 
-  m_active <= m_start_toggle xor m_stop_toggle;
+  m_active  <= m_start_toggle xor m_stop_toggle;
 
-  process(m_active,m_scl)
+  -- toggles at start or restart
+  process(reset,m_sda_i)
   begin
-    if m_active = '0' then
+    if reset = '1' then
+      m_restart_toggle <= '0';
+    elsif falling_edge(m_sda_i) and m_scl_i >= 'H' then
+      m_restart_toggle <= not m_restart_toggle;
+    end if;
+  end process;
+
+  -- toggles at first clock after start/restart
+  process(reset,m_scl_i)
+  begin
+    if reset = '1' then
+      m_first_toggle <= '0';
+    elsif falling_edge(m_scl_i) then
+      m_first_toggle <= m_restart_toggle;
+    end if;
+  end process;
+
+  count_rst <= m_restart_toggle xor m_first_toggle;
+
+  process(count_rst,m_scl_i)
+  begin
+    if count_rst = '1' then
       count <= 0;
-      r_w   <= (others => '0');
-    elsif rising_edge(m_scl) then
-      r_w(1) <= r_w(0);
-      if count = 7 then
-        r_w(0) <= r_w(0) or m_sda;
-      end if;
+    elsif rising_edge(m_scl_i) then
       if count = 8 then
         count <= 0;
       else
@@ -105,11 +141,23 @@ begin
     end if;
   end process;
 
-  process(m_active,m_scl)
+  process(m_active,m_scl_i)
+  begin
+    if m_active = '0' then
+      r_w   <= (others => '0');
+    elsif rising_edge(m_scl_i) then
+      r_w(1) <= r_w(0);
+      if count = 7 then
+        r_w(0) <= r_w(0) or m_sda_i;
+      end if;
+    end if;
+  end process;
+
+  process(m_active,m_scl_i)
   begin
     if m_active = '0' then
       s2m <= '0';
-    elsif falling_edge(m_scl) then
+    elsif falling_edge(m_scl_i) then
       if count = 8 then
         s2m <= not r_w(1);
       else
