@@ -16,6 +16,7 @@ VIVADO_PART:=$(FPGA_DEVICE)
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
 VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
+	$(SRC)/common/basic/sync_reg.vhd \
 	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_fm.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_clk.vhd \
@@ -37,7 +38,6 @@ VIVADO_SIM_TOP:=tb_$(VIVADO_DSN_TOP)
 VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/tyto_utils_pkg.vhd \
-	$(SRC)/common/basic/sync_reg.vhd \
 	$(SRC)/common/video/video_mode.vhd \
 	$(SRC)/common/video/model_video_out_clock.vhd \
 	$(SRC)/common/video/video_out_timing.vhd \

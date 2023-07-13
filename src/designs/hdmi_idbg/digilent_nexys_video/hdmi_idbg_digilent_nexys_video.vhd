@@ -209,8 +209,8 @@ architecture synth of hdmi_idbg_digilent_nexys_video is
 
   -- CPU
   signal rsto           : std_logic;
-  signal axi_mosi       : axi4_mosi_a32d32_t;
-  signal axi_miso       : axi4_miso_a32d32_t;
+  signal axi_mosi       : axi4_a32d32_mosi_t;
+  signal axi_miso       : axi4_a32d32_miso_t;
 
 begin
 

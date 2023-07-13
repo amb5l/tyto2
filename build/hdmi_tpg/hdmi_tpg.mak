@@ -10,14 +10,15 @@ SUBMODULES:=$(REPO_ROOT)/submodules
 MAKE_FPGA:=$(SUBMODULES)/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
 
+BOARD_VARIANT:=$(BOARD)$(addprefix _,$(BOARD_VARIANT))
 FPGA_VENDOR:=$(word 1,$(FPGA))
 FPGA_FAMILY:=$(word 2,$(FPGA))
 
 FPGA_TOOL:=vivado
 
-NEEDS_MMCM:=qmtech_wukong digilent_zybo_z7_20
+NEEDS_MMCM:=qmtech_wukong digilent_zybo_z7
 
-VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
+VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD_VARIANT)
 VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/tyto_utils_pkg.vhd \
@@ -36,7 +37,7 @@ VIVADO_DSN_VHDL:=\
 	$(if $(filter mega65r3,$(BOARD)),$(SRC)/contrib/mega65/keyboard.vhd) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
 VIVADO_DSN_XDC_IMPL:=\
-	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
+	$(SRC)/boards/$(BOARD)/$(BOARD_VARIANT).tcl \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc
 VIVADO_SIM_TOP:=tb_$(VIVADO_DSN_TOP)
 VIVADO_SIM_VHDL_2008:=\

@@ -26,6 +26,7 @@ library work;
   use work.axi4_pkg.all;
   use work.axi4s_pkg.all;
   use work.mmcm_pkg.all;
+  use work.i2c_rep_uni_pkg.all;
   use work.tmds_cap_z7ps_pkg.all;
   use work.tmds_cap_io_pkg.all;
 
@@ -36,7 +37,7 @@ entity tmds_cap_digilent_zybo_z7_10 is
     clki_125m           : in    std_logic;
 
     -- LEDs, buttons and switches
---  sw                  : in    std_logic_vector(3 downto 0);
+    sw                  : in    std_logic_vector(3 downto 0);
     btn                 : in    std_logic_vector(3 downto 0);
     led                 : out   std_logic_vector(3 downto 0);
     led_r               : out   std_logic_vector(6 downto 6);
@@ -44,19 +45,19 @@ entity tmds_cap_digilent_zybo_z7_10 is
     led_b               : out   std_logic_vector(6 downto 6);
 
     -- HDMI RX
---  hdmi_rx_hpd         : out   std_logic;
---  hdmi_rx_scl         : inout std_logic;
---  hdmi_rx_sda         : inout std_logic;
+    hdmi_rx_hpd         : out   std_logic;
+    hdmi_rx_scl         : inout std_logic;
+    hdmi_rx_sda         : inout std_logic;
     hdmi_rx_clk_p       : in    std_logic;
     hdmi_rx_clk_n       : in    std_logic;
     hdmi_rx_d_p         : in    std_logic_vector(0 to 2);
     hdmi_rx_d_n         : in    std_logic_vector(0 to 2);
---  hdmi_rx_cec         : in    std_logic;
+--  hdmi_rx_cec         : in    std_logic; -- available on Zybo Z7-20 only
 
     -- HDMI TX
---  hdmi_tx_hpd         : in    std_logic;
---  hdmi_tx_scl         : inout std_logic;
---  hdmi_tx_sda         : inout std_logic;
+    hdmi_tx_hpd         : in    std_logic;
+    hdmi_tx_scl         : inout std_logic;
+    hdmi_tx_sda         : inout std_logic;
     hdmi_tx_clk_p       : out   std_logic;
     hdmi_tx_clk_n       : out   std_logic;
     hdmi_tx_d_p         : out   std_logic_vector(0 to 2);
@@ -125,6 +126,9 @@ architecture synth of tmds_cap_digilent_zybo_z7_10 is
   signal axi4s_mosi : axi4s_64_mosi_t;
   signal axi4s_miso : axi4s_64_miso_t;
 
+  signal gpo        : std_logic_vector(7 downto 0);
+  signal gpi        : std_logic_vector(7 downto 0);
+
 begin
 
   -- board specific clocking
@@ -136,7 +140,7 @@ begin
       odiv0       => 5.0
     )
     port map (
-      rsti    => btn(0),
+      rsti    => btn(3),
       clki    => clki_125m,
       rsto    => rst,
       clko(0) => clk_200m
@@ -158,7 +162,8 @@ begin
     port map (
       rst           => rst,
       clk_200m      => clk_200m,
-      led           => led,
+      gpo           => gpo,
+      gpi           => gpi,
       axi_rst_n     => axi_rst_n,
       axi_clk       => axi_clk,
       saxi4_mosi    => axi4_mosi,
@@ -174,12 +179,25 @@ begin
       hdmi_tx_d_p   => hdmi_tx_d_p,
       hdmi_tx_d_n   => hdmi_tx_d_n
     );
+  led <= gpo(3 downto 0);
+  gpi <= sw & btn;
+
+  -- HDMI through connections
+  hdmi_rx_hpd <= hdmi_tx_hpd;
+--hdmi_tx_cec <= hdmi_rx_cec;
+  U_I2C_REP: component i2c_rep_uni
+    port map (
+      reset => rst,
+      m_scl => hdmi_rx_scl,
+      m_sda => hdmi_rx_sda,
+      s_scl => hdmi_tx_scl,
+      s_sda => hdmi_tx_sda
+    );
 
   -- safe states for unused outputs
   led_r(6)      <= '0';
   led_g(6)      <= '0';
   led_b(6)      <= '0';
-  hdmi_tx_cec   <= '0';
   ac_muten      <= '0';
   ac_pbdat      <= '0';
   eth_rst_b     <= '1'; -- beware: reset will stop clki_125m

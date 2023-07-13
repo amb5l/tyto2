@@ -7,30 +7,31 @@ endif
 MAKE_FPGA:=$(REPO_ROOT)/submodules/make-fpga/make-fpga.mak
 SRC:=$(REPO_ROOT)/src
 
+BOARD_VARIANT:=$(BOARD)$(addprefix _,$(BOARD_VARIANT))
 FPGA_VENDOR?=$(word 1,$(FPGA))
 FPGA_FAMILY?=$(word 2,$(FPGA))
 FPGA_DEVICE?=$(word 3,$(FPGA))
 FPGA_TOOL:=vivado
 
 VIVADO_PART:=$(FPGA_DEVICE)
-VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD)
+VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD_VARIANT)
 VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
+	$(SRC)/common/basic/sync_reg.vhd \
 	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_fm.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_clk.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_align.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
     $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).vhd
+	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD_VARIANT).vhd
 VIVADO_DSN_XDC_IMPL:=\
-	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
+	$(SRC)/boards/$(BOARD)/$(BOARD_VARIANT).tcl \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc
 VIVADO_SIM_TOP:=tb_$(VIVADO_DSN_TOP)
 VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/tyto_utils_pkg.vhd \
-	$(SRC)/common/basic/sync_reg.vhd \
 	$(SRC)/common/video/video_mode.vhd \
 	$(SRC)/common/video/model_video_out_clock.vhd \
 	$(SRC)/common/video/video_out_timing.vhd \

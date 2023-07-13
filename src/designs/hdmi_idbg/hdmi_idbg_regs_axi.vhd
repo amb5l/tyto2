@@ -29,8 +29,8 @@ package hdmi_idbg_regs_axi_pkg is
       rst         : in    std_logic;
       clk         : in    std_logic;
       rx_status   : in    hdmi_rx_selectio_status_t;
-      axi_mosi    : in    axi4_mosi_a32d32_t;
-      axi_miso    : out   axi4_miso_a32d32_t
+      axi_mosi    : in    axi4_a32d32_mosi_t;
+      axi_miso    : out   axi4_a32d32_miso_t
     );
   end component hdmi_idbg_regs_axi;
 
@@ -50,8 +50,8 @@ entity hdmi_idbg_regs_axi is
     rst         : in    std_logic;
     clk         : in    std_logic;
     rx_status   : in    hdmi_rx_selectio_status_t;
-    axi_mosi    : in    axi4_mosi_a32d32_t;
-    axi_miso    : out   axi4_miso_a32d32_t
+    axi_mosi    : in    axi4_a32d32_mosi_t;
+    axi_miso    : out   axi4_a32d32_miso_t
   );
 end entity hdmi_idbg_regs_axi;
 

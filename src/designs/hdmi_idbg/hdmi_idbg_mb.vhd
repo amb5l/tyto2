@@ -30,8 +30,8 @@ package hdmi_idbg_mb_pkg is
       clk      : in    std_logic;
       uart_tx  : out   std_logic;
       uart_rx  : in    std_logic;
-      axi_mosi : out   axi4_mosi_a32d32_t;
-      axi_miso : in    axi4_miso_a32d32_t
+      axi_mosi : out   axi4_a32d32_mosi_t;
+      axi_miso : in    axi4_a32d32_miso_t
     );
   end component hdmi_idbg_mb;
 
@@ -52,8 +52,8 @@ entity hdmi_idbg_mb is
     clk      : in    std_logic;
     uart_tx  : out   std_logic;
     uart_rx  : in    std_logic;
-    axi_mosi : out   axi4_mosi_a32d32_t;
-    axi_miso : in    axi4_miso_a32d32_t
+    axi_mosi : out   axi4_a32d32_mosi_t;
+    axi_miso : in    axi4_a32d32_miso_t
   );
 end entity hdmi_idbg_mb;
 
