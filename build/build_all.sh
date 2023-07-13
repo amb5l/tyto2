@@ -1,27 +1,32 @@
 # do a clean build of all designs
 # TODO: add Linux support
 
-# workaround for Xilinx GNU tool issues
-alias sleep="/usr/bin/sleep"
+if [[ "$OSTYPE" != "msys"* ]]; then
+    @echo "This script currently supports Windows/MSYS2 only"; exit 1
+fi
+
+# put MSYS2 binaries at the front of the path
+if [ -z "$MSYS2" ]; then echo "MSYS2 not defined"; exit 1; fi
+PATH=$MSYS2/usr/bin:$PATH
 
 set -o errexit
 
 # check for executables
-printf "\nChecking Vivado...\n"
-cmd.exe /C "vivado -version"
-printf "\nChecking Vitis...\n"
-cmd.exe /C "xsct -eval \"puts [version]\""
-printf "\nChecking Quartus...\n"
-cmd.exe /C "quartus_sh --version"
+if [ -z $(type -P vivado) ]; then echo "Vivado not in path"; exit 1; fi
+if [ -z $(type -P xsct) ]; then echo "Vitis not in path"; exit 1; fi
+if [ -z $(type -P quartus_sh) ]; then echo "Quartus not in path"; exit 1; fi
 
 # build array of directories by searching for makefiles
 designs=( \
 	'ddr3_test' \
+	'hdmi_idbg' \
+	'hdmi_io' \
 	'hdmi_tpg' \
-	'np6532_poc' \
 	'mb_cb' \
 	'mb_cb_ps2' \
 	'mb_fb' \
+	'np6532_poc' \
+	'tmds_cap' \
 	)
 makefiles=($(find ${designs[@]} -maxdepth 2 -name makefile -type f))
 dirs=()
@@ -34,14 +39,14 @@ base_dir=$(pwd)
 printf "\nspawning builds...\n"
 num_builds=0
 for dir in ${dirs[@]}; do
-	cd $dir
-	echo $(pwd)
-	find . -name '*.bit' -or -name '*.sof' -type f -delete
 	# VIVADO_JOBS=1 reduces/eliminates Vivado hang on exit (following wait_on_run)
-	cmd.exe /C "start cmd.exe /C \"pwd & make clean & set VIVADO_JOBS=1 & make & if exist *.bit exit & if exist *.sof exit & pause\""
+    echo "cd $(cygpath -a -w $dir) & del *.bit *.sof"
+	echo "start cmd.exe /C \"pwd & make clean & make VIVADO_JOBS=1 & if exist *.bit exit & if exist *.sof exit & pause\""
 	cd $base_dir
 	num_builds=$((num_builds+1))
-done
+done > build_all.bat
+
+exit 0
 
 # wait for all builds to finish
 printf "\nwaiting for %d builds...\n" $num_builds
