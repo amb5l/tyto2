@@ -22,10 +22,12 @@ package sync_reg_pkg is
 
   component sync_reg is
     generic (
-      width : integer := 1;
-      depth : integer := 2
+      width     : integer := 1;
+      depth     : integer := 2;
+      rst_state : std_logic := '0'
     );
     port (
+      rst   : in    std_logic := '0';
       clk   : in    std_logic;
       d     : in    std_logic_vector(width-1 downto 0);
       q     : out   std_logic_vector(width-1 downto 0)
@@ -41,10 +43,12 @@ library ieee;
 
 entity sync_reg is
   generic (
-    width : integer := 1;
-    depth : integer := 2
+    width     : integer := 1;
+    depth     : integer := 2;
+    rst_state : std_logic := '0'
   );
   port (
+    rst   : in    std_logic := '0';
     clk   : in    std_logic;                          -- destination clock
     d     : in    std_logic_vector(width-1 downto 0); -- input
     q     : out   std_logic_vector(width-1 downto 0)  -- output
@@ -63,9 +67,11 @@ architecture structural of sync_reg is
 
 begin
 
-  MAIN: process (clk) is
+  MAIN: process (rst,clk) is
   begin
-    if rising_edge(clk) then
+    if rst = '1' then
+      reg <= (others => (others => rst_state));
+    elsif rising_edge(clk) then
       for i in 0 to depth-1 loop
         if i = 0 then
           reg(i) <= d;

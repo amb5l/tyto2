@@ -19,3 +19,6 @@
 [submodule "submodules/make-fpga"]
 	path = submodules/make-fpga
 	url = https://github.com/amb5l/make-fpga.git
+[submodule "submodules/OsvvmLibraries"]
+	path = submodules/OsvvmLibraries
+	url = https://github.com/OSVVM/OsvvmLibraries.git

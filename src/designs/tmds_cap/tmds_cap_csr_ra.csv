@@ -1,0 +1,29 @@
+SIGNATURE  ,00 ,signature value
+FREQ       ,04 ,pixel clock frequency count
+ASTAT      ,08 ,alignment status
+ATAPMASK0  ,10 ,alignment tap mask (channel 0)
+ATAPMASK1  ,14 ,alignment tap mask (channel 1)
+ATAPMASK2  ,18 ,alignment tap mask (channel 2)
+ATAP       ,20 ,alignment: chosen taps
+ABITSLIP   ,24 ,alignment: bit slip positions
+ACYCLE0    ,30 ,alignment cycle count (channel 0)
+ACYCLE1    ,34 ,alignment cycle count (channel 1)
+ACYCLE2    ,38 ,alignment cycle count (channel 2)
+ATAPOK0    ,40 ,alignment tap OK count (channel 0)
+ATAPOK1    ,44 ,alignment tap OK count (channel 1)
+ATAPOK2    ,48 ,alignment tap OK count (channel 2)
+AGAIN0     ,50 ,serial alignment gain count (channel 0)
+AGAIN1     ,54 ,serial alignment gain count (channel 1)
+AGAIN2     ,58 ,serial alignment gain count (channel 2)
+AGAINP     ,5C ,parallel alignment gain count
+ALOSS0     ,60 ,serial alignment loss count (channel 0)
+ALOSS1     ,64 ,serial alignment loss count (channel 1)
+ALOSS2     ,68 ,serial alignment loss count (channel 2)
+ALOSSP     ,6C ,parallel alignment loss count
+CAPCTRL    ,80 ,capture control (reset/go)
+CAPSIZE    ,84 ,capture size (pixels)
+CAPSTAT    ,88 ,capture status (run/loss/ovf/unf)
+CAPCOUNT   ,8C ,capture count (pixels)
+GPI        ,F0 ,general purpose in
+GPO        ,F4 ,general purpose out
+SCRATCH    ,FC ,scratch register

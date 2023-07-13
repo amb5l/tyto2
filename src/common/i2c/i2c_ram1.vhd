@@ -1,7 +1,6 @@
 --------------------------------------------------------------------------------
 -- i2c_ram1.vhd                                                               --
 -- I2C 24LCxx EEPROM emulating RAM, 1 byte sub address, 128-2048 bytes.       --
---  frequency measurement module.                                             --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -31,8 +30,8 @@ package i2c_ram1_pkg is
       init       : slv8_vector := (0 to 127 => x"00")
     );
     port (
-      reset      : in	  std_logic;
-      scl        : in	  std_logic;
+      reset      : in    std_logic;
+      scl        : in    std_logic;
       sda_i      : in    std_logic;
       sda_o      : out   std_logic
     );
@@ -55,12 +54,12 @@ entity i2c_ram1 is
     depth_log2 : integer range 7 to 11 := 7;                -- 2^depth_log2 bytes
     init       : slv8_vector := (0 to 127 => x"00")         -- initial contents
   );
-	port (
-    reset      : in	  std_logic;                            -- reset
-		scl        : in	  std_logic;                            -- I2C clock
-		sda_i      : in    std_logic;                           -- I2C data in
-		sda_o      : out   std_logic;                           -- I2C data out
-	);
+  port (
+    reset      : in    std_logic;                           -- reset
+    scl        : in    std_logic;                           -- I2C clock
+    sda_i      : in    std_logic;                           -- I2C data in
+    sda_o      : out   std_logic                            -- I2C data out
+  );
 end entity i2c_ram1;
 
 architecture synth of i2c_ram1 is
@@ -136,16 +135,19 @@ begin
       sri(7 downto 0) <= sri(6 downto 0) & sda_i;
       ack <= '0';
       if count = 7 then
-        ack <= '1';
         if phase = SLAVE_ADDR then
           r_w <= sda_i;
           bsel <= sri(2 downto 0);
-          if sri(6 downto 0) /= addr then
+          if sri(6 downto 0) = addr then
+            ack <= '1';
+          else
             ack <= '0';
           end if;
         elsif phase = SUB_ADDR then
+          ack <= '1';
           subaddr<= sri(6 downto 0) & sda_i;
         else
+          ack <= not r_w; -- don't ack reads
           subaddr <= std_logic_vector(unsigned(subaddr)+1);
         end if;
       end if;
@@ -166,7 +168,7 @@ begin
       end if;
     end if;
   end process;
-  sda_o <= '0' when ack = '1' else sro(7) when phase = READ_DATA else '1';
+  sda_o <= '0' when ack = '1' else sro(7) when (phase = READ_DATA and count /= 8) else '1';
 
   -- synchronous RAM
   ram_we <= '1' when phase = WRITE_DATA and count = 8 else '0';

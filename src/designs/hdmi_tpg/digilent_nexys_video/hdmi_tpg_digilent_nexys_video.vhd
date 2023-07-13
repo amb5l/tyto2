@@ -20,7 +20,6 @@ library ieee;
 
 library work;
   use work.hdmi_tpg_pkg.all;
-  use work.sync_reg_pkg.all;
 
 entity hdmi_tpg_digilent_nexys_video is
   port (
@@ -177,7 +176,6 @@ end entity hdmi_tpg_digilent_nexys_video;
 
 architecture synth of hdmi_tpg_digilent_nexys_video is
 
-  signal rst_100m  : std_logic;
   signal mode_step : std_logic;
   signal mode      : std_logic_vector(3 downto 0);
   signal dvi       : std_logic;
@@ -191,22 +189,12 @@ begin
   -- button CPU_RESET = reset
   -- button BTNC = press to increment video mode (0..14 then wrap)
   -- switch SW0 = HDMI/DVI mode
+  -- switch SW1 = steady audio
   -- led LD7 = DVI mode
   -- led LD6 = audio clock MMCM lock
   -- led LD5 = pixel clock MMCM lock
   -- led LD4 = heartbeat
   -- leds LD3..LD0 = display mode (binary, 0000..1110)
-
-  RST: component sync_reg
-    generic map (
-      width => 1,
-      depth => 2
-    )
-    port map (
-      clk   => clki_100m,
-      d(0)  => not btn_rst_n,
-      q(0)  => rst_100m
-    );
 
   mode_step       <= btn_c;
   dvi             <= sw(0);

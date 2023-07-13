@@ -1,10 +1,7 @@
 # makefile for tb_i2c_ram1
 
-REPO_ROOT:=$(shell git rev-parse --show-toplevel)
-ifeq ($(OS),Windows_NT)
-REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
-endif
-MAKE_FPGA:=$(REPO_ROOT)/submodules/make-fpga/make-fpga.mak
+include $(shell realpath --relative-to . $(shell git rev-parse --show-toplevel))/submodules/make-fpga/make-fpga-h.mak
+
 SRC:=$(REPO_ROOT)/src
 
 SIM_TOP:=tb_i2c_ram1

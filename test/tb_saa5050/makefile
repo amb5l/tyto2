@@ -1,10 +1,7 @@
 # makefile for tb_saa5050
 
-REPO_ROOT:=$(shell git rev-parse --show-toplevel)
-ifeq ($(OS),Windows_NT)
-REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
-endif
-MAKE_FPGA:=$(REPO_ROOT)/submodules/make-fpga/make-fpga.mak
+include $(shell realpath --relative-to . $(shell git rev-parse --show-toplevel))/submodules/make-fpga/make-fpga-h.mak
+
 SRC:=$(REPO_ROOT)/src
 
 DESIGN?=tb_saa5050
@@ -28,7 +25,7 @@ MAKE_DIR:=$(shell cygpath -m $(MAKE_DIR))
 endif
 TESTS:=engtest scarybeasts parrot
 DATA_DIR:=$(SRC)/common/retro/saa5050/test
-SIM_RUN=$(foreach t,$(TESTS),$t,$(SIM_TOP),infile=$(DATA_DIR)/$t.bin;outfile=$(MAKE_DIR)$(VARIANT)/$(lastword $(SIM_DIR))/$t$(VARIANT))
+SIM_RUN=$(foreach t,$(TESTS),$t,$(SIM_TOP),infile=$(DATA_DIR)/$t.bin;outfile=$(MAKE_DIR)$(VARIANT)/$(notdir $(SIM_DIR))/$t$(VARIANT))
 
 include $(MAKE_FPGA)
 

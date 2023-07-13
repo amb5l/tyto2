@@ -162,6 +162,7 @@ begin
 
   U_ALIGN: component hdmi_rx_selectio_align
     port map (
+      rst          => rst,
       prst         => prst,
       pclk         => pclk,
       iserdes_q    => iserdes_q,
