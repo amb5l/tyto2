@@ -15,7 +15,7 @@
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
 
-import socket, array
+import sys,socket,array,time
 import tmds_spec
 import hdmi_spec
 
@@ -84,19 +84,27 @@ print("CONNECTION ESTABLISHED")
 ################################################################################
 # get TMDS data
 
-preq = 16384 # pixels requested
+preq = 4*1024*1024 # more than enough for 2 frames of 1080p50
 BUF_LEN=preq
 
+print("requesting %d pixels..." % preq)
+sys.stdout.flush()
 s_tx.sendto(b'tmds_cap cap '+bytes(str(preq),'utf-8'), (server_ip, UDP_PORT_TX))
 
 # receive packed TMDS data
+t0 = time.perf_counter()
 tmds_packed = array.array('L', BUF_LEN*[0])
 pcnt = 0
 while pcnt < preq:
     data, addr = s_rx.recvfrom(UDP_MAX_PAYLOAD)
+    t1 = time.perf_counter()
+    if t1-t0 >= 1.0:
+        t0 = t1
+        print("  %d" % pcnt)
     for i in range(len(data)//4):
         tmds_packed[pcnt] = int.from_bytes(data[4*i:4+(4*i)],'little')
         pcnt += 1
+print("done")
 
 # separate channels from packed TMDS data
 tmds = []
