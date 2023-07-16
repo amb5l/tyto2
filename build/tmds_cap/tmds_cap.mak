@@ -122,7 +122,7 @@ VSCODE_XSRC.unisim:=\
 include $(MAKE_FPGA)
 
 run::
-	python $(SRC)/designs/$(DESIGN)/software/client/client.py
+	python $(SRC)/designs/$(DESIGN)/software/client/tmds_cap.py
 
 $(GEN_DIR):
 	bash -c "mkdir -p $@"
