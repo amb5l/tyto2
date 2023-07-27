@@ -33,25 +33,24 @@
 #include "lwip/timeouts.h"
 void lwip_init();
 
-#define MAX_UDP_PAYLOAD 1472
-#define UDP_PORT_BASE   65400
-#define UDP_PORT_RX     (UDP_PORT_BASE+0)
-#define UDP_PORT_TX     (UDP_PORT_BASE+1)
-#define UDP_PORT_BCAST  (UDP_PORT_BASE+2)
-
 #define BYTES_PER_PIXEL 4
-#define MAX_UDP_PIXELS (MAX_UDP_PAYLOAD/BYTES_PER_PIXEL) // 1472 bytes = 368 pixels
 
-const char s_rx_prefix[]  = "tmds_cap";
-const char s_rx_cmd_req[] = "req";
-const char s_rx_cmd_cap[] = "cap";
-const char s_tx_advert[]  = "tmds_cap advert";
-const char s_tx_ack[]     = "tmds_cap ack";
+#define UDP_MAX_PAYLOAD 1472
+#define UDP_PORT        65400
 
-ip_addr_t broadcast, client;
-struct udp_pcb *udp_pcb_rx, *udp_pcb_tx, *udp_pcb_bcast;
-struct pbuf *pkt;
-err_t err;
+#define TCP_MAX_PAYLOAD 1460
+#define TCP_PORT        65401
+
+const char s_disco[]      = "tmds_cap disco";
+const char s_cmd_prefix[] = "tmds_cap";
+const char s_cmd_get[]    = "get";
+
+ip_addr_t broadcast;
+struct udp_pcb *udp_pcb_bcast;
+struct pbuf *udp_pbuf;
+
+struct tcp_pcb *tcp_pcb_listen;
+struct tcp_pcb *tcp_pcb_tx;
 
 void print_ip(char *msg, ip_addr_t *ip)
 {
@@ -60,84 +59,105 @@ void print_ip(char *msg, ip_addr_t *ip)
     fflush(stdout);
 }
 
-// broadcast advertisement
-void advertise()
+// broadcast advertisement (UDP)
+void advertise(const char *s)
 {
-	u16_t s_tx_advert_len = strlen(s_tx_advert);
+    u16_t l = strlen(s);
 
-    pkt->payload = (void *)s_tx_advert;
-    pkt->len = s_tx_advert_len;
-    pkt->tot_len = s_tx_advert_len;
-    err = ERR_TIMEOUT;
-    while (err != ERR_OK)
-        err = udp_sendto(udp_pcb_bcast, pkt, &broadcast, UDP_PORT_BCAST);
+    udp_pbuf->payload = (void *)s;
+    udp_pbuf->len = l;
+    udp_pbuf->tot_len = l;
+    while (udp_sendto(udp_pcb_bcast, udp_pbuf, &broadcast, UDP_PORT) != ERR_OK);
 }
 
-// acknowledge connection request
-void acknowledge()
+void server_tcp_close(struct tcp_pcb *pcb)
 {
-	u16_t s_tx_ack_len = strlen(s_tx_ack);
-
-	pkt->payload = (void *)s_tx_ack;
-	pkt->len = s_tx_ack_len;
-	pkt->tot_len = s_tx_ack_len;
-	err = ERR_TIMEOUT;
-	while (err != ERR_OK)
-		err = udp_sendto(udp_pcb_tx, pkt, &client, UDP_PORT_TX);
+  tcp_arg(pcb, NULL);
+  tcp_sent(pcb, NULL);
+  tcp_recv(pcb, NULL);
+  tcp_err(pcb, NULL);
+  tcp_poll(pcb, NULL, 0);
+  tcp_close(pcb);
 }
 
-// handle received UDP packets
-void udp_rx(
-    void* arg,
-    struct udp_pcb* upcb,
-    struct pbuf* p,
-    const ip_addr_t* addr,
-    u16_t port
-)
+err_t server_tcp_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err)
 {
     char *s;
     long n;
 
-    s = strtok((char *)p->payload, " ");
-    if (!strcmp(s_rx_prefix,s)) {
-        s = strtok(NULL, " ");
-        // handle client request
-        if (!strcmp(s_rx_cmd_req, s)) {
-            client.addr = addr->addr;
-            acknowledge();
-        }
-        // handle other commands
-        else if (!strcmp(s_rx_cmd_cap, s)) {
+    if (p) {
+        s = strtok((char *)p->payload, " ");
+        if (!strcmp(s_cmd_prefix,s)) {
             s = strtok(NULL, " ");
-            n = strtol(s, (char **)NULL, 10);
-            printf("udp_rx: cap: n = %ld\r\n", n);
-            cap_start((uint32_t)n);
+            if (!strcmp(s_cmd_get, s)) {
+                s = strtok(NULL, " ");
+                n = strtol(s, (char **)NULL, 10);
+                printf("client requested %ld pixels\r\n", n);
+                tcp_pcb_tx = pcb;
+                cap_start((uint32_t)n);
+            } else {
+                printf("received unknown command from client (%s)\r\n", s);
+            }
+        } else {
+            printf("received bad prefix from client (%s)\r\n", s);
         }
+        tcp_recved(pcb, p->tot_len);
+        pbuf_free(p);
     }
     else {
-        printf("udp_rx: bad prefix (%s)\r\n", s);
+        // no pbuf?
+        printf("TCP connection closed\r\n");
+        server_tcp_close(pcb);
     }
-    pbuf_free(p);
+    return ERR_OK;
 }
 
-// transfer captured data
-void transfer(uint32_t pixels)
+err_t server_tcp_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
 {
-    int i;
+	// do nothing
+	return ERR_OK;
+}
 
-    for (i = 0; i < pixels; i += MAX_UDP_PIXELS) {
-        if (pixels-i >= MAX_UDP_PIXELS) {
-            pkt->tot_len = pkt->len = BYTES_PER_PIXEL*MAX_UDP_PIXELS;
-        } else {
-            pkt->tot_len = pkt->len = BYTES_PER_PIXEL*(pixels-i);
+void server_tcp_error(void *arg, err_t err)
+{
+    printf("TCP error\r\n");
+}
+
+
+
+err_t server_tcp_poll(void *arg, struct tcp_pcb *pcb)
+{
+    // do nothing
+	return ERR_OK;
+}
+
+err_t server_tcp_accept(void *arg, struct tcp_pcb *pcb, err_t err)
+{
+	printf("TCP connection accepted\r\n");
+    tcp_arg(pcb, NULL);
+    tcp_sent(pcb, server_tcp_sent);
+    tcp_recv(pcb, server_tcp_recv);
+    tcp_err(pcb, server_tcp_error);
+    tcp_poll(pcb, server_tcp_poll, 0);
+    return ERR_OK;
+}
+
+int pixels_remaining = 0;
+int pixels_sent = 0;
+
+// transfer captured data
+void transfer()
+{
+    int n;
+
+    n = tcp_sndbuf(tcp_pcb_tx)/BYTES_PER_PIXEL; // get send buffer space in pixels
+    if (n) {
+        if (n > pixels_remaining)
+            n = pixels_remaining;
+        if (tcp_write(tcp_pcb_tx,(void *)&cap_buf[pixels_sent],n * BYTES_PER_PIXEL,0) == ERR_OK) {
+            pixels_sent += n; pixels_remaining -= n;
         }
-        pkt->payload = (void *)&cap_buf[i];
-        //printf("transfer: sending %d pixels from offset %d\r\n", pkt->len/BYTES_PER_PIXEL, i);
-        err = ERR_TIMEOUT;
-        while (err != ERR_OK)
-            err = udp_sendto(udp_pcb_tx, pkt, &client, UDP_PORT_TX);
     }
-    printf("transfer: done\r\n");
 }
 
 // banner message
@@ -163,20 +183,17 @@ void server_init()
     netif_set_up(&Eth0);
 
     // UDP setup
-    udp_pcb_rx = udp_new();
-    udp_bind(udp_pcb_rx, IP_ADDR_ANY, UDP_PORT_RX ) ;
-    udp_connect(udp_pcb_rx, IP_ADDR_ANY, UDP_PORT_RX);
-    udp_recv(udp_pcb_rx, udp_rx, NULL ) ;
-    udp_pcb_tx = udp_new();
-    udp_bind(udp_pcb_tx, IP_ADDR_ANY, UDP_PORT_TX ) ;
-    udp_connect(udp_pcb_tx, IP_ADDR_ANY, UDP_PORT_TX);
     udp_pcb_bcast = udp_new();
     ip_set_option(udp_pcb_bcast, SOF_BROADCAST);
-    udp_bind(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT_BCAST ) ;
-    udp_connect(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT_BCAST);
-    pkt = pbuf_alloc(PBUF_TRANSPORT, MAX_UDP_PAYLOAD, PBUF_RAM);
+    udp_bind(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT ) ;
+    udp_connect(udp_pcb_bcast, IP_ADDR_ANY, UDP_PORT);
+    udp_pbuf = pbuf_alloc(PBUF_TRANSPORT, UDP_MAX_PAYLOAD, PBUF_RAM);
 
-    client.addr = 0;
+    // TCP setup
+    tcp_pcb_listen = tcp_new();
+    tcp_bind(tcp_pcb_listen, IP_ADDR_ANY, TCP_PORT);
+    tcp_pcb_listen = tcp_listen(tcp_pcb_listen);
+    tcp_accept(tcp_pcb_listen, server_tcp_accept);
 }
 
 // establish IP address
@@ -215,24 +232,25 @@ void server_dhcp()
 // foreground loop
 void server_run()
 {
-    uint32_t pixels;
-
     countdown = 0;
     while (1) {
 
         hal_netif_rx(&Eth0);
         sys_check_timeouts();
 
-        // advertise once per second
+        // advertise once per second to enable discovery
         if (countdown <= 0) {
-        	countdown = COUNTDOWN_SEC;
-        	advertise();
+            countdown = COUNTDOWN_SEC;
+            advertise(s_disco);
         }
 
         // transfer pixels as required
-        pixels = cap_rdy();
-        if (pixels) { // capture data is ready to transfer
-            transfer(pixels);
+        if (pixels_remaining) {
+            transfer();
+        }
+        else {
+        	pixels_sent = 0;
+            pixels_remaining = cap_rdy();
         }
     }
 }
