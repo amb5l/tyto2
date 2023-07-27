@@ -84,33 +84,43 @@ print("CONNECTION ESTABLISHED")
 ################################################################################
 # get TMDS data
 
+BYTES_PER_PIXEL = 4
 preq = 4*1024*1024 # more than enough for 2 frames of 1080p50
-BUF_LEN=preq
+breq = preq * BYTES_PER_PIXEL
+packet_count = 1+int(breq/UDP_MAX_PAYLOAD)
+packet_array = []
+for i in range(packet_count):
+    packet_array.append(bytearray(UDP_MAX_PAYLOAD))
 
-print("requesting %d pixels..." % preq)
-sys.stdout.flush()
-s_tx.sendto(b'tmds_cap cap '+bytes(str(preq),'utf-8'), (server_ip, UDP_PORT_TX))
+s_rx.setblocking(0)
+s_rx.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2*breq)
 
-# receive packed TMDS data
 t0 = time.perf_counter()
-tmds_packed = array.array('L', BUF_LEN*[0])
-pcnt = 0
-while pcnt < preq:
-    data, addr = s_rx.recvfrom(UDP_MAX_PAYLOAD)
-    t1 = time.perf_counter()
-    if t1-t0 >= 1.0:
-        t0 = t1
-        print("  %d" % pcnt)
-    for i in range(len(data)//4):
-        tmds_packed[pcnt] = int.from_bytes(data[4*i:4+(4*i)],'little')
-        pcnt += 1
-print("done")
+t1 = t0+1
+print("requesting %d pixels (%d packets)..." % (preq,packet_count))
+s_tx.sendto(b'tmds_cap cap '+bytes(str(preq),'utf-8'), (server_ip, UDP_PORT_TX))
+for i in range(packet_count):
+    while True:
+        try:
+            packet_array[i] = s_rx.recv(preq*BYTES_PER_PIXEL)
+            break
+        except:
+            t = time.perf_counter()
+            if t > t1:
+                print(i)
+                t1 = t+1
+print("done (total time = %f)" % (time.perf_counter()-t0))
+
+# convert raw bytes to packed TMDS
+tmds_packed = array.array('L', preq*[0])
+for i in range(preq):
+    tmds_packed[i] = int.from_bytes(raw_data[4*i:4+(4*i)],'little')
 
 # separate channels from packed TMDS data
 tmds = []
 for ch in range(3):
-    tmds.append(array.array('h', BUF_LEN*[-1]))
-    for i in range(pcnt):
+    tmds.append(array.array('h', preq*[-1]))
+    for i in range(preq):
         tmds[ch][i] = (tmds_packed[i] >> (10*ch)) & 0x3FF
 del tmds_packed
 
@@ -135,10 +145,10 @@ PERIOD_DATA = 128
 tmds_ch_p = [] # period flags per channel
 tmds_c = []*3 # 2 bit C value per channel, -1 = invalid
 for ch in range(3):
-    tmds_ch_p.append(array.array('B', BUF_LEN*[PERIOD_UNKNOWN]))
-    tmds_c.append(array.array('b', BUF_LEN*[-1]))
-tmds_p = array.array('B', BUF_LEN*[PERIOD_UNKNOWN]) # overall period flags
-tmds_sync = array.array('b', BUF_LEN*[-1]) # bit 0 = h_sync, bit 1 = v_sync
+    tmds_ch_p.append(array.array('B', preq*[PERIOD_UNKNOWN]))
+    tmds_c.append(array.array('b', preq*[-1]))
+tmds_p = array.array('B', preq*[PERIOD_UNKNOWN]) # overall period flags
+tmds_sync = array.array('b', preq*[-1]) # bit 0 = h_sync, bit 1 = v_sync
 tmds_valid = -1 # offset of first valid pixel
 
 # measurements
@@ -163,7 +173,7 @@ m_h_act_low    = -1
 stop = False
 
 print("analysis pass 1 - preliminary period detection per channel")
-for i in range(pcnt):
+for i in range(preq):
     for ch in range(3):
         p = PERIOD_UNKNOWN
         if tmds[ch][i] in tmds_spec.ctrl:
@@ -193,7 +203,7 @@ for i in range(pcnt):
 if not stop:
     print("analysis pass 2 - resolve control periods")
     p_count = 0
-    for i in range(pcnt):
+    for i in range(preq):
         cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
         # control periods should begin and end in sync across all channels
         if (cp[0] | cp[1] | cp[2]) & PERIOD_CTRL: # control period for at least one channel
@@ -213,7 +223,7 @@ if not stop:
 
 if not stop:
     print("analysis pass 3 - detect preambles")
-    for i in range(pcnt):
+    for i in range(preq):
         cc = [tmds_c[0][i],tmds_c[1][i],tmds_c[2][i]] # channel C values
         p = tmds_p[i]
         if p & PERIOD_CTRL:
@@ -235,7 +245,7 @@ if not stop:
     print("analysis pass 4 - check preambles and detect data islands")
     p_count = 0
     p_type = ''
-    for i in range(pcnt):
+    for i in range(preq):
         cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
         p = tmds_p[i]
         if p_type == 'video_pre':
@@ -358,7 +368,7 @@ if not stop:
 if not stop:
     print("analysis pass 5 - detect video periods")
     p_count = 0
-    for i in range(pcnt):
+    for i in range(preq):
         cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
         p = tmds_p[i]
         if not p:
@@ -376,7 +386,7 @@ if not stop:
 if not stop:
     print("analysis pass 6 - resolve syncs")
     sync = -1
-    for i in range(pcnt):
+    for i in range(preq):
         p = tmds_p[i]
         if p & PERIOD_CTRL:
             sync = tmds_c[0][i]
@@ -391,19 +401,19 @@ if not stop:
     h_sync_prev    = None # previous h_sync state
     h_sync_rising  = None # index of latest h_sync rising edge
     h_sync_falling = None # index of latest h_sync falling edge
-    h_sync_high    = None # width of lastest h_sync high period
-    h_sync_low     = None # width of lastest h_sync low period
+    h_sync_high    = -1   # width of lastest h_sync high period
+    h_sync_low     = -1   # width of lastest h_sync low period
     v_sync_prev    = None # previous v_sync state
     v_sync_rising  = None # index of latest v_sync rising edge
     v_sync_falling = None # index of latest v_sync falling edge
-    v_sync_high    = None # width of lastest v_sync high period
-    v_sync_low     = None # width of lastest v_sync low period
+    v_sync_high    = -1   # width of lastest v_sync high period
+    v_sync_low     = -1   # width of lastest v_sync low period
     h_act_prev     = None
     h_act_rising   = None
     h_act_falling  = None
-    h_act_high     = None
-    h_act_low      = None
-    for i in range(pcnt):
+    h_act_high     = -1
+    h_act_low      = -1
+    for i in range(preq):
         if tmds_sync[i] >= 0:
             h_sync = tmds_sync[i] & 1
             v_sync = (tmds_sync[i] >> 1) & 1
@@ -499,7 +509,7 @@ if not stop:
 
 print()
 print("REPORT")
-print("pixels analysed: %d" % pcnt)
+print("pixels analysed: %d" % preq)
 print("first valid pixel: %d" % tmds_valid)
 print("protocol is", m_protocol)
 print()
@@ -537,7 +547,7 @@ print("    blank pixels : %d" % m_v_blank  )
 if 0:
     print()
     print("         | ...ch 2... | ...ch 1... | ...ch 0... | H V |  CTL |")
-    for i in range(pcnt):
+    for i in range(preq):
         print(f'{i:008d}',end=" | ")
         print(f'{tmds[2][i]:010b}',end=" | ")
         print(f'{tmds[1][i]:010b}',end=" | ")
