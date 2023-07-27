@@ -29,89 +29,61 @@ print()
 
 s_myip = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s_myip.connect(("8.8.8.8", 80))
-UDP_IP = s_myip.getsockname()[0]
+MY_IP = s_myip.getsockname()[0]
 s_myip.close()
-print("my IP address is", UDP_IP)
+print("my IP address is", MY_IP)
 
-UDP_PORT_BASE = 65400
-UDP_PORT_TX = UDP_PORT_BASE+0
-UDP_PORT_RX = UDP_PORT_BASE+1
-UDP_PORT_BCAST = UDP_PORT_BASE+2
+UDP_PORT = 65400
 UDP_MAX_PAYLOAD = 1472
 
-MSG_ADVERT = b'tmds_cap advert'
-MSG_REQ = b'tmds_cap req'
-MSG_ACK = b'tmds_cap ack'
-MSG_CMD_CAP = b'tmds_cap cap'
+TCP_PORT = 65401
+TCP_MAX_PAYLOAD = 1460
 
-print("listening for server advertisements on port %d..." % UDP_PORT_BCAST)
+print("listening for server advertisements (UDP broadcasts) on port %d..." % UDP_PORT)
 s_bcast = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s_bcast.bind(('', UDP_PORT_BCAST))
+s_bcast.bind(('', UDP_PORT))
 while True:
     data, addr = s_bcast.recvfrom(UDP_MAX_PAYLOAD) # buffer size is 1024 bytes
-    if addr[1] != UDP_PORT_BCAST:
+    if addr[1] != UDP_PORT:
         print("unexpected source port (%s)" % addr[1])
-    if data == MSG_ADVERT:
+    if data == b'tmds_cap disco':
         server_ip = addr[0]
         break
+    else:
+        print("unexpected data (%s)" % data)
 s_bcast.close()
 
-print("server IP address:", server_ip)
-
-s_tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s_tx.bind((UDP_IP, UDP_PORT_TX))
-s_rx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s_rx.bind((UDP_IP, UDP_PORT_RX))
-
-print("requesting client connection on port %d..." % UDP_PORT_TX)
-s_tx.sendto(MSG_REQ, (server_ip, UDP_PORT_TX))
-
-print("waiting for server acknowledgement on port %d..." % UDP_PORT_RX)
-while True:
-    data, addr = s_rx.recvfrom(UDP_MAX_PAYLOAD) # buffer size is 1024 bytes
-    if addr[0] != server_ip:
-        print("unexpected source address (%s)" % addr[0])
-    if addr[1] != UDP_PORT_RX:
-        print("unexpected source port (%s)" % addr[1])
-    if data == MSG_ACK:
-        break
-
-print("CONNECTION ESTABLISHED")
-
 # TODO
-# establish mechanism to get capture statistics (pixel clock etc)
+# establish mechanism to get capture statistics (pixel clock frequency, etc)
 
 ################################################################################
 # get TMDS data
 
 BYTES_PER_PIXEL = 4
 preq = 4*1024*1024 # more than enough for 2 frames of 1080p50
-breq = preq * BYTES_PER_PIXEL
-packet_count = 1+int(breq/UDP_MAX_PAYLOAD)
-packet_array = []
-for i in range(packet_count):
-    packet_array.append(bytearray(UDP_MAX_PAYLOAD))
 
-s_rx.setblocking(0)
-s_rx.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2*breq)
+s_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP socket
+s_tcp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+#s_tcp.bind(('0.0.0.0', TCP_PORT))
+print("connecting to server at", server_ip)
+s_tcp.connect((server_ip,TCP_PORT))
+print("CONNECTION ESTABLISHED")
 
+print("requesting %d pixels..." % preq)
 t0 = time.perf_counter()
-t1 = t0+1
-print("requesting %d pixels (%d packets)..." % (preq,packet_count))
-s_tx.sendto(b'tmds_cap cap '+bytes(str(preq),'utf-8'), (server_ip, UDP_PORT_TX))
-for i in range(packet_count):
-    while True:
-        try:
-            packet_array[i] = s_rx.recv(preq*BYTES_PER_PIXEL)
-            break
-        except:
-            t = time.perf_counter()
-            if t > t1:
-                print(i)
-                t1 = t+1
+s_tcp.sendall(b'tmds_cap get '+bytes(str(preq),'utf-8'))
+breq = preq * BYTES_PER_PIXEL
+raw_data = bytearray()
+while len(raw_data) < breq:
+    data = s_tcp.recv(breq-len(data))
+    if data:
+        raw_data.extend(data)
 print("done (total time = %f)" % (time.perf_counter()-t0))
 
-# convert raw bytes to packed TMDS
+s_tcp.shutdown(socket.SHUT_RDWR)
+s_tcp.close()
+
+# convert raw received bytes to packed TMDS
 tmds_packed = array.array('L', preq*[0])
 for i in range(preq):
     tmds_packed[i] = int.from_bytes(raw_data[4*i:4+(4*i)],'little')
@@ -124,23 +96,19 @@ for ch in range(3):
         tmds[ch][i] = (tmds_packed[i] >> (10*ch)) & 0x3FF
 del tmds_packed
 
-print()
-print("TMDS data received")
-print()
-
 ################################################################################
 # analysis: constants and variables
 
 # flag values for period type
-PERIOD_UNKNOWN = 0
-PERIOD_CTRL = 1
-PERIOD_VIDEO_PRE = 2
-PERIOD_VIDEO_GB = 4
-PERIOD_VIDEO = 8
-PERIOD_DATA_PRE = 16
-PERIOD_DATA_GB_LEADING = 32 # used during prelim decode for *any* data guardband
+PERIOD_UNKNOWN          = 0
+PERIOD_CTRL             = 1
+PERIOD_VIDEO_PRE        = 2
+PERIOD_VIDEO_GB         = 4
+PERIOD_VIDEO            = 8
+PERIOD_DATA_PRE         = 16
+PERIOD_DATA_GB_LEADING  = 32 # used during prelim decode for *any* data guardband
 PERIOD_DATA_GB_TRAILING = 64
-PERIOD_DATA = 128
+PERIOD_DATA             = 128
 
 tmds_ch_p = [] # period flags per channel
 tmds_c = []*3 # 2 bit C value per channel, -1 = invalid
