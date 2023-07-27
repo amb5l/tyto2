@@ -33,14 +33,14 @@
 #include "lwip/timeouts.h"
 void lwip_init();
 
-#define MAX_UDP_PAYLOAD 1024
+#define MAX_UDP_PAYLOAD 1472
 #define UDP_PORT_BASE   65400
 #define UDP_PORT_RX     (UDP_PORT_BASE+0)
 #define UDP_PORT_TX     (UDP_PORT_BASE+1)
 #define UDP_PORT_BCAST  (UDP_PORT_BASE+2)
 
 #define BYTES_PER_PIXEL 4
-#define MAX_UDP_PIXELS 128 // 512 bytes (no fragmentation)
+#define MAX_UDP_PIXELS (MAX_UDP_PAYLOAD/BYTES_PER_PIXEL) // 1472 bytes = 368 pixels
 
 const char s_rx_prefix[]  = "tmds_cap";
 const char s_rx_cmd_req[] = "req";
