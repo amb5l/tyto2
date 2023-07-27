@@ -63,8 +63,6 @@ BYTES_PER_PIXEL = 4
 preq = 4*1024*1024 # more than enough for 2 frames of 1080p50
 
 s_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP socket
-s_tcp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-#s_tcp.bind(('0.0.0.0', TCP_PORT))
 print("connecting to server at", server_ip)
 s_tcp.connect((server_ip,TCP_PORT))
 print("CONNECTION ESTABLISHED")
@@ -80,13 +78,10 @@ while len(raw_data) < breq:
         raw_data.extend(data)
 print("done (total time = %f)" % (time.perf_counter()-t0))
 
-s_tcp.shutdown(socket.SHUT_RDWR)
-s_tcp.close()
-
 # convert raw received bytes to packed TMDS
 tmds_packed = array.array('L', preq*[0])
 for i in range(preq):
-    tmds_packed[i] = int.from_bytes(data[4*i:4+(4*i)],'little')
+    tmds_packed[i] = int.from_bytes(raw_data[4*i:4+(4*i)],'little')
 
 # separate channels from packed TMDS data
 tmds = []
@@ -369,18 +364,18 @@ if not stop:
     h_sync_prev    = None # previous h_sync state
     h_sync_rising  = None # index of latest h_sync rising edge
     h_sync_falling = None # index of latest h_sync falling edge
-    h_sync_high    = -1   # width of lastest h_sync high period
-    h_sync_low     = -1   # width of lastest h_sync low period
+    h_sync_high    = 0    # width of lastest h_sync high period
+    h_sync_low     = 0    # width of lastest h_sync low period
     v_sync_prev    = None # previous v_sync state
     v_sync_rising  = None # index of latest v_sync rising edge
     v_sync_falling = None # index of latest v_sync falling edge
-    v_sync_high    = -1   # width of lastest v_sync high period
-    v_sync_low     = -1   # width of lastest v_sync low period
+    v_sync_high    = 0    # width of lastest v_sync high period
+    v_sync_low     = 0    # width of lastest v_sync low period
     h_act_prev     = None
     h_act_rising   = None
     h_act_falling  = None
-    h_act_high     = -1
-    h_act_low      = -1
+    h_act_high     = 0
+    h_act_low      = 0
     for i in range(preq):
         if tmds_sync[i] >= 0:
             h_sync = tmds_sync[i] & 1
