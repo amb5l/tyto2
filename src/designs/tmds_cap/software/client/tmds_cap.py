@@ -87,34 +87,31 @@ print("CONNECTION ESTABLISHED")
 BYTES_PER_PIXEL = 4
 preq = 4*1024*1024 # more than enough for 2 frames of 1080p50
 breq = preq * BYTES_PER_PIXEL
-packet_count = 1+int(breq/UDP_MAX_PAYLOAD)
-packet_array = []
-for i in range(packet_count):
-    packet_array.append(bytearray(UDP_MAX_PAYLOAD))
 
 s_rx.setblocking(0)
 s_rx.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2*breq)
 
 t0 = time.perf_counter()
 t1 = t0+1
-print("requesting %d pixels (%d packets)..." % (preq,packet_count))
+print("requesting %d pixels (%d bytes)..." % (preq,breq))
 s_tx.sendto(b'tmds_cap cap '+bytes(str(preq),'utf-8'), (server_ip, UDP_PORT_TX))
-for i in range(packet_count):
+data = bytearray()
+while len(data) < breq:
     while True:
         try:
-            packet_array[i] = s_rx.recv(preq*BYTES_PER_PIXEL)
+            data.extend(s_rx.recv(breq-len(data)))
             break
         except:
             t = time.perf_counter()
             if t > t1:
-                print(i)
+                print(len(data))
                 t1 = t+1
 print("done (total time = %f)" % (time.perf_counter()-t0))
 
 # convert raw bytes to packed TMDS
 tmds_packed = array.array('L', preq*[0])
 for i in range(preq):
-    tmds_packed[i] = int.from_bytes(raw_data[4*i:4+(4*i)],'little')
+    tmds_packed[i] = int.from_bytes(data[4*i:4+(4*i)],'little')
 
 # separate channels from packed TMDS data
 tmds = []
