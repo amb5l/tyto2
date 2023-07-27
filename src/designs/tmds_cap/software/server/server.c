@@ -132,11 +132,12 @@ void transfer(uint32_t pixels)
             pkt->tot_len = pkt->len = BYTES_PER_PIXEL*(pixels-i);
         }
         pkt->payload = (void *)&cap_buf[i];
-        printf("transfer: sending %d pixels from offset %d\r\n", pkt->len/BYTES_PER_PIXEL, i);
+        //printf("transfer: sending %d pixels from offset %d\r\n", pkt->len/BYTES_PER_PIXEL, i);
         err = ERR_TIMEOUT;
         while (err != ERR_OK)
             err = udp_sendto(udp_pcb_tx, pkt, &client, UDP_PORT_TX);
     }
+    printf("transfer: done\r\n");
 }
 
 // banner message

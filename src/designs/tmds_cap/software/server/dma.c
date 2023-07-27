@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "xparameters.h"
+#include "xil_cache.h"
 
 #define DMA_BASEADDR XPAR_AXI_DMA_BASEADDR
 
@@ -31,6 +32,7 @@ void dma_init() {
 }
 
 void dma_start(uint32_t addr, uint32_t bytes) {
+	Xil_DCacheFlushRange(addr, bytes);
     POKE( S2MM_DMACR  , S2MM_DMACR_RS );
     POKE( S2MM_DMADA  , addr          );
     POKE( S2MM_LENGTH , bytes         );

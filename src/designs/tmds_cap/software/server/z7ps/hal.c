@@ -49,7 +49,7 @@ void isr_timer(XScuTimer *pXScuTimer)
 
 void hal_init(void)
 {
-    Xil_DCacheDisable();
+    //Xil_DCacheDisable();
 
     // setup timer
     XScuTimer_Config *pXScuTimer_Config;
