@@ -28,6 +28,7 @@ void cap_init() {
 }
 
 void cap_start(uint32_t pixels) {
+	sdram_fill((uint32_t)cap_buf, 4*pixels, 0xAAAAAAAA, 0 ); // invalid TMDS characters
     dma_start((uint32_t)cap_buf, 4*pixels);
     CSR_POKE(RA_CAPSIZE, pixels);
     CSR_POKE(RA_CAPCTRL, CSR_CAPCTRL_EN | CSR_CAPCTRL_TEST);
