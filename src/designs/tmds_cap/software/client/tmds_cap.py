@@ -60,7 +60,7 @@ s_bcast.close()
 # get TMDS data
 
 BYTES_PER_PIXEL = 4
-preq = 4*1024*1024 # more than enough for 2 frames of 1080p50
+preq = (3*1920*1080)+2200 # enough for 2 full frames of 1080p, or 4 fields of 1080i
 
 s_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP socket
 print("connecting to server at", server_ip)
@@ -77,6 +77,7 @@ while len(raw_data) < breq:
     if data:
         raw_data.extend(data)
 print("done (total time = %f)" % (time.perf_counter()-t0))
+s_tcp.close()
 
 # convert raw received bytes to packed TMDS
 tmds_packed = array.array('L', preq*[0])
@@ -86,7 +87,7 @@ for i in range(preq):
 # separate channels from packed TMDS data
 tmds = []
 for ch in range(3):
-    tmds.append(array.array('h', preq*[-1]))
+    tmds.append(array.array('h',preq*[-1]))
     for i in range(preq):
         tmds[ch][i] = (tmds_packed[i] >> (10*ch)) & 0x3FF
 del tmds_packed
@@ -107,28 +108,38 @@ PERIOD_DATA             = 128
 
 tmds_ch_p = [] # period flags per channel
 tmds_c = []*3 # 2 bit C value per channel, -1 = invalid
+tmds_sync = []
 for ch in range(3):
     tmds_ch_p.append(array.array('B', preq*[PERIOD_UNKNOWN]))
     tmds_c.append(array.array('b', preq*[-1]))
 tmds_p = array.array('B', preq*[PERIOD_UNKNOWN]) # overall period flags
-tmds_sync = array.array('b', preq*[-1]) # bit 0 = h_sync, bit 1 = v_sync
-tmds_valid = -1 # offset of first valid pixel
+tmds_sync = array.array('b', preq*[-1]) # bit 0 = r_h_sync[0], bit 1 = v_sync
 
+################################################################################
 # measurements
-m_protocol     = 'DVI'
-m_interlaced   = None
-m_h_sync_count = -1
-m_h_sync_pol   = -1
-m_h_sync_width = -1
-m_v_sync_count = -1
-m_v_sync_pol   = -1
-m_v_sync_width = -1
-m_v_total      = -1
-m_v_active     = -1
-m_v_blank      = -1
-m_h_act_count  = -1
-m_h_act_high   = -1
-m_h_act_low    = -1
+
+m_protocol      = 'DVI'
+
+m_start         = -1 # offset of first control pixel (start of valid data)
+
+# horizontal timing (durations are in pixels)
+m_h_sync_pol    = -1 # h sync polarity (1 = high, 0 = low)
+m_h_front_porch = -1 # duration of h front porch (active to sync)
+m_h_sync        = -1 # duration of h sync
+m_h_back_porch  = -1 # duration of h back porch (sync to active)
+m_h_active      = -1 # duration of h active
+m_h_blank       = -1 # m_h_blank = m_h_front_porch+m_h_sync+m_h_back_porch
+m_h_total       = -1 # m_h_total = m_h_blank+m_h_active
+
+# vertical timing (durations are in lines)
+m_v_interlace   = -1 # 1 = interlace, 0 = progressive
+m_v_sync_pol    = -1 # v sync polarity (1 = high, 0 = low)
+m_v_front_porch = -1 # duration of v front porch (active to sync)
+m_v_sync        = -1 # duration of v sync
+m_v_back_porch  = -1 # duration of v back porch (sync to active)
+m_v_active      = -1 # duration of v active
+m_v_blank       = -1 # m_v_blank = m_v_front_porch+m_v_sync+m_v_back_porch
+m_v_total       = -1 # m_v_total = m_v_blank+m_h_active
 
 ################################################################################
 # detect period types (set tmds_p)
@@ -168,10 +179,12 @@ if not stop:
     p_count = 0
     for i in range(preq):
         cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
-        # control periods should begin and end in sync across all channels
+        # control periods should begin and end together across all channels
         if (cp[0] | cp[1] | cp[2]) & PERIOD_CTRL: # control period for at least one channel
             if cp[0] & cp[1] & cp[2] & PERIOD_CTRL: # control period across all
                 tmds_p[i] = PERIOD_CTRL
+                if m_start == -1 and tmds_c[1][i] == 0 and tmds_c[2][i] == 0:
+                    m_start = i
             else:
                 print("error: control period channel misalignment (offset %d)" % i)
                 stop = True
@@ -186,7 +199,7 @@ if not stop:
 
 if not stop:
     print("analysis pass 3 - detect preambles")
-    for i in range(preq):
+    for i in range(m_start,preq):
         cc = [tmds_c[0][i],tmds_c[1][i],tmds_c[2][i]] # channel C values
         p = tmds_p[i]
         if p & PERIOD_CTRL:
@@ -356,173 +369,248 @@ if not stop:
         elif p & (PERIOD_DATA | PERIOD_DATA_GB_LEADING | PERIOD_DATA_GB_TRAILING):
             sync = tmds_spec.terc4.index(tmds[0][i]) & 3
         tmds_sync[i] = sync
-        if sync >= 0 and tmds_valid < 0:
-            tmds_valid = i
 
 if not stop:
-    print("analysis pass 7 - video timing measurements")
-    h_sync_prev    = None # previous h_sync state
-    h_sync_rising  = None # index of latest h_sync rising edge
-    h_sync_falling = None # index of latest h_sync falling edge
-    h_sync_high    = 0    # width of lastest h_sync high period
-    h_sync_low     = 0    # width of lastest h_sync low period
-    v_sync_prev    = None # previous v_sync state
-    v_sync_rising  = None # index of latest v_sync rising edge
-    v_sync_falling = None # index of latest v_sync falling edge
-    v_sync_high    = 0    # width of lastest v_sync high period
-    v_sync_low     = 0    # width of lastest v_sync low period
-    h_act_prev     = None
-    h_act_rising   = None
-    h_act_falling  = None
-    h_act_high     = 0
-    h_act_low      = 0
-    for i in range(preq):
-        if tmds_sync[i] >= 0:
-            h_sync = tmds_sync[i] & 1
-            v_sync = (tmds_sync[i] >> 1) & 1
-            if h_sync_prev != None and h_sync != h_sync_prev:
-                if h_sync == 0:
-                    m_h_sync_count += 1 # assume counting falling edges is OK
-                    h_sync_falling = i
-                    if h_sync_rising:
-                        if h_sync_high:
-                            if h_sync_high != h_sync_falling - h_sync_rising:
-                                print("error: inconsistent h_sync high duration (offset %d, found %d, expected %d)" % (i, h_sync_falling - h_sync_rising, h_sync_high))
-                                stop = True
-                                break
-                        else:
-                            h_sync_high = h_sync_falling - h_sync_rising
+    print("analysis pass 7 - horizontal video timing")
+    # records
+    r_h_event       = [None]*5  # record of h event types
+    r_h_act         = [None]*3  # record of h active event levels
+    r_h_act_i       = [None]*3  # record of h active event indices
+    r_h_sync        = [None]*3  # record of h sync event levels
+    r_h_sync_i      = [None]*3  # record of h sync event indices
+    # short term variables
+    h_act           = None      # h active level, this pixel
+    h_act_1         = None      # h active level, previous pixel
+    h_sync          = None      # h sync level, this pixel
+    h_sync_1        = None      # h sync level, previous pixel
+    h_event_bad     = None      # h event sequence is bad
+    h_event_new     = None      # h event, this pixel (if applicable)
+    h_total_i       = None      # index of previous event for h_total calculation
+    # extract timing
+    for i in range(m_start,preq):
+        h_act_1 = h_act; h_act = 1 if tmds_p[i] & PERIOD_VIDEO else 0
+        h_sync_1 = h_sync; h_sync = tmds_sync[i] & 1
+        h_event_bad = False
+        h_event_new = None
+        h_total_i   = None
+        if h_act_1 != None and h_act != h_act_1:
+            if h_sync != h_sync_1:
+                print("at %d: coinciding events on h_act and h_sync" % i); stop=True; break
+            else:
+                if h_act == 1 and h_act_1 == 0:
+                    h_event_new = "h_act_rising"
+                elif h_act == 0 and h_act_1 == 1:
+                    h_event_new = "h_act_falling"
                 else:
-                    h_sync_rising = i
-                    if h_sync_falling:
-                        if h_sync_low:
-                            if h_sync_low != h_sync_rising - h_sync_falling:
-                                print("error: inconsistent h_sync low duration (offset %d)" % i)
-                                print("error: inconsistent h_sync low duration (offset %d, found %d, expected %d)" % (i, h_sync_rising - h_sync_falling, h_sync_low))
-                                stop = True
-                                break
+                    print("at %d: impossible levels (h_act = %d,  h_act_1 = %d)" % (i,h_act,h_act_1)); stop=True; break
+        elif h_sync_1 != None and h_sync != h_sync_1:
+            if h_sync == 1 and h_sync_1 == 0:
+                h_event_new = "h_sync_rising"
+            elif h_sync == 0 and h_sync_1 == 1:
+                h_event_new = "h_sync_falling"
+            else:
+                print("at %d: impossible levels (h_sync = %d,  h_sync_1 = %d)" % (h_sync,h_sync_1)); stop=True; break
+        if h_event_new:
+            r_h_event = [h_event_new]+r_h_event[:-1]
+            h_total_i = None
+            if r_h_event[0][:5] == "h_act":
+                r_h_act = [h_act]+r_h_act[:-1]
+                r_h_act_i = [i]+r_h_act_i[:-1]
+                if not (r_h_event[0] == "h_act_rising" and r_h_event[3] != "h_act_falling"):
+                    h_total_i = r_h_act_i[2]
+            elif r_h_event[0][:6] == "h_sync":
+                r_h_sync[2] = r_h_sync[1]; r_h_sync[1] = r_h_sync[0]; r_h_sync[0] = h_sync
+                r_h_sync_i = [i]+r_h_sync_i[:-1]
+                h_total_i = r_h_sync_i[2]
+            if r_h_event[1] != None:
+                if r_h_event[0] == "h_act_rising":
+                    if r_h_event[1][:6] == "h_sync":
+                        # check/measure h_sync_pol
+                        if m_h_sync_pol != -1:
+                            if m_h_sync_pol != 1-r_h_sync[0]:
+                                s = "h_sync_rising" if r_h_sync[0] == 1 else "h_sync_falling"
+                                print("%s at %d: preceding %s is unexpected" % (r_h_event[0],i,s)); stop=True; break
                         else:
-                            h_sync_low = h_sync_rising - h_sync_falling
-            if v_sync_prev != None and v_sync != v_sync_prev:
-                if v_sync == 0:
-                    m_h_sync_count += 1 # assume counting falling edges is OK
-                    v_sync_falling = i
-                    if v_sync_rising:
-                        if v_sync_high:
-                            if v_sync_high != v_sync_falling - v_sync_rising:
-                                print("error: inconsistent v_sync high duration (offset %d)" % i)
-                                stop = True
-                                break
+                            m_h_sync_pol = 1-r_h_sync[0]
+                        # check/measure h_back_porch
+                        if m_h_back_porch != -1:
+                            if m_h_back_porch != r_h_act_i[0]-r_h_sync_i[0]:
+                                print("%s at %d: expected h_back_porch = %d found %d" % (r_h_event[0],i,m_h_back_porch,r_h_act_i[0]-r_h_sync_i[0])); stop=True; break
                         else:
-                            v_sync_high = v_sync_falling - v_sync_rising
+                            if r_h_sync_i[0] != None:
+                                m_h_back_porch = r_h_act_i[0]-r_h_sync_i[0]
+                        # check/measure h_blank
+                        if r_h_event[2][:6] == "h_sync" and r_h_event[3] == "h_act_falling":
+                            if m_h_blank != -1:
+                                if m_h_blank != r_h_act_i[0]-r_h_act_i[1]:
+                                    print("%s at %d: expected h_blank = %d found %d" % (r_h_event[0],i,m_h_blank,r_h_act_i[0]-r_h_act_i[1])); stop=True; break
+                            else:
+                                if r_h_act_i[1] != None:
+                                    m_h_blank = r_h_act_i[0]-r_h_act_i[1]
+                    else:
+                        h_event_bad = True
+                elif r_h_event[0] == "h_act_falling":
+                    if r_h_event[1] == "h_act_rising":
+                        # check/measure h_active
+                        if m_h_active != -1:
+                            if m_h_active != r_h_act_i[0]-r_h_act_i[1]:
+                                print("%s at %d: expected h_active = %d found %d" % (r_h_event[0],i,m_h_active,r_h_act_i[0]-r_h_act_i[1])); stop=True; break
+                        else:
+                            m_h_active = r_h_act_i[0]-r_h_act_i[1]
+                    else:
+                        h_event_bad = True
+                elif r_h_event[0][:6] == "h_sync":
+                    if r_h_event[1] == "h_act_falling":
+                        # check/measure h_sync_pol
+                        if m_h_sync_pol != -1:
+                            if m_h_sync_pol != h_sync:
+                                s = "low" if r_h_sync[0] == 0 else "high"
+                                print("%s at %d: unexpected active %s h sync" % (r_h_event[0],i,s)); stop=True; break
+                        else:
+                            m_h_sync_pol = h_sync
+                        # check_measure h_front_porch
+                        if m_h_front_porch != -1:
+                            if m_h_front_porch != r_h_sync_i[0]-r_h_act_i[0]:
+                                print("%s at %d: expected h_front_porch = %d found %d" % (r_h_event[0],i,m_h_front_porch,r_h_sync_i[0]-r_h_act_i[0])); stop=True; break
+                        else:
+                            m_h_front_porch = r_h_sync_i[0]-r_h_act_i[0]
+                    elif r_h_event[1][:6] == "h_sync" and r_h_event[2] != None:
+                        if r_h_event[2][:6] == "h_sync":
+                            if r_h_sync_i[0]-r_h_sync_i[1] > r_h_sync_i[1]-r_h_sync_i[2]: # leading
+                                x_h_sync_pol = h_sync
+                                x_h_sync = r_h_sync_i[1]-r_h_sync_i[2]
+                            else: # trailing
+                                x_h_sync_pol = 1-h_sync
+                                x_h_sync = r_h_sync_i[0]-r_h_sync_i[1]
+                            # check/measure h_sync_pol
+                            if m_h_sync_pol != -1:
+                                if m_h_sync_pol != x_h_sync_pol:
+                                    s = "low" if r_h_sync[0] == 0 else "high"
+                                    print("%s at %d: unexpected active %s h sync" % (r_h_event[0],i,s)); stop=True; break
+                            else:
+                                m_h_sync_pol = x_h_sync_pol
+                            # check_measure h_sync
+                            if m_h_sync != -1:
+                                if m_h_sync != x_h_sync:
+                                    print("%s at %d: expected h_sync = %d found %d" % (r_h_event[0],i,m_h_sync,x_h_sync)); stop=True; break
+                            else:
+                                m_h_sync = x_h_sync
                 else:
-                    v_sync_rising = i
-                    if v_sync_falling:
-                        if v_sync_low:
-                            if v_sync_low != v_sync_rising - v_sync_falling:
-                                print("error: inconsistent v_sync low duration (offset %d)" % i)
-                                stop = True
-                                break
-                        else:
-                            v_sync_low = v_sync_rising - v_sync_falling
-            h_sync_prev = h_sync
-            v_sync_prev = v_sync
-            h_act = 1 if tmds_p[i] & PERIOD_VIDEO else 0
-            if h_act_prev != None and h_act != h_act_prev:
-                if h_act == 0:
-                    m_h_act_count += 1
-                    h_act_falling = i
-                    if h_act_rising:
-                        if h_act_high:
-                            if h_act_high != h_act_falling - h_act_rising:
-                                print("error: inconsistent h_act high duration (offset %d)" % i)
-                                stop = True
-                                break
-                        else:
-                            h_act_high = h_act_falling - h_act_rising
+                    print("%s at %d: unexpected event" % (r_h_event[0],i)); stop=True; break
+                if h_event_bad:
+                    print("at %d: unexpected event sequence (%s followed by %s)" % (r_h_event[1],r_h_event[0])); stop=True; break
                 else:
-                    h_act_rising = i
-                    if h_act_falling:
-                        if h_act_low:
-                            if h_act_low != h_act_rising - h_act_falling:
-                                print("error: inconsistent h_act low duration (offset %d)" % i)
-                                stop = True
-                                break
+                    # check/measure h_total
+                    if not ( \
+                        (r_h_event[0] == "h_act_rising" and r_h_event[3] != "h_act_falling") or
+                        (r_h_event[0] == "h_act_falling" and r_h_event[4] != "h_act_falling") \
+                    ):
+                        if m_h_total != -1:
+                            if m_h_total != i-h_total_i:
+                                print("%s at %d: expected h_total = %d found %d" % (r_h_event[0],i,m_h_total,i-h_total_i)); stop=True; break
                         else:
-                            h_act_low = h_act_rising - h_act_falling
-            h_act_prev = h_act
-    if h_sync_low and h_sync_high:
-        if h_sync_low >= h_sync_high:
-            m_h_sync_pol   = 1
-            m_h_sync_width = h_sync_high
-        else:
-            m_h_sync_pol   = 0
-            m_h_sync_width = h_sync_low
-    if v_sync_low and v_sync_high:
-        if v_sync_low >= v_sync_high:
-            m_v_sync_pol   = 1
-            m_v_sync_width = v_sync_high
-        else:
-            m_v_sync_pol   = 0
-            m_v_sync_width = v_sync_low
-    m_h_act_high = h_act_high
-    m_h_act_low  = h_act_low
+                            if h_total_i != None:
+                                m_h_total = i-h_total_i
+
+if not stop:
+    print("analysis pass 8 - vertical video timing")
+    # records
+    r_v_event       = [None]*3  # record of v event types
+    r_v_act         = [None]*3  # record of v active event levels
+    r_v_act_i       = [None]*3  # record of v active event indices
+    r_v_sync        = [None]*3  # record of v sync event levels
+    r_v_sync_i      = [None]*3  # record of v sync event indices    
+    # short term variables
+    v_act           = None
+    v_act_1         = None
+    h_sync          = None
+    h_sync_1        = None
+    v_sync          = None
+    v_sync_1        = None
+    # get m_v_sync_pol
+    for i in range(m_start,preq):
+        h_act = 1 if tmds_p[i] & PERIOD_VIDEO else 0
+        v_sync = (tmds_sync[i] & 2) >> 1
+        if h_act == 1:
+            m_v_sync_pol = 1-v_sync
+            break
+    # get m_v_interlace
+    m_v_interlace = 0
+    for i in range(m_start,preq):
+        h_sync_1 = h_sync; h_sync = tmds_sync[i] & 1
+        v_sync_1 = v_sync; v_sync = (tmds_sync[i] & 2) >> 1
+        if v_sync_1 != None and v_sync != v_sync_1:
+            if h_sync == h_sync_1:
+                m_v_interlace = 1
+                break
+    # locate v sync (for field 1 in the case of interlace)
+    for i in range(m_start,preq):
+        h_sync_1 = h_sync; h_sync = tmds_sync[i] & 1
+        v_sync_1 = v_sync; v_sync = (tmds_sync[i] & 2) >> 1
+        if v_sync == m_v_sync_pol and v_sync_1 == 1-m_v_sync_pol: # leading edge
+            pass
+        elif v_sync == 1-m_v_sync_pol and v_sync_1 == m_v_sync_pol: # trailing edge
+            pass
 
 ################################################################################
 
 print()
 print("REPORT")
 print("pixels analysed: %d" % preq)
-print("first valid pixel: %d" % tmds_valid)
+print("first valid pixel: %d" % m_start)
 print("protocol is", m_protocol)
 print()
-#print("          h syncs seen : %d" % m_h_sync_count)
-#print("          v syncs seen : %d" % m_v_sync_count)
-#print(" h active periods seen : %d" % m_h_act_count)
-#print("         h active high : %d" % m_h_act_high)
-#print("          h active low : %d" % m_h_act_low)
-#print()
-
-
 print("horizontal timings:")
-print("   sync polarity : %d" % m_h_sync_pol)
-print("      sync width : %d" % m_h_sync_width)
-print("   active pixels : %d" % m_h_act_high )
-print("    blank pixels : %d" % m_h_act_low  )
-print("    total pixels : %d" % (m_h_act_high+m_h_act_low)  )
+print("   sync polarity : %s" % ("high" if m_h_sync_pol == 1 else "low" if m_h_sync_pol == 0 else "???"))
+print("     front porch : %d" % m_h_front_porch)
+print("      sync width : %d" % m_h_sync)
+print("      back porch : %d" % m_h_back_porch)
+print("          active : %d" % m_h_active)
+print("           blank : %d" % m_h_blank)
+print("           total : %d" % m_h_total)
+if m_h_blank != m_h_front_porch+m_h_sync+m_h_back_porch:
+    print("ERROR: h_blank != h_front_porch + h_sync + h_back_porch")
+if m_h_total != m_h_active+m_h_blank:
+    print("ERROR: h_total != h_active + h_blank")
+print()
 print("vertical timings:")
-print("   sync polarity : %d" % m_v_sync_pol)
-print("      sync width : %d" % m_v_sync_width)
-print("    total pixels : %d" % m_v_total  )
-print("   active pixels : %d" % m_v_active )
-print("    blank pixels : %d" % m_v_blank  )
+print("            scan : %s" % ("interlace" if m_v_interlace == 1 else "progressive" if m_v_interlace == 0 else "???"))
+print("   sync polarity : %s" % ("high" if m_v_sync_pol == 1 else "low" if m_v_sync_pol == 0 else "???"))
+print("     front porch : %d" % m_v_front_porch)
+print("      sync width : %d" % m_v_sync)
+print("      back porch : %d" % m_v_back_porch)
+print("          active : %d" % m_v_active)
+print("           blank : %d" % m_v_blank)
+print("           total : %d" % m_v_total)
 
 # TODO:
-# check consistency of...
-#   H & V active, blanking and total periods
-#   field/frame periods
-# check for extended control periods
+# implement vertical timing extraction
+# check consistency of field/frame periods
+# more HDMI rules e.g. check for extended control periods
 # decode data and verify
+# compare video timing with CTA spec
 
 ################################################################################
-# debug - dump TMDS data and period information
+# error dump
 
-if 0:
+if i != preq-1:
+    err_i = i
     print()
-    print("         | ...ch 2... | ...ch 1... | ...ch 0... | H V |  CTL |")
-    for i in range(preq):
+    print("         | ...ch 2... | ...ch 1... | ...ch 0... |  CTL   | H V |")
+    for i in range(err_i-3000,err_i+3000): # TODO prevent starting index < 0
         print(f'{i:008d}',end=" | ")
         print(f'{tmds[2][i]:010b}',end=" | ")
         print(f'{tmds[1][i]:010b}',end=" | ")
         print(f'{tmds[0][i]:010b}',end=" | ")
         p = tmds_p[i]
-        print(tmds_sync[i] & 1,end=" ")
-        print((tmds_sync[i] >> 1) & 1,end=" | ")
         if p & PERIOD_CTRL:
             print(format(tmds_c[2][i],'#04b')[2:],end="")
-            print(format(tmds_c[1][i],'#04b')[2:],end=" | ")
+            print(format(tmds_c[1][i],'#04b')[2:],end="")
+            print(format(tmds_c[0][i],'#04b')[2:],end=" | ")
         else:
-            print("....",end=" | ")
+            print("......",end=" | ")
+        print(tmds_sync[i] & 1,end=" ")
+        print((tmds_sync[i] >> 1) & 1,end=" | ")
         if p & PERIOD_VIDEO_PRE:
             print("v_pre",end=" | ")
         else:
