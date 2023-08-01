@@ -15,7 +15,10 @@
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
 
-import sys,socket,array,time
+# standard modules
+import sys,argparse,struct,socket,array,time
+
+# local modules
 import tmds_spec
 import hdmi_spec
 
@@ -24,71 +27,93 @@ print("tmds_cap client application")
 print("-------------------------------------------------------------------------------")
 print()
 
-################################################################################
-# network stuff
+PIXELS = (3*1920*1080)+2200 # enough for 2 full frames of 1080p, or 4 fields of 1080i
 
-s_myip = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s_myip.connect(("8.8.8.8", 80))
-MY_IP = s_myip.getsockname()[0]
-s_myip.close()
-print("my IP address is", MY_IP)
-
-UDP_PORT = 65400
-UDP_MAX_PAYLOAD = 1472
-
-TCP_PORT = 65401
-TCP_MAX_PAYLOAD = 1460
-
-print("listening for server advertisements (UDP broadcasts) on port %d..." % UDP_PORT)
-s_bcast = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s_bcast.bind(('', UDP_PORT))
-while True:
-    data, addr = s_bcast.recvfrom(UDP_MAX_PAYLOAD) # buffer size is 1024 bytes
-    if addr[1] != UDP_PORT:
-        print("unexpected source port (%s)" % addr[1])
-    if data == b'tmds_cap disco':
-        server_ip = addr[0]
-        break
-    else:
-        print("unexpected data (%s)" % data)
-s_bcast.close()
-
-# TODO
-# establish mechanism to get capture statistics (pixel clock frequency, etc)
+parser = argparse.ArgumentParser(
+    prog='tmds_cap.py',
+    description='TMDS data capture and analysis for HDMI and DVI sources',
+    epilog='See https://github.com/amb5l/tyto2'
+    )
+group = parser.add_mutually_exclusive_group(required=False)
+group.add_argument('-n',type=int,default=PIXELS,help='capture N pixels from hardware (default: %(default)s)')
+group.add_argument('-i',metavar='filename',default=None,help='read TMDS data from specified input file (default: %(default)s)')
+parser.add_argument('-o',metavar='filename',default=None,help='write TMDS data to specified output file (default: %(default)s)')
+args = parser.parse_args()
+n = args.n
+infile = args.i
+outfile = args.o
 
 ################################################################################
-# get TMDS data
+# get TMDS data from infile or hardware
 
 BYTES_PER_PIXEL = 4
-preq = (3*1920*1080)+2200 # enough for 2 full frames of 1080p, or 4 fields of 1080i
 
-s_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP socket
-print("connecting to server at", server_ip)
-s_tcp.connect((server_ip,TCP_PORT))
-print("CONNECTION ESTABLISHED")
-
-print("requesting %d pixels..." % preq)
-t0 = time.perf_counter()
-s_tcp.sendall(b'tmds_cap get '+bytes(str(preq),'utf-8'))
-breq = preq * BYTES_PER_PIXEL
-raw_data = bytearray()
-while len(raw_data) < breq:
-    data = s_tcp.recv(breq-len(data))
-    if data:
-        raw_data.extend(data)
-print("done (total time = %.2f seconds)" % (time.perf_counter()-t0))
-s_tcp.close()
+if infile:
+    # read TMDS data from file
+    print("reading TMDS data from %s..." % infile)
+    tmds_packed = array.array('L')
+    n = 0
+    with open(infile, 'rb') as f:
+        tmds_bytes = f.read()
+    n = int(len(tmds_bytes)/BYTES_PER_PIXEL)
+    print("%d pixels read" % n)
+else:
+    # read TMDS data from hardware
+    s_myip = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s_myip.connect(("8.8.8.8", 80))
+    MY_IP = s_myip.getsockname()[0]
+    s_myip.close()
+    print("my IP address is", MY_IP)
+    UDP_PORT = 65400
+    UDP_MAX_PAYLOAD = 1472
+    TCP_PORT = 65401
+    TCP_MAX_PAYLOAD = 1460
+    print("listening for server advertisements (UDP broadcasts) on port %d..." % UDP_PORT)
+    s_bcast = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s_bcast.bind(('', UDP_PORT))
+    while True:
+        data, addr = s_bcast.recvfrom(UDP_MAX_PAYLOAD) # buffer size is 1024 bytes
+        if addr[1] != UDP_PORT:
+            print("unexpected source port (%s)" % addr[1])
+        if data == b'tmds_cap disco':
+            server_ip = addr[0]
+            break
+        else:
+            print("unexpected data (%s)" % data)
+    s_bcast.close()
+    s_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP socket
+    print("connecting to server at", server_ip)
+    s_tcp.connect((server_ip,TCP_PORT))
+    print("CONNECTION ESTABLISHED")
+    print("requesting %d pixels..." % n)
+    t0 = time.perf_counter()
+    s_tcp.sendall(b'tmds_cap get '+bytes(str(n),'utf-8'))
+    breq = n * BYTES_PER_PIXEL
+    tmds_bytes = bytearray()
+    while len(tmds_bytes) < breq:
+        data = s_tcp.recv(breq-len(data))
+        if data:
+            tmds_bytes.extend(data)
+    print("done (total time = %.2f seconds)" % (time.perf_counter()-t0))
+    s_tcp.close()
 
 # convert raw received bytes to packed TMDS
-tmds_packed = array.array('L', preq*[0])
-for i in range(preq):
-    tmds_packed[i] = int.from_bytes(raw_data[4*i:4+(4*i)],'little')
+tmds_packed = array.array('L', n*[0])
+for i in range(n):
+    tmds_packed[i] = int.from_bytes(tmds_bytes[4*i:4+(4*i)],'little')
+if outfile:
+    # write TMDS data to file
+    print("writing TMDS data to %s..." % outfile)
+    with open(outfile, 'wb') as f:
+        for d in tmds_packed:
+            f.write(struct.pack('<L',d))
+    f.close()
 
 # separate channels from packed TMDS data
 tmds = []
 for ch in range(3):
-    tmds.append(array.array('h',preq*[-1]))
-    for i in range(preq):
+    tmds.append(array.array('h',n*[-1]))
+    for i in range(n):
         tmds[ch][i] = (tmds_packed[i] >> (10*ch)) & 0x3FF
 del tmds_packed
 
@@ -109,10 +134,10 @@ PERIOD_DATA             = 128
 tmds_ch_p = [] # period flags per channel
 tmds_c = []*3 # 2 bit C value per channel, -1 = invalid
 for ch in range(3):
-    tmds_ch_p.append(array.array('B', preq*[PERIOD_UNKNOWN]))
-    tmds_c.append(array.array('b', preq*[-1]))
-tmds_p = array.array('B', preq*[PERIOD_UNKNOWN]) # overall period flags
-tmds_sync = array.array('b', preq*[-1]) # bit 0 = h sync, bit 1 = v sync
+    tmds_ch_p.append(array.array('B', n*[PERIOD_UNKNOWN]))
+    tmds_c.append(array.array('b', n*[-1]))
+tmds_p = array.array('B', n*[PERIOD_UNKNOWN]) # overall period flags
+tmds_sync = array.array('b', n*[-1]) # bit 0 = h sync, bit 1 = v sync
 
 ################################################################################
 # measurements to be made
@@ -152,7 +177,7 @@ m_v_total       = -1 # m_v_total = m_v_blank+m_h_active
 stop = False
 
 print("analysis pass 1 - preliminary period detection per channel")
-for i in range(preq):
+for i in range(n):
     for ch in range(3):
         p = PERIOD_UNKNOWN
         if tmds[ch][i] in tmds_spec.ctrl:
@@ -180,7 +205,7 @@ for i in range(preq):
 if not stop:
     print("analysis pass 2 - resolve control periods")
     p_count = 0
-    for i in range(preq):
+    for i in range(n):
         cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
         # control periods should begin and end together across all channels
         if (cp[0] | cp[1] | cp[2]) & PERIOD_CTRL: # control period for at least one channel
@@ -197,7 +222,7 @@ if not stop:
 
 if not stop:
     print("analysis pass 3 - detect preambles")
-    for i in range(m_start,preq):
+    for i in range(m_start,n):
         cc = [tmds_c[0][i],tmds_c[1][i],tmds_c[2][i]] # channel C values
         p = tmds_p[i]
         if p & PERIOD_CTRL:
@@ -216,7 +241,7 @@ if not stop:
     print("analysis pass 4 - check preambles and detect data islands")
     p_count = 0
     p_type = ''
-    for i in range(preq):
+    for i in range(n):
         cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
         p = tmds_p[i]
         if p_type == 'video_pre':
@@ -304,7 +329,7 @@ if not stop:
 if not stop:
     print("analysis pass 5 - detect video periods")
     p_count = 0
-    for i in range(preq):
+    for i in range(n):
         cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
         p = tmds_p[i]
         if not p:
@@ -319,7 +344,7 @@ if not stop:
 if not stop:
     print("analysis pass 6 - resolve syncs")
     sync = -1
-    for i in range(preq):
+    for i in range(n):
         p = tmds_p[i]
         if p & PERIOD_CTRL:
             sync = tmds_c[0][i]
@@ -344,7 +369,7 @@ if not stop:
     h_event_new     = None      # h event, this pixel (if applicable)
     h_total_i       = None      # index of previous event for h_total calculation
     # extract timing
-    for i in range(m_start,preq):
+    for i in range(m_start,n):
         h_act_1 = h_act; h_act = 1 if tmds_p[i] & PERIOD_VIDEO else 0
         h_sync_1 = h_sync; h_sync = tmds_sync[i] & 1
         h_event_bad = False
@@ -469,9 +494,9 @@ if not stop:
                             if h_total_i != None:
                                 m_h_total = i-h_total_i
     if m_h_blank != m_h_front_porch+m_h_sync+m_h_back_porch:
-        print("ERROR: h_blank != h_front_porch + h_sync + h_back_porch"); stop=True
+        print("ERROR: h_blank != h_front_porch + h_sync + h_back_porch")
     if m_h_total != m_h_active+m_h_blank:
-        print("ERROR: h_total != h_active + h_blank"); stop=True
+        print("ERROR: h_total != h_active + h_blank")
 
 if not stop:
     print("analysis pass 8 - vertical video timing")
@@ -492,7 +517,7 @@ if not stop:
     v_act_1           = None
     field             = None
     # get m_v_sync_pol
-    for i in range(m_start,preq):
+    for i in range(m_start,n):
         h_act = 1 if tmds_p[i] & PERIOD_VIDEO else 0
         v_sync = (tmds_sync[i] & 2) >> 1
         if h_act == 1 and m_v_sync_pol == -1:
@@ -500,7 +525,7 @@ if not stop:
             break
     # get m_v_sync_i, m_v_interlace
     m_v_interlace = 0
-    for i in range(m_start,preq):
+    for i in range(m_start,n):
         h_sync_1 = h_sync; h_sync = tmds_sync[i] & 1
         v_sync_1 = v_sync; v_sync = (tmds_sync[i] & 2) >> 1
         if v_sync == m_v_sync_pol and v_sync_1 == 1-m_v_sync_pol: # leading edge of v sync
@@ -512,7 +537,7 @@ if not stop:
         if m_v_sync_i != -1 and m_v_interlace == 1:
             break
     # get/check m_v_total
-    for i in range(m_start,preq):
+    for i in range(m_start,n):
         h_act_1 = h_act; h_act = 1 if tmds_p[i] & PERIOD_VIDEO else 0
         h_sync_1 = h_sync; h_sync = tmds_sync[i] & 1
         v_sync_1 = v_sync; v_sync = (tmds_sync[i] & 2) >> 1
@@ -633,16 +658,16 @@ if not stop:
     m_v_blank = int(m_v_blank)
     m_v_total = int(m_v_total)
     if m_v_blank != m_v_front_porch+m_v_sync+m_v_back_porch:
-        print("ERROR: v_blank != v_front_porch + v_sync + v_back_porch"); stop=True
+        print("ERROR: v_blank != v_front_porch + v_sync + v_back_porch")
     if m_v_total != m_v_active+m_v_blank:
-        print("ERROR: v_total != v_active + v_blank"); stop=True
+        print("ERROR: v_total != v_active + v_blank")
 
 ################################################################################
 # report
 
 print()
 print("REPORT")
-print("pixels analysed: %d" % preq)
+print("pixels analysed: %d" % n)
 print("first valid pixel: %d" % m_start)
 print("protocol is", m_protocol)
 print()
