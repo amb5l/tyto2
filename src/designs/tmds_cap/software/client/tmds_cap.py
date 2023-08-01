@@ -76,7 +76,7 @@ while len(raw_data) < breq:
     data = s_tcp.recv(breq-len(data))
     if data:
         raw_data.extend(data)
-print("done (total time = %f)" % (time.perf_counter()-t0))
+print("done (total time = %.2f seconds)" % (time.perf_counter()-t0))
 s_tcp.close()
 
 # convert raw received bytes to packed TMDS
@@ -108,15 +108,14 @@ PERIOD_DATA             = 128
 
 tmds_ch_p = [] # period flags per channel
 tmds_c = []*3 # 2 bit C value per channel, -1 = invalid
-tmds_sync = []
 for ch in range(3):
     tmds_ch_p.append(array.array('B', preq*[PERIOD_UNKNOWN]))
     tmds_c.append(array.array('b', preq*[-1]))
 tmds_p = array.array('B', preq*[PERIOD_UNKNOWN]) # overall period flags
-tmds_sync = array.array('b', preq*[-1]) # bit 0 = r_h_sync[0], bit 1 = v_sync
+tmds_sync = array.array('b', preq*[-1]) # bit 0 = h sync, bit 1 = v sync
 
 ################################################################################
-# measurements
+# measurements to be made
 
 m_protocol      = 'DVI'
 
@@ -132,17 +131,23 @@ m_h_blank       = -1 # m_h_blank = m_h_front_porch+m_h_sync+m_h_back_porch
 m_h_total       = -1 # m_h_total = m_h_blank+m_h_active
 
 # vertical timing (durations are in lines)
+m_v_sync_i      = -1 # offset of first vsync (for first field if interlaced)
 m_v_interlace   = -1 # 1 = interlace, 0 = progressive
 m_v_sync_pol    = -1 # v sync polarity (1 = high, 0 = low)
-m_v_front_porch = -1 # duration of v front porch (active to sync)
+m_v_front_porch = -1 # duration of v front porch (active to sync) (first field)
 m_v_sync        = -1 # duration of v sync
-m_v_back_porch  = -1 # duration of v back porch (sync to active)
+m_v_back_porch  = -1 # duration of v back porch (sync to active) (first field)
 m_v_active      = -1 # duration of v active
 m_v_blank       = -1 # m_v_blank = m_v_front_porch+m_v_sync+m_v_back_porch
 m_v_total       = -1 # m_v_total = m_v_blank+m_h_active
 
+# note: in the case of interlace,
+#  m_v_front_porch and m_v_back_porch are relative to upper field v sync
+# i.e. they are integers.
+# For the lower field the numbers are 1/2 a line greater.
+
 ################################################################################
-# detect period types (set tmds_p)
+# analysis
 
 stop = False
 
@@ -169,9 +174,7 @@ for i in range(preq):
             if tmds[ch][i] in tmds_spec.terc4:
                 p = p | PERIOD_DATA
         if p == 0:
-            print("error: illegal TMDS character (offset %d, channel %d)" % (i,ch))
-            stop = True
-            # TODO: consider continuing analysis after this error?
+            print("error: illegal TMDS character (offset %d, channel %d)" % (i,ch)); stop = True; break
         tmds_ch_p[ch][i] = p
 
 if not stop:
@@ -186,15 +189,10 @@ if not stop:
                 if m_start == -1 and tmds_c[1][i] == 0 and tmds_c[2][i] == 0:
                     m_start = i
             else:
-                print("error: control period channel misalignment (offset %d)" % i)
-                stop = True
-                break
-                # TODO: consider continuing analysis after this error?
+                print("error: control period channel misalignment (offset %d)" % i); stop = True; break
         else:
             if p_count > 0 and p_count < hdmi_spec.CTRL_PERIOD_LEN_MIN:
-                print("error: control period too short (offset %d)" % i)
-                stop = True
-                break
+                print("error: control period too short (offset %d)" % i); stop = True; break
             p_count = 0
 
 if not stop:
@@ -211,10 +209,7 @@ if not stop:
                 p = p | PERIOD_DATA_PRE
             else:
                 print("error: illegal control period CTL value (offset %d, CTL[3:0] = %s)", \
-                    i,format(cc[2],'#04b')[2:],format(cc[1],'#04b')[2:])
-                stop = True
-                break
-                # TODO: consider continuing analysis after this error?
+                    i,format(cc[2],'#04b')[2:],format(cc[1],'#04b')[2:]); stop = True; break
             tmds_p[i] = p
 
 if not stop:
@@ -229,29 +224,20 @@ if not stop:
                 p_count += 1
             else:
                 if p_count != hdmi_spec.PRE_LEN:
-                    print("error: bad video preamble length (offset %d, length %d)" % (i,p_count))
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    print("error: bad video preamble length (offset %d, length %d)" % (i,p_count)); stop = True; break
                 elif cp[0] & cp[1] & cp[2] & PERIOD_VIDEO_GB:
                     p |= PERIOD_VIDEO_GB
                     p_type = 'video_gb'
                     p_count = 1
                 else:
-                    print("error: expected video guardband after preamble (offset %d)" % i)
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    print("error: expected video guardband after preamble (offset %d)" % i); stop = True; break
         elif p_type == 'video_gb':
             if cp[0] & cp[1] & cp[2] & PERIOD_VIDEO_GB:
                 p |= PERIOD_VIDEO_GB
                 p_count += 1
             else:
                 if p_count != hdmi_spec.GB_LEN:
-                    print("error: bad video guardband length (offset %d, length %d)" % (i,p_count))
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    print("error: bad video guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
                 p_type = ''
                 p_count = 0
         elif p_type == 'data_pre':
@@ -259,76 +245,50 @@ if not stop:
                 p_count += 1
             else:
                 if p_count != hdmi_spec.PRE_LEN:
-                    print("error: bad data preamble length (offset %d, length %d)" % (i,p_count))
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    print("error: bad data preamble length (offset %d, length %d)" % (i,p_count)); stop = True; break
                 elif (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_LEADING):
                     p |= PERIOD_DATA_GB_LEADING
                     p_type = 'data_gb_leading'
                     p_count = 1
                 else:
-                    print("error: expected data guardband after preamble (offset %d)" % i)
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    print("error: expected data guardband after preamble (offset %d)" % i); stop = True; break
         elif p_type == 'data_gb_leading':
             if (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_LEADING):
                 p |= PERIOD_DATA_GB_LEADING
                 p_count += 1
             else:
                 if p_count != hdmi_spec.GB_LEN:
-                    print("error: bad leading data guardband length (offset %d, length %d)" % (i,p_count))
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    print("error: bad leading data guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
                 elif cp[0] & cp[1] & cp[2] & PERIOD_DATA:
                     p |= PERIOD_DATA
                     p_type = 'data'
                     p_count = 1
                 else:
-                    printf("error: expected TERC4 after leading data guardband (offset %d)" % i)
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    printf("error: expected TERC4 after leading data guardband (offset %d)" % i); stop = True; break
         elif p_type == 'data':
             if cp[0] & cp[1] & cp[2] & PERIOD_DATA:
                 p |= PERIOD_DATA
                 p_count += 1
             else:
                 if p_count % hdmi_spec.PACKET_LEN != 0:
-                    print("error: non-integer multiple of data packets (offset %d, data length %d)" % (i,p_count))
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    print("error: non-integer multiple of data packets (offset %d, data length %d)" % (i,p_count)); stop = True; break
                 elif (p_count // hdmi_spec.PACKET_LEN) > hdmi_spec.PACKET_MAX:
-                    print("error: too many consecutive data packets (offset %d)" % i)
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    print("error: too many consecutive data packets (offset %d)" % i); stop = True; break
                 elif (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_TRAILING):
                     p |= PERIOD_DATA_GB_TRAILING
                     p_type = 'data_gb_trailing'
                     p_count = 1
                 else:
-                    print("error: expected trailing data guardband after data (offset %d)" % i)
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    print("error: expected trailing data guardband after data (offset %d)" % i); stop = True; break
         elif p_type == 'data_gb_trailing':
             if (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_LEADING):
                 p |= PERIOD_DATA_GB_TRAILING
                 p_count += 1
             else:
                 if p_count != hdmi_spec.GB_LEN:
-                    print("error: bad trailing data guardband length (offset %d, length %d)" % (i,p_count))
-                    stop = True
-                    break
-                    # TODO: consider continuing analysis after this error?
+                    print("error: bad trailing data guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
                 elif not p & PERIOD_CTRL:
-                    print("error: expected control period after data island (offset %d" % i)
-                    stop = True
-                    break
+                    print("error: expected control period after data island (offset %d" % i); stop = True; break
                 else:
                     p_type = ''
                     p_count = 0
@@ -352,10 +312,7 @@ if not stop:
                 p = p | PERIOD_VIDEO
             else:
                 # this should be impossible
-                print("error: non-video characters found in video period (offset %d, length %d)" % (i,p_count))
-                stop = True
-                break
-                # TODO: consider continuing analysis after this error?
+                print("error: non-video characters found in video period (offset %d, length %d)" % (i,p_count)); stop = True; break
         tmds_p[i] = p
 
 # assumption - sync states persist after control and data periods
@@ -395,21 +352,21 @@ if not stop:
         h_total_i   = None
         if h_act_1 != None and h_act != h_act_1:
             if h_sync != h_sync_1:
-                print("at %d: coinciding events on h_act and h_sync" % i); stop=True; break
+                print("at %d: coinciding events on h_act and h_sync" % i); err_i = i; stop=True; break
             else:
                 if h_act == 1 and h_act_1 == 0:
                     h_event_new = "h_act_rising"
                 elif h_act == 0 and h_act_1 == 1:
                     h_event_new = "h_act_falling"
                 else:
-                    print("at %d: impossible levels (h_act = %d,  h_act_1 = %d)" % (i,h_act,h_act_1)); stop=True; break
+                    print("at %d: impossible levels (h_act = %d,  h_act_1 = %d)" % (i,h_act,h_act_1)); err_i = i; stop=True; break
         elif h_sync_1 != None and h_sync != h_sync_1:
             if h_sync == 1 and h_sync_1 == 0:
                 h_event_new = "h_sync_rising"
             elif h_sync == 0 and h_sync_1 == 1:
                 h_event_new = "h_sync_falling"
             else:
-                print("at %d: impossible levels (h_sync = %d,  h_sync_1 = %d)" % (h_sync,h_sync_1)); stop=True; break
+                print("at %d: impossible levels (h_sync = %d,  h_sync_1 = %d)" % (h_sync,h_sync_1)); err_i = i; stop=True; break
         if h_event_new:
             r_h_event = [h_event_new]+r_h_event[:-1]
             h_total_i = None
@@ -429,13 +386,13 @@ if not stop:
                         if m_h_sync_pol != -1:
                             if m_h_sync_pol != 1-r_h_sync[0]:
                                 s = "h_sync_rising" if r_h_sync[0] == 1 else "h_sync_falling"
-                                print("%s at %d: preceding %s is unexpected" % (r_h_event[0],i,s)); stop=True; break
+                                print("%s at %d: preceding %s is unexpected" % (r_h_event[0],i,s)); err_i = i; stop=True; break
                         else:
                             m_h_sync_pol = 1-r_h_sync[0]
                         # check/measure h_back_porch
                         if m_h_back_porch != -1:
                             if m_h_back_porch != r_h_act_i[0]-r_h_sync_i[0]:
-                                print("%s at %d: expected h_back_porch = %d found %d" % (r_h_event[0],i,m_h_back_porch,r_h_act_i[0]-r_h_sync_i[0])); stop=True; break
+                                print("%s at %d: expected h_back_porch = %g found %g" % (r_h_event[0],i,m_h_back_porch,r_h_act_i[0]-r_h_sync_i[0])); err_i = i; stop=True; break
                         else:
                             if r_h_sync_i[0] != None:
                                 m_h_back_porch = r_h_act_i[0]-r_h_sync_i[0]
@@ -443,7 +400,7 @@ if not stop:
                         if r_h_event[2][:6] == "h_sync" and r_h_event[3] == "h_act_falling":
                             if m_h_blank != -1:
                                 if m_h_blank != r_h_act_i[0]-r_h_act_i[1]:
-                                    print("%s at %d: expected h_blank = %d found %d" % (r_h_event[0],i,m_h_blank,r_h_act_i[0]-r_h_act_i[1])); stop=True; break
+                                    print("%s at %d: expected h_blank = %g found %g" % (r_h_event[0],i,m_h_blank,r_h_act_i[0]-r_h_act_i[1])); err_i = i; stop=True; break
                             else:
                                 if r_h_act_i[1] != None:
                                     m_h_blank = r_h_act_i[0]-r_h_act_i[1]
@@ -454,7 +411,7 @@ if not stop:
                         # check/measure h_active
                         if m_h_active != -1:
                             if m_h_active != r_h_act_i[0]-r_h_act_i[1]:
-                                print("%s at %d: expected h_active = %d found %d" % (r_h_event[0],i,m_h_active,r_h_act_i[0]-r_h_act_i[1])); stop=True; break
+                                print("%s at %d: expected h_active = %g found %g" % (r_h_event[0],i,m_h_active,r_h_act_i[0]-r_h_act_i[1])); err_i = i; stop=True; break
                         else:
                             m_h_active = r_h_act_i[0]-r_h_act_i[1]
                     else:
@@ -465,13 +422,13 @@ if not stop:
                         if m_h_sync_pol != -1:
                             if m_h_sync_pol != h_sync:
                                 s = "low" if r_h_sync[0] == 0 else "high"
-                                print("%s at %d: unexpected active %s h sync" % (r_h_event[0],i,s)); stop=True; break
+                                print("%s at %d: unexpected active %s h sync" % (r_h_event[0],i,s)); err_i = i; stop=True; break
                         else:
                             m_h_sync_pol = h_sync
                         # check_measure h_front_porch
                         if m_h_front_porch != -1:
                             if m_h_front_porch != r_h_sync_i[0]-r_h_act_i[0]:
-                                print("%s at %d: expected h_front_porch = %d found %d" % (r_h_event[0],i,m_h_front_porch,r_h_sync_i[0]-r_h_act_i[0])); stop=True; break
+                                print("%s at %d: expected h_front_porch = %g found %g" % (r_h_event[0],i,m_h_front_porch,r_h_sync_i[0]-r_h_act_i[0])); err_i = i; stop=True; break
                         else:
                             m_h_front_porch = r_h_sync_i[0]-r_h_act_i[0]
                     elif r_h_event[1][:6] == "h_sync" and r_h_event[2] != None:
@@ -486,19 +443,19 @@ if not stop:
                             if m_h_sync_pol != -1:
                                 if m_h_sync_pol != x_h_sync_pol:
                                     s = "low" if r_h_sync[0] == 0 else "high"
-                                    print("%s at %d: unexpected active %s h sync" % (r_h_event[0],i,s)); stop=True; break
+                                    print("%s at %d: unexpected active %s h sync" % (r_h_event[0],i,s)); err_i = i; stop=True; break
                             else:
                                 m_h_sync_pol = x_h_sync_pol
                             # check_measure h_sync
                             if m_h_sync != -1:
                                 if m_h_sync != x_h_sync:
-                                    print("%s at %d: expected h_sync = %d found %d" % (r_h_event[0],i,m_h_sync,x_h_sync)); stop=True; break
+                                    print("%s at %d: expected h_sync = %g found %g" % (r_h_event[0],i,m_h_sync,x_h_sync)); err_i = i; stop=True; break
                             else:
                                 m_h_sync = x_h_sync
                 else:
-                    print("%s at %d: unexpected event" % (r_h_event[0],i)); stop=True; break
+                    print("%s at %d: unexpected event" % (r_h_event[0],i)); err_i = i; stop=True; break
                 if h_event_bad:
-                    print("at %d: unexpected event sequence (%s followed by %s)" % (r_h_event[1],r_h_event[0])); stop=True; break
+                    print("at %d: unexpected event sequence (%s followed by %s)" % (r_h_event[1],r_h_event[0])); err_i = i; stop=True; break
                 else:
                     # check/measure h_total
                     if not ( \
@@ -507,52 +464,181 @@ if not stop:
                     ):
                         if m_h_total != -1:
                             if m_h_total != i-h_total_i:
-                                print("%s at %d: expected h_total = %d found %d" % (r_h_event[0],i,m_h_total,i-h_total_i)); stop=True; break
+                                print("%s at %d: expected h_total = %g found %g" % (r_h_event[0],i,m_h_total,i-h_total_i)); err_i = i; stop=True; break
                         else:
                             if h_total_i != None:
                                 m_h_total = i-h_total_i
+    if m_h_blank != m_h_front_porch+m_h_sync+m_h_back_porch:
+        print("ERROR: h_blank != h_front_porch + h_sync + h_back_porch"); stop=True
+    if m_h_total != m_h_active+m_h_blank:
+        print("ERROR: h_total != h_active + h_blank"); stop=True
 
 if not stop:
     print("analysis pass 8 - vertical video timing")
     # records
-    r_v_event       = [None]*3  # record of v event types
-    r_v_act         = [None]*3  # record of v active event levels
-    r_v_act_i       = [None]*3  # record of v active event indices
-    r_v_sync        = [None]*3  # record of v sync event levels
-    r_v_sync_i      = [None]*3  # record of v sync event indices    
+    r_h_sync_leading  = [None]*3  # record of h sync leading edge indices
+    r_v_sync_leading  = [None]*3  # record of v sync leading edge indices
+    r_v_sync_trailing = [None]*3  # record of v sync trailing edge indices
+    r_v_act           = [None]*3  # record of v active events (level,index)
     # short term variables
-    v_act           = None
-    v_act_1         = None
-    h_sync          = None
-    h_sync_1        = None
-    v_sync          = None
-    v_sync_1        = None
+    h_act             = None
+    h_act_1           = None
+    h_sync            = None
+    h_sync_1          = None
+    h_sync_i          = None
+    v_sync            = None
+    v_sync_1          = None
+    v_act             = None
+    v_act_1           = None
+    field             = None
     # get m_v_sync_pol
     for i in range(m_start,preq):
         h_act = 1 if tmds_p[i] & PERIOD_VIDEO else 0
         v_sync = (tmds_sync[i] & 2) >> 1
-        if h_act == 1:
+        if h_act == 1 and m_v_sync_pol == -1:
             m_v_sync_pol = 1-v_sync
             break
-    # get m_v_interlace
+    # get m_v_sync_i, m_v_interlace
     m_v_interlace = 0
     for i in range(m_start,preq):
         h_sync_1 = h_sync; h_sync = tmds_sync[i] & 1
         v_sync_1 = v_sync; v_sync = (tmds_sync[i] & 2) >> 1
-        if v_sync_1 != None and v_sync != v_sync_1:
-            if h_sync == h_sync_1:
+        if v_sync == m_v_sync_pol and v_sync_1 == 1-m_v_sync_pol: # leading edge of v sync
+            if h_sync == m_h_sync_pol and h_sync_1 == 1-m_h_sync_pol: # coincident leading edge of h sync
+                if m_v_sync_i == -1:
+                    m_v_sync_i = i
+            else: # non coincident h sync
                 m_v_interlace = 1
-                break
-    # locate v sync (for field 1 in the case of interlace)
+        if m_v_sync_i != -1 and m_v_interlace == 1:
+            break
+    # get/check m_v_total
     for i in range(m_start,preq):
+        h_act_1 = h_act; h_act = 1 if tmds_p[i] & PERIOD_VIDEO else 0
         h_sync_1 = h_sync; h_sync = tmds_sync[i] & 1
         v_sync_1 = v_sync; v_sync = (tmds_sync[i] & 2) >> 1
-        if v_sync == m_v_sync_pol and v_sync_1 == 1-m_v_sync_pol: # leading edge
-            pass
-        elif v_sync == 1-m_v_sync_pol and v_sync_1 == m_v_sync_pol: # trailing edge
-            pass
+        if h_act == 1 and h_act_1 == 0: # leading edge of h active
+            v_act = 1
+        if h_sync == m_h_sync_pol and h_sync_1 == 1-m_h_sync_pol: # leading edge of h sync
+            if h_sync_i != None:
+                # process v_act for preceding line
+                if v_act_1 != None and v_act != v_act_1:
+                    r_v_act = [[h_sync_i,1]]+r_v_act[:-1]
+                    if v_act == 1 and v_act_1 == 0: # leading edge of v active
+                        if r_v_act[0] != None and r_v_sync_trailing[0] != None and field != None:
+                            # check/measure v_back_porch
+                            x = ((r_v_act[0][0]-r_v_sync_trailing[0])/m_h_total)+(field/2)
+                            if m_v_back_porch != -1:
+                                if m_v_back_porch != x:
+                                    print("at %d: expected v_back_porch = %g found %g" % (i,m_v_back_porch,x)); err_i = i; stop=True; break
+                            else:
+                                m_v_back_porch = x
+                                if m_v_back_porch != int(m_v_back_porch):
+                                    print("at %d: expected integer v_back_porch, found %g" % (i,m_v_back_porch)); err_i = i; stop=True; break
+                        if r_v_act[1] != None:
+                            # check/measure v_blank
+                            x = (r_v_act[0][0]-r_v_act[1][0])/m_h_total
+                            if m_v_blank != -1:
+                                if m_v_blank != x:
+                                    print("at %d: expected v_blank = %g found %g" % (i,m_v_blank,x)); err_i = i; stop=True; break
+                            else:
+                                m_v_blank = x
+                                if m_v_blank != int(m_v_blank):
+                                    print("at %d: expected integer v_blank, found %g" % (i,m_v_blank)); err_i = i; stop=True; break
+                    elif v_act == 0 and v_act_1 == 1: # trailing edge of v active
+                        if r_v_act[1] != None:
+                            # check/measure v_active
+                            x = (r_v_act[0][0]-r_v_act[1][0])/m_h_total
+                            if m_v_active != -1:
+                                if m_v_active != x:
+                                    print("at %d: expected v_active = %g found %g" % (i,m_v_active,x)); err_i = i; stop=True; break
+                            else:
+                                m_v_active = x
+                                if m_v_active != int(m_v_active):
+                                    print("at %d: expected integer v_active, found %g" % (i,m_v_active)); err_i = i; stop=True; break
+                v_act_1 = v_act; v_act = 0
+            h_sync_i = i
+        if v_sync == m_v_sync_pol and v_sync_1 == 1-m_v_sync_pol: # leading edge of v sync
+            field = 1 if h_sync_i != i else 0
+            r_v_sync_leading = [i]+r_v_sync_leading[:-1]
+            r_v_sync_leading_prev = r_v_sync_leading[1] if m_v_interlace == 0 else r_v_sync_leading[2]
+            if m_v_interlace == 0: # progressive
+                r_v_sync_leading_prev = r_v_sync_leading[1]
+                h_sync_i_x = i
+            elif field == 0: # first field of interlace
+                r_v_sync_leading_prev = r_v_sync_leading[2]
+                h_sync_i_x = i
+            elif field == 1: # second field of interlace
+                r_v_sync_leading_prev = r_v_sync_leading[2]
+                h_sync_i_x = i-m_h_total/2
+            # check position of v sync edge w.r.t h sync leading edge
+            if h_sync_i != h_sync_i_x:
+                print("at %d: bad v sync position w.r.t. h sync - found offset %d, expected %g" % (i,i-h_sync_i,i-h_sync_i_x)); err_i = i; stop=True; break
+            # check/measure m_v_total
+            if r_v_sync_leading_prev != None:
+                if m_v_total != -1:
+                    if m_v_total != (i-r_v_sync_leading_prev)/m_h_total:
+                        print("at %d: expected v_total = %g found %g" % (i,m_v_total,(i-r_v_sync_leading_prev)/m_h_total)); err_i = i; stop=True; break
+                else:
+                    m_v_total = (i-r_v_sync_leading_prev)/m_h_total
+                    if m_v_total != int(m_v_total):
+                        print("at %d: expected integer v_total, found %g" % (i,m_v_total)); err_i = i; stop=True; break
+            if r_v_act[0] != None and field != None:
+                # check/measure m_v_front_porch
+                x = ((i-r_v_act[0][0])/m_h_total)+(field/2)
+                if m_v_front_porch != -1:
+                    if m_v_front_porch != x:
+                        print("at %d: expected v_front_porch = %g found %g" % (i,m_v_front_porch,x)); err_i = i; stop=True; break
+                else:
+                    m_v_front_porch = x
+                    if m_v_front_porch != int(m_v_front_porch):
+                        print("at %d: expected integer v_front_porch, found %g" % (i,m_v_front_porch)); err_i = i; stop=True; break
+        elif v_sync == 1-m_v_sync_pol and v_sync_1 == m_v_sync_pol: # trailing edge of v sync
+            r_v_sync_trailing = [i]+r_v_sync_trailing[:-1]
+            r_v_sync_trailing_prev = r_v_sync_trailing[1] if m_v_interlace == 0 else r_v_sync_trailing[2]
+            if m_v_interlace == 0: # progressive
+                r_v_sync_trailing_prev = r_v_sync_trailing[1]
+                h_sync_i_x = i
+            elif field == 0: # first field of interlace
+                r_v_sync_trailing_prev = r_v_sync_trailing[2]
+                h_sync_i_x = i
+            elif field == 1: # second field of interlace
+                r_v_sync_trailing_prev = r_v_sync_trailing[2]
+                h_sync_i_x = i-m_h_total/2
+            # check position of v sync edge w.r.t h sync leading edge
+            if h_sync_i != h_sync_i_x:
+                print("at %d: bad v sync position w.r.t. h sync - found offset %d, expected %g" % (i,i-h_sync_i,i-h_sync_i_x)); err_i = i; stop=True; break
+            # check/measure m_v_total
+            if r_v_sync_trailing_prev != None:
+                if m_v_total != -1:
+                    if m_v_total != (i-r_v_sync_trailing_prev)/m_h_total:
+                        print("at %d: expected v_total = %g found %g" % (i,m_v_total,(i-r_v_sync_trailing_prev)/m_h_total)); err_i = i; stop=True; break
+                else:
+                    m_v_total = (i-r_v_sync_trailing_prev)/m_h_total
+                    if m_v_total != int(m_v_total):
+                        print("at %d: expected integer v_total, found %g" % (i,m_v_total)); err_i = i; stop=True; break
+            if r_v_sync_leading[0] != None:
+                # check/measure m_v_sync
+                x = (i-r_v_sync_leading[0])/m_h_total
+                if m_v_sync != -1:
+                    if m_v_sync != x:
+                        print("at %d: expected v_sync = %g found %g" % (i,m_v_sync,x)); err_i = i; stop=True; break
+                else:
+                    m_v_sync = x
+                    if m_v_sync != int(m_v_sync):
+                        print("at %d: expected integer v_sync, found %g" % (i,m_v_sync)); err_i = i; stop=True; break
+    m_v_front_porch = int(m_v_front_porch)
+    m_v_sync = int(m_v_sync)
+    m_v_back_porch = int(m_v_back_porch)
+    m_v_active = int(m_v_active)
+    m_v_blank = int(m_v_blank)
+    m_v_total = int(m_v_total)
+    if m_v_blank != m_v_front_porch+m_v_sync+m_v_back_porch:
+        print("ERROR: v_blank != v_front_porch + v_sync + v_back_porch"); stop=True
+    if m_v_total != m_v_active+m_v_blank:
+        print("ERROR: v_total != v_active + v_blank"); stop=True
 
 ################################################################################
+# report
 
 print()
 print("REPORT")
@@ -568,10 +654,6 @@ print("      back porch : %d" % m_h_back_porch)
 print("          active : %d" % m_h_active)
 print("           blank : %d" % m_h_blank)
 print("           total : %d" % m_h_total)
-if m_h_blank != m_h_front_porch+m_h_sync+m_h_back_porch:
-    print("ERROR: h_blank != h_front_porch + h_sync + h_back_porch")
-if m_h_total != m_h_active+m_h_blank:
-    print("ERROR: h_total != h_active + h_blank")
 print()
 print("vertical timings:")
 print("            scan : %s" % ("interlace" if m_v_interlace == 1 else "progressive" if m_v_interlace == 0 else "???"))
@@ -593,8 +675,7 @@ print("           total : %d" % m_v_total)
 ################################################################################
 # error dump
 
-if i != preq-1:
-    err_i = i
+if stop:
     print()
     print("         | ...ch 2... | ...ch 1... | ...ch 0... |  CTL   | H V |")
     for i in range(err_i-3000,err_i+3000): # TODO prevent starting index < 0
