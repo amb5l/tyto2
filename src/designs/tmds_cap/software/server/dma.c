@@ -50,6 +50,10 @@ int dma_idle() {
     return PEEK(S2MM_DMASR) & S2MM_DMASR_IDLE;
 }
 
+uint32_t dma_count() {
+	return PEEK( S2MM_LENGTH );
+}
+
 uint32_t dma_status() {
     return PEEK(S2MM_DMASR);
 }

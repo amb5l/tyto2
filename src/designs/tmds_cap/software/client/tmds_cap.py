@@ -88,7 +88,7 @@ else:
     print("requesting %d pixels..." % n)
     t0 = time.perf_counter()
     s_tcp.sendall(b'tmds_cap get '+bytes(str(n),'utf-8'))
-    breq = n * BYTES_PER_PIXEL
+    breq = n*BYTES_PER_PIXEL
     tmds_bytes = bytearray()
     while len(tmds_bytes) < breq:
         data = s_tcp.recv(breq-len(data))
@@ -97,7 +97,7 @@ else:
     print("done (total time = %.2f seconds)" % (time.perf_counter()-t0))
     s_tcp.close()
 
-# convert raw received bytes to packed TMDS
+# convert raw bytes to packed TMDS
 tmds_packed = array.array('L', n*[0])
 for i in range(n):
     tmds_packed[i] = int.from_bytes(tmds_bytes[4*i:4+(4*i)],'little')
@@ -691,8 +691,7 @@ print("           blank : %d" % m_v_blank)
 print("           total : %d" % m_v_total)
 
 # TODO:
-# implement vertical timing extraction
-# check consistency of field/frame periods
+# check consistency of field periods for interlace
 # more HDMI rules e.g. check for extended control periods
 # decode data and verify
 # compare video timing with CTA spec

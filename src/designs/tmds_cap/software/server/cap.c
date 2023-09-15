@@ -11,15 +11,22 @@
 
 #include "cap.h"
 
+#define CAP_DMA_MAX_BYTES (32*1024*1024)
 #define CAP_BUF_ALIGN_PIXELS 4
 #define CAP_BUF_ALIGN_BYTES (4*CAP_BUF_ALIGN_PIXELS)
 volatile uint32_t cap_buf_unaligned[CAP_BUF_PIXELS+CAP_BUF_ALIGN_PIXELS];
+
+uint32_t cap_bytes_transferred;
+uint32_t cap_bytes_remaining;
 
 // hack to disable test pattern generation
 #define CSR_CAPCTRL_TEST 0
 
 void cap_init() {
     cap_buf = (uint32_t *)((CAP_BUF_ALIGN_BYTES+(uint32_t)cap_buf_unaligned) & -CAP_BUF_ALIGN_BYTES);
+	printf("sizeof(cap_buf_unaligned) = %ld\r\n", sizeof(cap_buf_unaligned));
+	printf("cap_buf_unaligned = 0x%08X\r\n", cap_buf_unaligned);
+	printf("cap_buf = 0x%08X\r\n", cap_buf);
     CSR_POKE(RA_CAPCTRL, CSR_CAPCTRL_RST);
     usleep(1);
     CSR_POKE(RA_CAPCTRL, CSR_CAPCTRL_TEST);
@@ -28,23 +35,32 @@ void cap_init() {
 }
 
 void cap_start(uint32_t pixels) {
+	cap_bytes_transferred = 0;
+	cap_bytes_remaining = 4*pixels;
 	sdram_fill((uint32_t)cap_buf, 4*pixels, 0xAAAAAAAA, 0 ); // invalid TMDS characters
-    dma_start((uint32_t)cap_buf, 4*pixels);
+	if (4*pixels > CAP_DMA_MAX_BYTES)
+		dma_start((uint32_t)cap_buf, CAP_DMA_MAX_BYTES);
+	else
+		dma_start((uint32_t)cap_buf, 4*pixels);
     CSR_POKE(RA_CAPSIZE, pixels);
     CSR_POKE(RA_CAPCTRL, CSR_CAPCTRL_EN | CSR_CAPCTRL_TEST);
 }
 
 uint32_t cap_rdy() {
-    if (
-        (CSR_PEEK(RA_CAPCTRL) & CSR_CAPCTRL_EN) &&
-        (CSR_PEEK(RA_CAPSTAT) & CSR_CAPSTAT_STOP) &&
-        dma_idle()
-    ) {
-        CSR_POKE(RA_CAPCTRL, CSR_CAPCTRL_TEST);
-        return CSR_PEEK(RA_CAPSIZE);
-    }
-    else
-        return 0;
+	if (dma_idle()){
+		cap_bytes_transferred += dma_count();
+		cap_bytes_remaining -= dma_count();
+		if (cap_bytes_remaining) {
+			if (cap_bytes_remaining > CAP_DMA_MAX_BYTES)
+				dma_start(cap_bytes_transferred+(uint32_t)cap_buf, CAP_DMA_MAX_BYTES);
+			else
+				dma_start(cap_bytes_transferred+(uint32_t)cap_buf, cap_bytes_remaining);
+			return 0;
+		} else {
+	        CSR_POKE(RA_CAPCTRL, CSR_CAPCTRL_TEST);
+	        return CSR_PEEK(RA_CAPSIZE);
+		}
+	}
 }
 
 void cap_reg_dump()

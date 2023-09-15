@@ -142,8 +142,8 @@ err_t server_tcp_accept(void *arg, struct tcp_pcb *pcb, err_t err)
     return ERR_OK;
 }
 
-int pixels_remaining = 0;
-int pixels_sent = 0;
+uint32_t pixels_remaining = 0;
+uint32_t pixels_sent = 0;
 
 // transfer captured data
 void transfer()
@@ -242,6 +242,7 @@ void server_run()
         if (countdown <= 0) {
             countdown = COUNTDOWN_SEC;
             advertise(s_disco);
+            printf("pixels_sent = %d, pixels_remaining = %d\r\n", pixels_sent, pixels_remaining);
         }
 
         // transfer pixels as required
