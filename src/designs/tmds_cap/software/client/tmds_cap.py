@@ -140,7 +140,7 @@ tmds_p = array.array('B', n*[PERIOD_UNKNOWN]) # overall period flags
 tmds_sync = array.array('b', n*[-1]) # bit 0 = h sync, bit 1 = v sync
 
 ################################################################################
-# measurements to be made
+# measurements to be made and data to be extracted
 
 m_protocol      = 'DVI'
 
@@ -170,6 +170,9 @@ m_v_total       = -1 # m_v_total = m_v_blank+m_h_active
 #  m_v_front_porch and m_v_back_porch are relative to upper field v sync
 # i.e. they are integers.
 # For the lower field the numbers are 1/2 a line greater.
+
+# list of raw data packets
+data_raw = []
 
 ################################################################################
 # analysis
@@ -662,6 +665,43 @@ if not stop:
     if m_v_total != m_v_active+m_v_blank:
         print("ERROR: v_total != v_active + v_blank")
 
+if not stop and m_protocol == "HDMI":
+    print("analysis pass 9 - extract data")
+    i = m_start
+    while i < n:
+        p = tmds_p[i]
+        if p & PERIOD_DATA:
+            if n-i >= hdmi_spec.PACKET_LEN: # complete packet available
+                # 5 BCH blocks: 4 subpackets, 1 header
+                bch_blocks = [bytearray(8),bytearray(8),bytearray(8),bytearray(8),bytearray(4)]
+                for j in range(32):
+                    # 4 bit data word per channel
+                    def int2bitlist(x,n):
+                        return [(x >> i) & 1 for i in range(n)]
+                    a = int2bitlist(tmds_spec.terc4.index(tmds[0][i+j]),4)
+                    b = int2bitlist(tmds_spec.terc4.index(tmds[1][i+j]),4)
+                    c = int2bitlist(tmds_spec.terc4.index(tmds[2][i+j]),4)
+                    # fill subpackets 0..3
+                    byte = j >> 2 # 0..7
+                    bit = (j & 3) << 1
+                    for k in range(4):
+                        bch_blocks[k][byte] |= (b[k] << bit)
+                        bch_blocks[k][byte] |= (c[k] << (bit+1))
+                    # fill header
+                    byte = j >> 3 # 0..3
+                    bit = j & 7
+                    bch_blocks[4][byte] |= (a[2] << bit)
+                # store packet
+                data_raw.append([byte for bch_block in bch_blocks for byte in bch_block])
+                i += hdmi_spec.PACKET_LEN
+            else: # no more complete packets
+                i = n # so halt
+        else:
+            i += 1
+
+#if not stop and m_protocol == "HDMI":
+#    print("analysis pass 10 - check data parity")
+
 ################################################################################
 # report
 
@@ -689,6 +729,8 @@ print("      back porch : %d" % m_v_back_porch)
 print("          active : %d" % m_v_active)
 print("           blank : %d" % m_v_blank)
 print("           total : %d" % m_v_total)
+print()
+print("data packets: %d" % len(data_raw))
 
 # TODO:
 # check consistency of field periods for interlace
