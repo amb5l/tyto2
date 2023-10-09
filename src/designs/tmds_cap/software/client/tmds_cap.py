@@ -181,23 +181,23 @@ for i in range(n):
     for ch in range(3):
         p = PERIOD_UNKNOWN
         if tmds[ch][i] in tmds_spec.ctrl:
-            p = p | PERIOD_CTRL
+            p |= PERIOD_CTRL
             tmds_c[ch][i] = tmds_spec.ctrl.index(tmds[ch][i])
             if ch > 0:
                 if tmds_c[ch][i] > 0:
                     m_protocol = 'HDMI'
         if tmds[ch][i] == tmds_spec.video_gb[ch]:
-            p = p | PERIOD_VIDEO_GB
+            p |= PERIOD_VIDEO_GB
         if tmds_spec.video[tmds[ch][i]] != -1:
-            p = p | PERIOD_VIDEO
+            p |= PERIOD_VIDEO
         if ch == 0:
             if tmds[ch][i] in tmds_spec.terc4:
-                p = p | PERIOD_DATA
+                p |= PERIOD_DATA
         else:
             if tmds[ch][i] == tmds_spec.data_gb:
-                p = p | PERIOD_DATA_GB_LEADING | PERIOD_DATA_GB_TRAILING
+                p |= PERIOD_DATA_GB_LEADING | PERIOD_DATA_GB_TRAILING
             if tmds[ch][i] in tmds_spec.terc4:
-                p = p | PERIOD_DATA
+                p |= PERIOD_DATA
         if p == 0:
             print("error: illegal TMDS character (offset %d, channel %d)" % (i,ch)); stop = True; break
         tmds_ch_p[ch][i] = p
@@ -229,9 +229,9 @@ if not stop:
             if cc[1] == 0 and cc[2] == 0: # normal control period
                 pass
             elif cc[1] == 1 and cc[2] == 0: # video preamble
-                p = p | PERIOD_VIDEO_PRE
+                p |= PERIOD_VIDEO_PRE
             elif cc[1] == 1 and cc[2] == 1: # data preamble
-                p = p | PERIOD_DATA_PRE
+                p |= PERIOD_DATA_PRE
             else:
                 print("error: illegal control period CTL value (offset %d, CTL[3:0] = %s)", \
                     i,format(cc[2],'#04b')[2:],format(cc[1],'#04b')[2:]); stop = True; break
@@ -334,7 +334,7 @@ if not stop:
         p = tmds_p[i]
         if not p:
             if cp[0] & cp[1] & cp[2] & PERIOD_VIDEO:
-                p = p | PERIOD_VIDEO
+                p |= PERIOD_VIDEO
             else:
                 # this should be impossible
                 print("error: non-video characters found in video period (offset %d, length %d)" % (i,p_count)); stop = True; break
