@@ -19,8 +19,7 @@
 import sys,argparse,struct,socket,array,time
 
 # local modules
-import tmds_spec
-import hdmi_spec
+import spec.tmds,spec.hdmi
 
 print("-------------------------------------------------------------------------------")
 print("tmds_cap client application")
@@ -183,23 +182,23 @@ print("analysis pass 1 - preliminary period detection per channel")
 for i in range(n):
     for ch in range(3):
         p = PERIOD_UNKNOWN
-        if tmds[ch][i] in tmds_spec.ctrl:
+        if tmds[ch][i] in spec.tmds.ctrl:
             p |= PERIOD_CTRL
-            tmds_c[ch][i] = tmds_spec.ctrl.index(tmds[ch][i])
+            tmds_c[ch][i] = spec.tmds.ctrl.index(tmds[ch][i])
             if ch > 0:
                 if tmds_c[ch][i] > 0:
                     m_protocol = 'HDMI'
-        if tmds[ch][i] == tmds_spec.video_gb[ch]:
+        if tmds[ch][i] == spec.tmds.video_gb[ch]:
             p |= PERIOD_VIDEO_GB
-        if tmds_spec.video[tmds[ch][i]] != -1:
+        if spec.tmds.video[tmds[ch][i]] != -1:
             p |= PERIOD_VIDEO
         if ch == 0:
-            if tmds[ch][i] in tmds_spec.terc4:
+            if tmds[ch][i] in spec.tmds.terc4:
                 p |= PERIOD_DATA
         else:
-            if tmds[ch][i] == tmds_spec.data_gb:
+            if tmds[ch][i] == spec.tmds.data_gb:
                 p |= PERIOD_DATA_GB_LEADING | PERIOD_DATA_GB_TRAILING
-            if tmds[ch][i] in tmds_spec.terc4:
+            if tmds[ch][i] in spec.tmds.terc4:
                 p |= PERIOD_DATA
         if p == 0:
             print("error: illegal TMDS character (offset %d, channel %d)" % (i,ch)); stop = True; break
@@ -219,7 +218,7 @@ if not stop:
             else:
                 print("error: control period channel misalignment (offset %d)" % i); stop = True; break
         else:
-            if p_count > 0 and p_count < hdmi_spec.CTRL_PERIOD_LEN_MIN:
+            if p_count > 0 and p_count < spec.hdmi.CTRL_PERIOD_LEN_MIN:
                 print("error: control period too short (offset %d)" % i); stop = True; break
             p_count = 0
 
@@ -251,7 +250,7 @@ if not stop:
             if p & PERIOD_VIDEO_PRE:
                 p_count += 1
             else:
-                if p_count != hdmi_spec.PRE_LEN:
+                if p_count != spec.hdmi.PRE_LEN:
                     print("error: bad video preamble length (offset %d, length %d)" % (i,p_count)); stop = True; break
                 elif cp[0] & cp[1] & cp[2] & PERIOD_VIDEO_GB:
                     p |= PERIOD_VIDEO_GB
@@ -264,7 +263,7 @@ if not stop:
                 p |= PERIOD_VIDEO_GB
                 p_count += 1
             else:
-                if p_count != hdmi_spec.GB_LEN:
+                if p_count != spec.hdmi.GB_LEN:
                     print("error: bad video guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
                 p_type = ''
                 p_count = 0
@@ -272,7 +271,7 @@ if not stop:
             if p & PERIOD_DATA_PRE:
                 p_count += 1
             else:
-                if p_count != hdmi_spec.PRE_LEN:
+                if p_count != spec.hdmi.PRE_LEN:
                     print("error: bad data preamble length (offset %d, length %d)" % (i,p_count)); stop = True; break
                 elif (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_LEADING):
                     p |= PERIOD_DATA_GB_LEADING
@@ -285,7 +284,7 @@ if not stop:
                 p |= PERIOD_DATA_GB_LEADING
                 p_count += 1
             else:
-                if p_count != hdmi_spec.GB_LEN:
+                if p_count != spec.hdmi.GB_LEN:
                     print("error: bad leading data guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
                 elif cp[0] & cp[1] & cp[2] & PERIOD_DATA:
                     p |= PERIOD_DATA
@@ -298,9 +297,9 @@ if not stop:
                 p |= PERIOD_DATA
                 p_count += 1
             else:
-                if p_count % hdmi_spec.PACKET_LEN != 0:
+                if p_count % spec.hdmi.PACKET_LEN != 0:
                     print("error: non-integer multiple of data packets (offset %d, data length %d)" % (i,p_count)); stop = True; break
-                elif (p_count // hdmi_spec.PACKET_LEN) > hdmi_spec.PACKET_MAX:
+                elif (p_count // spec.hdmi.PACKET_LEN) > spec.hdmi.PACKET_MAX:
                     print("error: too many consecutive data packets (offset %d)" % i); stop = True; break
                 elif (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_TRAILING):
                     p |= PERIOD_DATA_GB_TRAILING
@@ -313,7 +312,7 @@ if not stop:
                 p |= PERIOD_DATA_GB_TRAILING
                 p_count += 1
             else:
-                if p_count != hdmi_spec.GB_LEN:
+                if p_count != spec.hdmi.GB_LEN:
                     print("error: bad trailing data guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
                 elif not p & PERIOD_CTRL:
                     print("error: expected control period after data island (offset %d" % i); stop = True; break
@@ -352,7 +351,7 @@ if not stop:
         if p & PERIOD_CTRL:
             sync = tmds_c[0][i]
         elif p & (PERIOD_DATA | PERIOD_DATA_GB_LEADING | PERIOD_DATA_GB_TRAILING):
-            sync = tmds_spec.terc4.index(tmds[0][i]) & 3
+            sync = spec.tmds.terc4.index(tmds[0][i]) & 3
         tmds_sync[i] = sync
 
 if not stop:
@@ -671,16 +670,16 @@ if not stop and m_protocol == "HDMI":
     while i < n:
         p = tmds_p[i]
         if p & PERIOD_DATA:
-            if n-i >= hdmi_spec.PACKET_LEN: # complete packet available
+            if n-i >= spec.hdmi.PACKET_LEN: # complete packet available
                 # 5 BCH blocks: 4 subpackets, 1 header
                 bch_blocks = [bytearray(8),bytearray(8),bytearray(8),bytearray(8),bytearray(4)]
                 for j in range(32):
                     # 4 bit data word per channel
                     def int2bitlist(x,n):
                         return [(x >> i) & 1 for i in range(n)]
-                    a = int2bitlist(tmds_spec.terc4.index(tmds[0][i+j]),4)
-                    b = int2bitlist(tmds_spec.terc4.index(tmds[1][i+j]),4)
-                    c = int2bitlist(tmds_spec.terc4.index(tmds[2][i+j]),4)
+                    a = int2bitlist(spec.tmds.terc4.index(tmds[0][i+j]),4)
+                    b = int2bitlist(spec.tmds.terc4.index(tmds[1][i+j]),4)
+                    c = int2bitlist(spec.tmds.terc4.index(tmds[2][i+j]),4)
                     # fill subpackets 0..3
                     byte = j >> 2 # 0..7
                     bit = (j & 3) << 1
@@ -693,7 +692,7 @@ if not stop and m_protocol == "HDMI":
                     bch_blocks[4][byte] |= (a[2] << bit)
                 # store packet
                 data_raw.append([byte for bch_block in bch_blocks for byte in bch_block])
-                i += hdmi_spec.PACKET_LEN
+                i += spec.hdmi.PACKET_LEN
             else: # no more complete packets
                 i = n # so halt
         else:
