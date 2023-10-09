@@ -14,6 +14,8 @@
 ## Lesser General Public License along with The Tyto Project. If not, see     ##
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
+# TODO:
+# analysis progress bar
 
 # standard modules
 import sys,argparse,struct,socket,array,time
@@ -172,6 +174,46 @@ m_v_total       = -1 # m_v_total = m_v_blank+m_h_active
 
 # list of raw data packets
 data_raw = []
+
+################################################################################
+# utility functions
+
+def int2vec(x,n):
+    return [(x >> i) & 1 for i in range(n)]
+
+def vec2int(v):
+    r = 0
+    for i in range(len(v)):
+        r |= v[i] << i
+    return r
+
+def xorvec(v):
+    r = 0
+    for bit in v:
+        r ^= bit
+    return r
+
+def bch_ecc(bytes):
+    q = int2vec(0,8);
+    n = q[:]
+    for byte in bytes:
+        d = int2vec(byte,8)
+        # see hdmi_bch_ecc.py
+        n[0] = xorvec([d[0],d[1],d[2],d[4],d[5],d[7],q[0],q[1],q[2],q[4],q[5],q[7]])
+        n[1] = xorvec([d[3],d[4],d[6],d[7],q[3],q[4],q[6],q[7]])
+        n[2] = xorvec([d[1],d[2],q[1],q[2]])
+        n[3] = xorvec([d[0],d[2],d[3],q[0],q[2],q[3]])
+        n[4] = xorvec([d[0],d[1],d[3],d[4],q[0],q[1],q[3],q[4]])
+        n[5] = xorvec([d[1],d[2],d[4],d[5],q[1],q[2],q[4],q[5]])
+        n[6] = xorvec([d[0],d[2],d[3],d[5],d[6],q[0],q[2],q[3],q[5],q[6]])
+        n[7] = xorvec([d[0],d[1],d[3],d[4],d[6],d[7],q[0],q[1],q[3],q[4],q[6],q[7]])
+        q = n[:]
+    return vec2int(q)
+
+def print_hex_list(bytes,end="\r\n"):
+    for byte in bytes[:-1]:
+        print("%02X" % byte,end=" ")
+    print("%02X" % bytes[-1],end=end)
 
 ################################################################################
 # analysis
@@ -675,11 +717,9 @@ if not stop and m_protocol == "HDMI":
                 bch_blocks = [bytearray(8),bytearray(8),bytearray(8),bytearray(8),bytearray(4)]
                 for j in range(32):
                     # 4 bit data word per channel
-                    def int2bitlist(x,n):
-                        return [(x >> i) & 1 for i in range(n)]
-                    a = int2bitlist(spec.tmds.terc4.index(tmds[0][i+j]),4)
-                    b = int2bitlist(spec.tmds.terc4.index(tmds[1][i+j]),4)
-                    c = int2bitlist(spec.tmds.terc4.index(tmds[2][i+j]),4)
+                    a = int2vec(spec.tmds.terc4.index(tmds[0][i+j]),4)
+                    b = int2vec(spec.tmds.terc4.index(tmds[1][i+j]),4)
+                    c = int2vec(spec.tmds.terc4.index(tmds[2][i+j]),4)
                     # fill subpackets 0..3
                     byte = j >> 2 # 0..7
                     bit = (j & 3) << 1
@@ -698,8 +738,39 @@ if not stop and m_protocol == "HDMI":
         else:
             i += 1
 
-#if not stop and m_protocol == "HDMI":
-#    print("analysis pass 10 - check data parity")
+if not stop and m_protocol == "HDMI":
+    print("analysis pass 10 - check data parity")
+    for packet in data_raw:
+        print_hex_list(packet[0:8],end="")
+        print("(%02X)" % bch_ecc(packet[0:7]),end=" ")
+#        if bch_ecc(packet[0:7]) == packet[7]:
+#            print(".",end=" ")
+#        else:
+#            print("*",end=" ")
+        print_hex_list(packet[8:16],end="")
+        print("(%02X)" % bch_ecc(packet[8:15]),end=" ")
+#        if bch_ecc(packet[8:15]) == packet[15]:
+#            print(".",end=" ")
+#        else:
+#            print("*",end=" ")
+        print_hex_list(packet[16:24],end="")
+        print("(%02X)" % bch_ecc(packet[16:23]),end=" ")
+#       if bch_ecc(packet[16:23]) == packet[23]:
+#           print(".",end=" ")
+#       else:
+#           print("*",end=" ")
+        print_hex_list(packet[24:32],end="")
+        print("(%02X)" % bch_ecc(packet[24:31]),end=" ")
+#        if bch_ecc(packet[24:31]) == packet[31]:
+#            print(".",end=" ")
+#        else:
+#            print("*",end=" ")
+        print_hex_list(packet[32:36],end="")
+        print("(%02X)" % bch_ecc(packet[32:35]))
+#        if bch_ecc(packet[32:35]) == packet[35]:
+#            print(".",end=" ")
+#        else:
+#            print("*",end=" ")
 
 ################################################################################
 # report
@@ -730,6 +801,9 @@ print("           blank : %d" % m_v_blank)
 print("           total : %d" % m_v_total)
 print()
 print("data packets: %d" % len(data_raw))
+
+#for i in range(100):
+#    print_hex_list(data_raw[i])
 
 # TODO:
 # check consistency of field periods for interlace
