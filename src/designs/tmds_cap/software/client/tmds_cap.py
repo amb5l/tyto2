@@ -15,6 +15,7 @@
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
 # TODO:
+# get pixel clock frequency from h/w
 # analysis progress bar
 
 # standard modules
@@ -51,8 +52,7 @@ BYTES_PER_PIXEL = 4
 
 if infile:
     # read TMDS data from file
-    print("reading TMDS data from %s..." % infile)
-    tmds_packed = array.array('L')
+    print("reading TMDS data from %s..." % infile,end=" ")
     n = 0
     with open(infile, 'rb') as f:
         tmds_bytes = f.read()
@@ -98,12 +98,14 @@ else:
     print("done (total time = %.2f seconds)" % (time.perf_counter()-t0))
     s_tcp.close()
 
-# convert raw bytes to packed TMDS
+# convert raw bytes to 32 bit TMDS triplets (3 x 10 bits)
+print("packing raw bytes into TMDS triplets")
 tmds_packed = array.array('L', n*[0])
 for i in range(n):
     tmds_packed[i] = int.from_bytes(tmds_bytes[4*i:4+(4*i)],'little')
+
+# write TMDS data to file if required
 if outfile:
-    # write TMDS data to file
     print("writing TMDS data to %s..." % outfile)
     with open(outfile, 'wb') as f:
         for d in tmds_packed:
@@ -111,6 +113,7 @@ if outfile:
     f.close()
 
 # separate channels from packed TMDS data
+print("separating TMDS channels")
 tmds = []
 for ch in range(3):
     tmds.append(array.array('h',n*[-1]))
@@ -252,8 +255,8 @@ def print_hex_list(bytes,end="\r\n"):
 stop = False
 
 print("analysis pass 1 - preliminary period detection per channel")
-for i in range(n):
-    for ch in range(3):
+for ch in range(3):
+    for i in range(n):
         p = PERIOD_UNKNOWN
         if tmds[ch][i] in spec.tmds.ctrl:
             p |= PERIOD_CTRL
