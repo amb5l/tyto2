@@ -809,22 +809,20 @@ if not stop and m_protocol == "HDMI":
                 break
 
 if not stop and m_protocol == "HDMI":
-    print("decode data island packets")
+    print("decoding and checking data island packets")
     for packet_type_code,packet_list in packet_dict.items():
         for d in packet_list:
             if packet_type_code != d.hb[0]:
                 print("inconceivable!"); stop = True; break
-            if packet_type_code & 0x80:
-                packet_type = "InfoFrame"
-            elif packet_type_code in spec.hdmi.PACKET_TYPES:
+            if packet_type_code in spec.hdmi.PACKET_TYPES:
                 packet_type = spec.hdmi.PACKET_TYPES[packet_type_code]
             else:
-                packet_type = "unknown (0x%02X)" % packet_type_code
+                print("at %d: unknown packet type (0x%02X)" % (d.i,packet_type_code)); stop = True; break
             ################################################################################
-            if   packet_type == "Null":
-                pass
+            if packet_type == "Null":
                 # RULE: all bytes must be zero
-                # TODO
+                if sum(d.raw) != 0:
+                    print("at %d: non zero content in null packet" % d.i); stop = True; break
             ################################################################################
             elif packet_type == "Audio Clock Regeneration (N/CTS)":
                 pass
@@ -856,32 +854,26 @@ if not stop and m_protocol == "HDMI":
             elif packet_type == "Gamut Metadata":
                 pass
             ################################################################################
-            elif packet_type == "InfoFrame":
-                infoframe_type_code = packet_type_code & 0x7F
-                if infoframe_type_code in spec.cta861.INFOFRAME_TYPES:
-                    infoframe_type = spec.cta861.INFOFRAME_TYPES[infoframe_type_code]
-                else:
-                    infoframe_type = "unknown (0x%02X)" % infoframe_type_code
+            elif packet_type[:9] == "InfoFrame":
                 infoframe_version = d.hb[1]
                 infoframe_length = d.hb[2] & 0x1F
                 # RULE: HB2 bits 7..5 must be zero
                 if d.hb[2] & 0xE0:
-                    print("packet %d: HB2 MSBs set (0x02X)" % d.hb[2])
-                    stop = True
-                    break
+                    print("at %d: InfoFrame HB2 MSBs set (0x02X)" % (d.i,d.hb[2])); stop = True; break
                 # RULE: checksum must be good
                 if sum(d.get_hb_body()+d.get_pb()[:1+infoframe_length]) & 0xFF != 0:
-                    print("packet %d: bad InfoFrame checksum" % i); stop = True; break
+                    print("at %d: bad InfoFrame checksum" % d.i); stop = True; break
                 ################################################################################
-                if   infoframe_type == "Vendor Specific":
+                if   packet_type == "InfoFrame: Vendor Specific":
                     pass
                     #TODO HDMI vendor specific
                 ################################################################################
-                elif infoframe_type == "Auxiliary Video Information (AVI)":
+                elif packet_type == "InfoFrame: Auxiliary Video Information (AVI)":
                     # RULE: length = 13
-                    pass
+                    if infoframe_length != 13:
+                        print("at %d: bad length (0x%02X) for AVI InfoFrame" % (d.i,infoframe_length)); stop = True; break
                 ################################################################################
-                elif infoframe_type == "Source Product Description":
+                elif packet_type == "InfoFrame: Source Product Description":
                     # RULE: length = 25
                     if infoframe_length != 25:
                         print("at %d: bad length (0x%02X) for SPD InfoFrame" % (d.i,infoframe_length)); stop = True; break
@@ -897,27 +889,41 @@ if not stop and m_protocol == "HDMI":
                         source_information = "reserved (0x%02X)" % source_information_code
                     d.notes.append("Vendor Name = %s, Product Description = %s, Source Information = %s" % (vendor_name,product_description,source_information))
                 ################################################################################
-                elif infoframe_type == "Audio":
+                elif packet_type == "InfoFrame: Audio":
                     pass
                 ################################################################################
-                elif infoframe_type == "MPEG Source":
+                elif packet_type == "InfoFrame: MPEG Source":
                     pass
                 ################################################################################
-                elif infoframe_type == "NTSC VBI":
+                elif packet_type == "InfoFrame: NTSC VBI":
                     pass
                 ################################################################################
-                elif infoframe_type == "Dynamic Range and Mastering":
+                elif packet_type == "InfoFrame: Dynamic Range and Mastering":
                     pass
                 ################################################################################
                 else:
-                    print("packet %d: unknown InfoFrame type (0x%02X)" % (i,infoframe_type_code)); stop = True; break
-                ################################################################################
+                    print("inconceivable!"); stop = True; break
+            ################################################################################
+            else:
+                print("inconceivable!"); stop = True; break
+                
+ptype = type_key("InfoFrame: Auxiliary Video Information (AVI)")
+if not stop and m_protocol == "HDMI" and ptype in packet_dict:
+    packet_list = packet_dict[ptype]
+    if len(packet_list) > 1:
+        print("checking consistency of %d AVI InfoFrames... " % len(packet_list),end="")
+        if not all(x.raw==packet_list[0].raw for x in packet_list):
+            print("differences found:")
+            for p in packet_list:
+                print("  %s" % p.notes[0])
+        else:
+            print("OK")
 
 ptype = type_key("InfoFrame: Source Product Description")
 if not stop and m_protocol == "HDMI" and ptype in packet_dict:
     packet_list = packet_dict[ptype]
     if len(packet_list) > 1:
-        print("checking consistency of InfoFrame: Source Product Description... ",end="")
+        print("checking consistency of %d SPD InfoFrames... " % len(packet_list),end="")
         if not all(x.raw==packet_list[0].raw for x in packet_list):
             print("differences found:")
             for p in packet_list:
