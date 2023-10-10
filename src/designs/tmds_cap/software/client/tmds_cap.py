@@ -141,7 +141,7 @@ tmds_p = array.array('B', n*[PERIOD_UNKNOWN]) # overall period flags
 tmds_sync = array.array('b', n*[-1]) # bit 0 = h sync, bit 1 = v sync
 
 ################################################################################
-# measurements to be made and data to be extracted
+# measurements to be made
 
 m_protocol      = 'DVI'
 
@@ -172,8 +172,38 @@ m_v_total       = -1 # m_v_total = m_v_blank+m_h_active
 # i.e. they are integers.
 # For the lower field the numbers are 1/2 a line greater.
 
-# list of raw data packets
-data_raw = []
+################################################################################
+# data packet related
+
+class packet(bytes):
+    def __init__(self):
+        self.raw = memoryview(bytearray(36))
+        self.bch_blocks = [self.raw[0:8],self.raw[8:16],self.raw[16:24],self.raw[24:32],self.raw[32:36]]
+        self.hb,self.sb = self.bch_blocks[4],self.bch_blocks[:4]
+        self.hb_body,self.sb_body = self.hb[:3],[self.sb[0][:7],self.sb[1][:7],self.sb[2][:7],self.sb[3][:7]]
+        self.hb_ecc,self.sb_ecc = self.hb[3:],[self.sb[0][7:],self.sb[1][7:],self.sb[2][7:],self.sb[3][7:]]
+    def get_raw(self):
+        return self.raw.tolist()
+    def get_hb(self):
+        return self.hb.tolist()
+    def get_sb(self):
+        return [i.tolist() for i in self.sb]
+    def get_hb_body(self):
+        return self.hb_body.tolist()
+    def get_sb_body(self):
+        return [i.tolist() for i in self.sb_body]
+    def get_hb_ecc(self):
+        return self.hb_ecc.tolist()[0]
+    def get_sb_ecc(self):
+        return [i.tolist()[0] for i in self.sb_ecc]
+    def set_raw(self,bytes):
+        self.raw[:] = memoryview(bytearray(bytes))
+    def set_hb(self,bytes):
+        self.hb[:] = memoryview(bytearray(bytes))
+    def set_sb(self,i,bytes):
+        self.sb[i][:] = memoryview(bytearray(bytes))
+
+packets = []
 
 ################################################################################
 # utility functions
@@ -713,8 +743,7 @@ if not stop and m_protocol == "HDMI":
         p = tmds_p[i]
         if p & PERIOD_DATA:
             if n-i >= spec.hdmi.PACKET_LEN: # complete packet available
-                # 5 BCH blocks: 4 subpackets, 1 header
-                bch_blocks = [bytearray(8),bytearray(8),bytearray(8),bytearray(8),bytearray(4)]
+                pkt = packet()
                 for j in range(32):
                     # 4 bit data word per channel
                     a = int2vec(spec.tmds.terc4.index(tmds[0][i+j]),4)
@@ -724,14 +753,14 @@ if not stop and m_protocol == "HDMI":
                     byte = j >> 2 # 0..7
                     bit = (j & 3) << 1
                     for k in range(4):
-                        bch_blocks[k][byte] |= (b[k] << bit)
-                        bch_blocks[k][byte] |= (c[k] << (bit+1))
+                        pkt.sb[k][byte] |= (b[k] << bit)
+                        pkt.sb[k][byte] |= (c[k] << (bit+1))
                     # fill header
                     byte = j >> 3 # 0..3
                     bit = j & 7
-                    bch_blocks[4][byte] |= (a[2] << bit)
+                    pkt.hb[byte] |= (a[2] << bit)
                 # store packet
-                data_raw.append([byte for bch_block in bch_blocks for byte in bch_block])
+                packets.append(pkt)
                 i += spec.hdmi.PACKET_LEN
             else: # no more complete packets
                 i = n # so halt
@@ -740,37 +769,22 @@ if not stop and m_protocol == "HDMI":
 
 if not stop and m_protocol == "HDMI":
     print("analysis pass 10 - check data parity")
-    for packet in data_raw:
-        print_hex_list(packet[0:8],end="")
-        print("(%02X)" % bch_ecc(packet[0:7]),end=" ")
-#        if bch_ecc(packet[0:7]) == packet[7]:
-#            print(".",end=" ")
-#        else:
-#            print("*",end=" ")
-        print_hex_list(packet[8:16],end="")
-        print("(%02X)" % bch_ecc(packet[8:15]),end=" ")
-#        if bch_ecc(packet[8:15]) == packet[15]:
-#            print(".",end=" ")
-#        else:
-#            print("*",end=" ")
-        print_hex_list(packet[16:24],end="")
-        print("(%02X)" % bch_ecc(packet[16:23]),end=" ")
-#       if bch_ecc(packet[16:23]) == packet[23]:
-#           print(".",end=" ")
-#       else:
-#           print("*",end=" ")
-        print_hex_list(packet[24:32],end="")
-        print("(%02X)" % bch_ecc(packet[24:31]),end=" ")
-#        if bch_ecc(packet[24:31]) == packet[31]:
-#            print(".",end=" ")
-#        else:
-#            print("*",end=" ")
-        print_hex_list(packet[32:36],end="")
-        print("(%02X)" % bch_ecc(packet[32:35]))
-#        if bch_ecc(packet[32:35]) == packet[35]:
-#            print(".",end=" ")
-#        else:
-#            print("*",end=" ")
+    for i in range(len(packets)):
+        pkt = packets[i]
+        if bch_ecc(pkt.get_hb_body()) != pkt.get_hb_ecc() \
+        or bch_ecc(pkt.get_sb_body()[0]) != pkt.get_sb_ecc()[0] \
+        or bch_ecc(pkt.get_sb_body()[1]) != pkt.get_sb_ecc()[1] \
+        or bch_ecc(pkt.get_sb_body()[2]) != pkt.get_sb_ecc()[2] \
+        or bch_ecc(pkt.get_sb_body()[3]) != pkt.get_sb_ecc()[3]:
+            print("packet %d: bad ECC" % i)
+            print_hex_list(pkt.get_raw())
+            print(pkt.get_hb_body(),pkt.get_hb_ecc(),bch_ecc(pkt.get_hb_body()))
+            print(pkt.get_sb_body()[0],pkt.get_sb_ecc()[0],bch_ecc(pkt.get_sb_body()[0]))
+            print(pkt.get_sb_body()[1],pkt.get_sb_ecc()[0],bch_ecc(pkt.get_sb_body()[1]))
+            print(pkt.get_sb_body()[2],pkt.get_sb_ecc()[0],bch_ecc(pkt.get_sb_body()[2]))
+            print(pkt.get_sb_body()[3],pkt.get_sb_ecc()[0],bch_ecc(pkt.get_sb_body()[3]))
+            stop = True
+            break
 
 ################################################################################
 # report
@@ -800,10 +814,10 @@ print("          active : %d" % m_v_active)
 print("           blank : %d" % m_v_blank)
 print("           total : %d" % m_v_total)
 print()
-print("data packets: %d" % len(data_raw))
+print("data packets: %d" % len(packets))
 
 #for i in range(100):
-#    print_hex_list(data_raw[i])
+#    print_hex_list(packets[i].get_raw())
 
 # TODO:
 # check consistency of field periods for interlace
