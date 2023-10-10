@@ -741,7 +741,7 @@ if not stop:
         print("ERROR: v_total != v_active + v_blank")
 
 if not stop and m_protocol == "HDMI":
-    print("analysis pass 9 - extract data")
+    print("analysis pass 9 - extract data island packets")
     i = m_start
     while i < n:
         p = tmds_p[i]
@@ -772,7 +772,7 @@ if not stop and m_protocol == "HDMI":
             i += 1
 
 if not stop and m_protocol == "HDMI":
-    print("analysis pass 10 - check data parity")
+    print("analysis pass 10 - check data island packet ECC")
     for i in range(len(packets)):
         pkt = packets[i]
         if bch_ecc(pkt.get_hb_body()) != pkt.get_hb_ecc() \
@@ -831,10 +831,10 @@ print("data packets: %d" % len(packets))
 print("data packet types and counts:")
 for type,count in packet_types.items():
     if type in spec.hdmi.PACKET_TYPES:
-        s = spec.hdmi.PACKET_TYPES[type]
+        desc = spec.hdmi.PACKET_TYPES[type]
     else:
-        s = type
-    print("%40s : %d" % (s,count))
+        desc = type
+    print("%40s : %d" % (desc,count))
 
 #for i in range(100):
 #    print_hex_list(packets[i].get_raw())
