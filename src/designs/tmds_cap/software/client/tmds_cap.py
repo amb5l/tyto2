@@ -17,12 +17,14 @@
 # TODO:
 # get pixel clock frequency from h/w
 # analysis progress bar
+# output video to BMP
+# output audio to WAV
 
 # standard modules
 import sys,argparse,struct,socket,array,time
 
-# local modules
-import spec.tmds,spec.hdmi
+# local package
+import spec
 
 print("-------------------------------------------------------------------------------")
 print("tmds_cap client application")
@@ -180,17 +182,21 @@ m_v_total       = -1 # m_v_total = m_v_blank+m_h_active
 
 class packet(bytes):
     def __init__(self):
+        self.i = 0 # index (pixel position)
         self.raw = memoryview(bytearray(36))
         self.bch_blocks = [self.raw[0:8],self.raw[8:16],self.raw[16:24],self.raw[24:32],self.raw[32:36]]
         self.hb,self.sb = self.bch_blocks[4],self.bch_blocks[:4]
         self.hb_body,self.sb_body = self.hb[:3],[self.sb[0][:7],self.sb[1][:7],self.sb[2][:7],self.sb[3][:7]]
         self.hb_ecc,self.sb_ecc = self.hb[3:],[self.sb[0][7:],self.sb[1][7:],self.sb[2][7:],self.sb[3][7:]]
+        self.notes = []
     def get_raw(self):
         return self.raw.tolist()
     def get_hb(self):
         return self.hb.tolist()
     def get_sb(self):
         return [i.tolist() for i in self.sb]
+    def get_pb(self):
+        return [i for s in self.get_sb_body() for i in s]
     def get_hb_body(self):
         return self.hb_body.tolist()
     def get_sb_body(self):
@@ -206,8 +212,7 @@ class packet(bytes):
     def set_sb(self,i,bytes):
         self.sb[i][:] = memoryview(bytearray(bytes))
 
-packets = []
-packet_types = {}
+packet_dict = {}
 
 ################################################################################
 # utility functions
@@ -221,10 +226,16 @@ def vec2int(v):
         r |= v[i] << i
     return r
 
-def xorvec(v):
+def xor_vec(v):
     r = 0
     for bit in v:
         r ^= bit
+    return r
+
+def or_list(l):
+    r = 0
+    for e in l:
+        r |= e
     return r
 
 def bch_ecc(bytes):
@@ -233,14 +244,14 @@ def bch_ecc(bytes):
     for byte in bytes:
         d = int2vec(byte,8)
         # see hdmi_bch_ecc.py
-        n[0] = xorvec([d[0],d[1],d[2],d[4],d[5],d[7],q[0],q[1],q[2],q[4],q[5],q[7]])
-        n[1] = xorvec([d[3],d[4],d[6],d[7],q[3],q[4],q[6],q[7]])
-        n[2] = xorvec([d[1],d[2],q[1],q[2]])
-        n[3] = xorvec([d[0],d[2],d[3],q[0],q[2],q[3]])
-        n[4] = xorvec([d[0],d[1],d[3],d[4],q[0],q[1],q[3],q[4]])
-        n[5] = xorvec([d[1],d[2],d[4],d[5],q[1],q[2],q[4],q[5]])
-        n[6] = xorvec([d[0],d[2],d[3],d[5],d[6],q[0],q[2],q[3],q[5],q[6]])
-        n[7] = xorvec([d[0],d[1],d[3],d[4],d[6],d[7],q[0],q[1],q[3],q[4],q[6],q[7]])
+        n[0] = xor_vec([d[0],d[1],d[2],d[4],d[5],d[7],q[0],q[1],q[2],q[4],q[5],q[7]])
+        n[1] = xor_vec([d[3],d[4],d[6],d[7],q[3],q[4],q[6],q[7]])
+        n[2] = xor_vec([d[1],d[2],q[1],q[2]])
+        n[3] = xor_vec([d[0],d[2],d[3],q[0],q[2],q[3]])
+        n[4] = xor_vec([d[0],d[1],d[3],d[4],q[0],q[1],q[3],q[4]])
+        n[5] = xor_vec([d[1],d[2],d[4],d[5],q[1],q[2],q[4],q[5]])
+        n[6] = xor_vec([d[0],d[2],d[3],d[5],d[6],q[0],q[2],q[3],q[5],q[6]])
+        n[7] = xor_vec([d[0],d[1],d[3],d[4],d[6],d[7],q[0],q[1],q[3],q[4],q[6],q[7]])
         q = n[:]
     return vec2int(q)
 
@@ -249,12 +260,15 @@ def print_hex_list(bytes,end="\r\n"):
         print("%02X" % byte,end=" ")
     print("%02X" % bytes[-1],end=end)
 
+def type_key(s):
+    return list(spec.hdmi.PACKET_TYPES.keys())[list(spec.hdmi.PACKET_TYPES.values()).index(s)]
+
 ################################################################################
 # analysis
 
 stop = False
 
-print("analysis pass 1 - preliminary period detection per channel")
+print("preliminary period detection per channel")
 for ch in range(3):
     for i in range(n):
         p = PERIOD_UNKNOWN
@@ -281,7 +295,7 @@ for ch in range(3):
         tmds_ch_p[ch][i] = p
 
 if not stop:
-    print("analysis pass 2 - resolve control periods")
+    print("resolve control periods")
     p_count = 0
     for i in range(n):
         cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
@@ -299,7 +313,7 @@ if not stop:
             p_count = 0
 
 if not stop:
-    print("analysis pass 3 - detect preambles")
+    print("detect preambles")
     for i in range(m_start,n):
         cc = [tmds_c[0][i],tmds_c[1][i],tmds_c[2][i]] # channel C values
         p = tmds_p[i]
@@ -316,7 +330,7 @@ if not stop:
             tmds_p[i] = p
 
 if not stop:
-    print("analysis pass 4 - check preambles and detect data islands")
+    print("check preambles and detect data islands")
     p_count = 0
     p_type = ''
     for i in range(n):
@@ -405,7 +419,7 @@ if not stop:
         tmds_p[i] = p
 
 if not stop:
-    print("analysis pass 5 - detect video periods")
+    print("detect video periods")
     p_count = 0
     for i in range(n):
         cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
@@ -420,7 +434,7 @@ if not stop:
 
 # assumption - sync states persist after control and data periods
 if not stop:
-    print("analysis pass 6 - resolve syncs")
+    print("resolve syncs")
     sync = -1
     for i in range(n):
         p = tmds_p[i]
@@ -431,7 +445,7 @@ if not stop:
         tmds_sync[i] = sync
 
 if not stop:
-    print("analysis pass 7 - horizontal video timing")
+    print("detect horizontal video timing")
     # records
     r_h_event       = [None]*5  # record of h event types
     r_h_act         = [None]*3  # record of h active event levels
@@ -577,7 +591,7 @@ if not stop:
         print("ERROR: h_total != h_active + h_blank")
 
 if not stop:
-    print("analysis pass 8 - vertical video timing")
+    print("detect vertical video timing")
     # records
     r_h_sync_leading  = [None]*3  # record of h sync leading edge indices
     r_v_sync_leading  = [None]*3  # record of v sync leading edge indices
@@ -741,13 +755,14 @@ if not stop:
         print("ERROR: v_total != v_active + v_blank")
 
 if not stop and m_protocol == "HDMI":
-    print("analysis pass 9 - extract data island packets")
+    print("extract data island packets")
     i = m_start
     while i < n:
         p = tmds_p[i]
         if p & PERIOD_DATA:
             if n-i >= spec.hdmi.PACKET_LEN: # complete packet available
-                pkt = packet()
+                d = packet()
+                d.i = i
                 for j in range(32):
                     # 4 bit data word per channel
                     a = int2vec(spec.tmds.terc4.index(tmds[0][i+j]),4)
@@ -757,14 +772,17 @@ if not stop and m_protocol == "HDMI":
                     byte = j >> 2 # 0..7
                     bit = (j & 3) << 1
                     for k in range(4):
-                        pkt.sb[k][byte] |= (b[k] << bit)
-                        pkt.sb[k][byte] |= (c[k] << (bit+1))
+                        d.sb[k][byte] |= (b[k] << bit)
+                        d.sb[k][byte] |= (c[k] << (bit+1))
                     # fill header
                     byte = j >> 3 # 0..3
                     bit = j & 7
-                    pkt.hb[byte] |= (a[2] << bit)
+                    d.hb[byte] |= (a[2] << bit)
                 # store packet
-                packets.append(pkt)
+                if d.hb[0] in packet_dict:
+                    packet_dict[d.hb[0]].append(d)
+                else:
+                    packet_dict[d.hb[0]] = [d]
                 i += spec.hdmi.PACKET_LEN
             else: # no more complete packets
                 i = n # so halt
@@ -772,32 +790,140 @@ if not stop and m_protocol == "HDMI":
             i += 1
 
 if not stop and m_protocol == "HDMI":
-    print("analysis pass 10 - check data island packet ECC")
-    for i in range(len(packets)):
-        pkt = packets[i]
-        if bch_ecc(pkt.get_hb_body()) != pkt.get_hb_ecc() \
-        or bch_ecc(pkt.get_sb_body()[0]) != pkt.get_sb_ecc()[0] \
-        or bch_ecc(pkt.get_sb_body()[1]) != pkt.get_sb_ecc()[1] \
-        or bch_ecc(pkt.get_sb_body()[2]) != pkt.get_sb_ecc()[2] \
-        or bch_ecc(pkt.get_sb_body()[3]) != pkt.get_sb_ecc()[3]:
-            print("packet %d: bad ECC" % i)
-            print_hex_list(pkt.get_raw())
-            print(pkt.get_hb_body(),pkt.get_hb_ecc(),bch_ecc(pkt.get_hb_body()))
-            print(pkt.get_sb_body()[0],pkt.get_sb_ecc()[0],bch_ecc(pkt.get_sb_body()[0]))
-            print(pkt.get_sb_body()[1],pkt.get_sb_ecc()[0],bch_ecc(pkt.get_sb_body()[1]))
-            print(pkt.get_sb_body()[2],pkt.get_sb_ecc()[0],bch_ecc(pkt.get_sb_body()[2]))
-            print(pkt.get_sb_body()[3],pkt.get_sb_ecc()[0],bch_ecc(pkt.get_sb_body()[3]))
-            stop = True
-            break
+    print("check data island packet ECC")
+    for _,packet_list in packet_dict.items():
+        for d in packet_list:
+            if bch_ecc(d.get_hb_body()) != d.get_hb_ecc() \
+            or bch_ecc(d.get_sb_body()[0]) != d.get_sb_ecc()[0] \
+            or bch_ecc(d.get_sb_body()[1]) != d.get_sb_ecc()[1] \
+            or bch_ecc(d.get_sb_body()[2]) != d.get_sb_ecc()[2] \
+            or bch_ecc(d.get_sb_body()[3]) != d.get_sb_ecc()[3]:
+                print("packet %d: bad ECC" % i)
+                print_hex_list(d.get_raw())
+                print(d.get_hb_body(),d.get_hb_ecc(),bch_ecc(d.get_hb_body()))
+                print(d.get_sb_body()[0],d.get_sb_ecc()[0],bch_ecc(d.get_sb_body()[0]))
+                print(d.get_sb_body()[1],d.get_sb_ecc()[0],bch_ecc(d.get_sb_body()[1]))
+                print(d.get_sb_body()[2],d.get_sb_ecc()[0],bch_ecc(d.get_sb_body()[2]))
+                print(d.get_sb_body()[3],d.get_sb_ecc()[0],bch_ecc(d.get_sb_body()[3]))
+                stop = True
+                break
 
 if not stop and m_protocol == "HDMI":
-    print("analysis pass 11 - basic packet inspection")
-    for i in range(len(packets)):
-        pkt = packets[i]
-        if pkt.hb[0] in packet_types:
-            packet_types[pkt.hb[0]] += 1
+    print("decode data island packets")
+    for packet_type_code,packet_list in packet_dict.items():
+        for d in packet_list:
+            if packet_type_code != d.hb[0]:
+                print("inconceivable!"); stop = True; break
+            if packet_type_code & 0x80:
+                packet_type = "InfoFrame"
+            elif packet_type_code in spec.hdmi.PACKET_TYPES:
+                packet_type = spec.hdmi.PACKET_TYPES[packet_type_code]
+            else:
+                packet_type = "unknown (0x%02X)" % packet_type_code
+            ################################################################################
+            if   packet_type == "Null":
+                pass
+                # RULE: all bytes must be zero
+                # TODO
+            ################################################################################
+            elif packet_type == "Audio Clock Regeneration (N/CTS)":
+                pass
+            ################################################################################
+            elif packet_type == "Audio Sample":
+                pass
+            ################################################################################
+            elif packet_type == "General Control":
+                pass
+            ################################################################################
+            elif packet_type == "ACP":
+                pass
+            ################################################################################
+            elif packet_type == "ISRC1":
+                pass
+            ################################################################################
+            elif packet_type == "ISRC2":
+                pass
+            ################################################################################
+            elif packet_type == "One Bit Audio Sample":
+                pass
+            ################################################################################
+            elif packet_type == "DST":
+                pass
+            ################################################################################
+            elif packet_type == "HBR Audio Stream":
+                pass
+            ################################################################################
+            elif packet_type == "Gamut Metadata":
+                pass
+            ################################################################################
+            elif packet_type == "InfoFrame":
+                infoframe_type_code = packet_type_code & 0x7F
+                if infoframe_type_code in spec.cta861.INFOFRAME_TYPES:
+                    infoframe_type = spec.cta861.INFOFRAME_TYPES[infoframe_type_code]
+                else:
+                    infoframe_type = "unknown (0x%02X)" % infoframe_type_code
+                infoframe_version = d.hb[1]
+                infoframe_length = d.hb[2] & 0x1F
+                # RULE: HB2 bits 7..5 must be zero
+                if d.hb[2] & 0xE0:
+                    print("packet %d: HB2 MSBs set (0x02X)" % d.hb[2])
+                    stop = True
+                    break
+                # RULE: checksum must be good
+                if sum(d.get_hb_body()+d.get_pb()[:1+infoframe_length]) & 0xFF != 0:
+                    print("packet %d: bad InfoFrame checksum" % i); stop = True; break
+                ################################################################################
+                if   infoframe_type == "Vendor Specific":
+                    pass
+                    #TODO HDMI vendor specific
+                ################################################################################
+                elif infoframe_type == "Auxiliary Video Information (AVI)":
+                    # RULE: length = 13
+                    pass
+                ################################################################################
+                elif infoframe_type == "Source Product Description":
+                    # RULE: length = 25
+                    if infoframe_length != 25:
+                        print("at %d: bad length (0x%02X) for SPD InfoFrame" % (d.i,infoframe_length)); stop = True; break
+                    # RULE: vendor name and product description use 7-bit ASCII code
+                    if or_list(d.get_pb()[1:25]) & 0x80:
+                        print("at %d: non-ASCII character(s) in SPD InfoFrame" % i); stop = True; break
+                    vendor_name = ''.join(map(chr,d.get_pb()[1:9]))
+                    product_description = ''.join(map(chr,d.get_pb()[9:25]))
+                    source_information_code = d.get_pb()[25]
+                    if source_information_code in spec.cta861.SPD_SOURCE_INFO:
+                        source_information = spec.cta861.SPD_SOURCE_INFO[source_information_code]
+                    else:
+                        source_information = "reserved (0x%02X)" % source_information_code
+                    d.notes.append("Vendor Name = %s, Product Description = %s, Source Information = %s" % (vendor_name,product_description,source_information))
+                ################################################################################
+                elif infoframe_type == "Audio":
+                    pass
+                ################################################################################
+                elif infoframe_type == "MPEG Source":
+                    pass
+                ################################################################################
+                elif infoframe_type == "NTSC VBI":
+                    pass
+                ################################################################################
+                elif infoframe_type == "Dynamic Range and Mastering":
+                    pass
+                ################################################################################
+                else:
+                    print("packet %d: unknown InfoFrame type (0x%02X)" % (i,infoframe_type_code)); stop = True; break
+                ################################################################################
+
+ptype = type_key("InfoFrame: Source Product Description")
+if not stop and m_protocol == "HDMI" and ptype in packet_dict:
+    packet_list = packet_dict[ptype]
+    if len(packet_list) > 1:
+        print("checking consistency of InfoFrame: Source Product Description... ",end="")
+        if not all(x.raw==packet_list[0].raw for x in packet_list):
+            print("differences found:")
+            for p in packet_list:
+                print("  %s" % p.notes[0])
         else:
-            packet_types[pkt.hb[0]] = 1
+            print("OK")
 
 ################################################################################
 # report
@@ -827,22 +953,17 @@ print("          active : %d" % m_v_active)
 print("           blank : %d" % m_v_blank)
 print("           total : %d" % m_v_total)
 print()
-print("data packets: %d" % len(packets))
 print("data packet types and counts:")
-for type,count in packet_types.items():
+for type,list in packet_dict.items():
     if type in spec.hdmi.PACKET_TYPES:
         desc = spec.hdmi.PACKET_TYPES[type]
     else:
         desc = type
-    print("%40s : %d" % (desc,count))
-
-#for i in range(100):
-#    print_hex_list(packets[i].get_raw())
+    print("%50s : %d" % (desc,len(list)))
 
 # TODO:
 # check consistency of field periods for interlace
 # more HDMI rules e.g. check for extended control periods
-# decode data and verify
 # compare video timing with CTA spec
 
 ################################################################################

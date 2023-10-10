@@ -16,10 +16,11 @@ PACKET_TYPES = { \
     0x08: "DST",
     0x09: "HBR Audio Stream",
     0x0A: "Gamut Metadata",
-    0x80: "InfoFrame",
-    0x81: "Vendor Specific InfoFrame",
-    0x82: "AVI InfoFrame",
-    0x83: "Source Product Descriptor InfoFrame",
-    0x84: "Audio InfoFrame",
-    0x85: "MPEG Source InfoFrame"
+    0x81: "InfoFrame: Vendor Specific",
+    0x82: "InfoFrame: Auxiliary Video Information (AVI)",
+    0x83: "InfoFrame: Source Product Description",
+    0x84: "InfoFrame: Audio",
+    0x85: "InfoFrame: MPEG Source",
+    0x86: "InfoFrame: NTSC VBI",
+    0x87: "InfoFrame: Dynamic Range and Mastering"
 }
