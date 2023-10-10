@@ -204,6 +204,7 @@ class packet(bytes):
         self.sb[i][:] = memoryview(bytearray(bytes))
 
 packets = []
+packet_types = {}
 
 ################################################################################
 # utility functions
@@ -786,6 +787,15 @@ if not stop and m_protocol == "HDMI":
             stop = True
             break
 
+if not stop and m_protocol == "HDMI":
+    print("analysis pass 11 - basic packet inspection")
+    for i in range(len(packets)):
+        pkt = packets[i]
+        if pkt.hb[0] in packet_types:
+            packet_types[pkt.hb[0]] += 1
+        else:
+            packet_types[pkt.hb[0]] = 1
+
 ################################################################################
 # report
 
@@ -815,6 +825,13 @@ print("           blank : %d" % m_v_blank)
 print("           total : %d" % m_v_total)
 print()
 print("data packets: %d" % len(packets))
+print("data packet types and counts:")
+for type,count in packet_types.items():
+    if type in spec.hdmi.PACKET_TYPES:
+        s = spec.hdmi.PACKET_TYPES[type]
+    else:
+        s = type
+    print("%40s : %d" % (s,count))
 
 #for i in range(100):
 #    print_hex_list(packets[i].get_raw())
