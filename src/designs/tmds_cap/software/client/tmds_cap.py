@@ -180,6 +180,7 @@ m_v_total       = -1 # m_v_total = m_v_blank+m_h_active
 ################################################################################
 # data packet related
 
+# TODO: remove unused functions
 class packet(bytes):
     def __init__(self):
         self.i = 0 # index (pixel position)
@@ -262,6 +263,9 @@ def print_hex_list(bytes,end="\r\n"):
 
 def type_key(s):
     return list(spec.hdmi.PACKET_TYPES.keys())[list(spec.hdmi.PACKET_TYPES.values()).index(s)]
+
+def bit_field(v,msb,lsb):
+    return (v >> lsb) & ((2**((msb-lsb)+1))-1)
 
 ################################################################################
 # analysis
@@ -812,7 +816,8 @@ if not stop and m_protocol == "HDMI":
     print("decoding and checking data island packets")
     for packet_type_code,packet_list in packet_dict.items():
         for d in packet_list:
-            if packet_type_code != d.hb[0]:
+            hb = d.get_hb(); sb = d.get_sb(); pb = d.get_pb()
+            if packet_type_code != hb[0]:
                 print("inconceivable!"); stop = True; break
             if packet_type_code in spec.hdmi.PACKET_TYPES:
                 packet_type = spec.hdmi.PACKET_TYPES[packet_type_code]
@@ -855,13 +860,13 @@ if not stop and m_protocol == "HDMI":
                 pass
             ################################################################################
             elif packet_type[:9] == "InfoFrame":
-                infoframe_version = d.hb[1]
-                infoframe_length = d.hb[2] & 0x1F
+                infoframe_version = hb[1]
+                infoframe_length = hb[2] & 0x1F
                 # RULE: HB2 bits 7..5 must be zero
-                if d.hb[2] & 0xE0:
-                    print("at %d: InfoFrame HB2 MSBs set (0x02X)" % (d.i,d.hb[2])); stop = True; break
+                if hb[2] & 0xE0:
+                    print("at %d: InfoFrame HB2 MSBs set (0x02X)" % (d.i,hb[2])); stop = True; break
                 # RULE: checksum must be good
-                if sum(d.get_hb_body()+d.get_pb()[:1+infoframe_length]) & 0xFF != 0:
+                if sum(hb[:3]+pb[:1+infoframe_length]) & 0xFF != 0:
                     print("at %d: bad InfoFrame checksum" % d.i); stop = True; break
                 ################################################################################
                 if   packet_type == "InfoFrame: Vendor Specific":
@@ -878,11 +883,11 @@ if not stop and m_protocol == "HDMI":
                     if infoframe_length != 25:
                         print("at %d: bad length (0x%02X) for SPD InfoFrame" % (d.i,infoframe_length)); stop = True; break
                     # RULE: vendor name and product description use 7-bit ASCII code
-                    if or_list(d.get_pb()[1:25]) & 0x80:
+                    if or_list(pb[1:25]) & 0x80:
                         print("at %d: non-ASCII character(s) in SPD InfoFrame" % i); stop = True; break
-                    vendor_name = ''.join(map(chr,d.get_pb()[1:9]))
-                    product_description = ''.join(map(chr,d.get_pb()[9:25]))
-                    source_information_code = d.get_pb()[25]
+                    vendor_name = ''.join(map(chr,pb[1:9]))
+                    product_description = ''.join(map(chr,pb[9:25]))
+                    source_information_code = pb[25]
                     if source_information_code in spec.cta861.SPD_SOURCE_INFO:
                         source_information = spec.cta861.SPD_SOURCE_INFO[source_information_code]
                     else:
@@ -890,7 +895,113 @@ if not stop and m_protocol == "HDMI":
                     d.notes.append("Vendor Name = %s, Product Description = %s, Source Information = %s" % (vendor_name,product_description,source_information))
                 ################################################################################
                 elif packet_type == "InfoFrame: Audio":
-                    pass
+                    # RULE: length = 10
+                    if infoframe_length != 10:
+                        print("at %d: bad length (0x%02X) for Audio InfoFrame" % (d.i,infoframe_length)); stop = True; break
+                    # extract fields
+                    CC     = bit_field(pb[ 1],2,0)
+                    F1     = bit_field(pb[ 1],3,3)
+                    CT     = bit_field(pb[ 1],7,4)
+                    SS     = bit_field(pb[ 2],1,0)
+                    SF     = bit_field(pb[ 2],4,2)
+                    F2     = bit_field(pb[ 2],7,5)
+                    CXT    = bit_field(pb[ 3],4,0)
+                    F3     = bit_field(pb[ 3],7,5)
+                    CA     = bit_field(pb[ 4],7,0)
+                    LFEPBL = bit_field(pb[ 5],1,0)
+                    F5     = bit_field(pb[ 5],2,2)
+                    LSV    = bit_field(pb[ 5],6,3)
+                    DM_INH = bit_field(pb[ 5],7,7)
+                    F6     = bit_field(pb[ 6],7,0)
+                    F7     = bit_field(pb[ 7],7,0)
+                    F8     = bit_field(pb[ 8],7,0)
+                    F9     = bit_field(pb[ 9],7,0)
+                    F10    = bit_field(pb[10],7,0)
+                    # CC[2:0] = channel count minus one; 000 = refer to stream header
+                    if CC == 0:
+                        d.notes.append("channel count: refer to stream header" % CC)
+                    else:
+                        d.notes.append("channel count: %d" % (CC+1))
+                    # F1 must equal 0
+                    if F1 != 0:
+                        d.notes.append("F1: 1 (ILLEGAL)")
+                        stop = True
+                    # CT[3:0] must equal 0000 (refer to stream header)
+                    s = "coding type: " + spec.cta861.AUDIO_CT[CT]
+                    if CT != 0:
+                        s += " (ILLEGAL FOR HDMI)"
+                        stop = True
+                    d.notes.append(s)
+                    # SS[1:0] must equal 00 (refer to stream header)
+                    s = "sample size: " + spec.cta861.AUDIO_SS[SS]
+                    if SS != 0:
+                        s += " (ILLEGAL FOR HDMI)"
+                        stop = True
+                    d.notes.append(s)
+                    # SF[2:0] = sample frequency
+                    d.notes.append("sample frequency: %s" % spec.cta861.AUDIO_SF[SF])
+                    if SF != 0:
+                        stop = True
+                    # TODO: SF should be zero for L-PCM or IEC 61937
+                    # F2 must equal 0
+                    if F2 != 0:
+                        d.notes.append("F2: 0b%s (ILLEGAL)" % format(F2,'03b'))
+                        stop = True
+                    # CXT must equal 0
+                    s = "coding extension type: " + spec.cta861.AUDIO_CXT[CXT]
+                    if CXT != 0:
+                        s += " (ILLEGAL FOR HDMI)"
+                        stop = True
+                    d.notes.append(s)
+                    # F3 must equal 0
+                    if F3 != 0:
+                        d.notes.append("F3: 0b%s (ILLEGAL)" % format(F3,'03b'))
+                        stop = True
+                    # TODO: CA not valid for IEC 61937
+                    if CA < len(spec.cta861.AUDIO_CA):
+                        s = "channel assignment: " + spec.cta861.AUDIO_CA[CA]
+                    elif CA == 0xFE:
+                        s = "delivery according to speaker mask"
+                    elif CA == 0xFF:
+                        s = "delivery by channel index"
+                    else:
+                        s = "reserved (ILLEGAL)"
+                        stop = True
+                    # LFEPBL
+                    s = "LFE playback level: " + spec.cta861.AUDIO_LFEPBL[LFEPBL]
+                    if LFEPBL == 3:
+                        s += " (ILLEGAL)"
+                        stop = True
+                    # F5 must equal 0
+                    if F5 != 0:
+                        d.notes.append("F5: %d (ILLEGAL)" % F5)
+                        stop = True                    
+                    # LSV
+                    d.notes.append("level shift value: %ddB" % LSV)
+                    # DM_INH
+                    d.notes.append("downmix: " + "permitted" if DM_INH == 0 else "prohibited")
+                    # F6 must equal 0
+                    if F6 != 0:
+                        d.notes.append("F6: 0b%s (ILLEGAL)" % format(F6,'08b'))
+                        stop = True                    
+                    # F7 must equal 0
+                    if F7 != 0:
+                        d.notes.append("F7: 0b%s (ILLEGAL)" % format(F7,'08b'))
+                        stop = True                    
+                    # F8 must equal 0
+                    if F8 != 0:
+                        d.notes.append("F8: 0b%s (ILLEGAL)" % format(F8,'08b'))
+                        stop = True                    
+                    # F9 must equal 0
+                    if F9 != 0:
+                        d.notes.append("F9: 0b%s (ILLEGAL)" % format(F9,'08b'))
+                        stop = True                    
+                    # F10 must equal 0
+                    if F10 != 0:
+                        d.notes.append("F10: 0b%s (ILLEGAL)" % format(F10,'08b'))
+                        stop = True                    
+                    if stop:
+                        print("AUDIO INFOFRAME: ERRORS ENCOUNTERED")
                 ################################################################################
                 elif packet_type == "InfoFrame: MPEG Source":
                     pass
@@ -906,7 +1017,7 @@ if not stop and m_protocol == "HDMI":
             ################################################################################
             else:
                 print("inconceivable!"); stop = True; break
-                
+
 ptype = type_key("InfoFrame: Auxiliary Video Information (AVI)")
 if not stop and m_protocol == "HDMI" and ptype in packet_dict:
     packet_list = packet_dict[ptype]
@@ -960,12 +1071,19 @@ print("           blank : %d" % m_v_blank)
 print("           total : %d" % m_v_total)
 print()
 print("data packet types and counts:")
-for type,list in packet_dict.items():
-    if type in spec.hdmi.PACKET_TYPES:
-        desc = spec.hdmi.PACKET_TYPES[type]
+for t,l in packet_dict.items():
+    if t in spec.hdmi.PACKET_TYPES:
+        desc = spec.hdmi.PACKET_TYPES[t]
     else:
-        desc = type
-    print("%50s : %d" % (desc,len(list)))
+        desc = t
+    print("%50s : %d" % (desc,len(l)))
+
+ptype = type_key("InfoFrame: Audio")
+d = packet_dict[ptype][0]
+print()
+print("Audio Infoframe decoded:")
+for n in d.notes:
+    print(n)
 
 # TODO:
 # check consistency of field periods for interlace
