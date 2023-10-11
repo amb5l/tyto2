@@ -940,8 +940,6 @@ if not stop and m_protocol == "HDMI":
                     d.notes.append(s)
                     # SF[2:0] = sample frequency
                     d.notes.append("sample frequency: %s" % spec.cta861.AUDIO_SF[SF])
-                    if SF != 0:
-                        stop = True
                     # TODO: SF should be zero for L-PCM or IEC 61937
                     # F2 must equal 0
                     if F2 != 0:
@@ -967,11 +965,13 @@ if not stop and m_protocol == "HDMI":
                     else:
                         s = "reserved (ILLEGAL)"
                         stop = True
+                    d.notes.append(s)
                     # LFEPBL
                     s = "LFE playback level: " + spec.cta861.AUDIO_LFEPBL[LFEPBL]
                     if LFEPBL == 3:
                         s += " (ILLEGAL)"
                         stop = True
+                    d.notes.append(s)
                     # F5 must equal 0
                     if F5 != 0:
                         d.notes.append("F5: %d (ILLEGAL)" % F5)
@@ -1023,6 +1023,18 @@ if not stop and m_protocol == "HDMI" and ptype in packet_dict:
     packet_list = packet_dict[ptype]
     if len(packet_list) > 1:
         print("checking consistency of %d AVI InfoFrames... " % len(packet_list),end="")
+        if not all(x.raw==packet_list[0].raw for x in packet_list):
+            print("differences found:")
+            for p in packet_list:
+                print("  %s" % p.notes[0])
+        else:
+            print("OK")
+
+type_key("InfoFrame: Audio")
+if not stop and m_protocol == "HDMI" and ptype in packet_dict:
+    packet_list = packet_dict[ptype]
+    if len(packet_list) > 1:
+        print("checking consistency of %d Audio InfoFrames... " % len(packet_list),end="")
         if not all(x.raw==packet_list[0].raw for x in packet_list):
             print("differences found:")
             for p in packet_list:
