@@ -58,10 +58,18 @@ BYTES_PER_PIXEL = 4
 if infile:
     # read TMDS data from file
     print("reading TMDS data from %s..." % infile,end=" ")
-    n = 0
-    with open(infile, 'rb') as f:
-        tmds_bytes = f.read()
-    n = int(len(tmds_bytes)/BYTES_PER_PIXEL)
+    f = open(infile, 'rb')
+    nb = os.path.getsize(infile)
+    if nb % 4 != 0:
+        print("size of %s is not a multiple of %d" % (infile,BYTES_PER_PIXEL))
+        sys.exit(1)
+    tmds_bytes = memoryview(bytearray(nb))
+    nr = f.readinto(tmds_bytes)
+    f.close()
+    if nb != nr:
+        print("failed to read %s correctly (expected %d, read %d)" % (infile,nb,nr))
+        sys.exit(1)
+    n = nb//BYTES_PER_PIXEL
     print("%d pixels read" % n)
 else:
     # read TMDS data from hardware
@@ -94,20 +102,18 @@ else:
     print("requesting %d pixels..." % n)
     t0 = time.perf_counter()
     s_tcp.sendall(b'tmds_cap get '+bytes(str(n),'utf-8'))
-    breq = n*BYTES_PER_PIXEL
-    tmds_bytes = bytearray()
-    while len(tmds_bytes) < breq:
-        data = s_tcp.recv(breq-len(data))
-        if data:
-            tmds_bytes.extend(data)
+    tmds_bytes = memoryview(bytearray(n*BYTES_PER_PIXEL))
+    i = 0
+    while i < n*BYTES_PER_PIXEL:
+        nr = s_tcp.recv_into(tmds_bytes[i:])
+        if nr == 0:
+            print("failed to read from hardware after %d bytes" % i)
+            sys.exit(1)
     print("done (total time = %.2f seconds)" % (time.perf_counter()-t0))
     s_tcp.close()
 
 # convert raw bytes to 32 bit TMDS triplets (3 x 10 bits)
-print("packing raw bytes into TMDS triplets")
-tmds_packed = array.array('L', n*[0])
-for i in range(n):
-    tmds_packed[i] = int.from_bytes(tmds_bytes[4*i:4+(4*i)],'little')
+tmds_packed = tmds_bytes.cast('L')
 
 # write TMDS data to file if required
 if outfile:
@@ -121,11 +127,15 @@ if outfile:
 print("separating TMDS channels")
 tmds = []
 for ch in range(3):
-    tmds.append(array.array('h',n*[-1]))
-    for i in range(n):
-        tmds[ch][i] = (tmds_packed[i] >> (10*ch)) & 0x3FF
-del tmds_packed
-
+    tmds.append(memoryview(bytearray(n*2)).cast('h'))
+for i in range(n):
+    l = tmds_packed[i]
+    tmds[0][i] = l & 0x3FF
+    l >>= 10
+    tmds[1][i] = l & 0x3FF
+    l >>= 10
+    tmds[2][i] = l & 0x3FF
+        
 ################################################################################
 # analysis: constants and variables
 
