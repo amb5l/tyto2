@@ -21,10 +21,13 @@
 # output audio to WAV
 
 # standard modules
-import sys,argparse,struct,socket,array,time
+import sys,os,argparse,struct,socket,array,time
+from datetime import datetime
 
 # local package
 import spec
+
+start_time = datetime.now()
 
 print("-------------------------------------------------------------------------------")
 print("tmds_cap client application")
@@ -1161,3 +1164,7 @@ if stop:
         else:
             print("    ",end=" | ")
         print()
+
+elapsed = datetime.now()-start_time
+print()
+print("elapsed time =",elapsed)
