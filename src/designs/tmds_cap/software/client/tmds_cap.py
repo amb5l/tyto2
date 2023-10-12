@@ -180,8 +180,9 @@ m_v_total       = -1 # m_v_total = m_v_blank+m_h_active
 ################################################################################
 # data packet related
 
+# data island packet class
 # TODO: remove unused functions
-class packet(bytes):
+class packet():
     def __init__(self):
         self.i = 0 # index (pixel position)
         self.raw = memoryview(bytearray(36))
@@ -213,7 +214,13 @@ class packet(bytes):
     def set_sb(self,i,bytes):
         self.sb[i][:] = memoryview(bytearray(bytes))
 
-packet_dict = {}
+## IEC 60958 block = 192 frames = 2 x (192 x subframe + channel status + user data)
+#class iec60958_cs():
+#    def __init__(self):
+#        self.raw = memoryview(bytearray(24))
+
+packet_dict = {} # dictionary of packet lists, keyed by type code
+#iec60958csb = [] # list of iec60958 blocks
 
 ################################################################################
 # utility functions
@@ -833,6 +840,9 @@ if not stop and m_protocol == "HDMI":
                 pass
             ################################################################################
             elif packet_type == "Audio Sample":
+                # 3 MSBs of HB1 must be zero
+                # extract samples, save to file?
+                
                 pass
             ################################################################################
             elif packet_type == "General Control":
@@ -975,7 +985,7 @@ if not stop and m_protocol == "HDMI":
                     # F5 must equal 0
                     if F5 != 0:
                         d.notes.append("F5: %d (ILLEGAL)" % F5)
-                        stop = True                    
+                        stop = True
                     # LSV
                     d.notes.append("level shift value: %ddB" % LSV)
                     # DM_INH
@@ -983,23 +993,23 @@ if not stop and m_protocol == "HDMI":
                     # F6 must equal 0
                     if F6 != 0:
                         d.notes.append("F6: 0b%s (ILLEGAL)" % format(F6,'08b'))
-                        stop = True                    
+                        stop = True
                     # F7 must equal 0
                     if F7 != 0:
                         d.notes.append("F7: 0b%s (ILLEGAL)" % format(F7,'08b'))
-                        stop = True                    
+                        stop = True
                     # F8 must equal 0
                     if F8 != 0:
                         d.notes.append("F8: 0b%s (ILLEGAL)" % format(F8,'08b'))
-                        stop = True                    
+                        stop = True
                     # F9 must equal 0
                     if F9 != 0:
                         d.notes.append("F9: 0b%s (ILLEGAL)" % format(F9,'08b'))
-                        stop = True                    
+                        stop = True
                     # F10 must equal 0
                     if F10 != 0:
                         d.notes.append("F10: 0b%s (ILLEGAL)" % format(F10,'08b'))
-                        stop = True                    
+                        stop = True
                     if stop:
                         print("AUDIO INFOFRAME: ERRORS ENCOUNTERED")
                 ################################################################################
