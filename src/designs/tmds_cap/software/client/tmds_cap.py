@@ -203,6 +203,64 @@ m_v_total       = -1 # m_v_total = m_v_blank+m_h_active
 # For the lower field the numbers are 1/2 a line greater.
 
 ################################################################################
+# utility functions
+
+def int2vec(x,n):
+    return [(x >> i) & 1 for i in range(n)]
+
+def vec2int(v):
+    r = 0
+    for i in range(len(v)):
+        r |= v[i] << i
+    return r
+
+def xor_vec(v):
+    r = 0
+    for bit in v:
+        r ^= bit
+    return r
+
+def xor_byte(b):
+    r = 0
+    for i in range(8):
+        r = r ^ (b >> i)
+    return r & 1
+
+def or_list(l):
+    r = 0
+    for e in l:
+        r |= e
+    return r
+
+def bch_ecc(bytes):
+    q = int2vec(0,8);
+    n = q[:]
+    for byte in bytes:
+        d = int2vec(byte,8)
+        # see hdmi_bch_ecc.py
+        n[0] = xor_vec([d[0],d[1],d[2],d[4],d[5],d[7],q[0],q[1],q[2],q[4],q[5],q[7]])
+        n[1] = xor_vec([d[3],d[4],d[6],d[7],q[3],q[4],q[6],q[7]])
+        n[2] = xor_vec([d[1],d[2],q[1],q[2]])
+        n[3] = xor_vec([d[0],d[2],d[3],q[0],q[2],q[3]])
+        n[4] = xor_vec([d[0],d[1],d[3],d[4],q[0],q[1],q[3],q[4]])
+        n[5] = xor_vec([d[1],d[2],d[4],d[5],q[1],q[2],q[4],q[5]])
+        n[6] = xor_vec([d[0],d[2],d[3],d[5],d[6],q[0],q[2],q[3],q[5],q[6]])
+        n[7] = xor_vec([d[0],d[1],d[3],d[4],d[6],d[7],q[0],q[1],q[3],q[4],q[6],q[7]])
+        q = n[:]
+    return vec2int(q)
+
+def print_hex_list(bytes,end="\r\n"):
+    for byte in bytes[:-1]:
+        print("%02X" % byte,end=" ")
+    print("%02X" % bytes[-1],end=end)
+
+def type_key(s):
+    return list(spec.hdmi.PACKET_TYPES.keys())[list(spec.hdmi.PACKET_TYPES.values()).index(s)]
+
+def bit_field(v,msb,lsb):
+    return (v >> lsb) & ((2**((msb-lsb)+1))-1)
+
+################################################################################
 # data packet related
 
 # data island packet class
@@ -239,65 +297,117 @@ class packet():
     def set_sb(self,i,bytes):
         self.sb[i][:] = memoryview(bytearray(bytes))
 
-## IEC 60958 block = 192 frames = 2 x (192 x subframe + channel status + user data)
-#class iec60958_cs():
-#    def __init__(self):
-#        self.raw = memoryview(bytearray(24))
+# IEC 60958 channel status block
+class iec60958_csb():
+    def __init__(self):      self.raw = memoryview(bytearray(24))
+    def set_raw(self,bytes): self.raw[:] = memoryview(bytearray(bytes))
+    def get_raw(self):       return self.raw.tolist()
+    def get_raw_a(self):     return bit_field(self.raw[0],0,0)
+    def get_raw_b(self):     return bit_field(self.raw[0],1,1)
+    def get_raw_c(self):     return bit_field(self.raw[0],2,2)
+    def get_raw_d(self):     return bit_field(self.raw[0],5,3)
+    def get_raw_mode(self):  return bit_field(self.raw[0],7,6)
+    def get_raw_cat(self):   return self.raw[1]
+    def get_raw_src(self):   return bit_field(self.raw[2],3,0)
+    def get_raw_chan(self):  return bit_field(self.raw[2],7,4)
+    def get_raw_fs(self):    return bit_field(self.raw[3],3,0)
+    def get_raw_acc(self):   return bit_field(self.raw[3],5,4)
+    def get_raw_wmax(self):  return bit_field(self.raw[4],0,0)
+    def get_raw_wlen(self):  return bit_field(self.raw[4],3,1)
+    def get_raw_fso(self):   return bit_field(self.raw[4],7,4)
+
+    def get_a(self): return "consumer" if self.get_raw_a() == 0 else "professional"
+    def get_b(self): return "linear PCM" if self.get_raw_b() == 0 else "other"
+    def get_c(self): return "copyright" if self.get_raw_c() == 0 else "no copyright"
+    def get_d(self):
+        match self.get_raw_d():
+            case 0b000: return "2 audio channels without pre-emphasis"
+            case 0b001: return "2 audio channels with 50us/15us pre-emphasis"
+            case 0b010: return "reserved (for 2 audio channels with pre-emphasis)"
+            case 0b011: return "reserved (for 2 audio channels with pre-emphasis)"
+            case 0b100: return "reserved (0b100)"
+            case 0b101: return "reserved (0b101)"
+            case 0b110: return "reserved (0b110)"
+            case 0b111: return "reserved (0b111)"
+    def get_mode(self): return "mode 0" if self.get_raw_mode() == 0 else "unsupported mode"
+    def get_cat(self):  return self.raw[1]
+    def get_src(self):
+        if self.get_raw_src() == 0:
+            return "do not take into account"
+        else:
+            return "%d" % self.get_raw_src()
+    def get_chan(self):
+        if self.get_raw_chan() == 0:
+            return "do not take into account"
+        elif self.get_raw_chan() == 1:
+            return "1 (stereo left)"
+        elif self.get_raw_chan() == 2:
+            return "2 (stereo right)"
+        else:
+            return "%d" % self.get_raw_chan()
+    def get_fs(self):
+        match self.get_raw_fs():
+            case 0b0000: return "44.1 kHz"
+            case 0b0001: return "reserved (0001)"
+            case 0b0010: return "48 kHz"
+            case 0b0011: return "32 kHz"
+            case 0b0100: return "22.05 kHz"
+            case 0b0101: return "reserved (0101)"
+            case 0b0110: return "24 kHz"
+            case 0b0111: return "reserved (0111)"
+            case 0b1000: return "88.2 kHz"
+            case 0b1001: return "reserved (1001)"
+            case 0b1010: return "96 kHz"
+            case 0b1011: return "reserved (1011)"
+            case 0b1100: return "176.4 kHz"
+            case 0b1101: return "reserved (1101)"
+            case 0b1110: return "192 kHz"
+            case 0b1111: return "reserved (1111)"
+    def get_acc(self):
+        match self.get_raw_acc():
+            case 0b00: return "level II"
+            case 0b01: return "level I"
+            case 0b10: return "level III"
+            case 0b11: return "frame rate not matched to sample frequency"
+    def get_wmax(self): return "20 bits" if self.get_raw_wmax() == 0 else "24 bits"
+    def get_wlen(self):
+        match self.get_raw_wlen():
+            case 0b000: return "word length not indicated"
+            case 0b001: return "16 bits" if self.get_raw_wmax() == 0 else "20 bits"
+            case 0b010: return "18 bits" if self.get_raw_wmax() == 0 else "22 bits"
+            case 0b011: return "reserved (011)"
+            case 0b100: return "19 bits" if self.get_raw_wmax() == 0 else "23 bits"
+            case 0b101: return "20 bits" if self.get_raw_wmax() == 0 else "24 bits"
+            case 0b110: return "17 bits" if self.get_raw_wmax() == 0 else "21 bits"
+            case 0b111: return "reserved (111)"
+    def get_fso(self):
+        match self.get_raw_fso():
+            case 0b1111: return "44.1 kHz"
+            case 0b0111: return "88.2 kHz"
+            case 0b1011: return "22.05 kHz"
+            case 0b0011: return "176.4 kHz"
+            case 0b1101: return "48 kHz"
+            case 0b0101: return "96 kHz"
+            case 0b1001: return "24 kHz"
+            case 0b0001: return "192 kHz"
+            case 0b1110: return "reserved (1110)"
+            case 0b0110: return "8 kHz"
+            case 0b1010: return "11.025 kHz"
+            case 0b0010: return "12 kHz"
+            case 0b1100: return "32 kHz"
+            case 0b0100: return "reserved (0100)"
+            case 0b1000: return "16 kHz"
+            case 0b0000: return "not indicated"
 
 packet_dict = {} # dictionary of packet lists, keyed by type code
-#iec60958csb = [] # list of iec60958 blocks
-
-################################################################################
-# utility functions
-
-def int2vec(x,n):
-    return [(x >> i) & 1 for i in range(n)]
-
-def vec2int(v):
-    r = 0
-    for i in range(len(v)):
-        r |= v[i] << i
-    return r
-
-def xor_vec(v):
-    r = 0
-    for bit in v:
-        r ^= bit
-    return r
-
-def or_list(l):
-    r = 0
-    for e in l:
-        r |= e
-    return r
-
-def bch_ecc(bytes):
-    q = int2vec(0,8);
-    n = q[:]
-    for byte in bytes:
-        d = int2vec(byte,8)
-        # see hdmi_bch_ecc.py
-        n[0] = xor_vec([d[0],d[1],d[2],d[4],d[5],d[7],q[0],q[1],q[2],q[4],q[5],q[7]])
-        n[1] = xor_vec([d[3],d[4],d[6],d[7],q[3],q[4],q[6],q[7]])
-        n[2] = xor_vec([d[1],d[2],q[1],q[2]])
-        n[3] = xor_vec([d[0],d[2],d[3],q[0],q[2],q[3]])
-        n[4] = xor_vec([d[0],d[1],d[3],d[4],q[0],q[1],q[3],q[4]])
-        n[5] = xor_vec([d[1],d[2],d[4],d[5],q[1],q[2],q[4],q[5]])
-        n[6] = xor_vec([d[0],d[2],d[3],d[5],d[6],q[0],q[2],q[3],q[5],q[6]])
-        n[7] = xor_vec([d[0],d[1],d[3],d[4],d[6],d[7],q[0],q[1],q[3],q[4],q[6],q[7]])
-        q = n[:]
-    return vec2int(q)
-
-def print_hex_list(bytes,end="\r\n"):
-    for byte in bytes[:-1]:
-        print("%02X" % byte,end=" ")
-    print("%02X" % bytes[-1],end=end)
-
-def type_key(s):
-    return list(spec.hdmi.PACKET_TYPES.keys())[list(spec.hdmi.PACKET_TYPES.values()).index(s)]
-
-def bit_field(v,msb,lsb):
-    return (v >> lsb) & ((2**((msb-lsb)+1))-1)
+iec60958_subframe = array.array('B', 4*[0])
+iec60958_cs_raw = [] # raw channel status data (for 8 channels)
+iec60958_cs_raw_tmp = [] # raw CSB work in progress (for 8 channels)
+iec60958_cs = [] # processed channel status data
+for i in range(8):
+    iec60958_cs_raw.append([])
+    iec60958_cs_raw_tmp.append(array.array('b'))
+    iec60958_cs.append([])
 
 ################################################################################
 # decode (tmds[] => tmds_p, tmds_c, tmds_sync)
@@ -522,6 +632,8 @@ else: # read decoded data from file
 
 ################################################################################
 # analysis
+
+err_i = 0
 
 if not stop:
     print("detect horizontal video timing")
@@ -890,7 +1002,11 @@ if not stop and m_protocol == "HDMI":
 if not stop and m_protocol == "HDMI":
     print("decoding and checking data island packets")
     for packet_type_code,packet_list in packet_dict.items():
+        if stop:
+            break;
         for d in packet_list:
+            if stop:
+                break;
             hb = d.get_hb(); sb = d.get_sb(); pb = d.get_pb()
             if packet_type_code != hb[0]:
                 print("inconceivable!"); stop = True; break
@@ -908,10 +1024,46 @@ if not stop and m_protocol == "HDMI":
                 pass
             ################################################################################
             elif packet_type == "Audio Sample":
-                # 3 MSBs of HB1 must be zero
-                # extract samples, save to file?
+                # RULE: 3 MSBs of HB1 must be zero
+                if hb[1] & 0xE0:
+                    print("Audio Sample Packet at %d: InfoFrame HB1 MSBs set (0x02X)" % (d.i,hb[1])); stop = True; break
+                # extract fields
+                SP     = bit_field(hb[1],3,0)
+                LAYOUT = bit_field(hb[1],4,4)
+                SF     = bit_field(hb[2],3,0)
+                B      = bit_field(hb[2],7,4)
+                if LAYOUT == 0:
+                    if SP != 0 and SP != 1 and SP != 3 and SP != 7 and SP != 15:
+                        print("Audio Sample Packet at %d: bad sample present value (%s)" % (d.i,"{:04b}".format(SP))); stop = True; break
+                if B != 0 and B != 1 and B != 2 and B != 4 and B != 8:
+                    print("Audio Sample Packet at %d: bad B value (%s)" % (d.i,"{:04b}".format(B))); stop = True; break
+                # process 4 subpackets, each containing a sample pair
+                for spn in range(4):
+                    if SP & (1<<spn): # if sample (pair) is present
+                        # do both members of the sample pair
+                        for spm in range(2):
+                            ch = spm if LAYOUT == 0 else (spn*4)+spm
+                            # build 28 bit subframe word
+                            iec60958_subframe[0] = sb[spn][   spm*3 ]
+                            iec60958_subframe[1] = sb[spn][1+(spm*3)]
+                            iec60958_subframe[2] = sb[spn][2+(spm*3)]
+                            iec60958_subframe[3] = (sb[spn][6] >> (spm*4)) & 0xF
+                            # check parity
+                            par = 0
+                            for i in range(4):
+                                par = par ^ xor_byte(iec60958_subframe[i])
+                            if par != 0:
+                                print("Audio Sample Packet at %d: bad parity in channel %d, subpacket %d" % (d.i,spm,spn)); stop = True; break
+                            # build raw IEC 60958 channel status blocks
+                            C = bit_field(iec60958_subframe[3],2,2)
+                            if B & (1<<spn):
+                                iec60958_cs_raw_tmp[ch] = array.array('b',[C])
+                            elif len(iec60958_cs_raw_tmp[ch]):
+                                iec60958_cs_raw_tmp[ch].append(C)
+                                if len(iec60958_cs_raw_tmp[ch]) == 192:
+                                    iec60958_cs_raw[ch].append(iec60958_cs_raw_tmp[ch])
+                # TODO: extract user data messages
 
-                pass
             ################################################################################
             elif packet_type == "General Control":
                 pass
@@ -1096,41 +1248,67 @@ if not stop and m_protocol == "HDMI":
             else:
                 print("inconceivable!"); stop = True; break
 
-ptype = type_key("InfoFrame: Auxiliary Video Information (AVI)")
-if not stop and m_protocol == "HDMI" and ptype in packet_dict:
-    packet_list = packet_dict[ptype]
-    if len(packet_list) > 1:
-        print("checking consistency of %d AVI InfoFrames... " % len(packet_list),end="")
-        if not all(x.raw==packet_list[0].raw for x in packet_list):
-            print("differences found:")
-            for p in packet_list:
-                print("  %s" % p.notes[0])
-        else:
-            print("OK")
+    if not stop:
+        print("processing raw IEC 60958 channel status blocks")
+        for ch in range(len(iec60958_cs_raw)):
+            for raw_block in iec60958_cs_raw[ch]:
+                csb = iec60958_csb()
+                csb.set_raw([vec2int(raw_block[i*8:8+(i*8)]) for i in range(24)])
+                iec60958_cs[ch].append(csb)
 
-type_key("InfoFrame: Audio")
-if not stop and m_protocol == "HDMI" and ptype in packet_dict:
-    packet_list = packet_dict[ptype]
-    if len(packet_list) > 1:
-        print("checking consistency of %d Audio InfoFrames... " % len(packet_list),end="")
-        if not all(x.raw==packet_list[0].raw for x in packet_list):
-            print("differences found:")
-            for p in packet_list:
-                print("  %s" % p.notes[0])
-        else:
-            print("OK")
+    if not stop:
+        ptype = type_key("InfoFrame: Auxiliary Video Information (AVI)")
+        if ptype in packet_dict:
+            packet_list = packet_dict[ptype]
+            if len(packet_list) > 1:
+                print("checking consistency of %d AVI InfoFrames... " % len(packet_list),end="")
+                if not all(x.raw==packet_list[0].raw for x in packet_list):
+                    print("differences found:")
+                    for p in packet_list:
+                        print("  %s" % p.notes[0])
+                else:
+                    print("OK")
 
-ptype = type_key("InfoFrame: Source Product Description")
-if not stop and m_protocol == "HDMI" and ptype in packet_dict:
-    packet_list = packet_dict[ptype]
-    if len(packet_list) > 1:
-        print("checking consistency of %d SPD InfoFrames... " % len(packet_list),end="")
-        if not all(x.raw==packet_list[0].raw for x in packet_list):
-            print("differences found:")
-            for p in packet_list:
-                print("  %s" % p.notes[0])
-        else:
-            print("OK")
+    if not stop:
+        type_key("InfoFrame: Audio")
+        if ptype in packet_dict:
+            packet_list = packet_dict[ptype]
+            if len(packet_list) > 1:
+                print("checking consistency of %d Audio InfoFrames... " % len(packet_list),end="")
+                if not all(x.raw==packet_list[0].raw for x in packet_list):
+                    print("differences found")
+                else:
+                    print("OK")
+
+    if not stop:
+        ptype = type_key("InfoFrame: Source Product Description")
+        if ptype in packet_dict:
+            packet_list = packet_dict[ptype]
+            if len(packet_list) > 1:
+                print("checking consistency of %d SPD InfoFrames... " % len(packet_list),end="")
+                if not all(x.raw==packet_list[0].raw for x in packet_list):
+                    print("differences found:")
+                    for p in packet_list:
+                        print("  %s" % p.notes[0])
+                else:
+                    print("OK")
+
+    if not stop:
+        print("checking consistency of IEC 60958 channel status blocks:")
+        for ch in range(len(iec60958_cs)):
+            print("  channel %d: %d CSBs ... " % (ch,len(iec60958_cs_raw[ch])),end=" ")
+            if len(iec60958_cs[ch]) >= 2:
+                if not all(x.get_raw()==iec60958_cs[ch][0].get_raw() for x in iec60958_cs[ch]):
+                    print("differences found:")
+                    for csb in iec60958_cs[ch]:
+                        print("    "+" ".join(["%02X" % x for x in csb.get_raw()]))
+                else:
+                    print("OK")
+            else:
+                print("N/A")
+
+    print("checking consistency of Audio Sample Packets with Audio InfoFrames (SP)")
+    print("NOT YET DONE")
 
 ################################################################################
 # report
@@ -1169,18 +1347,37 @@ for t,l in packet_dict.items():
     print("%50s : %d" % (desc,len(l)))
 
 ptype = type_key("InfoFrame: Source Product Description")
-d = packet_dict[ptype][0]
-print()
-print("first Source Product Description decoded:")
-for n in d.notes:
-    print(n)
+if ptype in packet_dict:
+    d = packet_dict[ptype][0]
+    print()
+    print("first Source Product Description decoded:")
+    for n in d.notes:
+        print(n)
 
 ptype = type_key("InfoFrame: Audio")
-d = packet_dict[ptype][0]
-print()
-print("first Audio Infoframe decoded:")
-for n in d.notes:
-    print(n)
+if ptype in packet_dict:
+    d = packet_dict[ptype][0]
+    print()
+    print("first Audio InfoFrame decoded:")
+    for n in d.notes:
+        print(n)
+    print()
+
+print("first CSB:")
+csb = iec60958_cs[0][0]
+print("                            a = %s" % csb.get_a())
+print("                            b = %s" % csb.get_b())
+print("                            c = %s" % csb.get_c())
+print("                            d = %s" % csb.get_d())
+print("                category code = %s" % csb.get_cat())
+print("                source number = %s" % csb.get_src())
+print("               channel number = %s" % csb.get_chan())
+print("           sampling frequency = %s" % csb.get_fs())
+print("               clock accuracy = %s" % csb.get_acc())
+print("              word max length = %s" % csb.get_wmax())
+print("                  word length = %s" % csb.get_wlen())
+print("  original sampling frequency = %s" % csb.get_fso())
+
 
 # TODO:
 # check consistency of field periods for interlace
@@ -1190,7 +1387,7 @@ for n in d.notes:
 ################################################################################
 # error dump
 
-if stop:
+if stop and err_i:
     print()
     print("         | ...ch 2... | ...ch 1... | ...ch 0... |  CTL   | H V |")
     for i in range(err_i-3000,err_i+3000): # TODO prevent starting index < 0
