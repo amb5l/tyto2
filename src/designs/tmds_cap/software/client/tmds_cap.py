@@ -41,38 +41,48 @@ parser = argparse.ArgumentParser(
     description='TMDS data capture and analysis for HDMI and DVI sources',
     epilog='See https://github.com/amb5l/tyto2'
     )
-group = parser.add_mutually_exclusive_group(required=False)
+
+group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('-n',type=int,default=PIXELS,help='capture N pixels from hardware (default: %(default)s)')
-group.add_argument('-i',metavar='filename',default=None,help='read TMDS data from specified input file (default: %(default)s)')
-parser.add_argument('-o',metavar='filename',default=None,help='write TMDS data to specified output file (default: %(default)s)')
+group.add_argument('-i',metavar='filename',default=None,help='read raw TMDS data from specified file (default: %(default)s)')
+group.add_argument('-r',metavar='filename',default=None,help='read decoded TMDS data from specified file (default: %(default)s)')
+parser.add_argument('-o',metavar='filename',default=None,required=False,help='write raw TMDS data to specified file (default: %(default)s)')
+parser.add_argument('-w',metavar='filename',default=None,help='write decoded TMDS data to specified file (default: %(default)s)')
+
 args = parser.parse_args()
+if args.o and not args.n:
+   parser.error("Writing raw TMDS data is only supported when capturing from hardware (-n)")
+if args.w and args.r:
+   parser.error("Writing decoded TMDS data is not supported when reading decoded TMDS data")
 n = args.n
-infile = args.i
-outfile = args.o
+infile_raw = args.i
+outfile_raw = args.o
+infile_dec = args.r
+outfile_dec = args.w
 
 ################################################################################
-# get TMDS data from infile or hardware
+# get TMDS data from infile_raw or hardware
 
 BYTES_PER_PIXEL = 4
 
-if infile:
-    # read TMDS data from file
-    print("reading TMDS data from %s..." % infile,end=" ")
-    f = open(infile, 'rb')
-    nb = os.path.getsize(infile)
+if infile_raw:
+    # read raw TMDS data from file
+    print("reading raw TMDS data from %s..." % infile_raw,end=" ")
+    f = open(infile_raw, 'rb')
+    nb = os.path.getsize(infile_raw)
     if nb % 4 != 0:
-        print("size of %s is not a multiple of %d" % (infile,BYTES_PER_PIXEL))
+        print("size of %s is not a multiple of %d" % (infile_raw,BYTES_PER_PIXEL))
         sys.exit(1)
     tmds_bytes = memoryview(bytearray(nb))
     nr = f.readinto(tmds_bytes)
     f.close()
     if nb != nr:
-        print("failed to read %s correctly (expected %d, read %d)" % (infile,nb,nr))
+        print("failed to read %s correctly (expected %d, read %d)" % (infile_raw,nb,nr))
         sys.exit(1)
     n = nb//BYTES_PER_PIXEL
     print("%d pixels read" % n)
-else:
-    # read TMDS data from hardware
+elif not infile_dec:
+    # read raw TMDS data from hardware
     s_myip = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s_myip.connect(("8.8.8.8", 80))
     MY_IP = s_myip.getsockname()[0]
@@ -112,30 +122,32 @@ else:
     print("done (total time = %.2f seconds)" % (time.perf_counter()-t0))
     s_tcp.close()
 
-# convert raw bytes to 32 bit TMDS triplets (3 x 10 bits)
-tmds_packed = tmds_bytes.cast('L')
+if not infile_dec:
 
-# write TMDS data to file if required
-if outfile:
-    print("writing TMDS data to %s..." % outfile)
-    with open(outfile, 'wb') as f:
-        for d in tmds_packed:
-            f.write(struct.pack('<L',d))
-    f.close()
+    # convert raw bytes to 32 bit TMDS triplets (3 x 10 bits)
+    tmds_packed = tmds_bytes.cast('L')
 
-# separate channels from packed TMDS data
-print("separating TMDS channels")
-tmds = []
-for ch in range(3):
-    tmds.append(memoryview(bytearray(n*2)).cast('h'))
-for i in range(n):
-    l = tmds_packed[i]
-    tmds[0][i] = l & 0x3FF
-    l >>= 10
-    tmds[1][i] = l & 0x3FF
-    l >>= 10
-    tmds[2][i] = l & 0x3FF
-        
+    # write TMDS data to file if required
+    if outfile_raw:
+        print("writing raw TMDS data to %s..." % outfile_raw)
+        with open(outfile_raw, 'wb') as f:
+            for d in tmds_packed:
+                f.write(struct.pack('<L',d))
+        f.close()
+
+    # separate channels from packed TMDS data
+    print("separating TMDS channels")
+    tmds = []
+    for ch in range(3):
+        tmds.append(array.array('h',n*[-1]))
+    for i in range(n):
+        l = tmds_packed[i]
+        tmds[0][i] = l & 0x3FF
+        l >>= 10
+        tmds[1][i] = l & 0x3FF
+        l >>= 10
+        tmds[2][i] = l & 0x3FF
+
 ################################################################################
 # analysis: constants and variables
 
@@ -288,185 +300,228 @@ def bit_field(v,msb,lsb):
     return (v >> lsb) & ((2**((msb-lsb)+1))-1)
 
 ################################################################################
-# analysis
+# decode (tmds[] => tmds_p, tmds_c, tmds_sync)
 
 stop = False
 
-print("preliminary period detection per channel")
-for ch in range(3):
-    for i in range(n):
-        p = PERIOD_UNKNOWN
-        if tmds[ch][i] in spec.tmds.ctrl:
-            p |= PERIOD_CTRL
-            tmds_c[ch][i] = spec.tmds.ctrl.index(tmds[ch][i])
-            if ch > 0:
-                if tmds_c[ch][i] > 0:
-                    m_protocol = 'HDMI'
-        if tmds[ch][i] == spec.tmds.video_gb[ch]:
-            p |= PERIOD_VIDEO_GB
-        if spec.tmds.video[tmds[ch][i]] != -1:
-            p |= PERIOD_VIDEO
-        if ch == 0:
-            if tmds[ch][i] in spec.tmds.terc4:
-                p |= PERIOD_DATA
-        else:
-            if tmds[ch][i] == spec.tmds.data_gb:
-                p |= PERIOD_DATA_GB_LEADING | PERIOD_DATA_GB_TRAILING
-            if tmds[ch][i] in spec.tmds.terc4:
-                p |= PERIOD_DATA
-        if p == 0:
-            print("error: illegal TMDS character (offset %d, channel %d)" % (i,ch)); stop = True; break
-        tmds_ch_p[ch][i] = p
+if not infile_dec:
 
-if not stop:
-    print("resolve control periods")
-    p_count = 0
-    for i in range(n):
-        cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
-        # control periods should begin and end together across all channels
-        if (cp[0] | cp[1] | cp[2]) & PERIOD_CTRL: # control period for at least one channel
-            if cp[0] & cp[1] & cp[2] & PERIOD_CTRL: # control period across all
-                tmds_p[i] = PERIOD_CTRL
-                if m_start == -1 and tmds_c[1][i] == 0 and tmds_c[2][i] == 0:
-                    m_start = i
-            else:
-                print("error: control period channel misalignment (offset %d)" % i); stop = True; break
-        else:
-            if p_count > 0 and p_count < spec.hdmi.CTRL_PERIOD_LEN_MIN:
-                print("error: control period too short (offset %d)" % i); stop = True; break
-            p_count = 0
-
-if not stop:
-    print("detect preambles")
-    for i in range(m_start,n):
-        cc = [tmds_c[0][i],tmds_c[1][i],tmds_c[2][i]] # channel C values
-        p = tmds_p[i]
-        if p & PERIOD_CTRL:
-            if cc[1] == 0 and cc[2] == 0: # normal control period
-                pass
-            elif cc[1] == 1 and cc[2] == 0: # video preamble
-                p |= PERIOD_VIDEO_PRE
-            elif cc[1] == 1 and cc[2] == 1: # data preamble
-                p |= PERIOD_DATA_PRE
-            else:
-                print("error: illegal control period CTL value (offset %d, CTL[3:0] = %s)", \
-                    i,format(cc[2],'#04b')[2:],format(cc[1],'#04b')[2:]); stop = True; break
-            tmds_p[i] = p
-
-if not stop:
-    print("check preambles and detect data islands")
-    p_count = 0
-    p_type = ''
-    for i in range(n):
-        cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
-        p = tmds_p[i]
-        if p_type == 'video_pre':
-            if p & PERIOD_VIDEO_PRE:
-                p_count += 1
-            else:
-                if p_count != spec.hdmi.PRE_LEN:
-                    print("error: bad video preamble length (offset %d, length %d)" % (i,p_count)); stop = True; break
-                elif cp[0] & cp[1] & cp[2] & PERIOD_VIDEO_GB:
-                    p |= PERIOD_VIDEO_GB
-                    p_type = 'video_gb'
-                    p_count = 1
-                else:
-                    print("error: expected video guardband after preamble (offset %d)" % i); stop = True; break
-        elif p_type == 'video_gb':
-            if cp[0] & cp[1] & cp[2] & PERIOD_VIDEO_GB:
+    print("preliminary period detection per channel")
+    for ch in range(3):
+        for i in range(n):
+            p = PERIOD_UNKNOWN
+            if tmds[ch][i] in spec.tmds.ctrl:
+                p |= PERIOD_CTRL
+                tmds_c[ch][i] = spec.tmds.ctrl.index(tmds[ch][i])
+                if ch > 0:
+                    if tmds_c[ch][i] > 0:
+                        m_protocol = 'HDMI'
+            if tmds[ch][i] == spec.tmds.video_gb[ch]:
                 p |= PERIOD_VIDEO_GB
-                p_count += 1
-            else:
-                if p_count != spec.hdmi.GB_LEN:
-                    print("error: bad video guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
-                p_type = ''
-                p_count = 0
-        elif p_type == 'data_pre':
-            if p & PERIOD_DATA_PRE:
-                p_count += 1
-            else:
-                if p_count != spec.hdmi.PRE_LEN:
-                    print("error: bad data preamble length (offset %d, length %d)" % (i,p_count)); stop = True; break
-                elif (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_LEADING):
-                    p |= PERIOD_DATA_GB_LEADING
-                    p_type = 'data_gb_leading'
-                    p_count = 1
-                else:
-                    print("error: expected data guardband after preamble (offset %d)" % i); stop = True; break
-        elif p_type == 'data_gb_leading':
-            if (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_LEADING):
-                p |= PERIOD_DATA_GB_LEADING
-                p_count += 1
-            else:
-                if p_count != spec.hdmi.GB_LEN:
-                    print("error: bad leading data guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
-                elif cp[0] & cp[1] & cp[2] & PERIOD_DATA:
+            if spec.tmds.video[tmds[ch][i]] != -1:
+                p |= PERIOD_VIDEO
+            if ch == 0:
+                if tmds[ch][i] in spec.tmds.terc4:
                     p |= PERIOD_DATA
-                    p_type = 'data'
-                    p_count = 1
-                else:
-                    printf("error: expected TERC4 after leading data guardband (offset %d)" % i); stop = True; break
-        elif p_type == 'data':
-            if cp[0] & cp[1] & cp[2] & PERIOD_DATA:
-                p |= PERIOD_DATA
-                p_count += 1
             else:
-                if p_count % spec.hdmi.PACKET_LEN != 0:
-                    print("error: non-integer multiple of data packets (offset %d, data length %d)" % (i,p_count)); stop = True; break
-                elif (p_count // spec.hdmi.PACKET_LEN) > spec.hdmi.PACKET_MAX:
-                    print("error: too many consecutive data packets (offset %d)" % i); stop = True; break
-                elif (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_TRAILING):
-                    p |= PERIOD_DATA_GB_TRAILING
-                    p_type = 'data_gb_trailing'
-                    p_count = 1
+                if tmds[ch][i] == spec.tmds.data_gb:
+                    p |= PERIOD_DATA_GB_LEADING | PERIOD_DATA_GB_TRAILING
+                if tmds[ch][i] in spec.tmds.terc4:
+                    p |= PERIOD_DATA
+            if p == 0:
+                print("error: illegal TMDS character (offset %d, channel %d)" % (i,ch)); stop = True; break
+            tmds_ch_p[ch][i] = p
+
+    if not stop:
+        print("resolve control periods")
+        p_count = 0
+        for i in range(n):
+            cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
+            # control periods should begin and end together across all channels
+            if (cp[0] | cp[1] | cp[2]) & PERIOD_CTRL: # control period for at least one channel
+                if cp[0] & cp[1] & cp[2] & PERIOD_CTRL: # control period across all
+                    tmds_p[i] = PERIOD_CTRL
+                    if m_start == -1 and tmds_c[1][i] == 0 and tmds_c[2][i] == 0:
+                        m_start = i
                 else:
-                    print("error: expected trailing data guardband after data (offset %d)" % i); stop = True; break
-        elif p_type == 'data_gb_trailing':
-            if (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_LEADING):
-                p |= PERIOD_DATA_GB_TRAILING
-                p_count += 1
+                    print("error: control period channel misalignment (offset %d)" % i); stop = True; break
             else:
-                if p_count != spec.hdmi.GB_LEN:
-                    print("error: bad trailing data guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
-                elif not p & PERIOD_CTRL:
-                    print("error: expected control period after data island (offset %d" % i); stop = True; break
+                if p_count > 0 and p_count < spec.hdmi.CTRL_PERIOD_LEN_MIN:
+                    print("error: control period too short (offset %d)" % i); stop = True; break
+                p_count = 0
+
+    if not stop:
+        print("detect preambles")
+        for i in range(m_start,n):
+            cc = [tmds_c[0][i],tmds_c[1][i],tmds_c[2][i]] # channel C values
+            p = tmds_p[i]
+            if p & PERIOD_CTRL:
+                if cc[1] == 0 and cc[2] == 0: # normal control period
+                    pass
+                elif cc[1] == 1 and cc[2] == 0: # video preamble
+                    p |= PERIOD_VIDEO_PRE
+                elif cc[1] == 1 and cc[2] == 1: # data preamble
+                    p |= PERIOD_DATA_PRE
                 else:
+                    print("error: illegal control period CTL value (offset %d, CTL[3:0] = %s)", \
+                        i,format(cc[2],'#04b')[2:],format(cc[1],'#04b')[2:]); stop = True; break
+                tmds_p[i] = p
+
+    if not stop:
+        print("check preambles and detect data islands")
+        p_count = 0
+        p_type = ''
+        for i in range(n):
+            cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
+            p = tmds_p[i]
+            if p_type == 'video_pre':
+                if p & PERIOD_VIDEO_PRE:
+                    p_count += 1
+                else:
+                    if p_count != spec.hdmi.PRE_LEN:
+                        print("error: bad video preamble length (offset %d, length %d)" % (i,p_count)); stop = True; break
+                    elif cp[0] & cp[1] & cp[2] & PERIOD_VIDEO_GB:
+                        p |= PERIOD_VIDEO_GB
+                        p_type = 'video_gb'
+                        p_count = 1
+                    else:
+                        print("error: expected video guardband after preamble (offset %d)" % i); stop = True; break
+            elif p_type == 'video_gb':
+                if cp[0] & cp[1] & cp[2] & PERIOD_VIDEO_GB:
+                    p |= PERIOD_VIDEO_GB
+                    p_count += 1
+                else:
+                    if p_count != spec.hdmi.GB_LEN:
+                        print("error: bad video guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
                     p_type = ''
                     p_count = 0
-        else: # not currently processing a preamble or guardband
-            if p & PERIOD_VIDEO_PRE:
-                p_type = 'video_pre'
-                p_count = 1
-            elif p & PERIOD_DATA_PRE:
-                p_type = 'data_pre'
-                p_count = 1
-        tmds_p[i] = p
+            elif p_type == 'data_pre':
+                if p & PERIOD_DATA_PRE:
+                    p_count += 1
+                else:
+                    if p_count != spec.hdmi.PRE_LEN:
+                        print("error: bad data preamble length (offset %d, length %d)" % (i,p_count)); stop = True; break
+                    elif (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_LEADING):
+                        p |= PERIOD_DATA_GB_LEADING
+                        p_type = 'data_gb_leading'
+                        p_count = 1
+                    else:
+                        print("error: expected data guardband after preamble (offset %d)" % i); stop = True; break
+            elif p_type == 'data_gb_leading':
+                if (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_LEADING):
+                    p |= PERIOD_DATA_GB_LEADING
+                    p_count += 1
+                else:
+                    if p_count != spec.hdmi.GB_LEN:
+                        print("error: bad leading data guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
+                    elif cp[0] & cp[1] & cp[2] & PERIOD_DATA:
+                        p |= PERIOD_DATA
+                        p_type = 'data'
+                        p_count = 1
+                    else:
+                        printf("error: expected TERC4 after leading data guardband (offset %d)" % i); stop = True; break
+            elif p_type == 'data':
+                if cp[0] & cp[1] & cp[2] & PERIOD_DATA:
+                    p |= PERIOD_DATA
+                    p_count += 1
+                else:
+                    if p_count % spec.hdmi.PACKET_LEN != 0:
+                        print("error: non-integer multiple of data packets (offset %d, data length %d)" % (i,p_count)); stop = True; break
+                    elif (p_count // spec.hdmi.PACKET_LEN) > spec.hdmi.PACKET_MAX:
+                        print("error: too many consecutive data packets (offset %d)" % i); stop = True; break
+                    elif (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_TRAILING):
+                        p |= PERIOD_DATA_GB_TRAILING
+                        p_type = 'data_gb_trailing'
+                        p_count = 1
+                    else:
+                        print("error: expected trailing data guardband after data (offset %d)" % i); stop = True; break
+            elif p_type == 'data_gb_trailing':
+                if (cp[0] & PERIOD_DATA) and (cp[1] & cp[2] & PERIOD_DATA_GB_LEADING):
+                    p |= PERIOD_DATA_GB_TRAILING
+                    p_count += 1
+                else:
+                    if p_count != spec.hdmi.GB_LEN:
+                        print("error: bad trailing data guardband length (offset %d, length %d)" % (i,p_count)); stop = True; break
+                    elif not p & PERIOD_CTRL:
+                        print("error: expected control period after data island (offset %d" % i); stop = True; break
+                    else:
+                        p_type = ''
+                        p_count = 0
+            else: # not currently processing a preamble or guardband
+                if p & PERIOD_VIDEO_PRE:
+                    p_type = 'video_pre'
+                    p_count = 1
+                elif p & PERIOD_DATA_PRE:
+                    p_type = 'data_pre'
+                    p_count = 1
+            tmds_p[i] = p
 
-if not stop:
-    print("detect video periods")
-    p_count = 0
-    for i in range(n):
-        cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
-        p = tmds_p[i]
-        if not p:
-            if cp[0] & cp[1] & cp[2] & PERIOD_VIDEO:
-                p |= PERIOD_VIDEO
-            else:
-                # this should be impossible
-                print("error: non-video characters found in video period (offset %d, length %d)" % (i,p_count)); stop = True; break
-        tmds_p[i] = p
+    if not stop:
+        print("detect video periods")
+        p_count = 0
+        for i in range(n):
+            cp = [tmds_ch_p[0][i],tmds_ch_p[1][i],tmds_ch_p[2][i]] # channel periods
+            p = tmds_p[i]
+            if not p:
+                if cp[0] & cp[1] & cp[2] & PERIOD_VIDEO:
+                    p |= PERIOD_VIDEO
+                else:
+                    # this should be impossible
+                    print("error: non-video characters found in video period (offset %d, length %d)" % (i,p_count)); stop = True; break
+            tmds_p[i] = p
 
-# assumption - sync states persist after control and data periods
-if not stop:
-    print("resolve syncs")
-    sync = -1
-    for i in range(n):
-        p = tmds_p[i]
-        if p & PERIOD_CTRL:
-            sync = tmds_c[0][i]
-        elif p & (PERIOD_DATA | PERIOD_DATA_GB_LEADING | PERIOD_DATA_GB_TRAILING):
-            sync = spec.tmds.terc4.index(tmds[0][i]) & 3
-        tmds_sync[i] = sync
+    # assumption - sync states persist after control and data periods
+    if not stop:
+        print("resolve syncs")
+        sync = -1
+        for i in range(n):
+            p = tmds_p[i]
+            if p & PERIOD_CTRL:
+                sync = tmds_c[0][i]
+            elif p & (PERIOD_DATA | PERIOD_DATA_GB_LEADING | PERIOD_DATA_GB_TRAILING):
+                sync = spec.tmds.terc4.index(tmds[0][i]) & 3
+            tmds_sync[i] = sync
+
+    # write decoded data to file
+    if outfile_dec:
+        print("writing decoded TMDS data to %s..." % outfile_dec,end=" ")
+        f = open(outfile_dec, 'wb')
+        f.write(struct.pack('I', n))
+        f.write(struct.pack('I', m_start))
+        f.write(struct.pack('I', 1 if m_protocol == 'HDMI' else 0))
+        for i in range(3):
+            tmds[i].tofile(f)
+            tmds_ch_p[i].tofile(f)
+            tmds_c[i].tofile(f)
+        tmds_p.tofile(f)
+        tmds_sync.tofile(f)
+        print("%d pixels written" % n)
+
+else: # read decoded data from file
+    print("reading decoded TMDS data from %s..." % infile_dec,end=" ")
+    f = open(infile_dec, 'rb')
+    n = struct.unpack('I', f.read(4))[0]
+    m_start = struct.unpack('I', f.read(4))[0]
+    m_protocol = struct.unpack('I', f.read(4))[0]
+    m_protocol = 'HDMI' if m_protocol == 1 else 'DVI'
+    tmds = []
+    tmds_ch_p = []
+    tmds_c = []
+    tmds_p = array.array('B')
+    tmds_sync = array.array('b')
+    for i in range(3):
+        tmds.append(array.array('h'))
+        tmds_ch_p.append(array.array('B'))
+        tmds_c.append(array.array('b'))
+        tmds[i].fromfile(f,n)
+        tmds_ch_p[i].fromfile(f,n)
+        tmds_c[i].fromfile(f,n)
+    tmds_p.fromfile(f,n)
+    tmds_sync.fromfile(f,n)
+    print("%d pixels read" % n)
+
+################################################################################
+# analysis
 
 if not stop:
     print("detect horizontal video timing")
@@ -855,7 +910,7 @@ if not stop and m_protocol == "HDMI":
             elif packet_type == "Audio Sample":
                 # 3 MSBs of HB1 must be zero
                 # extract samples, save to file?
-                
+
                 pass
             ################################################################################
             elif packet_type == "General Control":
@@ -1113,10 +1168,17 @@ for t,l in packet_dict.items():
         desc = t
     print("%50s : %d" % (desc,len(l)))
 
+ptype = type_key("InfoFrame: Source Product Description")
+d = packet_dict[ptype][0]
+print()
+print("first Source Product Description decoded:")
+for n in d.notes:
+    print(n)
+
 ptype = type_key("InfoFrame: Audio")
 d = packet_dict[ptype][0]
 print()
-print("Audio Infoframe decoded:")
+print("first Audio Infoframe decoded:")
 for n in d.notes:
     print(n)
 
