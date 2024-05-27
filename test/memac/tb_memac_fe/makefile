@@ -15,7 +15,7 @@ VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/ethernet/memac_rx_fe.vhd \
 	$(toplevel)/src/common/tyto_queue_pkg.vhd \
 	$(toplevel)/src/common/ethernet/test/$(TB).vhd
-VIVADO_SIM_RUN=tb_memac_fe;PACKET_COUNT=$(PACKET_COUNT)
+VIVADO_SIM_RUN=$(TB);PACKET_COUNT=$(PACKET_COUNT)
 
 all: sim
 
