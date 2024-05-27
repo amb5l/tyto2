@@ -7,7 +7,6 @@ PACKET_COUNT=10
 
 TB=tb_memac_fe
 
-VIVADO_PART=xc7s50fgga484-1
 VIVADO_LANGUAGE=VHDL-2008
 VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/ethernet/memac_util_pkg.vhd \
