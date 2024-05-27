@@ -130,6 +130,9 @@ library ieee;
   use ieee.numeric_std.all;
 
 entity tb_memac_fe is
+  generic (
+    PACKET_COUNT : positive
+  );
 end entity tb_memac_fe;
 
 architecture sim of tb_memac_fe is
@@ -395,12 +398,15 @@ begin
     crc_inc => '0'
   );
 
-  P_RX: process(clk)
+  P_RX: process(rst,clk)
     variable xpkt  : packet_t;
     variable rpkt  : packet_t;
     variable rdesc : rx_prd_t;
+    variable count : integer;
   begin
-    if rising_edge(clk) and rst = '0' then
+    if rst = '1' then
+      count := 0;
+    elsif rising_edge(clk) then
       -- wait for packet
       if rx_prq.items > 0 then
         -- get descriptor, packet and expected packet
@@ -450,6 +456,12 @@ begin
         expected.deq;
         -- report
         report "received packet: " & integer'image(rpkt.size) & " bytes" severity note;
+        -- count
+        count := count + 1;
+        if count >= PACKET_COUNT then
+          report integer'image(count) & " packets received" severity note;
+          std.env.finish;
+        end if;
       end if;
       -- TODO: pace
     end if;
