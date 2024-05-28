@@ -316,8 +316,6 @@ begin
         -- update write pointer and space value
         tx_buf_wptr <= std_ulogic_vector(unsigned(tx_buf_wptr)+pkt.size);
         tx_buf_space.sub(pkt.size);
-        -- report
-        report "transmitted packet: " & integer'image(pkt.size) & " bytes" severity note;
       end if;
       -- TODO: pace
     end if;
@@ -384,7 +382,6 @@ begin
       end if;
       if tx_pfq.items > 0 then
         tx_buf_space.add(to_integer(unsigned(tx_pfq_len)));
-        report "tx_pfq.items = " & integer'image(tx_pfq.items);
         tx_pfq.deq;
       end if;
     end if;
@@ -456,8 +453,6 @@ begin
         rx_pfq.enq((len => rdesc.len));
         rx_prq.deq;
         expected.deq;
-        -- report
-        report "received packet: " & integer'image(rpkt.size) & " bytes" severity note;
         -- count
         count := count + 1;
         if count >= PACKET_COUNT then
