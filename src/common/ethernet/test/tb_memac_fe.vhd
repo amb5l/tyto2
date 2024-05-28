@@ -456,7 +456,7 @@ begin
         -- count
         count := count + 1;
         if count >= PACKET_COUNT then
-          report integer'image(count) & " packets received" severity note;
+          report "*** SUCCESS ***" & integer'image(count) & " packets received" severity note;
           std.env.finish;
         end if;
       end if;
