@@ -14,6 +14,8 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
+-- TODO: verify manual FCS
+--------------------------------------------------------------------------------
 -- definitions required for generic package instances
 
 use work.memac_util_pkg.all;
