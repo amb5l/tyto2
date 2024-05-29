@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- memac_rx_fe.vhd                                                            --
--- Modular Ethernet MAC: receive front end.                                   --
+-- Modular Ethernet MAC (MEMAC): receive front end.                           --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --

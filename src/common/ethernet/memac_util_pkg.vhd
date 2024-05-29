@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- memac_util_pkg.vhd                                                            --
--- Modular Ethernet MAC: utility package.                                     --
+-- memac_util_pkg.vhd                                                         --
+-- Modular Ethernet MAC (MEMAC): utility package.                             --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --

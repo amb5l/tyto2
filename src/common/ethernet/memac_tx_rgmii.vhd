@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- memac_tx_rgmii.vhd                                                         --
--- MEMAC transmit RGMII shim.                                                 --
+-- Modular Ethernet MAC (MEMAC): transmit UMI to RGMII shim.                  --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --

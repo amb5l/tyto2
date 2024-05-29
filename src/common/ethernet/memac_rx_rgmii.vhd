@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- memac_rx_rgmii.vhd                                                         --
--- MEMAC receive RGMII shim.                                                  --
+-- Modular Ethernet MAC (MEMAC): receive GMII to UMI shim.                    --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
