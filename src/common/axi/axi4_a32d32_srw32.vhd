@@ -82,13 +82,13 @@ entity axi4_a32d32_srw32 is
     axi4_so : out   axi4_a32d32_h_miso_t := AXI4_A32D32_H_MISO_DEFAULT; -- AXI4 slave output
 
     sw_en   : out   std_logic;                                          -- simple write enable
-    sw_addr : out   std_logic_vector(31 downto 0);            -- simple write address
+    sw_addr : out   std_logic_vector(31 downto 0);                      -- simple write address
     sw_be   : out   std_logic_vector(3 downto 0);                       -- simple write byte enables
     sw_data : out   std_logic_vector(31 downto 0);                      -- simple write data
     sw_rdy  : in    std_logic;                                          -- simple write ready
 
     sr_en   : out   std_logic;                                          -- simple read enable
-    sr_addr : out   std_logic_vector(31 downto 0);            -- simple read address
+    sr_addr : out   std_logic_vector(31 downto 0);                      -- simple read address
     sr_data : in    std_logic_vector(31 downto 0);                      -- simple read data
     sr_rdy  : in    std_logic                                           -- simple read ready
 
