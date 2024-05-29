@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- memac_rx_fe.vhd                                                            --
+-- memac_util_pkg.vhd                                                            --
 -- Modular Ethernet MAC: utility package.                                     --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
