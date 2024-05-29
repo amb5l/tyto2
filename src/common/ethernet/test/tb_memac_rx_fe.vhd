@@ -2,7 +2,7 @@
 -- tb_memac_rx_fe.vhd                                                         --
 -- Testbench for memac_rx_fe.                                                 --
 --------------------------------------------------------------------------------
--- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
+-- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
 -- you can redistribute it and/or modify it under the terms of the GNU Lesser --
 -- General Public License as published by the Free Software Foundation,       --

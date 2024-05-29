@@ -2,7 +2,7 @@
 -- tb_memac_tx_fe.vhd                                                         --
 -- Testbench for memac_tx_fe.                                                 --
 --------------------------------------------------------------------------------
--- (C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
+-- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
 -- you can redistribute it and/or modify it under the terms of the GNU Lesser --
 -- General Public License as published by the Free Software Foundation,       --
@@ -31,7 +31,7 @@ package tb_memac_fe_pkg is
   --------------------------------------------------------------------------------
   -- packet descriptor queues
 
-  -- TX packet reservation
+  -- packet reservation
   type prd_t is record
     len : std_ulogic_vector(log2(MTU)-1 downto 0);
     idx : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
@@ -45,7 +45,7 @@ package tb_memac_fe_pkg is
     opt => (pre_len => x"8",pre_auto => 'X',fcs_auto => 'X')
   );
 
-  -- TX packet free
+  -- packet free
   type pfd_t is record
     len : std_ulogic_vector(log2(MTU)-1 downto 0);
     idx : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
@@ -435,7 +435,7 @@ begin
   --------------------------------------------------------------------------------
   -- DUT instantiation
 
-  U_TX: component memac_tx_fe
+  DUT: component memac_tx_fe
     port map (
       rst      => rst,
       clk      => clk,
