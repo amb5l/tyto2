@@ -33,6 +33,7 @@ package tyto_types_pkg is
   type    slv8_vector         is array(natural range <>) of slv8;
   type    slv10_vector        is array(natural range <>) of slv10;
   type    slv32_vector        is array(natural range <>) of slv32;
+  type    sulv_vector         is array(natural range <>) of std_ulogic_vector;
   type    std_logic_vector_2d is array(natural range <>, natural range <>) of std_logic;
   type    slv8_vector_2d      is array(natural range <>, natural range <>) of slv8;
 
