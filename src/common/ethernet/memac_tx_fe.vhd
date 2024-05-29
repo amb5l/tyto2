@@ -51,9 +51,9 @@ package memac_tx_fe_pkg is
       buf_idx  : out   std_ulogic_vector;
       buf_data : in    std_ulogic_vector(7 downto 0);
       buf_er   : in    std_ulogic;
-      phy_dv   : out   std_ulogic;
-      phy_er   : out   std_ulogic;
-      phy_data : out   std_ulogic_vector(7 downto 0)
+      umi_dv   : out   std_ulogic;
+      umi_er   : out   std_ulogic;
+      umi_data : out   std_ulogic_vector(7 downto 0)
     );
   end component memac_tx_fe;
 
@@ -88,9 +88,9 @@ entity memac_tx_fe is
     buf_idx  : out   std_ulogic_vector;
     buf_data : in    std_ulogic_vector(7 downto 0);
     buf_er   : in    std_ulogic;
-    phy_dv   : out   std_ulogic;
-    phy_er   : out   std_ulogic;
-    phy_data : out   std_ulogic_vector(7 downto 0)
+    umi_dv   : out   std_ulogic;
+    umi_er   : out   std_ulogic;
+    umi_data : out   std_ulogic_vector(7 downto 0)
   );
 end entity memac_tx_fe;
 
@@ -100,7 +100,7 @@ architecture rtl of memac_tx_fe is
 
   type state_t is (IDLE,PRE,PKT,FCS,IPG,FIN);
 
-  type phy_sel_t is (IPG,PRE,SFD,DATA,FCS1,FCS2,FCS3,FCS4);
+  type umi_sel_t is (IPG,PRE,SFD,DATA,FCS1,FCS2,FCS3,FCS4);
 
   signal s1_state    : state_t;
   signal s1_count    : integer range 0 to COUNT_MAX;
@@ -116,23 +116,23 @@ architecture rtl of memac_tx_fe is
   signal s1_pfq_tag  : std_ulogic_vector(pfq_tag'range);
   signal s1_pfq_stb  : std_ulogic;
   signal s1_pkt_opt  : memac_tx_opt_t;
-  signal s1_phy_sel  : phy_sel_t;
+  signal s1_umi_sel  : umi_sel_t;
   signal s1_buf_re   : std_ulogic;
   signal s1_buf_len  : std_ulogic_vector(prq_len'range);
   signal s1_buf_idx  : std_ulogic_vector(buf_idx'range);
 
-  signal s2_phy_sel  : phy_sel_t;
+  signal s2_umi_sel  : umi_sel_t;
   signal s2_buf_data : std_ulogic_vector(buf_data'range);
   signal s2_buf_er   : std_ulogic;
 
-  signal s3_phy_sel  : phy_sel_t;
+  signal s3_umi_sel  : umi_sel_t;
   signal s3_buf_data : std_ulogic_vector(buf_data'range);
   signal s3_buf_er   : std_ulogic;
   signal s3_crc32    : std_ulogic_vector(31 downto 0);
 
-  signal s4_phy_dv   : std_ulogic;
-  signal s4_phy_er   : std_ulogic;
-  signal s4_phy_data : std_ulogic_vector(7 downto 0);
+  signal s4_umi_dv   : std_ulogic;
+  signal s4_umi_er   : std_ulogic;
+  signal s4_umi_data : std_ulogic_vector(7 downto 0);
 
 begin
 
@@ -151,9 +151,9 @@ begin
   buf_idx     <= s1_buf_idx;
   s2_buf_data <= buf_data;
   s2_buf_er   <= buf_er;
-  phy_dv      <= s4_phy_dv;
-  phy_er      <= s4_phy_er;
-  phy_data    <= s4_phy_data;
+  umi_dv      <= s4_umi_dv;
+  umi_er      <= s4_umi_er;
+  umi_data    <= s4_umi_data;
 
   P_MAIN: process(rst,clk)
   begin
@@ -170,14 +170,14 @@ begin
       s1_buf_re   <= '0';
       s1_buf_len  <= (others => '0');
       s1_buf_idx  <= (others => '0');
-      s2_phy_sel  <= IPG;
-      s3_phy_sel  <= IPG;
+      s2_umi_sel  <= IPG;
+      s3_umi_sel  <= IPG;
       s3_buf_data <= (others => '0');
       s3_buf_er   <= '0';
       s3_crc32    <= (others => '1');
-      s4_phy_dv   <= '0';
-      s4_phy_er   <= '0';
-      s4_phy_data <= (others => 'X');
+      s4_umi_dv   <= '0';
+      s4_umi_er   <= '0';
+      s4_umi_data <= (others => 'X');
 
     elsif rising_edge(clk) then
 
@@ -196,7 +196,7 @@ begin
             s1_pfq_idx <= s1_prq_idx;
             s1_pfq_tag <= s1_prq_tag;
             s1_pkt_opt <= s1_prq_opt;
-            s1_phy_sel <= PRE;
+            s1_umi_sel <= PRE;
             s1_buf_re  <= '0' when s1_prq_opt.pre_auto = '1' else '1';
             s1_buf_len <= s1_prq_len;
             s1_buf_idx <= s1_prq_idx;
@@ -207,9 +207,9 @@ begin
         when PRE =>
           s1_count <= s1_count + 1;
           if s1_count = to_integer(unsigned(s1_pkt_opt.pre_len))-2 then
-            s1_phy_sel <= SFD when s1_pkt_opt.pre_auto = '1' else DATA;
+            s1_umi_sel <= SFD when s1_pkt_opt.pre_auto = '1' else DATA;
           elsif s1_count = to_integer(unsigned(s1_pkt_opt.pre_len))-1 then
-            s1_phy_sel <= DATA;
+            s1_umi_sel <= DATA;
             s1_buf_re  <= '1';
             s1_state   <= PKT;
             s1_count   <= 0;
@@ -220,10 +220,10 @@ begin
             s1_pfq_stb <= '1';
             s1_buf_re  <= '0';
             if s1_pkt_opt.fcs_auto = '1' then
-              s1_phy_sel <= FCS1;
+              s1_umi_sel <= FCS1;
               s1_state   <= FCS;
             else
-              s1_phy_sel <= IPG;
+              s1_umi_sel <= IPG;
               s1_state   <= IPG;
             end if;
             s1_count <= 0;
@@ -231,13 +231,13 @@ begin
 
         when FCS =>
           case s1_count mod 4 is
-            when 0      => s1_phy_sel <= FCS2;
-            when 1      => s1_phy_sel <= FCS3;
-            when 2      => s1_phy_sel <= FCS4;
-            when others => s1_phy_sel <= FCS1;
+            when 0      => s1_umi_sel <= FCS2;
+            when 1      => s1_umi_sel <= FCS3;
+            when 2      => s1_umi_sel <= FCS4;
+            when others => s1_umi_sel <= FCS1;
           end case;
           if s1_count = 3 then
-            s1_phy_sel <= IPG;
+            s1_umi_sel <= IPG;
             s1_state   <= IPG;
             s1_count   <= 0;
           else
@@ -267,37 +267,37 @@ begin
       --------------------------------------------------------------------------------
       -- stage 2
 
-      s2_phy_sel <= s1_phy_sel;
+      s2_umi_sel <= s1_umi_sel;
 
       --------------------------------------------------------------------------------
       -- stage 3
 
-      s3_phy_sel  <= s2_phy_sel;
+      s3_umi_sel  <= s2_umi_sel;
       s3_buf_data <= s2_buf_data;
       s3_buf_er   <= s2_buf_er;
 
-      if s2_phy_sel = SFD then
+      if s2_umi_sel = SFD then
         s3_crc32 <= (others => '1');
-      elsif s2_phy_sel = DATA then
+      elsif s2_umi_sel = DATA then
         s3_crc32 <= crc32_eth_8(s2_buf_data,s3_crc32);
       end if;
 
       --------------------------------------------------------------------------------
       -- stage 4
 
-      s4_phy_dv <= '0' when s3_phy_sel = IPG else '1';
+      s4_umi_dv <= '0' when s3_umi_sel = IPG else '1';
 
-      s4_phy_er <= s3_buf_er when s3_phy_sel = DATA else '0';
+      s4_umi_er <= s3_buf_er when s3_umi_sel = DATA else '0';
 
-      case s3_phy_sel is
-        when IPG  => s4_phy_data <= (others => 'X');
-        when PRE  => s4_phy_data <= x"55";
-        when SFD  => s4_phy_data <= x"D5";
-        when DATA => s4_phy_data <= s3_buf_data;
-        when FCS1 => s4_phy_data <= s3_crc32(31 downto 24);
-        when FCS2 => s4_phy_data <= s3_crc32(23 downto 16);
-        when FCS3 => s4_phy_data <= s3_crc32(15 downto  8);
-        when FCS4 => s4_phy_data <= s3_crc32( 7 downto  0);
+      case s3_umi_sel is
+        when IPG  => s4_umi_data <= (others => 'X');
+        when PRE  => s4_umi_data <= x"55";
+        when SFD  => s4_umi_data <= x"D5";
+        when DATA => s4_umi_data <= s3_buf_data;
+        when FCS1 => s4_umi_data <= s3_crc32(31 downto 24);
+        when FCS2 => s4_umi_data <= s3_crc32(23 downto 16);
+        when FCS3 => s4_umi_data <= s3_crc32(15 downto  8);
+        when FCS4 => s4_umi_data <= s3_crc32( 7 downto  0);
       end case;
 
       --------------------------------------------------------------------------------

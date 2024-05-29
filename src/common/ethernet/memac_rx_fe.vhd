@@ -58,9 +58,9 @@ package memac_rx_fe_pkg is
       buf_idx  : out   std_ulogic_vector;
       buf_data : out   std_ulogic_vector(7 downto 0);
       buf_er   : out   std_ulogic;
-      phy_dv   : in    std_ulogic;
-      phy_er   : in    std_ulogic;
-      phy_data : in    std_ulogic_vector(7 downto 0)
+      umi_dv   : in    std_ulogic;
+      umi_er   : in    std_ulogic;
+      umi_data : in    std_ulogic_vector(7 downto 0)
     );
   end component memac_rx_fe;
 
@@ -95,9 +95,9 @@ entity memac_rx_fe is
     buf_idx  : out   std_ulogic_vector;
     buf_data : out   std_ulogic_vector(7 downto 0);
     buf_er   : out   std_ulogic;
-    phy_dv   : in    std_ulogic;
-    phy_er   : in    std_ulogic;
-    phy_data : in    std_ulogic_vector(7 downto 0)
+    umi_dv   : in    std_ulogic;
+    umi_er   : in    std_ulogic;
+    umi_data : in    std_ulogic_vector(7 downto 0)
   );
 end entity memac_rx_fe;
 
@@ -110,9 +110,9 @@ architecture rtl of memac_rx_fe is
   signal state      : state_t;
   signal count      : integer range 0 to COUNT_MAX;
   signal pkt_opt    : memac_rx_opt_t;
-  signal phy_dv_r   : std_ulogic_vector(1 to 5);
-  signal phy_er_r   : std_ulogic_vector(phy_dv_r'range);
-  signal phy_data_r : sulv_array_t(phy_dv_r'range)(7 downto 0);
+  signal umi_dv_r   : std_ulogic_vector(1 to 5);
+  signal umi_er_r   : std_ulogic_vector(umi_dv_r'range);
+  signal umi_data_r : sulv_array_t(umi_dv_r'range)(7 downto 0);
   signal buf_wr     : std_ulogic;
   signal buf_wptr   : std_ulogic_vector(buf_idx'range);
   signal buf_rptr   : std_ulogic_vector(buf_idx'range);
@@ -129,9 +129,9 @@ begin
       state      <= IDLE;
       count      <= 0;
       pkt_opt    <= (ipg_min => 12, pre_inc => '0', fcs_inc => '0', crc_inc => '0');
-      phy_dv_r   <= (phy_dv_r'range => '0');
-      phy_er_r   <= (phy_er_r'range => '0');
-      phy_data_r <= (phy_data_r'range => (phy_data_r'element'range => '0'));
+      umi_dv_r   <= (umi_dv_r'range => '0');
+      umi_er_r   <= (umi_er_r'range => '0');
+      umi_data_r <= (umi_data_r'range => (umi_data_r'element'range => '0'));
       prq_len    <= (prq_len'range => '0');
       prq_idx    <= (prq_idx'range => '0');
       prq_flag   <= (others => '0');
@@ -145,16 +145,16 @@ begin
 
     elsif rising_edge(clk) then
 
-      phy_dv_r   <= phy_dv   & phy_dv_r   ( phy_dv_r'low   to phy_dv_r'high-1   );
-      phy_er_r   <= phy_er   & phy_er_r   ( phy_er_r'low   to phy_er_r'high-1   );
-      phy_data_r <= phy_data & phy_data_r ( phy_data_r'low to phy_data_r'high-1 );
+      umi_dv_r   <= umi_dv   & umi_dv_r   ( umi_dv_r'low   to umi_dv_r'high-1   );
+      umi_er_r   <= umi_er   & umi_er_r   ( umi_er_r'low   to umi_er_r'high-1   );
+      umi_data_r <= umi_data & umi_data_r ( umi_data_r'low to umi_data_r'high-1 );
       prq_stb <= '0';
 
       case state is
 
         when IDLE =>
           crc32 <= (others => '1');
-          if phy_dv_r(4) = '1' then
+          if umi_dv_r(4) = '1' then
             if prq_rdy = '1' then
               buf_wr  <= opt.pre_inc;
               prq_len <= (prq_len'range => '0');
@@ -170,14 +170,14 @@ begin
           end if;
 
         when DROP =>
-          if phy_dv_r(4) = '0' then
+          if umi_dv_r(4) = '0' then
             state <= IPG;
             count <= 0;
           end if;
 
         when PRE =>
           count <= count + 1;
-          if phy_data_r(5) = x"D5" then
+          if umi_data_r(5) = x"D5" then
             if count < 7 then
               prq_flag.pre_short <= '1';
             elsif count > 7 then
@@ -186,7 +186,7 @@ begin
             buf_wr <= '1';
             state  <= PKT;
             count  <= 0;
-          elsif phy_data_r(5) = x"55" then
+          elsif umi_data_r(5) = x"55" then
             if count > 6 then
               prq_flag.pre_long <= '1';
             end if;
@@ -196,26 +196,26 @@ begin
             state <= PKT;
             count <= 0;
           end if;
-          if phy_er_r(5) = '1' then
+          if umi_er_r(5) = '1' then
             prq_flag.pre_bad <= '1';
           end if;
-          if phy_dv_r(4) = '0' then -- premature end of packet
+          if umi_dv_r(4) = '0' then -- premature end of packet
             buf_wr <= '0';
             state  <= IPG;
             count  <= 0;
           end if;
 
         when PKT =>
-          crc32 <= crc32_eth_8(phy_data_r(5),crc32);
-          if phy_er_r(5) = '1' then
+          crc32 <= crc32_eth_8(umi_data_r(5),crc32);
+          if umi_er_r(5) = '1' then
             prq_flag.data_err <= '1';
           end if;
-          if phy_dv & phy_dv_r = "011111" then -- FCS is next
+          if umi_dv & umi_dv_r = "011111" then -- FCS is next
             buf_wr <= pkt_opt.fcs_inc;
             prq_flag.fcs_inc <= pkt_opt.fcs_inc;
             state  <= FCS;
             count  <= 0;
-          elsif phy_dv_r(4) = '0' then -- this is last byte
+          elsif umi_dv_r(4) = '0' then -- this is last byte
             buf_wr  <= '0';
             prq_stb <= '1';
             state   <= IPG;
@@ -225,10 +225,10 @@ begin
         when FCS =>
           count <= count + 1;
           if count = 0 then
-            if  crc32( 31 downto 24 ) = phy_data_r(5)
-            and crc32( 23 downto 16 ) = phy_data_r(4)
-            and crc32( 15 downto  8 ) = phy_data_r(3)
-            and crc32(  7 downto  0 ) = phy_data_r(2)
+            if  crc32( 31 downto 24 ) = umi_data_r(5)
+            and crc32( 23 downto 16 ) = umi_data_r(4)
+            and crc32( 15 downto  8 ) = umi_data_r(3)
+            and crc32(  7 downto  0 ) = umi_data_r(2)
             then
               prq_flag.fcs_bad <= '0';
             end if;
@@ -242,7 +242,7 @@ begin
           end if;
 
         when IPG =>
-          if phy_dv_r(3) = '1' then
+          if umi_dv_r(3) = '1' then
             prq_flag <= (others => '0');
             if count < pkt_opt.ipg_min-2 then
               prq_flag.ipg_short <= '1';
@@ -290,7 +290,7 @@ begin
 
   buf_we   <= buf_wr and not buf_ff;
   buf_idx  <= buf_wptr;
-  buf_data <= phy_data_r(5);
-  buf_er   <= phy_er_r(5);
+  buf_data <= umi_data_r(5);
+  buf_er   <= umi_er_r(5);
 
 end architecture rtl;
