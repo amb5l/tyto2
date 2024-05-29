@@ -117,7 +117,7 @@ architecture rtl of memac_rx_fe is
   signal buf_wptr   : std_ulogic_vector(buf_idx'range);
   signal buf_rptr   : std_ulogic_vector(buf_idx'range);
   signal buf_ff     : std_ulogic;
-  signal crc32      : std_logic_vector(31 downto 0);
+  signal crc32      : std_ulogic_vector(31 downto 0);
   signal pfq_stb_r  : std_ulogic_vector(1 to 4);
 
 begin
