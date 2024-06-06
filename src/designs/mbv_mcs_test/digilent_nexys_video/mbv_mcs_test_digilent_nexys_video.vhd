@@ -35,14 +35,14 @@ entity mbv_mcs_test_digilent_nexys_video is
     -- fmc_mgt_clk_n   : in    std_logic;
 
     -- LEDs, buttons and switches
-    -- led             : out   std_logic_vector(7 downto 0);
+    led           : out   std_logic_vector(7 downto 0);
     -- btn_c           : in    std_logic;
     -- btn_d           : in    std_logic;
     -- btn_l           : in    std_logic;
     -- btn_r           : in    std_logic;
     -- btn_u           : in    std_logic;
     btn_rst_n     : in    std_logic;
-    -- sw              : in    std_logic_vector(7 downto 0);
+    sw            : in    std_logic_vector(7 downto 0);
 
     -- OLED
     oled_res_n    : out   std_logic;
@@ -179,16 +179,16 @@ end entity mbv_mcs_test_digilent_nexys_video;
 
 architecture rtl of mbv_mcs_test_digilent_nexys_video is
 
-  signal rsti        : std_ulogic;
-  signal rst         : std_ulogic;
-  signal clk         : std_logic;
+  signal rsti : std_ulogic;
+  signal rst  : std_ulogic;
+  signal clk  : std_logic;
+  signal gpo1 : std_ulogic_vector(31 downto 0);
+  signal gpi1 : std_ulogic_vector(31 downto 0);
 
 begin
 
   --------------------------------------------------------------------------------
   -- MMCM generates 125MHz from 100MHz
-
-  rsti <= not btn_rst_n;
 
   U_MMCM: component mmcm
     generic map (
@@ -205,7 +205,12 @@ begin
     );
 
   --------------------------------------------------------------------------------
-  -- hard reset from MMCM lock output
+  -- LEDs, switches and buttons
+
+  rsti <= not btn_rst_n;
+  led  <= gpo1(7 downto 0);
+  gpi1(7 downto 0) <= sw(7 downto 0);
+  gpi1(31 downto 8) <= (others => '0');
 
   --------------------------------------------------------------------------------
   -- MicroBlaze V MCS (CPU core)
@@ -215,21 +220,23 @@ begin
       rst      => rst,
       clk      => clk,
       uart_tx  => uart_rx_out,
-      uart_rx  => uart_tx_in
+      uart_rx  => uart_tx_in,
+      gpo1     => gpo1,
+      gpi1     => gpi1
     );
 
   --------------------------------------------------------------------------------
   -- unused I/Os
 
   hdmi_rx_txen   <= '0';
-  hdmi_tx_clk_p  <= '0';
-  hdmi_tx_clk_n  <= '1';
-  hdmi_tx_d_p(0) <= '0';
-  hdmi_tx_d_n(0) <= '1';
-  hdmi_tx_d_p(1) <= '0';
-  hdmi_tx_d_n(1) <= '1';
-  hdmi_tx_d_p(2) <= '0';
-  hdmi_tx_d_n(2) <= '1';
+  U_HDMI_TX_CLK: component obufds
+    port map (i  => '0', o  => hdmi_tx_clk_p, ob => hdmi_tx_clk_n);
+  U_HDMI_TX_D0: component obufds
+    port map (i  => '0', o  => hdmi_tx_d_p(0), ob => hdmi_tx_d_n(0));
+  U_HDMI_TX_D1: component obufds
+    port map (i  => '0', o  => hdmi_tx_d_p(1), ob => hdmi_tx_d_n(1));
+  U_HDMI_TX_D2: component obufds
+    port map (i  => '0', o  => hdmi_tx_d_p(2), ob => hdmi_tx_d_n(2));
   oled_res_n     <= '0';
   oled_d_c       <= '0';
   oled_sclk      <= '0';

@@ -25,7 +25,9 @@ package mbv_mcs_test_cpu_wrapper_pkg is
       rst      : in    std_ulogic;
       clk      : in    std_ulogic;
       uart_tx  : out   std_ulogic;
-      uart_rx  : in    std_ulogic
+      uart_rx  : in    std_ulogic;
+      gpo1     : out   std_ulogic_vector(31 downto 0);
+      gpi1     : in    std_ulogic_vector(31 downto 0)
     );
   end component mbv_mcs_test_cpu_wrapper;
 
@@ -43,7 +45,9 @@ entity mbv_mcs_test_cpu_wrapper is
     rst      : in    std_ulogic;
     clk      : in    std_ulogic;
     uart_tx  : out   std_ulogic;
-    uart_rx  : in    std_ulogic
+    uart_rx  : in    std_ulogic;
+    gpo1     : out   std_ulogic_vector(31 downto 0);
+    gpi1     : in    std_ulogic_vector(31 downto 0)
   );
 end entity mbv_mcs_test_cpu_wrapper;
 
@@ -55,7 +59,9 @@ architecture rtl of mbv_mcs_test_cpu_wrapper is
     rst_n           : in    std_ulogic;
     clk             : in    std_ulogic;
     uart_txd        : out   std_ulogic;
-    uart_rxd        : in    std_ulogic
+    uart_rxd        : in    std_ulogic;
+    gpio1_tri_o     : out   std_ulogic_vector(31 downto 0);
+    gpio1_tri_i     : in    std_ulogic_vector(31 downto 0)
   );
   end component mbv_mcs_test_cpu;
 
@@ -63,10 +69,12 @@ begin
 
   CPU: component mbv_mcs_test_cpu
     port map (
-      rst_n    => not rst,
-      clk      => clk,
-      uart_txd => uart_tx,
-      uart_rxd => uart_rx
+      rst_n       => not rst,
+      clk         => clk,
+      uart_txd    => uart_tx,
+      uart_rxd    => uart_rx,
+      gpio1_tri_o => gpo1,
+      gpio1_tri_i => gpi1
     );
 
 end architecture rtl;
