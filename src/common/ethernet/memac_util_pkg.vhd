@@ -24,8 +24,6 @@ package memac_util_pkg is
 
   constant kByte : integer := 1024;
 
-  type sulv_array_t is array(natural range <>) of std_ulogic_vector;
-
   type prng_t is protected
     procedure rand_seed(s1, s2 : in integer);
     impure function rand_real return real;
@@ -35,6 +33,7 @@ package memac_util_pkg is
 
   shared variable prng : prng_t;
 
+  function ternary( b : boolean; t, f : integer ) return integer;
   function bool2sl( b : boolean ) return std_ulogic;
   function bin2gray( bin : std_ulogic_vector ) return std_ulogic_vector;
   function gray2bin( gray : std_ulogic_vector ) return std_ulogic_vector;
@@ -75,6 +74,11 @@ package body memac_util_pkg is
       return std_ulogic_vector(to_unsigned(integer(r * real(max - min) + real(min)), width));
     end function rand_slv;
   end protected body prng_t;
+
+  function ternary( b : boolean; t, f : integer ) return integer is
+  begin
+    if b then return t; else return f; end if;
+  end function ternary;
 
   function bool2sl( b : boolean ) return std_ulogic is
   begin

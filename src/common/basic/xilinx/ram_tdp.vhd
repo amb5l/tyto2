@@ -1,5 +1,7 @@
 --------------------------------------------------------------------------------
--- ram_tdp.vhd (VHDL-1993)                                                    --
+-- ram_tdp.vhd                                                                --
+-- True dual port RAM, separate clocks, synchronous reset.                    --
+-- Infers block RAM correctly in Vivado. (VHDL-1993)                          --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --

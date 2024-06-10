@@ -14,42 +14,26 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
+-- TODO check IPG length flexibility
+
+use work.memac_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
 
 package memac_rx_fe_pkg is
 
-  type memac_rx_opt_t is record
-    ipg_min : integer;    -- minimum IPG
-    pre_inc : std_ulogic; -- include preamble & SFD
-    fcs_inc : std_ulogic; -- include FCS
-    crc_inc : std_ulogic; -- include CRC
-  end record memac_rx_opt_t;
-
-  type memac_rx_flag_t is record
-    ipg_short : std_ulogic; -- short IPG
-    pre_inc   : std_ulogic; -- includes preamble & SFD
-    pre_short : std_ulogic; -- short preamble (< 8)
-    pre_long  : std_ulogic; -- long preamble (> 8)
-    pre_bad   : std_ulogic; -- bad preamble or SFD
-    data_err  : std_ulogic; -- data errors
-    fcs_inc   : std_ulogic; -- includes FCS
-    fcs_bad   : std_ulogic; -- FCS is bad
-    crc_inc   : std_ulogic; -- includes CRC (over payload and FCS)
-    truncate  : std_ulogic; -- was truncated
-  end record memac_rx_flag_t;
-
   component memac_rx_fe is
     port (
       rst      : in    std_ulogic;
       clk      : in    std_ulogic;
-      opt      : in    memac_rx_opt_t;
+      clken    : in    std_ulogic;
+      opt      : in    rx_opt_t;
       drops    : out   std_ulogic_vector(31 downto 0);
       prq_rdy  : in    std_ulogic;
       prq_len  : out   std_ulogic_vector;
       prq_idx  : out   std_ulogic_vector;
-      prq_flag : out   memac_rx_flag_t;
+      prq_flag : out   rx_flag_t;
       prq_stb  : out   std_ulogic;
       pfq_rdy  : in    std_ulogic;
       pfq_len  : in    std_ulogic_vector;
@@ -68,25 +52,26 @@ end package memac_rx_fe_pkg;
 
 --------------------------------------------------------------------------------
 
-library ieee;
-  use ieee.std_logic_1164.all;
-  use ieee.numeric_std.all;
-
+use work.tyto_types_pkg.all;
+use work.memac_pkg.all;
 use work.memac_util_pkg.all;
 use work.crc32_eth_8_pkg.all;
 
-use work.memac_rx_fe_pkg.all;
+library ieee;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 entity memac_rx_fe is
   port (
     rst      : in    std_ulogic;
     clk      : in    std_ulogic;
-    opt      : in    memac_rx_opt_t;
+    clken    : in    std_ulogic;
+    opt      : in    rx_opt_t;
     drops    : out   std_ulogic_vector(31 downto 0);
     prq_rdy  : in    std_ulogic;
     prq_len  : out   std_ulogic_vector;
     prq_idx  : out   std_ulogic_vector;
-    prq_flag : out   memac_rx_flag_t;
+    prq_flag : out   rx_flag_t;
     prq_stb  : out   std_ulogic;
     pfq_rdy  : in    std_ulogic;
     pfq_len  : in    std_ulogic_vector;
@@ -109,10 +94,9 @@ architecture rtl of memac_rx_fe is
 
   signal state      : state_t;
   signal count      : integer range 0 to COUNT_MAX;
-  signal pkt_opt    : memac_rx_opt_t;
   signal umi_dv_r   : std_ulogic_vector(1 to 5);
   signal umi_er_r   : std_ulogic_vector(umi_dv_r'range);
-  signal umi_data_r : sulv_array_t(umi_dv_r'range)(7 downto 0);
+  signal umi_data_r : sulv_vector(umi_dv_r'range)(7 downto 0);
   signal buf_wr     : std_ulogic;
   signal buf_wptr   : std_ulogic_vector(buf_idx'range);
   signal buf_rptr   : std_ulogic_vector(buf_idx'range);
@@ -128,7 +112,6 @@ begin
 
       state      <= IDLE;
       count      <= 0;
-      pkt_opt    <= (ipg_min => 12, pre_inc => '0', fcs_inc => '0', crc_inc => '0');
       umi_dv_r   <= (umi_dv_r'range => '0');
       umi_er_r   <= (umi_er_r'range => '0');
       umi_data_r <= (umi_data_r'range => (umi_data_r'element'range => '0'));
@@ -143,7 +126,7 @@ begin
       drops      <= (drops'range => '0');
       pfq_stb_r  <= (pfq_stb_r'range => '0');
 
-    elsif rising_edge(clk) then
+    elsif rising_edge(clk) and clken = '1' then
 
       umi_dv_r   <= umi_dv   & umi_dv_r   ( umi_dv_r'low   to umi_dv_r'high-1   );
       umi_er_r   <= umi_er   & umi_er_r   ( umi_er_r'low   to umi_er_r'high-1   );
@@ -156,10 +139,10 @@ begin
           crc32 <= (others => '1');
           if umi_dv_r(4) = '1' then
             if prq_rdy = '1' then
-              buf_wr  <= opt.pre_inc;
+              buf_wr  <= opt(RX_OPT_PRE_INC_BIT);
               prq_len <= (prq_len'range => '0');
-              prq_flag.pre_inc <= opt.pre_inc;
-              prq_flag.fcs_bad <= '1';
+              prq_flag(RX_FLAG_PRE_INC_BIT) <= opt(RX_OPT_PRE_INC_BIT);
+              prq_flag(RX_FLAG_FCS_BAD_BIT) <= '1';
               state <= PRE;
               count <= 0;
             else
@@ -179,25 +162,25 @@ begin
           count <= count + 1;
           if umi_data_r(5) = x"D5" then
             if count < 7 then
-              prq_flag.pre_short <= '1';
+              prq_flag(RX_FLAG_PRE_SHORT_BIT) <= '1';
             elsif count > 7 then
-              prq_flag.pre_long <= '1';
+              prq_flag(RX_FLAG_PRE_LONG_BIT) <= '1';
             end if;
             buf_wr <= '1';
             state  <= PKT;
             count  <= 0;
           elsif umi_data_r(5) = x"55" then
             if count > 6 then
-              prq_flag.pre_long <= '1';
+              prq_flag(RX_FLAG_PRE_LONG_BIT) <= '1';
             end if;
           else
-            prq_flag.pre_bad <= '1';
+            prq_flag(RX_FLAG_PRE_BAD_BIT) <= '1';
             buf_wr <= '1';
             state <= PKT;
             count <= 0;
           end if;
           if umi_er_r(5) = '1' then
-            prq_flag.pre_bad <= '1';
+            prq_flag(RX_FLAG_PRE_BAD_BIT) <= '1';
           end if;
           if umi_dv_r(4) = '0' then -- premature end of packet
             buf_wr <= '0';
@@ -208,11 +191,11 @@ begin
         when PKT =>
           crc32 <= crc32_eth_8(umi_data_r(5),crc32);
           if umi_er_r(5) = '1' then
-            prq_flag.data_err <= '1';
+            prq_flag(RX_FLAG_DATA_ERR_BIT) <= '1';
           end if;
           if umi_dv & umi_dv_r = "011111" then -- FCS is next
-            buf_wr <= pkt_opt.fcs_inc;
-            prq_flag.fcs_inc <= pkt_opt.fcs_inc;
+            buf_wr <= opt(RX_OPT_FCS_INC_BIT);
+            prq_flag(RX_FLAG_FCS_INC_BIT) <= opt(RX_OPT_FCS_INC_BIT);
             state  <= FCS;
             count  <= 0;
           elsif umi_dv_r(4) = '0' then -- this is last byte
@@ -230,7 +213,7 @@ begin
             and crc32( 15 downto  8 ) = umi_data_r(3)
             and crc32(  7 downto  0 ) = umi_data_r(2)
             then
-              prq_flag.fcs_bad <= '0';
+              prq_flag(RX_FLAG_FCS_BAD_BIT) <= '0';
             end if;
           elsif count = 3 then
             buf_wr  <= '0';
@@ -244,8 +227,8 @@ begin
         when IPG =>
           if umi_dv_r(3) = '1' then
             prq_flag <= (others => '0');
-            if count < pkt_opt.ipg_min-2 then
-              prq_flag.ipg_short <= '1';
+            if count < to_integer(unsigned(opt(RX_OPT_IPG_MIN_RANGE)))-2 then
+              prq_flag(RX_FLAG_IPG_SHORT_BIT) <= '1';
             end if;
             state <= IDLE;
             count <= 0;
@@ -270,7 +253,7 @@ begin
           incr(buf_wptr);
           incr(prq_len);
         else
-          prq_flag.truncate <= '1';
+          prq_flag(RX_FLAG_TRUNCATE_BIT) <= '1';
         end if;
       end if;
 
