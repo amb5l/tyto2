@@ -28,6 +28,7 @@ package memac_mdio_pkg is
       rst  : in    std_ulogic;
       clk  : in    std_ulogic;
       stb  : in    std_ulogic;
+      pre  : in    std_ulogic;
       r_w  : in    std_ulogic;
       pa   : in    std_ulogic_vector(4 downto 0);
       ra   : in    std_ulogic_vector(4 downto 0);
@@ -56,6 +57,7 @@ entity memac_mdio is
     rst  : in    std_ulogic;                      -- PHY reset
     clk  : in    std_ulogic;                      -- system clock e.g. 100 MHz
     stb  : in    std_ulogic;
+    pre  : in    std_ulogic;                      -- enable preamble
     r_w  : in    std_ulogic;
     pa   : in    std_ulogic_vector(4 downto 0);
     ra   : in    std_ulogic_vector(4 downto 0);
@@ -71,7 +73,7 @@ end entity memac_mdio;
 
 architecture rtl of memac_mdio is
 
-  type state_t is (IDLE,PREAMBLE,TRANSACTION);
+  type state_t is (IDLE,SKIP,PREAMBLE,TRANSACTION);
 
   signal state     : state_t;
   signal count_div : integer range 0 to DIV5M-1;
@@ -121,10 +123,20 @@ begin
             sro(17 downto 16) <= "10" when r_w = '0' else "00";
             sro(15 downto  0) <= wd;
             sri <= (others => 'X');
-            mdo  <= '1';
-            mdoe <= '1';
-            state <= PREAMBLE;
+            if pre = '1' then
+              mdo  <= '1';
+              mdoe <= '1';
+              state <= PREAMBLE;
+            else
+              state <= SKIP;
+            end if;
           end if;
+
+        when SKIP =>
+          mdo  <= sro(31);
+          mdoe <= '1';
+          sro  <= sro(30 downto 0) & 'X';
+          state <= TRANSACTION;
 
         -- 32 cycle preamble
         when PREAMBLE  =>

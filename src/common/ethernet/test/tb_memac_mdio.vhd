@@ -17,6 +17,7 @@ architecture sim of tb_memac_mdio is
   signal rst  : std_ulogic;
   signal clk  : std_ulogic;
   signal stb  : std_ulogic;
+  signal pre  : std_ulogic;
   signal r_w  : std_ulogic;
   signal pa   : std_ulogic_vector(4 downto 0);
   signal ra   : std_ulogic_vector(4 downto 0);
@@ -38,24 +39,33 @@ begin
 
   P_MAIN: process
 
+    variable test_pre : std_ulogic;
     variable test_r_w : std_ulogic;
     variable test_pa  : std_ulogic_vector(4 downto 0);
     variable test_ra  : std_ulogic_vector(4 downto 0);
     variable test_wd  : std_ulogic_vector(15 downto 0);
     variable test_rd  : std_ulogic_vector(15 downto 0);
 
-    procedure mdio_transaction(t_r_w : std_ulogic; t_pa : std_ulogic_vector(4 downto 0); t_ra : std_ulogic_vector(4 downto 0); t_wd : std_ulogic_vector(15 downto 0)) is
+    procedure mdio_transaction(
+      t_pre : std_ulogic;
+      t_r_w : std_ulogic;
+      t_pa  : std_ulogic_vector(4 downto 0);
+      t_ra  : std_ulogic_vector(4 downto 0);
+      t_wd  : std_ulogic_vector(15 downto 0)
+    ) is
     begin
       while rdy = '0' loop
         wait until rising_edge(clk);
       end loop;
       stb <= '1';
+      pre <= t_pre;
       r_w <= t_r_w;
       pa  <= t_pa;
       ra  <= t_ra;
       wd  <= t_wd;
       wait until rising_edge(clk);
       stb <= '0';
+      pre <= 'X';
       r_w <= 'X';
       pa  <= (others => 'X');
       ra  <= (others => 'X');
@@ -66,18 +76,20 @@ begin
 
     prng.rand_seed(123,456);
     stb <= '0';
+    pre <= 'X';
     r_w <= 'X';
     pa  <= (others => 'X');
     ra  <= (others => 'X');
     wd  <= (others => 'X');
     wait until rst = '0';
     for i in 0 to COUNT-1 loop
+      test_pre := prng.rand_slv(0,1,1)(0);
       test_r_w := prng.rand_slv(0,1,1)(0);
       test_pa  := prng.rand_slv(0,31,5);
       test_ra  := prng.rand_slv(0,31,5);
       test_wd  := prng.rand_slv(0,65535,16);
       test_rd  := "01" & test_r_w & not test_r_w & test_pa & test_ra & "00";
-      mdio_transaction(test_r_w,test_pa,test_ra,test_wd);
+      mdio_transaction(test_pre,test_r_w,test_pa,test_ra,test_wd);
       wait until rising_edge(clk) and rdy = '1';
       if test_r_w = '0' then
         assert test_wd = phy_wd report "write mismatch: tx " & to_hstring(test_wd) & " rx " & to_hstring(phy_wd) severity failure;
@@ -96,6 +108,7 @@ begin
       rst  => rst,
       clk  => clk,
       stb  => stb,
+      pre  => pre,
       r_w  => r_w,
       pa   => pa,
       ra   => ra,
