@@ -23,10 +23,10 @@ use work.memac_tx_pkg.all;
 use work.memac_rx_pkg.all;
 use work.mbv_mcs_wrapper_pkg.all;
 use work.mbv_mcs_memac_bridge_pkg.all;
+use work.memac_mdio_pkg.all;
 use work.memac_tx_rgmii_pkg.all;
 use work.memac_rx_rgmii_pkg.all;
 use work.memac_rx_rgmii_io_pkg.all;
-use work.memac_mdio_pkg.all;
 use work.sync_reg_u_pkg.all;
 
 library ieee;
@@ -196,14 +196,15 @@ end entity mb_memac_digilent_nexys_video;
 
 architecture rtl of mb_memac_digilent_nexys_video is
 
-  signal rsta         : std_ulogic; -- asynchronous reset from MMCM
   signal clk_200m     : std_ulogic;
   signal clk_125m_0   : std_ulogic;
   signal clk_125m_90  : std_ulogic;
   signal clk_100m     : std_logic;
 
+  signal rst_a        : std_ulogic; -- asynchronous reset from MMCM
   signal rst_100m     : std_ulogic; -- clk_100m synchronous reset
   signal rst_125m     : std_ulogic; -- clk_125m synchronous reset
+  signal umi_rst_a    : std_ulogic; -- UMI domain asynchronous reset
 
   signal gpi          : sulv_vector(1 to 4)(31 downto 0);
   signal gpo          : sulv_vector(1 to 4)(31 downto 0);
@@ -228,6 +229,7 @@ architecture rtl of mb_memac_digilent_nexys_video is
   signal tx_buf_dpin  : std_ulogic_vector(3 downto 0);
   signal tx_buf_dout  : std_ulogic_vector(31 downto 0);
   signal tx_buf_dpout : std_ulogic_vector(3 downto 0);
+  signal tx_umi_rst_s : std_ulogic;
   signal tx_umi_rst   : std_ulogic;
   signal tx_umi_clk   : std_ulogic;
   signal tx_umi_clken : std_ulogic;
@@ -253,6 +255,7 @@ architecture rtl of mb_memac_digilent_nexys_video is
   signal rx_buf_dpin  : std_ulogic_vector(3 downto 0);
   signal rx_buf_dout  : std_ulogic_vector(31 downto 0);
   signal rx_buf_dpout : std_ulogic_vector(3 downto 0);
+  signal rx_umi_rst_s : std_ulogic;
   signal rx_umi_rst   : std_ulogic;
   signal rx_umi_clk   : std_ulogic;
   signal rx_umi_clken : std_ulogic;
@@ -263,7 +266,6 @@ architecture rtl of mb_memac_digilent_nexys_video is
   signal rx_ibs_crx   : std_ulogic;
   signal rx_ibs_crxer : std_ulogic;
   signal rx_ibs_crf   : std_ulogic;
-  signal rx_ibs_col   : std_ulogic;
   signal rx_ibs_link  : std_ulogic;
   signal rx_ibs_spd   : std_ulogic_vector(1 downto 0);
   signal rx_ibs_fdx   : std_ulogic;
@@ -309,7 +311,7 @@ begin
     port map (
       rsti  => not btn_rst_n,
       clki  => clki_100m,
-      rsto  => rsta,
+      rsto  => rst_a,
       clk0  => clk_200m,
       clk1  => clk_125m_0,
       clk2  => clk_125m_90,
@@ -327,7 +329,7 @@ begin
     port map (
       rst  => '0',
       clk  => clk_100m,
-      i(0) => rsta,
+      i(0) => rst_a,
       o(0) => rst_100m
     );
 
@@ -339,16 +341,42 @@ begin
     port map (
       rst  => '0',
       clk  => clk_125m_0,
-      i(0) => rsta,
+      i(0) => rst_a,
       o(0) => rst_125m
     );
+
+  U_SYNC_RST_TX: component sync_reg_u
+    generic map (
+      stages    => 3,
+      rst_state => '1'
+    )
+    port map (
+      rst  => '0',
+      clk  => tx_umi_clk,
+      i(0) => umi_rst_a,
+      o(0) => tx_umi_rst_s
+    );
+  tx_umi_rst <= rst_a or tx_umi_rst_s;
+
+  U_SYNC_RST_RX: component sync_reg_u
+    generic map (
+      stages    => 3,
+      rst_state => '1'
+    )
+    port map (
+      rst  => '0',
+      clk  => rx_umi_clk,
+      i(0) => umi_rst_a,
+      o(0) => rx_umi_rst_s
+    );
+  rx_umi_rst <= rst_a or rx_umi_rst_s;
 
   --------------------------------------------------------------------------------
   -- IDELAYCTRL for IDELAYE2 usage in RGMII RX
 
   U_IDELAYCTRL: component idelayctrl
     port map (
-      rst    => rsta,
+      rst    => rst_a,
       refclk => clk_200m,
       rdy    => open
     );
@@ -417,61 +445,33 @@ begin
   --------------------------------------------------------------------------------
   -- GPO
 
-  -- reset
-
-  -- LEDs
-
- -- MDIO preamble enable
-  --md_pre <= gpo
-
-  -- TX speed and options
-  tx_umi_spd <= gpo(1)(9 downto 8);
-  tx_prq_opt(TX_OPT_PRE_LEN_RANGE) <= gpo(1)(13 downto 10);
-  tx_prq_opt(TX_OPT_PRE_AUTO_BIT)  <= gpo(1)(14);
-  tx_prq_opt(TX_OPT_FCS_AUTO_BIT)  <= gpo(1)(15);
-
-
-  -- RX options
-  rx_umi_spdi                  <= gpo(3)( 1 downto  0);
-  rx_opt(RX_OPT_IPG_MIN_RANGE) <= gpo(3)(11 downto  8);
-  rx_opt(RX_OPT_PRE_LEN_RANGE) <= gpo(3)(15 downto 12);
-  rx_opt(RX_OPT_PRE_INC_BIT)   <= gpo(3)(8);
-  rx_opt(RX_OPT_FCS_INC_BIT)   <= gpo(3)(9);
-  rx_opt(RX_OPT_CRC_INC_BIT)   <= gpo(3)(10);
+  umi_rst_a                         <= rst_a or not gpo(1)(0);
+  tx_umi_spd                       <= gpo(1)( 5 downto  4);
+  rx_umi_spdi                      <= gpo(1)( 7 downto  6);
+  rx_opt(RX_OPT_IPG_MIN_RANGE)     <= gpo(1)(11 downto  8);
+  rx_opt(RX_OPT_PRE_LEN_RANGE)     <= gpo(1)(15 downto 12);
+  rx_opt(RX_OPT_PRE_INC_BIT)       <= gpo(1)(          16);
+  rx_opt(RX_OPT_FCS_INC_BIT)       <= gpo(1)(          17);
+  rx_opt(RX_OPT_CRC_INC_BIT)       <= gpo(1)(          18);
 
   --------------------------------------------------------------------------------
   -- GPI
 
-  -- queue and MDIO status
-  gpi(1)(0) <= tx_prq_rdy;
-  gpi(1)(1) <= tx_pfq_rdy;
-  gpi(1)(2) <= rx_prq_rdy;
-  gpi(1)(3) <= rx_pfq_rdy;
-  gpi(1)(4) <= md_rdy;
+  gpi(1)(           0) <= tx_prq_rdy;
+  gpi(1)(           1) <= tx_pfq_rdy;
+  gpi(1)(           2) <= rx_prq_rdy;
+  gpi(1)(           3) <= rx_pfq_rdy;
+  gpi(1)(           4) <= md_rdy;
+  gpi(1)( 6 downto  5) <= rx_umi_spdo;
+  gpi(1)(           7) <= rx_ibs_crs;
+  gpi(1)(           8) <= rx_ibs_crx;
+  gpi(1)(           9) <= rx_ibs_crxer;
+  gpi(1)(          10) <= rx_ibs_crf;
+  gpi(1)(          11) <= rx_ibs_link;
+  gpi(1)(13 downto 12) <= rx_ibs_spd;
+  gpi(1)(          14) <= rx_ibs_fdx;
 
-    -- RX detected speed
-    gpi(1)(1 downto 0) <= rx_umi_spdo;
-
-
-  -- RGMII IBS
-  gpi(2)(0)          <= rx_ibs_crs;
-  gpi(2)(1)          <= rx_ibs_crx;
-  gpi(2)(2)          <= rx_ibs_crxer;
-  gpi(2)(3)          <= rx_ibs_crf;
-  gpi(2)(4)          <= rx_ibs_col;
-  gpi(2)(5)          <= rx_ibs_link;
-  gpi(2)(7 downto 6) <= rx_ibs_spd;
-  gpi(2)(8)          <= rx_ibs_fdx;
-
-  -- RX drop count
-  gpi(3) <= rx_drops;
-
-  --------------------------------------------------------------------------------
-  -- PHY and UMI reset
-
-  --eth_rst_n <=
-  --tx_umi_rst
-  --rx_umi_rst
+  gpi(2) <= rx_drops;
 
   --------------------------------------------------------------------------------
   -- MEMAC MDIO
@@ -572,8 +572,8 @@ begin
     port map (
       ref_clk    => clk_125m_0,
       ref_clk_90 => clk_125m_90,
-      rst        => rst_125m,
       umi_spd    => tx_umi_spd,
+      umi_rst    => tx_umi_rst,
       umi_clk    => tx_umi_clk,
       umi_clken  => tx_umi_clken,
       umi_dv     => tx_umi_dv,

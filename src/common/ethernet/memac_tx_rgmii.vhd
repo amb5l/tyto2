@@ -27,7 +27,7 @@ package memac_tx_rgmii_pkg is
     port (
       ref_clk    : in    std_ulogic;
       ref_clk_90 : in    std_ulogic := '0';
-      rst        : in    std_ulogic;
+      umi_rst    : in    std_ulogic;
       umi_spd    : in    std_ulogic_vector(1 downto 0);
       umi_clk    : out   std_ulogic;
       umi_clken  : out   std_ulogic;
@@ -58,8 +58,8 @@ entity memac_tx_rgmii is
   port (
     ref_clk    : in    std_ulogic;
     ref_clk_90 : in    std_ulogic := '0'; -- not used when edge aligned
-    rst        : in    std_ulogic;
     umi_spd    : in    std_ulogic_vector(1 downto 0);
+    umi_rst    : in    std_ulogic;
     umi_clk    : out   std_ulogic;
     umi_clken  : out   std_ulogic;
     umi_dv     : in    std_ulogic;
@@ -90,17 +90,14 @@ begin
 
   umi_clk <= ref_clk;
 
-  P_SYNC: process(rst,umi_clk)
+  P_SYNC: process(umi_rst,umi_clk)
     variable cycles : integer;
   begin
-    if rst = '1' then
+    if umi_rst = '1' then
 
       cycle        <= (others => '0');
       umi_clken_e  <= '0';
       umi_clken    <= '0';
-      rgmii_clk    <= '0';
-      rgmii_ctl    <= '0';
-      rgmii_d      <= (others => '0');
       rgmii_clken  <= '0';
       rgmii_clk_d1 <= '0';
       rgmii_clk_d2 <= '0';

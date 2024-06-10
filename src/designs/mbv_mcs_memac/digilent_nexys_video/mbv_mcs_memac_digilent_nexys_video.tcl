@@ -1,6 +1,6 @@
 ################################################################################
-## mb_memac_digilent_nexys_video.xdc                                          ##
-## Board specific constraints for the mb_memac design.                        ##
+## mbv_mcs_memac_digilent_nexys_video.tcl                                     ##
+## Board specific constraints for the mbv_mcs_memac design.                   ##
 ################################################################################
 ## (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        ##
 ## This file is part of The Tyto Project. The Tyto Project is free software:  ##
@@ -15,11 +15,15 @@
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
 
-# clock
+# input reference clock
 create_clock -add -name clki_100m -period 10.00 [get_ports clki_100m]
 
 # clock renaming
 
+create_generated_clock -name clk_200m    [get_pins U_MMCM/MMCM/CLKOUT0]
+create_generated_clock -name clk_125m_0  [get_pins U_MMCM/MMCM/CLKOUT1]
+create_generated_clock -name clk_125m_90 [get_pins U_MMCM/MMCM/CLKOUT2]
+create_generated_clock -name clk_100m    [get_pins U_MMCM/MMCM/CLKOUT3]
 
 #################################################################################
 # RGMII
@@ -29,7 +33,7 @@ set rgmii_tx_pins [get_ports {eth_txctl eth_txd[*]}]
 set rgmii_rx_pins [get_ports {eth_rxctl eth_rxd[*]}]
 
 create_clock -add -name phy_rx_clk -period 8.00
-create_clock -add -name rgmii_rx_clk -period 8.00 [get_ports rgmii_rx_clk]
+create_clock -add -name rgmii_rx_clk -period 8.00 [get_ports eth_rxck]
 
 set dsn_gen [get_property generic [get_filesets sources_1]]
 if {"RGMII_ALIGN=\"EDGE\"" in $dsn_gen} {
@@ -54,14 +58,8 @@ if {"RGMII_ALIGN=\"EDGE\"" in $dsn_gen} {
     set_input_delay -add_delay -clock phy_rx_clk             -max  $RGMII_SKEW $rgmii_rx_pins
     set_input_delay -add_delay -clock phy_rx_clk -clock_fall -max  $RGMII_SKEW $rgmii_rx_pins
 
-} elsif {"RGMII_ALIGN=\"CENTER\"" in $dsn_gen} {
+} else {
 
     # center aligned
 
-} else {
-    error "Could not find a supported RGMII_ALIGN generic value"
 }
-
-# edge aligned
-
-
