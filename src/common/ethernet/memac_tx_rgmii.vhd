@@ -22,7 +22,7 @@ package memac_tx_rgmii_pkg is
 
   component memac_tx_rgmii is
     generic (
-      ALIGN : string := "EDGE" -- "EDGE" or "CENTER"
+      ALIGN : string
     );
     port (
       ref_clk    : in    std_ulogic;
@@ -45,6 +45,7 @@ end package memac_tx_rgmii_pkg;
 --------------------------------------------------------------------------------
 
 use work.memac_util_pkg.all;
+use work.sync_reg_u_pkg.all;
 use work.oddr_pkg.all;
 
 library ieee;
@@ -53,7 +54,7 @@ library ieee;
 
 entity memac_tx_rgmii is
   generic (
-    ALIGN : string := "EDGE" -- "EDGE" or "CENTER"
+    ALIGN : string -- "EDGE" or "CENTER"
   );
   port (
     ref_clk    : in    std_ulogic;
@@ -73,7 +74,8 @@ end entity memac_tx_rgmii;
 
 architecture rtl of memac_tx_rgmii is
 
-  signal cycle           : std_ulogic_vector(5 downto 0);
+  signal cycle           : std_ulogic_vector(6 downto 0);
+  signal cycles          : std_ulogic_vector(6 downto 0);
   signal rgmii_clken     : std_ulogic;
   signal rgmii_clk_d1    : std_ulogic;
   signal rgmii_clk_d2    : std_ulogic;
@@ -81,6 +83,7 @@ architecture rtl of memac_tx_rgmii is
   signal rgmii_ctl_d2    : std_ulogic;
   signal rgmii_d_d1      : std_ulogic_vector(3 downto 0);
   signal rgmii_d_d2      : std_ulogic_vector(3 downto 0);
+  signal umi_spd_s       : std_ulogic_vector(1 downto 0);
   signal umi_clken_e     : std_ulogic;
   signal umi_dv_r        : std_ulogic;
   signal umi_er_r        : std_ulogic;
@@ -90,12 +93,24 @@ begin
 
   umi_clk <= ref_clk;
 
+  U_SYNC: component sync_reg_u
+    generic map (
+      stages    => 2,
+      rst_state => '0'
+    )
+    port map (
+      rst  => umi_rst,
+      clk  => umi_clk,
+      i    => umi_spd,
+      o    => umi_spd_s
+    );
+
   P_SYNC: process(umi_rst,umi_clk)
-    variable cycles : integer;
   begin
     if umi_rst = '1' then
 
       cycle        <= (others => '0');
+      cycles       <= (others => '0');
       umi_clken_e  <= '0';
       umi_clken    <= '0';
       rgmii_clken  <= '0';
@@ -109,8 +124,16 @@ begin
     elsif rising_edge(umi_clk) then
 
       -- UMI cycles per octet: 125MHz, 12.5MHz or 1.25MHz
-      cycles := 1 when umi_spd(1) = '1' else 10 when umi_spd(0) = '1' else 100;
-      cycle <= std_ulogic_vector((unsigned(cycle) + 1) mod cycles);
+      cycles <=
+        std_ulogic_vector(to_unsigned(  9,cycles'length)) when umi_spd_s(0) = '1' else
+        std_ulogic_vector(to_unsigned( 99,cycles'length));
+      if umi_spd_s(1) = '0' then
+        if cycle = cycles then
+          cycle <= (others => '0');
+        else
+          cycle <= std_ulogic_vector((unsigned(cycle) + 1));
+        end if;
+      end if;
       umi_clken <= umi_clken_e;
       -- input registers
       if umi_clken = '1' then
@@ -120,7 +143,7 @@ begin
       end if;
       -- ODDR inputs
       rgmii_clken  <= '0';
-      if umi_spd(1) = '1' then -- 1000Mbps
+      if umi_spd_s(1) = '1' then -- 1000Mbps
         umi_clken_e  <= '1';
         rgmii_clken  <= '1';
         rgmii_clk_d1 <= '1';
@@ -129,8 +152,7 @@ begin
         rgmii_ctl_d2 <= umi_er_r xor umi_dv_r;
         rgmii_d_d1   <= umi_d_r(3 downto 0);
         rgmii_d_d2   <= umi_d_r(7 downto 4);
-        cycle        <= (others => 'X');
-      elsif umi_spd(0) = '1' then -- 100Mbps
+      elsif umi_spd_s(0) = '1' then -- 100Mbps
         umi_clken_e <= bool2sl(unsigned(cycle) = 5);
         if    unsigned(cycle) = 8 then
           rgmii_clken  <= '1';
@@ -210,7 +232,7 @@ begin
 
   GEN_ALIGN: if ALIGN = "EDGE" generate
 
-    U_ODDR: component oddr
+    U_ODDR_CLK: component oddr
       port map (
         rst   => '0',
         set   => '0',
@@ -234,7 +256,7 @@ begin
       end if;
     end process P_180;
 
-    U_ODDR: component oddr
+    U_ODDR_CLK: component oddr
       port map (
         rst   => '0',
         set   => '0',
@@ -251,7 +273,7 @@ begin
     port map (
       rst            => '0',
       set            => '0',
-      clk            => ref_clk_90,
+      clk            => ref_clk,
       clken          => rgmii_clken,
       d1(4)          => rgmii_ctl_d1,
       d1(3 downto 0) => rgmii_d_d1,

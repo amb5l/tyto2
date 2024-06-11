@@ -35,7 +35,8 @@ VIVADO_PART=$(FPGA_DEVICE)
 VIVADO_LANGUAGE=VHDL-2008
 VIVADO_DSN_TOP=$(DESIGN)_$(BOARD)
 VIVADO_DSN_GEN=\
-	RGMII_ALIGN=$(MEMAC_RGMII_ALIGN) \
+	RGMII_TX_ALIGN=$(MEMAC_RGMII_TX_ALIGN) \
+	RGMII_RX_ALIGN=$(MEMAC_RGMII_RX_ALIGN) \
 	TX_BUF_SIZE=$(MEMAC_TX_BUF_SIZE) \
 	RX_BUF_SIZE=$(MEMAC_RX_BUF_SIZE)
 VIVADO_DSN_SRC=\
@@ -56,13 +57,14 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/ethernet/memac_rx.vhd \
 	$(toplevel)/src/common/ethernet/memac_spd.vhd \
 	$(toplevel)/src/common/ethernet/memac_tx_$(PHY).vhd \
+	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)_$(FPGA_FAMILY)/memac_tx_$(PHY)_io.vhd \
 	$(toplevel)/src/common/ethernet/memac_rx_$(PHY).vhd \
 	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)_$(FPGA_FAMILY)/memac_rx_$(PHY)_io.vhd \
 	$(toplevel)/src/common/ethernet/memac_mdio.vhd \
 	$(toplevel)/src/common/riscv/mbv_mcs/mbv_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN)_bridge.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
-VIVADO_BD_TCL=$(toplevel)/src/common/riscv/mbv_mcs/mbv_mcs.tcl
+VIVADO_BD_TCL=$(toplevel)/src/common/riscv/mbv_mcs/mbv_mcs.tcl=100000000
 VIVADO_PROC_REF=$(DESIGN)_$(BOARD)_cpu
 VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_SIM_SRC=\
@@ -71,7 +73,9 @@ VIVADO_SIM_ELF=$(VITIS_DIR)/$(VITIS_ELF_DBG)
 VIVADO_SIM_RUN=tb_$(DESIGN)
 VIVADO_XDC=\
 	$(toplevel)/src/boards/$(BOARD)/$(BOARD).tcl=IMPL \
-	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).tcl=IMPL
+	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).tcl=SYNTH,IMPL \
+		$(toplevel)/src/common/ethernet/memac_tx_rgmii.tcl=IMPL \
+	$(toplevel)/src/common/ethernet/memac_rx_rgmii.tcl=IMPL
 
 include $(make_fpga)/vivado.mak
 
@@ -88,7 +92,7 @@ VSCODE_SRC.unisim=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd
 VSCODE_AUX=\
-	$(VIVADO_BD_TCL) \
+	$(call VIVADO_SRC_FILE,$(VIVADO_BD_TCL)) \
 	$(call VIVADO_SRC_FILE,$(VIVADO_XDC))
 
 include $(make_fpga)/vscode.mak

@@ -15,51 +15,80 @@
 ## https://www.gnu.org/licenses/.                                             ##
 ################################################################################
 
-# input reference clock
-create_clock -add -name clki_100m -period 10.00 [get_ports clki_100m]
+set_msg_config -id {Common 17-1548} -new_severity {ERROR}
 
-# clock renaming
+set script_file_tail [file tail [file normalize [info script]]]
+set script_file_root [file rootname $script_file_tail]
 
-create_generated_clock -name clk_200m    [get_pins U_MMCM/MMCM/CLKOUT0]
-create_generated_clock -name clk_125m_0  [get_pins U_MMCM/MMCM/CLKOUT1]
-create_generated_clock -name clk_125m_90 [get_pins U_MMCM/MMCM/CLKOUT2]
-create_generated_clock -name clk_100m    [get_pins U_MMCM/MMCM/CLKOUT3]
+set rgmii_ports_tx_clk [get_ports eth_txck]
+set rgmii_ports_tx_out [get_port {eth_txctl eth_txd[*]}]
+set rgmii_ports_rx_clk [get_port {eth_rxck}]
+set rgmii_ports_rx_in  [get_port {eth_rxctl eth_rxd[*]}]
 
-#################################################################################
-# RGMII
+set dsn_gen [get_property -quiet generic [get_filesets sources_1]]
+if {[llength $dsn_gen]} {
 
-set RGMII_SKEW 0.5
-set rgmii_tx_pins [get_ports {eth_txctl eth_txd[*]}]
-set rgmii_rx_pins [get_ports {eth_rxctl eth_rxd[*]}]
+    #################################################################################
+    # synthesis specific
 
-create_clock -add -name phy_rx_clk -period 8.00
-create_clock -add -name rgmii_rx_clk -period 8.00 [get_ports eth_rxck]
+    # get required design generics
+    foreach c {RGMII_TX_ALIGN RGMII_RX_ALIGN} {
+        set found 0
+        foreach g $dsn_gen {
+            if {[string match "$c=*" $g]} {
+                set $c [lindex [split $g "="] 1]
+                set found 1
+            }
+        }
+        if {!$found} {
+            error "$c not found in design generics ($dsn_gen)"
+        }
+    }
 
-set dsn_gen [get_property generic [get_filesets sources_1]]
-if {"RGMII_ALIGN=\"EDGE\"" in $dsn_gen} {
+    # set associated properties
+    create_property -quiet USER_ALIGN port
+    set_property USER_ALIGN $RGMII_TX_ALIGN $rgmii_ports_tx_clk
+    set_property USER_ALIGN $RGMII_RX_ALIGN $rgmii_ports_rx_clk
 
-    # edge aligned
-
-    set_output_delay -max -$RGMII_SKEW -clock [get_clocks umi_tx_clk] [get_ports data_out]
-    set_output_delay -max -$RGMII_SKEW -clock [get_clocks umi_tx_clk] -clock_fall [get_ports data_out] -add_delay
-    set_output_delay -min  $RGMII_SKEW -clock [get_clocks umi_tx_clk] [get_ports data_out*]
-    set_output_delay -min  $RGMII_SKEW -clock [get_clocks umi_tx_clk] -clock_fall [get_ports data_out*] -add_delay
-
-    set_multicycle_path 0 -rise_from [get_clocks phy_rx_clk] -rise_to [get_clocks rgmii_rx_clk]
-    set_multicycle_path 0 -fall_from [get_clocks phy_rx_clk] -fall_to [get_clocks rgmii_rx_clk]
-
-    set_false_path -setup -rise_from [get_clocks phy_rx_clk] -fall_to [get_clocks rgmii_rx_clk]
-    set_false_path -hold  -rise_from [get_clocks phy_rx_clk] -rise_to [get_clocks rgmii_rx_clk]
-    set_false_path -setup -fall_from [get_clocks phy_rx_clk] -rise_to [get_clocks rgmii_rx_clk]
-    set_false_path -hold  -fall_from [get_clocks phy_rx_clk] -fall_to [get_clocks rgmii_rx_clk]
-
-    set_input_delay            -clock phy_rx_clk             -min -$RGMII_SKEW $rgmii_rx_pins
-    set_input_delay -add_delay -clock phy_rx_clk -clock_fall -min -$RGMII_SKEW $rgmii_rx_pins
-    set_input_delay -add_delay -clock phy_rx_clk             -max  $RGMII_SKEW $rgmii_rx_pins
-    set_input_delay -add_delay -clock phy_rx_clk -clock_fall -max  $RGMII_SKEW $rgmii_rx_pins
+    #################################################################################
 
 } else {
 
-    # center aligned
+    #################################################################################
+    # implememtation specific
+
+    # clocks
+
+    create_clock -add -name clki_100m -period 10.00 [get_ports clki_100m]
+    set clk_100m [get_clocks clki_100m]
+    create_generated_clock -name clk_200m    [get_pins U_MMCM/MMCM/CLKOUT0]
+    set clk_200m [get_clocks clk_200m]
+    create_generated_clock -name clk_125m_0  [get_pins U_MMCM/MMCM/CLKOUT1]
+    set clk_125m_0 [get_clocks clk_125m_0]
+    create_generated_clock -name clk_125m_90 [get_pins U_MMCM/MMCM/CLKOUT2]
+    set clk_125m_90 [get_clocks clk_125m_90]
+    create_generated_clock -name clk_100m    [get_pins U_MMCM/MMCM/CLKOUT3]
+    set clk_100m [get_clocks clk_100m]
+
+    # RGMII
+
+    set rgmii_tx_clk_src   [get_pins U_RGMII_TX/GEN_ALIGN.U_ODDR_CLK/GEN[0].U_ODDR/C]
+    set rgmii_gtx_clk      [get_clocks clk_125m_0]
+    set RGMII_TX_ALIGN     [get_property USER_ALIGN $rgmii_ports_tx_clk]
+    set RGMII_RX_ALIGN     [get_property USER_ALIGN $rgmii_ports_rx_clk]
+    source [get_files "memac_tx_rgmii.tcl"]
+    source [get_files "memac_rx_rgmii.tcl"]
+
+    # false paths
+
+    set_false_path      -from $clk_100m           -to $clk_125m_0
+    set_false_path      -from $clk_125m_0         -to $clk_100m
+    set_false_path      -from $clk_100m           -to $rgmii_rx_rclk
+    set_false_path      -from $rgmii_rx_rclk      -to $clk_100m
+    set_false_path      -from $rgmii_rx_rclk      -to $clk_125m_0
+    set_false_path -rise_from $rgmii_rx_rclk -fall_to $rgmii_rx_rclk
+    set_false_path -fall_from $rgmii_rx_rclk -rise_to $rgmii_rx_rclk
+
+    #################################################################################
 
 }

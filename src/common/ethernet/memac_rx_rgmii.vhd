@@ -53,6 +53,7 @@ end package memac_rx_rgmii_pkg;
 
 use work.memac_util_pkg.all;
 use work.memac_spd_pkg.all;
+use work.sync_reg_u_pkg.all;
 use work.iddr_pkg.all;
 
 library ieee;
@@ -85,14 +86,26 @@ end entity memac_rx_rgmii;
 
 architecture rtl of memac_rx_rgmii is
 
+  signal umi_spdi_s    : std_ulogic_vector(1 downto 0);
   signal rgmii_ctl_r   : std_ulogic;
   signal rgmii_ctl_f   : std_ulogic;
   signal rgmii_d_r     : std_ulogic_vector(3 downto 0);
   signal rgmii_d_f     : std_ulogic_vector(3 downto 0);
-
   signal rgmii_ctl_r_l : std_ulogic;
 
 begin
+
+  U_SYNC: component sync_reg_u
+    generic map (
+      stages    => 2,
+      rst_state => '0'
+    )
+    port map (
+      rst  => umi_rst,
+      clk  => umi_clk,
+      i    => umi_spdi,
+      o    => umi_spdi_s
+    );
 
   U_IDDR: component iddr
     port map (
@@ -136,7 +149,7 @@ begin
         ibs_crf   <= bool2sl(umi_d = x"0E");
       end if;
       -- dv, er, d
-      case umi_spdi is
+      case umi_spdi_s is
         when "00" | "01" => -- 10/100 Mbps
           umi_clken <= not umi_clken;
           if rgmii_ctl_r xor rgmii_ctl_r_l then

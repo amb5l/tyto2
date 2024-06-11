@@ -26,6 +26,7 @@ use work.mbv_mcs_memac_bridge_pkg.all;
 use work.memac_mdio_pkg.all;
 use work.memac_tx_rgmii_pkg.all;
 use work.memac_rx_rgmii_pkg.all;
+use work.memac_tx_rgmii_io_pkg.all;
 use work.memac_rx_rgmii_io_pkg.all;
 use work.sync_reg_u_pkg.all;
 
@@ -36,11 +37,12 @@ library ieee;
 library unisim;
   use unisim.vcomponents.all;
 
-entity mb_memac_digilent_nexys_video is
+entity mbv_mcs_memac_digilent_nexys_video is
   generic (
-    RGMII_ALIGN : string;
-    TX_BUF_SIZE : integer;
-    RX_BUF_SIZE : integer
+    RGMII_TX_ALIGN : string;
+    RGMII_RX_ALIGN : string;
+    TX_BUF_SIZE    : integer;
+    RX_BUF_SIZE    : integer
   );
   port (
 
@@ -192,9 +194,9 @@ entity mb_memac_digilent_nexys_video is
     -- ddr3_dqs_n      : inout std_logic_vector(1 downto 0)
 
   );
-end entity mb_memac_digilent_nexys_video;
+end entity mbv_mcs_memac_digilent_nexys_video;
 
-architecture rtl of mb_memac_digilent_nexys_video is
+architecture rtl of mbv_mcs_memac_digilent_nexys_video is
 
   signal clk_200m     : std_ulogic;
   signal clk_125m_0   : std_ulogic;
@@ -293,6 +295,9 @@ architecture rtl of mb_memac_digilent_nexys_video is
   signal eth_mdo     : std_ulogic;
   signal eth_mdoe    : std_ulogic;
 
+  attribute KEEP_HIERARCHY : string;
+  attribute KEEP_HIERARCHY of mbv_mcs_memac_digilent_nexys_video : entity is "TRUE";
+
 begin
 
   --------------------------------------------------------------------------------
@@ -304,7 +309,7 @@ begin
       div    => 1,
       odiv0  => 5.0,
       odiv1  => 8,
-      odiv2  => ternary(RGMII_ALIGN = "EDGE", 0, 8),
+      odiv2  => ternary(RGMII_TX_ALIGN = "EDGE", 0, 8),
       odiv3  => 10,
       phase2 => 90.0
     )
@@ -370,6 +375,8 @@ begin
       o(0) => rx_umi_rst_s
     );
   rx_umi_rst <= rst_a or rx_umi_rst_s;
+
+  eth_rst_n <= not umi_rst_a;
 
   --------------------------------------------------------------------------------
   -- IDELAYCTRL for IDELAYE2 usage in RGMII RX
@@ -445,7 +452,7 @@ begin
   --------------------------------------------------------------------------------
   -- GPO
 
-  umi_rst_a                         <= rst_a or not gpo(1)(0);
+  umi_rst_a                        <= rst_a or not gpo(1)(0);
   tx_umi_spd                       <= gpo(1)( 5 downto  4);
   rx_umi_spdi                      <= gpo(1)( 7 downto  6);
   rx_opt(RX_OPT_IPG_MIN_RANGE)     <= gpo(1)(11 downto  8);
@@ -567,7 +574,7 @@ begin
 
   U_RGMII_TX: component memac_tx_rgmii
     generic map (
-      ALIGN => RGMII_ALIGN
+      ALIGN => RGMII_TX_ALIGN
     )
     port map (
       ref_clk    => clk_125m_0,
@@ -584,9 +591,18 @@ begin
       rgmii_d    => rgmii_tx_d
     );
 
-  eth_txck  <= rgmii_tx_clk;
-  eth_txctl <= rgmii_tx_ctl;
-  eth_txd   <= rgmii_tx_d;
+  U_RGMII_TX_IO: component memac_tx_rgmii_io
+    generic map (
+      ALIGN => RGMII_TX_ALIGN
+    )
+    port map (
+      i_clk => rgmii_tx_clk,
+      i_ctl => rgmii_tx_ctl,
+      i_d   => rgmii_tx_d,
+      o_clk => eth_txck,
+      o_ctl => eth_txctl,
+      o_d   => eth_txd
+    );
 
   U_RGMII_RX: component memac_rx_rgmii
     port map (
@@ -614,13 +630,13 @@ begin
 
   U_RGMII_RX_IO: component memac_rx_rgmii_io
     generic map (
-      ALIGN => RGMII_ALIGN
+      ALIGN => RGMII_RX_ALIGN
     )
     port map (
       i_clk   => eth_rxck,
       i_ctl   => eth_rxctl,
       i_d     => eth_rxd,
-      o_clkr  => rx_umi_clk,
+      o_clk   => rx_umi_clk,
       o_clkio => rgmii_rx_clk,
       o_ctl   => rgmii_rx_ctl,
       o_d     => rgmii_rx_d

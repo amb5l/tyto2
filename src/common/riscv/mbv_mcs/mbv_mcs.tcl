@@ -1,6 +1,9 @@
 set bd_name [file rootname [file tail [file normalize [info script]]]]
 create_bd_design $bd_name
 
+set freq_hz [lindex $argv 0]
+puts "$bd_name: frequency = $freq_hz Hz"
+
 set cpu [ create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze_mcs_riscv:1.0 cpu ]
 set_property -dict [list \
     CONFIG.MEMSIZE       {131072} \
@@ -18,7 +21,7 @@ set_property -dict [list \
     CONFIG.USE_UART_TX   {1}      \
   ] $cpu
 
-set clk   [ create_bd_port -dir I -type clk clk   ]
+set clk   [ create_bd_port -dir I -type clk -freq_hz $freq_hz clk ]
 set rst_n [ create_bd_port -dir I -type rst rst_n ]
 
 set uart  [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:uart_rtl:1.0      uart  ]
@@ -39,3 +42,4 @@ connect_bd_intf_net -intf_net cpu_gpio4 [ get_bd_intf_ports gpio4 ] [ get_bd_int
 connect_bd_intf_net -intf_net cpu_io    [ get_bd_intf_ports io    ] [ get_bd_intf_pins cpu/IO    ]
 
 regenerate_bd_layout
+save_bd_design

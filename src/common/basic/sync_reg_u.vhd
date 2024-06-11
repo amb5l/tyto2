@@ -58,8 +58,8 @@ architecture rtl of sync_reg_u is
   type reg_t is array (1 to stages) of std_ulogic_vector(i'range);
   signal reg : reg_t;
 
-  attribute async_reg : string;
-  attribute async_reg of reg : signal is "TRUE";
+  attribute ASYNC_REG : string;
+  attribute ASYNC_REG of reg : signal is "TRUE";
 
 begin
 

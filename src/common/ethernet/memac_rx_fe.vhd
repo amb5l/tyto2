@@ -102,6 +102,8 @@ architecture rtl of memac_rx_fe is
   signal buf_rptr   : std_ulogic_vector(buf_idx'range);
   signal buf_ff     : std_ulogic;
   signal crc32      : std_ulogic_vector(31 downto 0);
+  signal pfq_rdy_r  : std_ulogic;
+  signal pfq_len_r  : std_ulogic_vector(pfq_len'range);
   signal pfq_stb_r  : std_ulogic_vector(1 to 4);
 
 begin
@@ -124,6 +126,8 @@ begin
       buf_ff     <= '0';
       crc32      <= (crc32'range => '1');
       drops      <= (drops'range => '0');
+      pfq_rdy_r  <= '0';
+      pfq_len_r  <= (pfq_len_r'range => '0');
       pfq_stb_r  <= (pfq_stb_r'range => '0');
 
     elsif rising_edge(clk) and clken = '1' then
@@ -131,7 +135,10 @@ begin
       umi_dv_r   <= umi_dv   & umi_dv_r   ( umi_dv_r'low   to umi_dv_r'high-1   );
       umi_er_r   <= umi_er   & umi_er_r   ( umi_er_r'low   to umi_er_r'high-1   );
       umi_data_r <= umi_data & umi_data_r ( umi_data_r'low to umi_data_r'high-1 );
-      prq_stb <= '0';
+      pfq_rdy_r  <= pfq_rdy;
+      pfq_len_r  <= pfq_len;
+
+      prq_stb    <= '0';
 
       case state is
 
@@ -263,9 +270,9 @@ begin
       end if;
 
       pfq_stb_r <= pfq_stb  & pfq_stb_r(pfq_stb_r'low to pfq_stb_r'high-1);
-      pfq_stb <= bool2sl(pfq_rdy = '1' and unsigned(pfq_stb & pfq_stb_r) = 0);
+      pfq_stb <= bool2sl(pfq_rdy_r = '1' and unsigned(pfq_stb & pfq_stb_r) = 0);
       if pfq_stb = '1' then
-        buf_rptr <= std_ulogic_vector(unsigned(buf_rptr) + unsigned(pfq_len));
+        buf_rptr <= std_ulogic_vector(unsigned(buf_rptr) + unsigned(pfq_len_r));
       end if;
 
     end if;
