@@ -109,7 +109,7 @@ begin
 
   U_IDDR: component iddr
     port map (
-      rst            => umi_rst,
+      rst            => '0',
       set            => '0',
       clk            => rgmii_clk,
       clken          => '1',
