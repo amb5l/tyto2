@@ -19,15 +19,10 @@ use work.tyto_types_pkg.all;
 use work.mmcm_v2_pkg.all;
 use work.memac_pkg.all;
 use work.memac_util_pkg.all;
-use work.memac_tx_pkg.all;
-use work.memac_rx_pkg.all;
 use work.mbv_mcs_wrapper_pkg.all;
 use work.mbv_mcs_memac_bridge_pkg.all;
-use work.memac_mdio_pkg.all;
-use work.memac_tx_rgmii_pkg.all;
-use work.memac_rx_rgmii_pkg.all;
-use work.memac_tx_rgmii_io_pkg.all;
-use work.memac_rx_rgmii_io_pkg.all;
+use work.memac_raw_rgmii_pkg.all;
+
 use work.sync_reg_u_pkg.all;
 
 library ieee;
@@ -198,102 +193,77 @@ end entity mbv_mcs_memac_digilent_nexys_video;
 
 architecture rtl of mbv_mcs_memac_digilent_nexys_video is
 
-  signal clk_200m     : std_ulogic;
-  signal clk_125m_0   : std_ulogic;
-  signal clk_125m_90  : std_ulogic;
-  signal clk_100m     : std_logic;
+  constant TX_BUF_SIZE_LOG2 : integer := log2(TX_BUF_SIZE);
+  constant RX_BUF_SIZE_LOG2 : integer := log2(RX_BUF_SIZE);
+  constant MTU              : integer := 1522;
+  constant LEN_MAX_LOG2     : integer := log2(MTU); -- should equal 11
 
-  signal rst_a        : std_ulogic; -- asynchronous reset from MMCM
-  signal rst_100m     : std_ulogic; -- clk_100m synchronous reset
-  signal rst_125m     : std_ulogic; -- clk_125m synchronous reset
-  signal umi_rst_a    : std_ulogic; -- UMI domain asynchronous reset
+  signal clk_200m         : std_ulogic;
+  signal clk_125m_0       : std_ulogic;
+  signal clk_125m_90      : std_ulogic;
+  signal clk_100m         : std_logic;
 
-  signal gpi          : sulv_vector(1 to 4)(31 downto 0);
-  signal gpo          : sulv_vector(1 to 4)(31 downto 0);
-  signal io_mosi      : mbv_mcs_io_mosi_t;
-  signal io_miso      : mbv_mcs_io_miso_t;
+  signal rst_a            : std_ulogic; -- asynchronous reset from MMCM
+  signal rst_100m         : std_ulogic; -- clk_100m synchronous reset
+  signal rst_125m         : std_ulogic; -- clk_125m synchronous reset
 
-  signal tx_prq_rdy   : std_ulogic;
-  signal tx_prq_len   : std_ulogic_vector(10 downto 0); -- max 2kbytes
-  signal tx_prq_idx   : std_ulogic_vector(log2(TX_BUF_SIZE)-1 downto 0);
-  signal tx_prq_tag   : std_ulogic_vector(0 downto 0);
-  signal tx_prq_opt   : tx_opt_t;
-  signal tx_prq_stb   : std_ulogic;
-  signal tx_pfq_rdy   : std_ulogic;
-  signal tx_pfq_len   : std_ulogic_vector(10 downto 0);
-  signal tx_pfq_idx   : std_ulogic_vector(log2(TX_BUF_SIZE)-1 downto 0);
-  signal tx_pfq_tag   : std_ulogic_vector(0 downto 0);
-  signal tx_pfq_stb   : std_ulogic;
-  signal tx_buf_en    : std_ulogic;
-  signal tx_buf_bwe   : std_ulogic_vector(3 downto 0);
-  signal tx_buf_addr  : std_ulogic_vector(log2(TX_BUF_SIZE)-1 downto 2);
-  signal tx_buf_din   : std_ulogic_vector(31 downto 0);
-  signal tx_buf_dpin  : std_ulogic_vector(3 downto 0);
-  signal tx_buf_dout  : std_ulogic_vector(31 downto 0);
-  signal tx_buf_dpout : std_ulogic_vector(3 downto 0);
-  signal tx_umi_rst_s : std_ulogic;
-  signal tx_umi_rst   : std_ulogic;
-  signal tx_umi_clk   : std_ulogic;
-  signal tx_umi_clken : std_ulogic;
-  signal tx_umi_dv    : std_ulogic;
-  signal tx_umi_er    : std_ulogic;
-  signal tx_umi_data  : std_ulogic_vector(7 downto 0);
-  signal tx_umi_spd   : std_ulogic_vector(1 downto 0);
+  signal gpi              : sulv_vector(1 to 4)(31 downto 0);
+  signal gpo              : sulv_vector(1 to 4)(31 downto 0);
+  signal io_mosi          : mbv_mcs_io_mosi_t;
+  signal io_miso          : mbv_mcs_io_miso_t;
 
-  signal rx_opt       : rx_opt_t;
-  signal rx_drops     : std_ulogic_vector(31 downto 0);
-  signal rx_prq_rdy   : std_ulogic;
-  signal rx_prq_len   : std_ulogic_vector(10 downto 0);
-  signal rx_prq_idx   : std_ulogic_vector(log2(RX_BUF_SIZE)-1 downto 0);
-  signal rx_prq_flag  : rx_flag_t;
-  signal rx_prq_stb   : std_ulogic;
-  signal rx_pfq_rdy   : std_ulogic;
-  signal rx_pfq_len   : std_ulogic_vector(10 downto 0);
-  signal rx_pfq_stb   : std_ulogic;
-  signal rx_buf_en    : std_ulogic;
-  signal rx_buf_bwe   : std_ulogic_vector(3 downto 0);
-  signal rx_buf_addr  : std_ulogic_vector(log2(RX_BUF_SIZE)-1 downto 2);
-  signal rx_buf_din   : std_ulogic_vector(31 downto 0);
-  signal rx_buf_dpin  : std_ulogic_vector(3 downto 0);
-  signal rx_buf_dout  : std_ulogic_vector(31 downto 0);
-  signal rx_buf_dpout : std_ulogic_vector(3 downto 0);
-  signal rx_umi_rst_s : std_ulogic;
-  signal rx_umi_rst   : std_ulogic;
-  signal rx_umi_clk   : std_ulogic;
-  signal rx_umi_clken : std_ulogic;
-  signal rx_umi_dv    : std_ulogic;
-  signal rx_umi_er    : std_ulogic;
-  signal rx_umi_data  : std_ulogic_vector(7 downto 0);
-  signal rx_ibs_crs   : std_ulogic;
-  signal rx_ibs_crx   : std_ulogic;
-  signal rx_ibs_crxer : std_ulogic;
-  signal rx_ibs_crf   : std_ulogic;
-  signal rx_ibs_link  : std_ulogic;
-  signal rx_ibs_spd   : std_ulogic_vector(1 downto 0);
-  signal rx_ibs_fdx   : std_ulogic;
-  signal rx_umi_spdi  : std_ulogic_vector(1 downto 0);
-  signal rx_umi_spdo  : std_ulogic_vector(1 downto 0);
+  signal mac_md_stb       : std_ulogic;
+  signal mac_md_pre       : std_ulogic;
+  signal mac_md_r_w       : std_ulogic;
+  signal mac_md_pa        : std_ulogic_vector(4 downto 0);
+  signal mac_md_ra        : std_ulogic_vector(4 downto 0);
+  signal mac_md_wd        : std_ulogic_vector(15 downto 0);
+  signal mac_md_rd        : std_ulogic_vector(15 downto 0);
+  signal mac_md_rdy       : std_ulogic;
+  signal mac_tx_rst       : std_ulogic;
+  signal mac_tx_spd       : std_ulogic_vector(1 downto 0);
+  signal mac_tx_prq_rdy   : std_ulogic;
+  signal mac_tx_prq_len   : std_ulogic_vector(LEN_MAX_LOG2-1 downto 0);
+  signal mac_tx_prq_idx   : std_ulogic_vector(log2(TX_BUF_SIZE)-1 downto 0);
+  signal mac_tx_prq_tag   : std_ulogic_vector(0 downto 0);
+  signal mac_tx_prq_opt   : tx_opt_t;
+  signal mac_tx_prq_stb   : std_ulogic;
+  signal mac_tx_pfq_rdy   : std_ulogic;
+  signal mac_tx_pfq_len   : std_ulogic_vector(LEN_MAX_LOG2-1 downto 0);
+  signal mac_tx_pfq_idx   : std_ulogic_vector(log2(TX_BUF_SIZE)-1 downto 0);
+  signal mac_tx_pfq_tag   : std_ulogic_vector(0 downto 0);
+  signal mac_tx_pfq_stb   : std_ulogic;
+  signal mac_tx_buf_en    : std_ulogic;
+  signal mac_tx_buf_bwe   : std_ulogic_vector(3 downto 0);
+  signal mac_tx_buf_addr  : std_ulogic_vector(TX_BUF_SIZE_LOG2-1 downto 2);
+  signal mac_tx_buf_din   : std_ulogic_vector(31 downto 0);
+  signal mac_tx_buf_dpin  : std_ulogic_vector(3 downto 0);
+  signal mac_tx_buf_dout  : std_ulogic_vector(31 downto 0);
+  signal mac_tx_buf_dpout : std_ulogic_vector(3 downto 0);
+  signal mac_rx_rst       : std_ulogic;
+  signal mac_rx_spd       : std_ulogic_vector(1 downto 0);
+  signal mac_rx_opt       : rx_opt_t;
+  signal mac_rx_stat      : rx_stat_t;
+  signal mac_rx_prq_rdy   : std_ulogic;
+  signal mac_rx_prq_len   : std_ulogic_vector(LEN_MAX_LOG2-1 downto 0);
+  signal mac_rx_prq_idx   : std_ulogic_vector(log2(TX_BUF_SIZE)-1 downto 0);
+  signal mac_rx_prq_flag  : rx_flag_t;
+  signal mac_rx_prq_stb   : std_ulogic;
+  signal mac_rx_pfq_rdy   : std_ulogic;
+  signal mac_rx_pfq_len   : std_ulogic_vector(LEN_MAX_LOG2-1 downto 0);
+  signal mac_rx_pfq_stb   : std_ulogic;
+  signal mac_rx_buf_en    : std_ulogic;
+  signal mac_rx_buf_bwe   : std_ulogic_vector(3 downto 0);
+  signal mac_rx_buf_addr  : std_ulogic_vector(RX_BUF_SIZE_LOG2-1 downto 2);
+  signal mac_rx_buf_din   : std_ulogic_vector(31 downto 0);
+  signal mac_rx_buf_dpin  : std_ulogic_vector(3 downto 0);
+  signal mac_rx_buf_dout  : std_ulogic_vector(31 downto 0);
+  signal mac_rx_buf_dpout : std_ulogic_vector(3 downto 0);
 
-  signal rgmii_tx_clk : std_ulogic;
-  signal rgmii_tx_ctl : std_ulogic;
-  signal rgmii_tx_d   : std_ulogic_vector(3 downto 0);
-  signal rgmii_rx_clk : std_ulogic;
-  signal rgmii_rx_ctl : std_ulogic;
-  signal rgmii_rx_d   : std_ulogic_vector(3 downto 0);
-
-  signal md_stb       : std_ulogic;
-  signal md_pre       : std_ulogic;
-  signal md_r_w       : std_ulogic;
-  signal md_pa        : std_ulogic_vector(4 downto 0);
-  signal md_ra        : std_ulogic_vector(4 downto 0);
-  signal md_wd        : std_ulogic_vector(15 downto 0);
-  signal md_rd        : std_ulogic_vector(15 downto 0);
-  signal md_rdy       : std_ulogic;
-
-  signal eth_rst     : std_ulogic;
-  signal eth_mdi     : std_ulogic;
-  signal eth_mdo     : std_ulogic;
-  signal eth_mdoe    : std_ulogic;
+  signal eth_rst          : std_ulogic;
+  signal eth_mdi          : std_ulogic;
+  signal eth_mdo          : std_ulogic;
+  signal eth_mdoe         : std_ulogic;
 
   attribute KEEP_HIERARCHY : string;
   attribute KEEP_HIERARCHY of mbv_mcs_memac_digilent_nexys_video : entity is "TRUE";
@@ -320,11 +290,11 @@ begin
       clk0  => clk_200m,
       clk1  => clk_125m_0,
       clk2  => clk_125m_90,
-      clk3  => clk_100m
+      clk3  => clk_100m,
+      clk4  => open,
+      clk5  => open,
+      clk6  => open
     );
-
-  --------------------------------------------------------------------------------
-  -- reset
 
   U_SYNC_RST_100M: component sync_reg_u
     generic map (
@@ -349,34 +319,6 @@ begin
       i(0) => rst_a,
       o(0) => rst_125m
     );
-
-  U_SYNC_RST_TX: component sync_reg_u
-    generic map (
-      stages    => 3,
-      rst_state => '1'
-    )
-    port map (
-      rst  => '0',
-      clk  => tx_umi_clk,
-      i(0) => umi_rst_a,
-      o(0) => tx_umi_rst_s
-    );
-  tx_umi_rst <= rst_a or tx_umi_rst_s;
-
-  U_SYNC_RST_RX: component sync_reg_u
-    generic map (
-      stages    => 3,
-      rst_state => '1'
-    )
-    port map (
-      rst  => '0',
-      clk  => rx_umi_clk,
-      i(0) => umi_rst_a,
-      o(0) => rx_umi_rst_s
-    );
-  rx_umi_rst <= rst_a or rx_umi_rst_s;
-
-  eth_rst_n <= not umi_rst_a;
 
   --------------------------------------------------------------------------------
   -- IDELAYCTRL for IDELAYE2 usage in RGMII RX
@@ -412,235 +354,157 @@ begin
       clk          => clk_100m,
       io_mosi      => io_mosi,
       io_miso      => io_miso,
-      tx_prq_len   => tx_prq_len,
-      tx_prq_idx   => tx_prq_idx,
-      tx_prq_tag   => tx_prq_tag,
-      tx_prq_opt   => tx_prq_opt,
-      tx_prq_stb   => tx_prq_stb,
-      tx_pfq_len   => tx_pfq_len,
-      tx_pfq_idx   => tx_pfq_idx,
-      tx_pfq_tag   => tx_pfq_tag,
-      tx_pfq_stb   => tx_pfq_stb,
-      tx_buf_en    => tx_buf_en,
-      tx_buf_bwe   => tx_buf_bwe,
-      tx_buf_addr  => tx_buf_addr,
-      tx_buf_din   => tx_buf_din,
-      tx_buf_dpin  => tx_buf_dpin,
-      tx_buf_dout  => tx_buf_dout,
-      tx_buf_dpout => tx_buf_dpout,
-      rx_prq_len   => rx_prq_len,
-      rx_prq_idx   => rx_prq_idx,
-      rx_prq_flag  => rx_prq_flag,
-      rx_prq_stb   => rx_prq_stb,
-      rx_pfq_len   => rx_pfq_len,
-      rx_pfq_stb   => rx_pfq_stb,
-      rx_buf_en    => rx_buf_en,
-      rx_buf_bwe   => rx_buf_bwe,
-      rx_buf_addr  => rx_buf_addr,
-      rx_buf_din   => rx_buf_din,
-      rx_buf_dpin  => rx_buf_dpin,
-      rx_buf_dout  => rx_buf_dout,
-      rx_buf_dpout => rx_buf_dpout,
-      md_stb       => md_stb,
-      md_r_w       => md_r_w,
-      md_pa        => md_pa,
-      md_ra        => md_ra,
-      md_wd        => md_wd,
-      md_rd        => md_rd
+      tx_prq_len   => mac_tx_prq_len,
+      tx_prq_idx   => mac_tx_prq_idx,
+      tx_prq_tag   => mac_tx_prq_tag,
+      tx_prq_opt   => mac_tx_prq_opt,
+      tx_prq_stb   => mac_tx_prq_stb,
+      tx_pfq_len   => mac_tx_pfq_len,
+      tx_pfq_idx   => mac_tx_pfq_idx,
+      tx_pfq_tag   => mac_tx_pfq_tag,
+      tx_pfq_stb   => mac_tx_pfq_stb,
+      tx_buf_en    => mac_tx_buf_en,
+      tx_buf_bwe   => mac_tx_buf_bwe,
+      tx_buf_addr  => mac_tx_buf_addr,
+      tx_buf_din   => mac_tx_buf_din,
+      tx_buf_dpin  => mac_tx_buf_dpin,
+      tx_buf_dout  => mac_tx_buf_dout,
+      tx_buf_dpout => mac_tx_buf_dpout,
+      rx_prq_len   => mac_rx_prq_len,
+      rx_prq_idx   => mac_rx_prq_idx,
+      rx_prq_flag  => mac_rx_prq_flag,
+      rx_prq_stb   => mac_rx_prq_stb,
+      rx_pfq_len   => mac_rx_pfq_len,
+      rx_pfq_stb   => mac_rx_pfq_stb,
+      rx_buf_en    => mac_rx_buf_en,
+      rx_buf_bwe   => mac_rx_buf_bwe,
+      rx_buf_addr  => mac_rx_buf_addr,
+      rx_buf_din   => mac_rx_buf_din,
+      rx_buf_dpin  => mac_rx_buf_dpin,
+      rx_buf_dout  => mac_rx_buf_dout,
+      rx_buf_dpout => mac_rx_buf_dpout,
+      md_stb       => mac_md_stb,
+      md_r_w       => mac_md_r_w,
+      md_pa        => mac_md_pa,
+      md_ra        => mac_md_ra,
+      md_wd        => mac_md_wd,
+      md_rd        => mac_md_rd
     );
 
   --------------------------------------------------------------------------------
-  -- GPO
+  -- integrated MEMAC with raw system interface and RGMII phy interface
 
-  umi_rst_a                        <= rst_a or not gpo(1)(0);
-  tx_umi_spd                       <= gpo(1)( 5 downto  4);
-  rx_umi_spdi                      <= gpo(1)( 7 downto  6);
-  rx_opt(RX_OPT_IPG_MIN_RANGE)     <= gpo(1)(11 downto  8);
-  rx_opt(RX_OPT_PRE_LEN_RANGE)     <= gpo(1)(15 downto 12);
-  rx_opt(RX_OPT_PRE_INC_BIT)       <= gpo(1)(          16);
-  rx_opt(RX_OPT_FCS_INC_BIT)       <= gpo(1)(          17);
-  rx_opt(RX_OPT_CRC_INC_BIT)       <= gpo(1)(          18);
-
-  --------------------------------------------------------------------------------
-  -- GPI
-
-  gpi(1)(           0) <= tx_prq_rdy;
-  gpi(1)(           1) <= tx_pfq_rdy;
-  gpi(1)(           2) <= rx_prq_rdy;
-  gpi(1)(           3) <= rx_pfq_rdy;
-  gpi(1)(           4) <= md_rdy;
-  gpi(1)( 6 downto  5) <= rx_umi_spdo;
-  gpi(1)(           7) <= rx_ibs_crs;
-  gpi(1)(           8) <= rx_ibs_crx;
-  gpi(1)(           9) <= rx_ibs_crxer;
-  gpi(1)(          10) <= rx_ibs_crf;
-  gpi(1)(          11) <= rx_ibs_link;
-  gpi(1)(13 downto 12) <= rx_ibs_spd;
-  gpi(1)(          14) <= rx_ibs_fdx;
-
-  gpi(2) <= rx_drops;
-
-  --------------------------------------------------------------------------------
-  -- MEMAC MDIO
-
-  U_MEMAC_MDIO: component memac_mdio
+  U_MAC: component memac_raw_rgmii
     generic map (
-      DIV5M => 20 -- 100 MHz / 20 = 5 MHz
+      MDIO_DIV5M => 20,
+      TX_ALIGN   => RGMII_TX_ALIGN,
+      RX_ALIGN   => RGMII_RX_ALIGN
     )
     port map (
-      rst  => rst_100m,
-      clk  => clk_100m,
-      stb  => md_stb,
-      pre  => md_pre,
-      r_w  => md_r_w,
-      pa   => md_pa,
-      ra   => md_ra,
-      wd   => md_wd,
-      rd   => md_rd,
-      rdy  => md_rdy,
-      mdc  => eth_mdc,
-      mdo  => eth_mdo,
-      mdoe => eth_mdoe,
-      mdi  => eth_mdi
+
+      sys_rst          => rst_100m,
+      sys_clk          => clk_100m,
+      sys_md_stb       => mac_md_stb,
+      sys_md_pre       => mac_md_pre,
+      sys_md_r_w       => mac_md_r_w,
+      sys_md_pa        => mac_md_pa,
+      sys_md_ra        => mac_md_ra,
+      sys_md_wd        => mac_md_wd,
+      sys_md_rd        => mac_md_rd,
+      sys_md_rdy       => mac_md_rdy,
+      sys_tx_rst       => mac_tx_rst,
+      sys_tx_spd       => mac_tx_spd,
+      sys_tx_prq_rdy   => mac_tx_prq_rdy,
+      sys_tx_prq_len   => mac_tx_prq_len,
+      sys_tx_prq_idx   => mac_tx_prq_idx,
+      sys_tx_prq_tag   => mac_tx_prq_tag,
+      sys_tx_prq_opt   => mac_tx_prq_opt,
+      sys_tx_prq_stb   => mac_tx_prq_stb,
+      sys_tx_pfq_rdy   => mac_tx_pfq_rdy,
+      sys_tx_pfq_len   => mac_tx_pfq_len,
+      sys_tx_pfq_idx   => mac_tx_pfq_idx,
+      sys_tx_pfq_tag   => mac_tx_pfq_tag,
+      sys_tx_pfq_stb   => mac_tx_pfq_stb,
+      sys_tx_buf_en    => mac_tx_buf_en,
+      sys_tx_buf_bwe   => mac_tx_buf_bwe,
+      sys_tx_buf_addr  => mac_tx_buf_addr,
+      sys_tx_buf_din   => mac_tx_buf_din,
+      sys_tx_buf_dpin  => mac_tx_buf_dpin,
+      sys_tx_buf_dout  => mac_tx_buf_dout,
+      sys_tx_buf_dpout => mac_tx_buf_dpout,
+      sys_rx_rst       => mac_rx_rst,
+      sys_rx_spd       => mac_rx_spd,
+      sys_rx_opt       => mac_rx_opt,
+      sys_rx_stat      => mac_rx_stat,
+      sys_rx_prq_rdy   => mac_rx_prq_rdy,
+      sys_rx_prq_len   => mac_rx_prq_len,
+      sys_rx_prq_idx   => mac_rx_prq_idx,
+      sys_rx_prq_flag  => mac_rx_prq_flag,
+      sys_rx_prq_stb   => mac_rx_prq_stb,
+      sys_rx_pfq_rdy   => mac_rx_pfq_rdy,
+      sys_rx_pfq_len   => mac_rx_pfq_len,
+      sys_rx_pfq_stb   => mac_rx_pfq_stb,
+      sys_rx_buf_en    => mac_rx_buf_en,
+      sys_rx_buf_bwe   => mac_rx_buf_bwe,
+      sys_rx_buf_addr  => mac_rx_buf_addr,
+      sys_rx_buf_din   => mac_rx_buf_din,
+      sys_rx_buf_dpin  => mac_rx_buf_dpin,
+      sys_rx_buf_dout  => mac_rx_buf_dout,
+      sys_rx_buf_dpout => mac_rx_buf_dpout,
+      ref_rst          => rst_125m,
+      ref_clk          => clk_125m_0,
+      ref_clk_90       => clk_125m_90,
+      phy_mdc          => eth_mdc,
+      phy_mdo          => eth_mdo,
+      phy_mdoe         => eth_mdoe,
+      phy_mdi          => eth_mdi,
+      phy_rgmii_tx_clk => eth_txck,
+      phy_rgmii_tx_ctl => eth_txctl,
+      phy_rgmii_tx_d   => eth_txd,
+      phy_rgmii_rx_clk => eth_rxck,
+      phy_rgmii_rx_ctl => eth_rxctl,
+      phy_rgmii_rx_d   => eth_rxd
     );
 
+  eth_rst_n <= not eth_rst;
   eth_mdi  <= eth_mdio;
   eth_mdio <= eth_mdo when eth_mdoe = '1' else 'Z';
 
   --------------------------------------------------------------------------------
-  -- MEMAC TX and RX
+  -- GPO
 
-  U_MEMAC_TX: component memac_tx
-    port map (
-      sys_rst   => rst_100m,
-      sys_clk   => clk_100m,
-      prq_rdy   => tx_prq_rdy,
-      prq_len   => tx_prq_len,
-      prq_idx   => tx_prq_idx,
-      prq_tag   => tx_prq_tag,
-      prq_opt   => tx_prq_opt,
-      prq_stb   => tx_prq_stb,
-      pfq_rdy   => tx_pfq_rdy,
-      pfq_len   => tx_pfq_len,
-      pfq_idx   => tx_pfq_idx,
-      pfq_tag   => tx_pfq_tag,
-      pfq_stb   => tx_pfq_stb,
-      buf_en    => tx_buf_en,
-      buf_bwe   => tx_buf_bwe,
-      buf_addr  => tx_buf_addr,
-      buf_din   => tx_buf_din,
-      buf_dpin  => tx_buf_dpin,
-      buf_dout  => tx_buf_dout,
-      buf_dpout => tx_buf_dpout,
-      umi_rst   => tx_umi_rst,
-      umi_clk   => tx_umi_clk,
-      umi_clken => tx_umi_clken,
-      umi_dv    => tx_umi_dv,
-      umi_er    => tx_umi_er,
-      umi_d     => tx_umi_data
-    );
+  eth_rst                          <= rst_a or not gpo(1)(0);
+  mac_tx_rst                       <= rst_a or not gpo(1)(1);
+  mac_rx_rst                       <= rst_a or not gpo(1)(2);
+  mac_md_pre                       <= gpo(1)(           3);
+  mac_tx_spd                       <= gpo(1)( 5 downto  4);
+  mac_rx_spd                       <= gpo(1)( 7 downto  6);
+  mac_rx_opt(RX_OPT_IPG_MIN_RANGE) <= gpo(1)(11 downto  8);
+  mac_rx_opt(RX_OPT_PRE_LEN_RANGE) <= gpo(1)(15 downto 12);
+  mac_rx_opt(RX_OPT_PRE_INC_BIT)   <= gpo(1)(          16);
+  mac_rx_opt(RX_OPT_FCS_INC_BIT)   <= gpo(1)(          17);
+  mac_rx_opt(RX_OPT_CRC_INC_BIT)   <= gpo(1)(          18);
 
-  U_MEMAC_RX: component memac_rx
-    port map (
-      sys_rst   => rst_100m,
-      sys_clk   => clk_100m,
-      opt       => rx_opt,
-      drops     => rx_drops,
-      prq_rdy   => rx_prq_rdy,
-      prq_len   => rx_prq_len,
-      prq_idx   => rx_prq_idx,
-      prq_flag  => rx_prq_flag,
-      prq_stb   => rx_prq_stb,
-      pfq_rdy   => rx_pfq_rdy,
-      pfq_len   => rx_pfq_len,
-      pfq_stb   => rx_pfq_stb,
-      buf_en    => rx_buf_en,
-      buf_bwe   => rx_buf_bwe,
-      buf_addr  => rx_buf_addr,
-      buf_din   => rx_buf_din,
-      buf_dpin  => rx_buf_dpin,
-      buf_dout  => rx_buf_dout,
-      buf_dpout => rx_buf_dpout,
-      umi_rst   => rx_umi_rst,
-      umi_clk   => rx_umi_clk,
-      umi_clken => rx_umi_clken,
-      umi_dv    => rx_umi_dv,
-      umi_er    => rx_umi_er,
-      umi_data  => rx_umi_data
-    );
+  led <= gpo(4)(led'range);
 
   --------------------------------------------------------------------------------
-  -- RGMII
+  -- GPI
 
-  U_RGMII_TX: component memac_tx_rgmii
-    generic map (
-      ALIGN => RGMII_TX_ALIGN
-    )
-    port map (
-      ref_clk    => clk_125m_0,
-      ref_clk_90 => clk_125m_90,
-      umi_spd    => tx_umi_spd,
-      umi_rst    => tx_umi_rst,
-      umi_clk    => tx_umi_clk,
-      umi_clken  => tx_umi_clken,
-      umi_dv     => tx_umi_dv,
-      umi_er     => tx_umi_er,
-      umi_d      => tx_umi_data,
-      rgmii_clk  => rgmii_tx_clk,
-      rgmii_ctl  => rgmii_tx_ctl,
-      rgmii_d    => rgmii_tx_d
-    );
+  gpi(1)(           0) <= mac_tx_prq_rdy;
+  gpi(1)(           1) <= mac_tx_pfq_rdy;
+  gpi(1)(           2) <= mac_rx_prq_rdy;
+  gpi(1)(           3) <= mac_rx_pfq_rdy;
+  gpi(1)(           4) <= mac_md_rdy;
+  gpi(1)( 6 downto  5) <= mac_rx_stat.spd;
+  gpi(1)(           7) <= mac_rx_stat.ibs_crs;
+  gpi(1)(           8) <= mac_rx_stat.ibs_crx;
+  gpi(1)(           9) <= mac_rx_stat.ibs_crxer;
+  gpi(1)(          10) <= mac_rx_stat.ibs_crf;
+  gpi(1)(          11) <= mac_rx_stat.ibs_link;
+  gpi(1)(13 downto 12) <= mac_rx_stat.ibs_spd;
+  gpi(1)(          14) <= mac_rx_stat.ibs_fdx;
 
-  U_RGMII_TX_IO: component memac_tx_rgmii_io
-    generic map (
-      ALIGN => RGMII_TX_ALIGN
-    )
-    port map (
-      i_clk => rgmii_tx_clk,
-      i_ctl => rgmii_tx_ctl,
-      i_d   => rgmii_tx_d,
-      o_clk => eth_txck,
-      o_ctl => eth_txctl,
-      o_d   => eth_txd
-    );
-
-  U_RGMII_RX: component memac_rx_rgmii
-    port map (
-      ref_rst   => rst_125m,
-      ref_clk   => clk_125m_0,
-      umi_spdi  => rx_umi_spdi,
-      umi_spdo  => rx_umi_spdo,
-      umi_rst   => rx_umi_rst,
-      umi_clk   => rx_umi_clk,
-      umi_clken => rx_umi_clken,
-      umi_dv    => rx_umi_dv,
-      umi_er    => rx_umi_er,
-      umi_d     => rx_umi_data,
-      ibs_crs   => rx_ibs_crs,
-      ibs_crx   => rx_ibs_crx,
-      ibs_crxer => rx_ibs_crxer,
-      ibs_crf   => rx_ibs_crf,
-      ibs_link  => rx_ibs_link,
-      ibs_spd   => rx_ibs_spd,
-      ibs_fdx   => rx_ibs_fdx,
-      rgmii_clk => rgmii_rx_clk,
-      rgmii_ctl => rgmii_rx_ctl,
-      rgmii_d   => rgmii_rx_d
-    );
-
-  U_RGMII_RX_IO: component memac_rx_rgmii_io
-    generic map (
-      ALIGN => RGMII_RX_ALIGN
-    )
-    port map (
-      i_clk   => eth_rxck,
-      i_ctl   => eth_rxctl,
-      i_d     => eth_rxd,
-      o_clk   => rx_umi_clk,
-      o_clkio => rgmii_rx_clk,
-      o_ctl   => rgmii_rx_ctl,
-      o_d     => rgmii_rx_d
-    );
+  gpi(2) <= mac_rx_stat.drops;
 
   --------------------------------------------------------------------------------
 

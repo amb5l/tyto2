@@ -57,12 +57,12 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/ethernet/memac_rx.vhd \
 	$(toplevel)/src/common/ethernet/memac_spd.vhd \
 	$(toplevel)/src/common/ethernet/memac_tx_$(PHY).vhd \
-	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)_$(FPGA_FAMILY)/memac_tx_$(PHY)_io.vhd \
 	$(toplevel)/src/common/ethernet/memac_rx_$(PHY).vhd \
 	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)_$(FPGA_FAMILY)/memac_rx_$(PHY)_io.vhd \
 	$(toplevel)/src/common/ethernet/memac_mdio.vhd \
-	$(toplevel)/src/common/riscv/mbv_mcs/mbv_mcs_wrapper.vhd \
+	$(toplevel)/src/common/ethernet/memac_raw_rgmii.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN)_bridge.vhd \
+	$(toplevel)/src/common/riscv/mbv_mcs/mbv_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
 VIVADO_BD_TCL=$(toplevel)/src/common/riscv/mbv_mcs/mbv_mcs.tcl=100000000
 VIVADO_PROC_REF=$(DESIGN)_$(BOARD)_cpu

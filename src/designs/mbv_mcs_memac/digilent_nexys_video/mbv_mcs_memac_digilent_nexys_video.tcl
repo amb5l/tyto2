@@ -72,10 +72,10 @@ if {[llength $dsn_gen]} {
 
     # RGMII
 
-    set rgmii_tx_clk_src   [get_pins U_RGMII_TX/GEN_ALIGN.U_ODDR_CLK/GEN[0].U_ODDR/C]
-    set rgmii_gtx_clk      [get_clocks clk_125m_0]
-    set RGMII_TX_ALIGN     [get_property USER_ALIGN $rgmii_ports_tx_clk]
-    set RGMII_RX_ALIGN     [get_property USER_ALIGN $rgmii_ports_rx_clk]
+    set rgmii_tx_clk_src [get_pins U_MAC/U_RGMII_TX/GEN_ALIGN.U_ODDR_CLK/GEN[0].U_ODDR/C]
+    set rgmii_gtx_clk    [get_clocks clk_125m_0]
+    set RGMII_TX_ALIGN   [get_property USER_ALIGN $rgmii_ports_tx_clk]
+    set RGMII_RX_ALIGN   [get_property USER_ALIGN $rgmii_ports_rx_clk]
     source [get_files "memac_tx_rgmii.tcl"]
     source [get_files "memac_rx_rgmii.tcl"]
 
