@@ -28,7 +28,9 @@ package memac_rx_fe_pkg is
       rst      : in    std_ulogic;
       clk      : in    std_ulogic;
       clken    : in    std_ulogic;
-      opt      : in    rx_opt_t;
+      ipg_min  : in    std_ulogic_vector(3 downto 0);
+      pre_inc  : in    std_ulogic;
+      fcs_inc  : in    std_ulogic;
       drops    : out   std_ulogic_vector(31 downto 0);
       prq_rdy  : in    std_ulogic;
       prq_len  : out   std_ulogic_vector;
@@ -66,7 +68,9 @@ entity memac_rx_fe is
     rst      : in    std_ulogic;
     clk      : in    std_ulogic;
     clken    : in    std_ulogic;
-    opt      : in    rx_opt_t;
+    ipg_min  : in    std_ulogic_vector(3 downto 0);
+    pre_inc  : in    std_ulogic;
+    fcs_inc  : in    std_ulogic;
     drops    : out   std_ulogic_vector(31 downto 0);
     prq_rdy  : in    std_ulogic;
     prq_len  : out   std_ulogic_vector;
@@ -146,9 +150,9 @@ begin
           crc32 <= (others => '1');
           if umi_dv_r(4) = '1' then
             if prq_rdy = '1' then
-              buf_wr  <= opt(RX_OPT_PRE_INC_BIT);
+              buf_wr  <= pre_inc;
               prq_len <= (prq_len'range => '0');
-              prq_flag(RX_FLAG_PRE_INC_BIT) <= opt(RX_OPT_PRE_INC_BIT);
+              prq_flag(RX_FLAG_PRE_INC_BIT) <= pre_inc;
               prq_flag(RX_FLAG_FCS_BAD_BIT) <= '1';
               state <= PRE;
               count <= 0;
@@ -201,8 +205,8 @@ begin
             prq_flag(RX_FLAG_DATA_ERR_BIT) <= '1';
           end if;
           if umi_dv & umi_dv_r = "011111" then -- FCS is next
-            buf_wr <= opt(RX_OPT_FCS_INC_BIT);
-            prq_flag(RX_FLAG_FCS_INC_BIT) <= opt(RX_OPT_FCS_INC_BIT);
+            buf_wr <= fcs_inc;
+            prq_flag(RX_FLAG_FCS_INC_BIT) <= fcs_inc;
             state  <= FCS;
             count  <= 0;
           elsif umi_dv_r(4) = '0' then -- this is last byte
@@ -234,7 +238,7 @@ begin
         when IPG =>
           if umi_dv_r(3) = '1' then
             prq_flag <= (others => '0');
-            if count < to_integer(unsigned(opt(RX_OPT_IPG_MIN_RANGE)))-2 then
+            if count < to_integer(unsigned(ipg_min))-2 then
               prq_flag(RX_FLAG_IPG_SHORT_BIT) <= '1';
             end if;
             state <= IDLE;

@@ -26,7 +26,7 @@ package memac_rx_pkg is
     port (
       sys_rst   : in    std_ulogic;
       sys_clk   : in    std_ulogic;
-      opt       : in    rx_opt_t;
+      ctrl      : in    rx_ctrl_t;
       stat      : out   rx_stat_t;
       prq_rdy   : out   std_ulogic;
       prq_len   : out   std_ulogic_vector;
@@ -70,7 +70,7 @@ entity memac_rx is
     sys_rst   : in    std_ulogic;
     sys_clk   : in    std_ulogic;
 
-    opt       : in    rx_opt_t;
+    ctrl      : in    rx_ctrl_t;
     stat      : out   rx_stat_t;
 
     prq_rdy   : out   std_ulogic;
@@ -191,7 +191,9 @@ begin
       rst      => umi_rst,
       clk      => umi_clk,
       clken    => umi_clken,
-      opt      => opt,
+      ipg_min  => ctrl.ipg_min,
+      pre_inc  => ctrl.pre_inc,
+      fcs_inc  => ctrl.fcs_inc,
       drops    => stat.drops,
       prq_rdy  => umi_prq_rdy,
       prq_len  => umi_prq_len,

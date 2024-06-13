@@ -20,17 +20,22 @@ library ieee;
 
 package memac_pkg is
 
+  type tx_ctrl_t is record
+    spd : std_ulogic_vector(1 downto 0);  -- speed
+  end record tx_ctrl_t;
+
   subtype tx_opt_t is std_ulogic_vector(5 downto 0);
   subtype TX_OPT_PRE_LEN_RANGE is natural range 3 downto 0;
   constant TX_OPT_PRE_AUTO_BIT : integer := 4;
   constant TX_OPT_FCS_AUTO_BIT : integer := 5;
 
-  subtype rx_opt_t is std_ulogic_vector(10 downto 0);
-  subtype RX_OPT_IPG_MIN_RANGE is natural range 3 downto 0;
-  subtype RX_OPT_PRE_LEN_RANGE is natural range 7 downto 4;
-  constant RX_OPT_PRE_INC_BIT : integer := 8;
-  constant RX_OPT_FCS_INC_BIT : integer := 9;
-  constant RX_OPT_CRC_INC_BIT : integer := 10;
+  type rx_ctrl_t is record
+    spd     : std_ulogic_vector(1 downto 0);  -- speed
+    ipg_min : std_ulogic_vector(3 downto 0);  -- IPG minimum
+    pre_len : std_ulogic_vector(3 downto 0);  -- preamble length
+    pre_inc : std_ulogic;                     -- include preamble
+    fcs_inc : std_ulogic;                     -- include FCS
+  end record rx_ctrl_t;
 
   type rx_stat_t is record
     spd       : std_ulogic_vector(1 downto 0);  -- speed
