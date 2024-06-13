@@ -245,14 +245,18 @@ begin
 
   else generate
 
-    signal rgmii_clken_180 : std_ulogic;
+    signal rgmii_clken_180  : std_ulogic;
+    signal rgmii_clk_d1_180 : std_ulogic;
+    signal rgmii_clk_d2_180 : std_ulogic;
 
   begin
 
     P_180: process(umi_clk)
     begin
       if falling_edge(umi_clk) then
-        rgmii_clken_180 <= rgmii_clken;
+        rgmii_clken_180  <= rgmii_clken;
+        rgmii_clk_d1_180 <= rgmii_clk_d1;
+        rgmii_clk_d2_180 <= rgmii_clk_d2;
       end if;
     end process P_180;
 
@@ -262,8 +266,8 @@ begin
         set   => '0',
         clk   => ref_clk_90,
         clken => rgmii_clken_180,
-        d1(0) => rgmii_clk_d1,
-        d2(0) => rgmii_clk_d2,
+        d1(0) => rgmii_clk_d1_180,
+        d2(0) => rgmii_clk_d2_180,
         q(0)  => rgmii_clk
       );
 
