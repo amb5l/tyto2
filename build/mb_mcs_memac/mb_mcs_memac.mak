@@ -1,5 +1,5 @@
 #################################################################################
-# mbv_mcs_memac.mak
+# mb_mcs_memac.mak
 #################################################################################
 
 all: bit
@@ -14,15 +14,11 @@ FPGA_FAMILY=$(word 2,$(FPGA))
 FPGA_DEVICE=$(word 3,$(FPGA))
 
 #################################################################################
-# generics
-
-
-#################################################################################
 # Vitis
 
 VITIS_FLOW=classic
 VITIS_SRC=$(toplevel)/src/designs/$(DESIGN)/software/main.c
-VITIS_SYM=APP_NAME=mbv_mcs_test
+VITIS_SYM=APP_NAME=mb$(CPU_VARIANT)_mcs_test
 VITIS_SYM_RLS=BUILD_CONFG=Release
 VITIS_SYM_DBG=BUILD_CONFG=Debug
 
@@ -62,9 +58,9 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/ethernet/memac_mdio.vhd \
 	$(toplevel)/src/common/ethernet/memac_raw_rgmii.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN)_bridge.vhd \
-	$(toplevel)/src/common/riscv/mbv_mcs/mbv_mcs_wrapper.vhd \
+	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
-VIVADO_BD_TCL=$(toplevel)/src/common/riscv/mbv_mcs/mbv_mcs.tcl=100000000
+VIVADO_BD_TCL=$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=mb$(CPU_VARIANT);100000000
 VIVADO_PROC_REF=$(DESIGN)_$(BOARD)_cpu
 VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_SIM_SRC=\

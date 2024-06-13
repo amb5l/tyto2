@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- mbv_mcs_memac_bridge.vhd                                                   --
--- Bridge from mbv_mcs CPU I/O bus to MEMAC queues and buffers.               --
+-- mb_mcs_memac_bridge.vhd                                                    --
+-- Bridge from mb_mcs CPU I/O bus to MEMAC queues and buffers.                --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -18,19 +18,19 @@
 use work.tyto_types_pkg.all;
 use work.memac_pkg.all;
 use work.memac_util_pkg.all;
-use work.mbv_mcs_wrapper_pkg.all;
+use work.mb_mcs_wrapper_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
 
-package mbv_mcs_memac_bridge_pkg is
+package mb_mcs_memac_bridge_pkg is
 
-  component mbv_mcs_memac_bridge is
+  component mb_mcs_memac_bridge is
     port (
       rst          : in    std_ulogic;
       clk          : in    std_ulogic;
-      io_mosi      : in    mbv_mcs_io_mosi_t;
-      io_miso      : out   mbv_mcs_io_miso_t;
+      io_mosi      : in    mb_mcs_io_mosi_t;
+      io_miso      : out   mb_mcs_io_miso_t;
       tx_prq_idx   : out   std_ulogic_vector;
       tx_prq_len   : out   std_ulogic_vector;
       tx_prq_tag   : out   std_ulogic_vector;
@@ -67,26 +67,26 @@ package mbv_mcs_memac_bridge_pkg is
       md_wd        : out   std_ulogic_vector(15 downto 0);
       md_rd        : in    std_ulogic_vector(15 downto 0)
     );
-  end component mbv_mcs_memac_bridge;
+  end component mb_mcs_memac_bridge;
 
-end package mbv_mcs_memac_bridge_pkg;
+end package mb_mcs_memac_bridge_pkg;
 
 --------------------------------------------------------------------------------
 
 use work.memac_pkg.all;
 use work.memac_util_pkg.all;
-use work.mbv_mcs_wrapper_pkg.all;
+use work.mb_mcs_wrapper_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
 
-entity mbv_mcs_memac_bridge is
+entity mb_mcs_memac_bridge is
   port (
     rst          : in    std_ulogic;
     clk          : in    std_ulogic;
-    io_mosi      : in    mbv_mcs_io_mosi_t;
-    io_miso      : out   mbv_mcs_io_miso_t;
+    io_mosi      : in    mb_mcs_io_mosi_t;
+    io_miso      : out   mb_mcs_io_miso_t;
     tx_prq_idx   : out   std_ulogic_vector;
     tx_prq_len   : out   std_ulogic_vector;
     tx_prq_tag   : out   std_ulogic_vector;
@@ -123,9 +123,9 @@ entity mbv_mcs_memac_bridge is
     md_wd        : out   std_ulogic_vector(15 downto 0);
     md_rd        : in    std_ulogic_vector(15 downto 0)
   );
-end entity mbv_mcs_memac_bridge;
+end entity mb_mcs_memac_bridge;
 
-architecture rtl of mbv_mcs_memac_bridge is
+architecture rtl of mb_mcs_memac_bridge is
 
   signal sel_tx_buf_std : std_ulogic;
   signal sel_tx_buf_err : std_ulogic;

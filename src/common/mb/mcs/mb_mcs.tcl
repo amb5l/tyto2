@@ -1,10 +1,17 @@
 set bd_name [file rootname [file tail [file normalize [info script]]]]
 create_bd_design $bd_name
 
-set freq_hz [lindex $argv 0]
-puts "$bd_name: frequency = $freq_hz Hz"
+set cpu_type [lindex $argv 0]
+set freq_hz  [lindex $argv 1]
+puts "$bd_name: CPU type = $cpu_type; frequency = $freq_hz Hz"
 
-set cpu [ create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze_mcs_riscv:1.0 cpu ]
+if {"$cpu_type" == "mbv"} {
+  set cpu_ip xilinx.com:ip:microblaze_mcs_riscv:1.0
+} else {
+  set cpu_ip xilinx.com:ip:microblaze_mcs:3.0
+}
+
+set cpu [ create_bd_cell -type ip -vlnv $cpu_ip cpu ]
 set_property -dict [list \
     CONFIG.MEMSIZE       {131072} \
     CONFIG.UART_BAUDRATE {115200} \

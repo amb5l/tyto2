@@ -1,4 +1,5 @@
-DESIGN=mbv_mcs_memac
+CPU_VARIANT=
+DESIGN=mb_mcs_memac
 PHY=rgmii
 BOARD=digilent_nexys_video
 FPGA=xilinx 7series xc7a200tsbg484-1

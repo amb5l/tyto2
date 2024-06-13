@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- mbv_mcs_wrapper.vhd                                                        --
--- Wrapper for the mbv_mcs block diagram.                                     --
+-- mb_mcs_wrapper.vhd                                                         --
+-- Wrapper for the mb_mcs block diagram.                                      --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -20,23 +20,23 @@ use work.tyto_types_pkg.all;
 library ieee;
   use ieee.std_logic_1164.all;
 
-package mbv_mcs_wrapper_pkg is
+package mb_mcs_wrapper_pkg is
 
-  type mbv_mcs_io_mosi_t is record
+  type mb_mcs_io_mosi_t is record
     astb  : std_ulogic;
     addr  : std_ulogic_vector(31 downto 0);
     be    : std_ulogic_vector(3 downto 0);
     wstb  : std_ulogic;
     wdata : std_ulogic_vector(31 downto 0);
     rstb  : std_ulogic;
-  end record mbv_mcs_io_mosi_t;
+  end record mb_mcs_io_mosi_t;
 
-  type mbv_mcs_io_miso_t is record
+  type mb_mcs_io_miso_t is record
     rdata : std_ulogic_vector(31 downto 0);
     rdy   : std_ulogic;
-  end record mbv_mcs_io_miso_t;
+  end record mb_mcs_io_miso_t;
 
-  component mbv_mcs_wrapper is
+  component mb_mcs_wrapper is
     port (
       rst      : in    std_ulogic;
       clk      : in    std_ulogic;
@@ -44,22 +44,22 @@ package mbv_mcs_wrapper_pkg is
       uart_rx  : in    std_ulogic;
       gpi      : in    sulv_vector(1 to 4)(31 downto 0);
       gpo      : out   sulv_vector(1 to 4)(31 downto 0);
-      io_mosi  : out   mbv_mcs_io_mosi_t;
-      io_miso  : in    mbv_mcs_io_miso_t
+      io_mosi  : out   mb_mcs_io_mosi_t;
+      io_miso  : in    mb_mcs_io_miso_t
     );
-  end component mbv_mcs_wrapper;
+  end component mb_mcs_wrapper;
 
-end package mbv_mcs_wrapper_pkg;
+end package mb_mcs_wrapper_pkg;
 
 --------------------------------------------------------------------------------
 
 use work.tyto_types_pkg.all;
-use work.mbv_mcs_wrapper_pkg.all;
+use work.mb_mcs_wrapper_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
 
-entity mbv_mcs_wrapper is
+entity mb_mcs_wrapper is
   port (
     rst      : in    std_ulogic;
     clk      : in    std_ulogic;
@@ -67,15 +67,15 @@ entity mbv_mcs_wrapper is
     uart_rx  : in    std_ulogic;
     gpi      : in    sulv_vector(1 to 4)(31 downto 0);
     gpo      : out   sulv_vector(1 to 4)(31 downto 0);
-    io_mosi  : out   mbv_mcs_io_mosi_t;
-    io_miso  : in    mbv_mcs_io_miso_t
+    io_mosi  : out   mb_mcs_io_mosi_t;
+    io_miso  : in    mb_mcs_io_miso_t
   );
-end entity mbv_mcs_wrapper;
+end entity mb_mcs_wrapper;
 
-architecture rtl of mbv_mcs_wrapper is
+architecture rtl of mb_mcs_wrapper is
 
-  -- matches the block diagram created by "mbv_mcs.tcl"
-  component mbv_mcs is
+  -- matches the block diagram created by "mb_mcs.tcl"
+  component mb_mcs is
   port (
     rst_n           : in    std_ulogic;
     clk             : in    std_ulogic;
@@ -98,11 +98,11 @@ architecture rtl of mbv_mcs_wrapper is
     io_read_data    : in    std_ulogic_vector(31 downto 0);
     io_ready        : in    std_ulogic
   );
-  end component mbv_mcs;
+  end component mb_mcs;
 
 begin
 
-  CPU: component mbv_mcs
+  CPU: component mb_mcs
     port map (
       rst_n           => not rst,
       clk             => clk,

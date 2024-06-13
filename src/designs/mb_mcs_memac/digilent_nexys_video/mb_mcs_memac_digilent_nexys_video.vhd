@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- mbv_mcs_memac_digilent_nexys_video.vhd                                     --
--- Board specific variant of the mbv_mcs_memac design.                        --
+-- mb_mcs_memac_digilent_nexys_video.vhd                                      --
+-- Board specific variant of the mb_mcs_memac design.                         --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -19,8 +19,8 @@ use work.tyto_types_pkg.all;
 use work.mmcm_v2_pkg.all;
 use work.memac_pkg.all;
 use work.memac_util_pkg.all;
-use work.mbv_mcs_wrapper_pkg.all;
-use work.mbv_mcs_memac_bridge_pkg.all;
+use work.mb_mcs_wrapper_pkg.all;
+use work.mb_mcs_memac_bridge_pkg.all;
 use work.memac_raw_rgmii_pkg.all;
 
 use work.sync_reg_u_pkg.all;
@@ -32,7 +32,7 @@ library ieee;
 library unisim;
   use unisim.vcomponents.all;
 
-entity mbv_mcs_memac_digilent_nexys_video is
+entity mb_mcs_memac_digilent_nexys_video is
   generic (
     RGMII_TX_ALIGN : string;
     RGMII_RX_ALIGN : string;
@@ -189,9 +189,9 @@ entity mbv_mcs_memac_digilent_nexys_video is
     -- ddr3_dqs_n      : inout std_logic_vector(1 downto 0)
 
   );
-end entity mbv_mcs_memac_digilent_nexys_video;
+end entity mb_mcs_memac_digilent_nexys_video;
 
-architecture rtl of mbv_mcs_memac_digilent_nexys_video is
+architecture rtl of mb_mcs_memac_digilent_nexys_video is
 
   constant TX_BUF_SIZE_LOG2 : integer := log2(TX_BUF_SIZE);
   constant RX_BUF_SIZE_LOG2 : integer := log2(RX_BUF_SIZE);
@@ -209,8 +209,8 @@ architecture rtl of mbv_mcs_memac_digilent_nexys_video is
 
   signal gpi              : sulv_vector(1 to 4)(31 downto 0);
   signal gpo              : sulv_vector(1 to 4)(31 downto 0);
-  signal io_mosi          : mbv_mcs_io_mosi_t;
-  signal io_miso          : mbv_mcs_io_miso_t;
+  signal io_mosi          : mb_mcs_io_mosi_t;
+  signal io_miso          : mb_mcs_io_miso_t;
 
   signal mac_md_stb       : std_ulogic;
   signal mac_md_pre       : std_ulogic;
@@ -266,7 +266,7 @@ architecture rtl of mbv_mcs_memac_digilent_nexys_video is
   signal eth_mdoe         : std_ulogic;
 
   attribute KEEP_HIERARCHY : string;
-  attribute KEEP_HIERARCHY of mbv_mcs_memac_digilent_nexys_video : entity is "TRUE";
+  attribute KEEP_HIERARCHY of mb_mcs_memac_digilent_nexys_video : entity is "TRUE";
 
 begin
 
@@ -333,7 +333,7 @@ begin
   --------------------------------------------------------------------------------
   -- MicroBlaze V MCS (CPU core)
 
-  U_MCU: component mbv_mcs_wrapper
+  U_MCU: component mb_mcs_wrapper
     port map (
       rst      => rst_100m,
       clk      => clk_100m,
@@ -348,7 +348,7 @@ begin
   --------------------------------------------------------------------------------
   -- MCS I/O to MEMAC interface
 
-  U_BRIDGE: component mbv_mcs_memac_bridge
+  U_BRIDGE: component mb_mcs_memac_bridge
     port map (
       rst          => rst_100m,
       clk          => clk_100m,

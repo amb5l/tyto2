@@ -1,6 +1,6 @@
 ################################################################################
-## mbv_mcs_memac_digilent_nexys_video.tcl                                     ##
-## Board specific constraints for the mbv_mcs_memac design.                   ##
+## mb_mcs_memac_digilent_nexys_video.tcl                                      ##
+## Board specific constraints for the mb_mcs_memac design.                    ##
 ################################################################################
 ## (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        ##
 ## This file is part of The Tyto Project. The Tyto Project is free software:  ##
