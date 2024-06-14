@@ -13,6 +13,8 @@ FPGA_VENDOR=$(word 1,$(FPGA))
 FPGA_FAMILY=$(word 2,$(FPGA))
 FPGA_DEVICE=$(word 3,$(FPGA))
 
+CPU=mb$(CPU_VARIANT)
+
 #################################################################################
 # Vitis
 
@@ -27,7 +29,7 @@ VITIS_INC=\
 	$(toplevel)/src/common/basic/microblaze \
 	$(toplevel)/src/common/ethernet \
 	$(toplevel)/src/designs/$(DESIGN)/software
-VITIS_SYM=APP_NAME=mb$(CPU_VARIANT)_mcs_test
+VITIS_SYM=APP_NAME=$(CPU)_mcs_test
 VITIS_SYM_RLS=BUILD_CONFIG=Release
 VITIS_SYM_DBG=BUILD_CONFIG=Debug
 
@@ -69,7 +71,7 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN)_bridge.vhd \
 	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
-VIVADO_BD_TCL=$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=mb$(CPU_VARIANT);100000000
+VIVADO_BD_TCL=$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=$(VIVADO_CPU);100000000
 VIVADO_PROC_REF=mb_mcs
 VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
