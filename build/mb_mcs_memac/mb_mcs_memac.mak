@@ -80,25 +80,14 @@ VIVADO_SIM_RUN=tb_$(DESIGN)
 VIVADO_XDC=\
 	$(toplevel)/src/boards/$(BOARD)/$(BOARD).tcl=IMPL \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).tcl=SYNTH,IMPL \
-		$(toplevel)/src/common/ethernet/memac_tx_rgmii.tcl=IMPL \
+	$(toplevel)/src/common/ethernet/memac_tx_rgmii.tcl=IMPL \
 	$(toplevel)/src/common/ethernet/memac_rx_rgmii.tcl=IMPL
+VIVADO_DSN_XLIB=unisim
+VIVADO_DSN_XSRC.unisim=\
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd
 
 include $(make_fpga)/vivado.mak
 
 ################################################################################
-# Visual Studio Code
-
-VSCODE_TOP=$(DESIGN) tb_$(DESIGN)
-VSCODE_LIB=work unisim
-VSCODE_SRC.work=\
-	$(call VIVADO_SRC_FILE,$(VIVADO_DSN_SRC)) \
-	$(call VIVADO_SRC_FILE,$(VIVADO_SIM_SRC))
-VSCODE_SRC.unisim=\
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd
-VSCODE_AUX=\
-	$(call VIVADO_SRC_FILE,$(VIVADO_BD_TCL)) \
-	$(call VIVADO_SRC_FILE,$(VIVADO_XDC))
-
-include $(make_fpga)/vscode.mak
