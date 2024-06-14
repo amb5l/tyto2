@@ -31,11 +31,20 @@ package mb_mcs_memac_bridge_pkg is
       clk          : in    std_ulogic;
       io_mosi      : in    mb_mcs_io_mosi_t;
       io_miso      : out   mb_mcs_io_miso_t;
+      md_stb       : out   std_ulogic;
+      md_r_w       : out   std_ulogic;
+      md_pa        : out   std_ulogic_vector(4 downto 0);
+      md_ra        : out   std_ulogic_vector(4 downto 0);
+      md_wd        : out   std_ulogic_vector(15 downto 0);
+      md_rd        : in    std_ulogic_vector(15 downto 0);
+      md_rdy       : in    std_ulogic;
+      tx_prq_rdy   : in    std_ulogic;
       tx_prq_idx   : out   std_ulogic_vector;
       tx_prq_len   : out   std_ulogic_vector;
       tx_prq_tag   : out   std_ulogic_vector;
       tx_prq_opt   : out   tx_opt_t;
       tx_prq_stb   : out   std_ulogic;
+      tx_pfq_rdy   : in    std_ulogic;
       tx_pfq_idx   : in    std_ulogic_vector;
       tx_pfq_len   : in    std_ulogic_vector;
       tx_pfq_tag   : in    std_ulogic_vector;
@@ -47,10 +56,12 @@ package mb_mcs_memac_bridge_pkg is
       tx_buf_dpin  : out   std_ulogic_vector(3 downto 0);
       tx_buf_dout  : in    std_ulogic_vector(31 downto 0);
       tx_buf_dpout : in    std_ulogic_vector(3 downto 0);
+      rx_prq_rdy   : in    std_ulogic;
       rx_prq_idx   : in    std_ulogic_vector;
       rx_prq_len   : in    std_ulogic_vector;
       rx_prq_flag  : in    rx_flag_t;
       rx_prq_stb   : out   std_ulogic;
+      rx_pfq_rdy   : in    std_ulogic;
       rx_pfq_len   : out   std_ulogic_vector;
       rx_pfq_stb   : out   std_ulogic;
       rx_buf_en    : out   std_ulogic;
@@ -59,13 +70,7 @@ package mb_mcs_memac_bridge_pkg is
       rx_buf_din   : out   std_ulogic_vector(31 downto 0);
       rx_buf_dpin  : out   std_ulogic_vector(3 downto 0);
       rx_buf_dout  : in    std_ulogic_vector(31 downto 0);
-      rx_buf_dpout : in    std_ulogic_vector(3 downto 0);
-      md_stb       : out   std_ulogic;
-      md_r_w       : out   std_ulogic;
-      md_pa        : out   std_ulogic_vector(4 downto 0);
-      md_ra        : out   std_ulogic_vector(4 downto 0);
-      md_wd        : out   std_ulogic_vector(15 downto 0);
-      md_rd        : in    std_ulogic_vector(15 downto 0)
+      rx_buf_dpout : in    std_ulogic_vector(3 downto 0)
     );
   end component mb_mcs_memac_bridge;
 
@@ -87,11 +92,20 @@ entity mb_mcs_memac_bridge is
     clk          : in    std_ulogic;
     io_mosi      : in    mb_mcs_io_mosi_t;
     io_miso      : out   mb_mcs_io_miso_t;
+    md_stb       : out   std_ulogic;
+    md_r_w       : out   std_ulogic;
+    md_pa        : out   std_ulogic_vector(4 downto 0);
+    md_ra        : out   std_ulogic_vector(4 downto 0);
+    md_wd        : out   std_ulogic_vector(15 downto 0);
+    md_rd        : in    std_ulogic_vector(15 downto 0);
+    md_rdy       : in    std_ulogic;
+    tx_prq_rdy   : in    std_ulogic;
     tx_prq_idx   : out   std_ulogic_vector;
     tx_prq_len   : out   std_ulogic_vector;
     tx_prq_tag   : out   std_ulogic_vector;
     tx_prq_opt   : out   tx_opt_t;
     tx_prq_stb   : out   std_ulogic;
+    tx_pfq_rdy   : in    std_ulogic;
     tx_pfq_idx   : in    std_ulogic_vector;
     tx_pfq_len   : in    std_ulogic_vector;
     tx_pfq_tag   : in    std_ulogic_vector;
@@ -103,10 +117,12 @@ entity mb_mcs_memac_bridge is
     tx_buf_dpin  : out   std_ulogic_vector(3 downto 0);
     tx_buf_dout  : in    std_ulogic_vector(31 downto 0);
     tx_buf_dpout : in    std_ulogic_vector(3 downto 0);
+    rx_prq_rdy   : in    std_ulogic;
     rx_prq_idx   : in    std_ulogic_vector;
     rx_prq_len   : in    std_ulogic_vector;
     rx_prq_flag  : in    rx_flag_t;
     rx_prq_stb   : out   std_ulogic;
+    rx_pfq_rdy   : in    std_ulogic;
     rx_pfq_len   : out   std_ulogic_vector;
     rx_pfq_stb   : out   std_ulogic;
     rx_buf_en    : out   std_ulogic;
@@ -115,13 +131,7 @@ entity mb_mcs_memac_bridge is
     rx_buf_din   : out   std_ulogic_vector(31 downto 0);
     rx_buf_dpin  : out   std_ulogic_vector(3 downto 0);
     rx_buf_dout  : in    std_ulogic_vector(31 downto 0);
-    rx_buf_dpout : in    std_ulogic_vector(3 downto 0);
-    md_stb       : out   std_ulogic;
-    md_r_w       : out   std_ulogic;
-    md_pa        : out   std_ulogic_vector(4 downto 0);
-    md_ra        : out   std_ulogic_vector(4 downto 0);
-    md_wd        : out   std_ulogic_vector(15 downto 0);
-    md_rd        : in    std_ulogic_vector(15 downto 0)
+    rx_buf_dpout : in    std_ulogic_vector(3 downto 0)
   );
 end entity mb_mcs_memac_bridge;
 
@@ -140,7 +150,10 @@ architecture rtl of mb_mcs_memac_bridge is
   signal tx_prq_opt_r   : tx_opt_t;
   signal tx_prq_tag_r   : std_ulogic_vector(tx_prq_tag'range);
 
-  signal rrdy  : std_ulogic;
+  signal astb_l : std_ulogic;
+  signal wstb_l : std_ulogic;
+  signal rstb_l : std_ulogic;
+  signal rrdy   : std_ulogic;
 
 begin
 
@@ -181,7 +194,7 @@ begin
     tx_pfq_stb  <= sel_tx_pq_lo and not io_mosi.wstb;
 
     tx_buf_en   <= sel_tx_buf_std or sel_tx_buf_err;
-    tx_buf_bwe  <= io_mosi.be when io_mosi.wstb = '1' else (others => '0');
+    tx_buf_bwe  <= io_mosi.be when (io_mosi.wstb = '1' or wstb_l = '1') else (others => '0');
     tx_buf_addr <= io_mosi.addr(tx_buf_addr'range);
     tx_buf_din  <= io_mosi.wdata;
     tx_buf_dpin <= io_mosi.be when sel_tx_buf_err else (others => '0');
@@ -192,7 +205,7 @@ begin
     rx_pfq_stb  <= sel_rx_pq_lo and io_mosi.wstb;
 
     rx_buf_en   <= sel_rx_buf_std or sel_rx_buf_err;
-    rx_buf_bwe  <= io_mosi.be when io_mosi.wstb = '1' else (others => '0');
+    rx_buf_bwe  <= io_mosi.be when (io_mosi.wstb = '1' or wstb_l = '1') else (others => '0');
     rx_buf_addr <= io_mosi.addr(rx_buf_addr'range);
     rx_buf_din  <= io_mosi.wdata;
     rx_buf_dpin <= io_mosi.be when sel_rx_buf_err else (others => '0');
@@ -203,7 +216,17 @@ begin
     md_ra  <= io_mosi.addr(4 downto 0);
     md_wd  <= io_mosi.wdata(15 downto 0);
 
-    io_miso.rdy <= io_mosi.wstb or rrdy;
+    io_miso.rdy <=
+      '1'        when (io_mosi.wstb = '1' or wstb_l = '1') and io_mosi.addr(19 downto 16) = "000" else -- TX buffer write
+      rrdy       when (io_mosi.rstb = '1' or rstb_l = '1') and io_mosi.addr(19 downto 16) = "000" else -- TX buffer read
+      tx_prq_rdy when (io_mosi.wstb = '1' or wstb_l = '1') and io_mosi.addr(19 downto 17) = "001" else -- TX PRQ write
+      tx_pfq_rdy when (io_mosi.rstb = '1' or rstb_l = '1') and io_mosi.addr(19 downto 17) = "001" else -- TX PFQ read
+      '1'        when (io_mosi.wstb = '1' or wstb_l = '1') and io_mosi.addr(19 downto 16) = "010" else -- RX buffer write
+      rrdy       when (io_mosi.rstb = '1' or rstb_l = '1') and io_mosi.addr(19 downto 16) = "010" else -- RX buffer read
+      rx_prq_rdy when (io_mosi.rstb = '1' or rstb_l = '1') and io_mosi.addr(19 downto 17) = "011" else -- RX PRQ read
+      rx_pfq_rdy when (io_mosi.wstb = '1' or wstb_l = '1') and io_mosi.addr(19 downto 17) = "011" else -- RX PFQ write
+      md_rdy     when (io_mosi.astb = '1' or astb_l = '1') and io_mosi.addr(19) = '1'             else -- MDIO
+      '0';
 
     if    sel_tx_buf_std then
       io_miso.rdata <= tx_buf_dout;
@@ -248,7 +271,10 @@ begin
   begin
     if rst = '1' then
       tx_prq_tag_r <= (others => '0');
-      rrdy <= '0';
+      astb_l <= '0';
+      wstb_l <= '0';
+      rstb_l <= '0';
+      rrdy   <= '0';
     elsif rising_edge(clk) then
       if sel_tx_pq_hi and io_mosi.wstb then
         if io_mosi.be(0) then
@@ -257,6 +283,21 @@ begin
         if io_mosi.be(2) then
           tx_prq_tag_r <= io_mosi.wdata(16+tx_prq_tag'high downto 16);
         end if;
+      end if;
+      if io_mosi.astb = '1' and io_miso.rdy = '0' then
+        astb_l <= '1';
+      elsif astb_l = '1' and io_miso.rdy = '1' then
+        astb_l <= '0';
+      end if;
+      if io_mosi.wstb = '1' and io_miso.rdy = '0' then
+        wstb_l <= '1';
+      elsif wstb_l = '1' and io_miso.rdy = '1' then
+        wstb_l <= '0';
+      end if;
+      if io_mosi.rstb = '1' and io_miso.rdy = '0' then
+        rstb_l <= '1';
+      elsif rstb_l = '1' and io_miso.rdy = '1' then
+        rstb_l <= '0';
       end if;
       rrdy <= io_mosi.rstb;
     end if;

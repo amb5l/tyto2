@@ -101,6 +101,8 @@ begin
 
     elsif rising_edge(clk) then
 
+      rdy  <= '0';
+
       case state is
 
         when IDLE =>
@@ -109,12 +111,10 @@ begin
           r_w_l     <= '0';
           sro        <= (others => '0');
           sri        <= (others => '0');
-          rdy       <= '1';
           mdc       <= '0';
           mdo       <= '0';
           mdoe      <= '0';
           if stb = '1' then
-            rdy   <= '0';
             r_w_l <= r_w;
             sro(31 downto 30) <= "01";
             sro(29 downto 28) <= "01" when r_w = '0' else "10";

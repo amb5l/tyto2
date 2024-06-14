@@ -12,6 +12,8 @@
 #define peek16(a)   (*(uint16_t *)a)
 #define peek32(a)   (*(uint32_t *)a)
 
+#define led(d) {XIOModule_DiscreteWrite(&io,4,d);}
+
 extern XIOModule io;
 
 int bsp_init();

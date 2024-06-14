@@ -30,8 +30,8 @@ VITIS_INC=\
 	$(toplevel)/src/common/ethernet \
 	$(toplevel)/src/designs/$(DESIGN)/software
 VITIS_SYM=APP_NAME=$(CPU)_mcs_test
-VITIS_SYM_RLS=BUILD_CONFIG=Release
-VITIS_SYM_DBG=BUILD_CONFIG=Debug
+VITIS_SYM_RLS=BUILD_CONFIG_RLS
+VITIS_SYM_DBG=BUILD_CONFIG_DBG
 
 include $(make_fpga)/vitis.mak
 

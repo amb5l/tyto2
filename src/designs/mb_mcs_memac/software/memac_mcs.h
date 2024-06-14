@@ -12,6 +12,7 @@ extern phy_id_t phy_id;
 #define phy_mdio_poke(ra,d) poke16(MEMEC_BASE_MDIO | ra, data)
 #define phy_mdio_peek(ra) peek16(MEMEC_BASE_MDIO | ra)
 
+void phy_reset(void);
 void phy_init(void);
 
 #endif
