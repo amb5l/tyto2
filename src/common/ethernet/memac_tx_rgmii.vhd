@@ -88,6 +88,9 @@ architecture rtl of memac_tx_rgmii is
   signal umi_dv_r        : std_ulogic;
   signal umi_er_r        : std_ulogic;
   signal umi_d_r         : std_ulogic_vector(7 downto 0);
+  signal oddr_d1          : std_ulogic_vector(4 downto 0);
+  signal oddr_d2          : std_ulogic_vector(4 downto 0);
+  signal oddr_q           : std_ulogic_vector(4 downto 0);
 
 begin
 
@@ -275,16 +278,17 @@ begin
 
   U_ODDR: component oddr
     port map (
-      rst            => '0',
-      set            => '0',
-      clk            => ref_clk,
-      clken          => rgmii_clken,
-      d1(4)          => rgmii_ctl_d1,
-      d1(3 downto 0) => rgmii_d_d1,
-      d2(4)          => rgmii_ctl_d2,
-      d2(3 downto 0) => rgmii_d_d2,
-      q(4)           => rgmii_ctl,
-      q(3 downto 0)  => rgmii_d
+      rst   => '0',
+      set   => '0',
+      clk   => ref_clk,
+      clken => rgmii_clken,
+      d1    => oddr_d1,
+      d2    => oddr_d2,
+      q     => oddr_q
     );
+  oddr_d1   <= rgmii_ctl_d1 & rgmii_d_d1;
+  oddr_d2   <= rgmii_ctl_d2 & rgmii_d_d2;
+  rgmii_ctl <= oddr_q(4);
+  rgmii_d   <= oddr_q(3 downto 0);
 
 end architecture rtl;

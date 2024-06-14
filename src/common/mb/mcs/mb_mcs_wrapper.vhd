@@ -77,26 +77,26 @@ architecture rtl of mb_mcs_wrapper is
   -- matches the block diagram created by "mb_mcs.tcl"
   component mb_mcs is
   port (
-    rst_n           : in    std_ulogic;
-    clk             : in    std_ulogic;
-    uart_txd        : out   std_ulogic;
-    uart_rxd        : in    std_ulogic;
-    gpio1_tri_i     : in    std_ulogic_vector(31 downto 0);
-    gpio2_tri_i     : in    std_ulogic_vector(31 downto 0);
-    gpio3_tri_i     : in    std_ulogic_vector(31 downto 0);
-    gpio4_tri_i     : in    std_ulogic_vector(31 downto 0);
-    gpio1_tri_o     : out   std_ulogic_vector(31 downto 0);
-    gpio2_tri_o     : out   std_ulogic_vector(31 downto 0);
-    gpio3_tri_o     : out   std_ulogic_vector(31 downto 0);
-    gpio4_tri_o     : out   std_ulogic_vector(31 downto 0);
-    io_addr_strobe  : out   std_ulogic;
-    io_address      : out   std_ulogic_vector(31 downto 0);
-    io_byte_enable  : out   std_ulogic_vector(3 downto 0);
-    io_write_strobe : out   std_ulogic;
-    io_write_data   : out   std_ulogic_vector(31 downto 0);
-    io_read_strobe  : out   std_ulogic;
-    io_read_data    : in    std_ulogic_vector(31 downto 0);
-    io_ready        : in    std_ulogic
+    rst_n           : in    std_logic;
+    clk             : in    std_logic;
+    uart_txd        : out   std_logic;
+    uart_rxd        : in    std_logic;
+    gpio1_tri_i     : in    std_logic_vector(31 downto 0);
+    gpio2_tri_i     : in    std_logic_vector(31 downto 0);
+    gpio3_tri_i     : in    std_logic_vector(31 downto 0);
+    gpio4_tri_i     : in    std_logic_vector(31 downto 0);
+    gpio1_tri_o     : out   std_logic_vector(31 downto 0);
+    gpio2_tri_o     : out   std_logic_vector(31 downto 0);
+    gpio3_tri_o     : out   std_logic_vector(31 downto 0);
+    gpio4_tri_o     : out   std_logic_vector(31 downto 0);
+    io_addr_strobe  : out   std_logic;
+    io_address      : out   std_logic_vector(31 downto 0);
+    io_byte_enable  : out   std_logic_vector(3 downto 0);
+    io_write_strobe : out   std_logic;
+    io_write_data   : out   std_logic_vector(31 downto 0);
+    io_read_strobe  : out   std_logic;
+    io_read_data    : in    std_logic_vector(31 downto 0);
+    io_ready        : in    std_logic
   );
   end component mb_mcs;
 

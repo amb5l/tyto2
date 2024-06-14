@@ -43,7 +43,7 @@ package memac_raw_rgmii_pkg is
       sys_md_rdy       : out   std_ulogic;
 
       sys_tx_rst       : in    std_ulogic;
-      sys_tx_ctrl      : in    tx_ctrl_t;
+      sys_tx_spd       : in    std_ulogic_vector(1 downto 0);
       sys_tx_prq_rdy   : out   std_ulogic;
       sys_tx_prq_len   : in    std_ulogic_vector;
       sys_tx_prq_idx   : in    std_ulogic_vector;
@@ -64,6 +64,8 @@ package memac_raw_rgmii_pkg is
       sys_tx_buf_dpout : out   std_ulogic_vector(3 downto 0);
 
       sys_rx_rst       : in    std_ulogic;
+      sys_rx_spdi      : in    std_ulogic_vector(1 downto 0);
+      sys_rx_spdo      : out   std_ulogic_vector(1 downto 0);
       sys_rx_ctrl      : in    rx_ctrl_t;
       sys_rx_stat      : out   rx_stat_t;
       sys_rx_prq_rdy   : out   std_ulogic;
@@ -136,7 +138,7 @@ entity memac_raw_rgmii is
     sys_md_rdy       : out   std_ulogic;
 
     sys_tx_rst       : in    std_ulogic;
-    sys_tx_ctrl      : in    tx_ctrl_t;
+    sys_tx_spd       : in    std_ulogic_vector(1 downto 0);
     sys_tx_prq_rdy   : out   std_ulogic;
     sys_tx_prq_len   : in    std_ulogic_vector;
     sys_tx_prq_idx   : in    std_ulogic_vector;
@@ -157,6 +159,8 @@ entity memac_raw_rgmii is
     sys_tx_buf_dpout : out   std_ulogic_vector(3 downto 0);
 
     sys_rx_rst       : in    std_ulogic;
+    sys_rx_spdi      : in    std_ulogic_vector(1 downto 0);
+    sys_rx_spdo      : out   std_ulogic_vector(1 downto 0);
     sys_rx_ctrl      : in    rx_ctrl_t;
     sys_rx_stat      : out   rx_stat_t;
     sys_rx_prq_rdy   : out   std_ulogic;
@@ -241,7 +245,6 @@ begin
   --------------------------------------------------------------------------------
 
   tx_umi_rst <= ref_rst or sys_tx_rst;
-  tx_umi_clk <= ref_clk;
 
   U_MEMAC_TX: component memac_tx
     port map (
@@ -280,7 +283,7 @@ begin
     port map (
       ref_clk    => ref_clk,
       ref_clk_90 => ref_clk_90,
-      umi_spd    => sys_tx_ctrl.spd,
+      umi_spd    => sys_tx_spd,
       umi_rst    => tx_umi_rst,
       umi_clk    => tx_umi_clk,
       umi_clken  => tx_umi_clken,
@@ -301,7 +304,7 @@ begin
       sys_rst   => sys_rst,
       sys_clk   => sys_clk,
       ctrl      => sys_rx_ctrl,
-      stat      => sys_rx_stat,
+      drops     => sys_rx_stat.drops,
       prq_rdy   => sys_rx_prq_rdy,
       prq_len   => sys_rx_prq_len,
       prq_idx   => sys_rx_prq_idx,
@@ -329,8 +332,8 @@ begin
     port map (
       ref_rst   => ref_rst,
       ref_clk   => ref_clk,
-      umi_spdi  => sys_rx_ctrl.spd,
-      umi_spdo  => sys_rx_stat.spd,
+      umi_spdi  => sys_rx_spdi,
+      umi_spdo  => sys_rx_spdo,
       umi_rst   => rx_umi_rst,
       umi_clk   => rx_umi_clk,
       umi_clken => rx_umi_clken,

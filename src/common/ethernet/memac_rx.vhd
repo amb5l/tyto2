@@ -27,7 +27,7 @@ package memac_rx_pkg is
       sys_rst   : in    std_ulogic;
       sys_clk   : in    std_ulogic;
       ctrl      : in    rx_ctrl_t;
-      stat      : out   rx_stat_t;
+      drops     : out   std_ulogic_vector(31 downto 0);
       prq_rdy   : out   std_ulogic;
       prq_len   : out   std_ulogic_vector;
       prq_idx   : out   std_ulogic_vector;
@@ -71,7 +71,7 @@ entity memac_rx is
     sys_clk   : in    std_ulogic;
 
     ctrl      : in    rx_ctrl_t;
-    stat      : out   rx_stat_t;
+    drops     : out   std_ulogic_vector(31 downto 0);
 
     prq_rdy   : out   std_ulogic;
     prq_len   : out   std_ulogic_vector;
@@ -194,7 +194,7 @@ begin
       ipg_min  => ctrl.ipg_min,
       pre_inc  => ctrl.pre_inc,
       fcs_inc  => ctrl.fcs_inc,
-      drops    => stat.drops,
+      drops    => drops,
       prq_rdy  => umi_prq_rdy,
       prq_len  => umi_prq_len,
       prq_idx  => umi_prq_idx,

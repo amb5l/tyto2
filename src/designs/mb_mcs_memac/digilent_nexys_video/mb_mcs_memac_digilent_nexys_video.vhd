@@ -221,7 +221,7 @@ architecture rtl of mb_mcs_memac_digilent_nexys_video is
   signal mac_md_rd        : std_ulogic_vector(15 downto 0);
   signal mac_md_rdy       : std_ulogic;
   signal mac_tx_rst       : std_ulogic;
-  signal mac_tx_ctrl      : tx_ctrl_t;
+  signal mac_tx_spd       : std_ulogic_vector(1 downto 0);
   signal mac_tx_prq_rdy   : std_ulogic;
   signal mac_tx_prq_len   : std_ulogic_vector(LEN_MAX_LOG2-1 downto 0);
   signal mac_tx_prq_idx   : std_ulogic_vector(log2(TX_BUF_SIZE)-1 downto 0);
@@ -241,6 +241,8 @@ architecture rtl of mb_mcs_memac_digilent_nexys_video is
   signal mac_tx_buf_dout  : std_ulogic_vector(31 downto 0);
   signal mac_tx_buf_dpout : std_ulogic_vector(3 downto 0);
   signal mac_rx_rst       : std_ulogic;
+  signal mac_rx_spdi      : std_ulogic_vector(1 downto 0);
+  signal mac_rx_spdo      : std_ulogic_vector(1 downto 0);
   signal mac_rx_ctrl      : rx_ctrl_t;
   signal mac_rx_stat      : rx_stat_t;
   signal mac_rx_prq_rdy   : std_ulogic;
@@ -412,7 +414,7 @@ begin
       sys_md_rd        => mac_md_rd,
       sys_md_rdy       => mac_md_rdy,
       sys_tx_rst       => mac_tx_rst,
-      sys_tx_ctrl      => mac_tx_ctrl,
+      sys_tx_spd       => mac_tx_spd,
       sys_tx_prq_rdy   => mac_tx_prq_rdy,
       sys_tx_prq_len   => mac_tx_prq_len,
       sys_tx_prq_idx   => mac_tx_prq_idx,
@@ -432,6 +434,8 @@ begin
       sys_tx_buf_dout  => mac_tx_buf_dout,
       sys_tx_buf_dpout => mac_tx_buf_dpout,
       sys_rx_rst       => mac_rx_rst,
+      sys_rx_spdi      => mac_rx_spdi,
+      sys_rx_spdo      => mac_rx_spdo,
       sys_rx_ctrl      => mac_rx_ctrl,
       sys_rx_stat      => mac_rx_stat,
       sys_rx_prq_rdy   => mac_rx_prq_rdy,
@@ -475,8 +479,8 @@ begin
   mac_tx_rst          <= rst_a or not gpo(1)(1);
   mac_rx_rst          <= rst_a or not gpo(1)(2);
   mac_md_pre          <= gpo(1)(           3);
-  mac_tx_ctrl.spd     <= gpo(1)( 5 downto  4);
-  mac_rx_ctrl.spd     <= gpo(1)( 7 downto  6);
+  mac_tx_spd          <= gpo(1)( 5 downto  4);
+  mac_rx_spdi         <= gpo(1)( 7 downto  6);
   mac_rx_ctrl.ipg_min <= gpo(1)(11 downto  8);
   mac_rx_ctrl.pre_len <= gpo(1)(15 downto 12);
   mac_rx_ctrl.pre_inc <= gpo(1)(          16);
@@ -492,7 +496,7 @@ begin
   gpi(1)(           2) <= mac_rx_prq_rdy;
   gpi(1)(           3) <= mac_rx_pfq_rdy;
   gpi(1)(           4) <= mac_md_rdy;
-  gpi(1)( 6 downto  5) <= mac_rx_stat.spd;
+  gpi(1)( 6 downto  5) <= mac_rx_spdo;
   gpi(1)(           7) <= mac_rx_stat.ibs_crs;
   gpi(1)(           8) <= mac_rx_stat.ibs_crx;
   gpi(1)(           9) <= mac_rx_stat.ibs_crxer;

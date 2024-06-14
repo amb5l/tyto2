@@ -87,6 +87,9 @@ end entity memac_rx_rgmii;
 architecture rtl of memac_rx_rgmii is
 
   signal umi_spdi_s    : std_ulogic_vector(1 downto 0);
+  signal iddr_d        : std_ulogic_vector(4 downto 0);
+  signal iddr_q1       : std_ulogic_vector(4 downto 0);
+  signal iddr_q2       : std_ulogic_vector(4 downto 0);
   signal rgmii_ctl_r   : std_ulogic;
   signal rgmii_ctl_f   : std_ulogic;
   signal rgmii_d_r     : std_ulogic_vector(3 downto 0);
@@ -109,17 +112,19 @@ begin
 
   U_IDDR: component iddr
     port map (
-      rst            => '0',
-      set            => '0',
-      clk            => rgmii_clk,
-      clken          => '1',
-      d(4)           => rgmii_ctl,
-      d(3 downto 0)  => rgmii_d,
-      q1(4)          => rgmii_ctl_r,
-      q1(3 downto 0) => rgmii_d_r,
-      q2(4)          => rgmii_ctl_f,
-      q2(3 downto 0) => rgmii_d_f
+      rst   => '0',
+      set   => '0',
+      clk   => rgmii_clk,
+      clken => '1',
+      d     => iddr_d,
+      q1    => iddr_q1,
+      q2    => iddr_q2
     );
+  iddr_d <= rgmii_ctl & rgmii_d;
+  rgmii_ctl_r <= iddr_q1(4);
+  rgmii_d_r   <= iddr_q1(3 downto 0);
+  rgmii_ctl_f <= iddr_q2(4);
+  rgmii_d_f   <= iddr_q2(3 downto 0);
 
   P_MAIN: process(umi_rst,umi_clk)
   begin

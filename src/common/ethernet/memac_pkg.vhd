@@ -20,17 +20,12 @@ library ieee;
 
 package memac_pkg is
 
-  type tx_ctrl_t is record
-    spd : std_ulogic_vector(1 downto 0);  -- speed
-  end record tx_ctrl_t;
-
   subtype tx_opt_t is std_ulogic_vector(5 downto 0);
   subtype TX_OPT_PRE_LEN_RANGE is natural range 3 downto 0;
   constant TX_OPT_PRE_AUTO_BIT : integer := 4;
   constant TX_OPT_FCS_AUTO_BIT : integer := 5;
 
   type rx_ctrl_t is record
-    spd     : std_ulogic_vector(1 downto 0);  -- speed
     ipg_min : std_ulogic_vector(3 downto 0);  -- IPG minimum
     pre_len : std_ulogic_vector(3 downto 0);  -- preamble length
     pre_inc : std_ulogic;                     -- include preamble
@@ -38,7 +33,6 @@ package memac_pkg is
   end record rx_ctrl_t;
 
   type rx_stat_t is record
-    spd       : std_ulogic_vector(1 downto 0);  -- speed
     ibs_crs   : std_ulogic;                     -- IBS carrier sense
     ibs_crx   : std_ulogic;                     -- IBS carrier extend
     ibs_crxer : std_ulogic;                     -- IBS carrier extend error

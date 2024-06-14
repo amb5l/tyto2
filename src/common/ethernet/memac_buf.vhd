@@ -79,6 +79,8 @@ end entity memac_buf;
 
 architecture rtl of memac_buf is
 
+  signal dout_a     : sulv_vector(3 downto 0)(8 downto 0);
+  signal dout_b     : sulv_vector(3 downto 0)(8 downto 0);
   signal umi_bwe    : std_ulogic_vector(3 downto 0);
   signal umi_bdout  : sulv_vector(3 downto 0)(7 downto 0);
   signal umi_bdpout : std_ulogic_vector(3 downto 0);
@@ -106,17 +108,19 @@ begin
         we_a    => cpu_bwe(i),
         addr_a  => cpu_addr,
         din_a   => cpu_dpin(i) & cpu_din(7+(i*8) downto i*8),
-        dout_a(7 downto 0) => cpu_dout(7+(i*8) downto i*8),
-        dout_a(8) => cpu_dpout(i),
+        dout_a  => dout_a(i),
         clk_b   => umi_clk,
         rst_b   => '0',
         en_b    => umi_en,
         we_b    => umi_bwe(i),
         addr_b  => umi_addr(umi_addr'high downto 2),
         din_b   => umi_dpin & umi_din,
-        dout_b(7 downto 0) => umi_bdout(i),
-        dout_b(8) => umi_bdpout(i)
+        dout_b  => dout_b(i)
       );
+      cpu_dout(7+(i*8) downto i*8) <= dout_a(i)(7 downto 0);
+      cpu_dpout(i) <= dout_a(i)(8);
+      umi_bdout(i) <= dout_b(i)(7 downto 0);
+      umi_bdpout(i) <= dout_b(i)(8);
   end generate GEN_BUF;
 
 end architecture rtl;
