@@ -17,10 +17,19 @@ FPGA_DEVICE=$(word 3,$(FPGA))
 # Vitis
 
 VITIS_FLOW=classic
-VITIS_SRC=$(toplevel)/src/designs/$(DESIGN)/software/main.c
+VITIS_SRC=\
+	$(toplevel)/src/common/basic/microblaze/printf.c \
+	$(toplevel)/src/common/ethernet/mdio.h \
+	$(toplevel)/src/designs/$(DESIGN)/software/memac_mcs.c \
+	$(toplevel)/src/designs/$(DESIGN)/software/bsp.c \
+	$(toplevel)/src/designs/$(DESIGN)/software/main.c
+VITIS_INC=\
+	$(toplevel)/src/common/basic/microblaze \
+	$(toplevel)/src/common/ethernet \
+	$(toplevel)/src/designs/$(DESIGN)/software
 VITIS_SYM=APP_NAME=mb$(CPU_VARIANT)_mcs_test
-VITIS_SYM_RLS=BUILD_CONFG=Release
-VITIS_SYM_DBG=BUILD_CONFG=Debug
+VITIS_SYM_RLS=BUILD_CONFIG=Release
+VITIS_SYM_DBG=BUILD_CONFIG=Debug
 
 include $(make_fpga)/vitis.mak
 
@@ -61,8 +70,9 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
 VIVADO_BD_TCL=$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=mb$(CPU_VARIANT);100000000
-VIVADO_PROC_REF=$(DESIGN)_$(BOARD)_cpu
+VIVADO_PROC_REF=mb_mcs
 VIVADO_PROC_CELL=cpu/U0/microblaze_I
+VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
 VIVADO_SIM_SRC=\
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/tb_$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_ELF=$(VITIS_DIR)/$(VITIS_ELF_DBG)
