@@ -71,7 +71,7 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN)_bridge.vhd \
 	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
-VIVADO_BD_TCL=$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=$(VIVADO_CPU);100000000
+VIVADO_BD_TCL=$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=$(CPU);100000000
 VIVADO_PROC_REF=mb_mcs
 VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
