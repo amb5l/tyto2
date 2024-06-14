@@ -3,7 +3,7 @@ create_bd_design $bd_name
 
 set cpu_type [lindex $argv 0]
 set freq_hz  [lindex $argv 1]
-puts "$bd_name: CPU type = $cpu_type; frequency = $freq_hz Hz"
+puts "$bd_name: CPU type = $cpu_type  frequency = $freq_hz Hz"
 
 if {"$cpu_type" == "mbv"} {
   set cpu_ip xilinx.com:ip:microblaze_mcs_riscv:1.0
