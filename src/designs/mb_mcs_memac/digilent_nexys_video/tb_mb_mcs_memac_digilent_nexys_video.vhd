@@ -73,4 +73,12 @@ begin
         ddr3_reset_n  => open
     );
 
-    end architecture sim;
+  U_MODEL_MDIO: component model_mdio
+    port map (
+      rst  => not btn_rst_n,
+      mdc  => eth_mdc,
+      mdio => eth_mdio
+    );
+
+
+end architecture sim;
