@@ -98,3 +98,6 @@ VIVADO_DSN_XSRC.unisim=\
 include $(make_fpga)/vivado.mak
 
 ################################################################################
+
+clean::
+	@rm -f $(LOG_FILE)
