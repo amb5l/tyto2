@@ -1,10 +1,24 @@
+use work.model_mdio_pkg.all;
+use work.model_console_pkg.all;
+
 library ieee;
   use ieee.std_logic_1164.all;
 
 entity tb_mb_mcs_memac_digilent_nexys_video is
+  generic (
+    FILENAME : string
+  );
 end entity tb_mb_mcs_memac_digilent_nexys_video;
 
 architecture sim of tb_mb_mcs_memac_digilent_nexys_video is
+
+  constant BAUD : integer := 115200;
+
+  constant PHY_OUI      : std_ulogic_vector(21 downto 0) := "10" & x"ABCDE";
+  constant PHY_MODEL    : std_ulogic_vector(5 downto 0) := "01" & "0101";
+  constant PHY_REVISION : std_ulogic_vector(3 downto 0) := x"A";
+  constant PHYID1       : std_ulogic_vector(15 downto 0) := PHY_OUI(21 downto 6);
+  constant PHYID2       : std_ulogic_vector(15 downto 0) := PHY_OUI(5 downto 0) & PHY_MODEL & PHY_REVISION;
 
   signal clki_100m     : std_logic;
   signal led           : std_logic_vector(7 downto 0);
@@ -73,12 +87,24 @@ begin
         ddr3_reset_n  => open
     );
 
-  U_MODEL_MDIO: component model_mdio
+  PHY: component model_mdio
+    generic map (
+      PHYID1 => PHYID1,
+      PHYID2 => PHYID2
+    )
     port map (
       rst  => not btn_rst_n,
       mdc  => eth_mdc,
       mdio => eth_mdio
     );
 
+  CONSOLE: component model_console
+    generic map (
+      BAUD     => BAUD,
+      FILENAME => FILENAME
+    )
+    port map (
+      i => uart_rx_out
+    );
 
 end architecture sim;

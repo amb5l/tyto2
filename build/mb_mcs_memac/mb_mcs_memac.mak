@@ -14,6 +14,7 @@ FPGA_FAMILY=$(word 2,$(FPGA))
 FPGA_DEVICE=$(word 3,$(FPGA))
 
 CPU=mb$(CPU_VARIANT)
+LOG_FILE=$(call xpath,./log.txt)
 
 #################################################################################
 # Vitis
@@ -77,9 +78,12 @@ VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
 VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/ethernet/test/model_mdio.vhd \
+	$(toplevel)/src/common/uart/test/model_uart_rx.vhd \
+	$(toplevel)/src/common/uart/test/model_console.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/tb_$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_ELF=$(VITIS_DIR)/$(VITIS_ELF_DBG)
-VIVADO_SIM_RUN=tb_$(DESIGN)
+VIVADO_SIM_RUN=\
+	tb_$(DESIGN)_$(BOARD);FILENAME=$(LOG_FILE)
 VIVADO_XDC=\
 	$(toplevel)/src/boards/$(BOARD)/$(BOARD).tcl=IMPL \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).tcl=SYNTH,IMPL \

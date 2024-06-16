@@ -175,15 +175,15 @@ begin
     --------------------------------------------------------------------------------
     -- I/O bus
 
-    sel_tx_buf_std <= io_mosi.astb and bool2sl(io_mosi.addr(19 downto 16) = "0000");
-    sel_tx_buf_err <= io_mosi.astb and bool2sl(io_mosi.addr(19 downto 16) = "0001");
-    sel_tx_pq_lo   <= io_mosi.astb and bool2sl(io_mosi.addr(19 downto 17) = "001" and io_mosi.addr(2) = '0');
-    sel_tx_pq_hi   <= io_mosi.astb and bool2sl(io_mosi.addr(19 downto 17) = "001" and io_mosi.addr(2) = '1');
-    sel_rx_buf_std <= io_mosi.astb and bool2sl(io_mosi.addr(19 downto 16) = "0100");
-    sel_rx_buf_err <= io_mosi.astb and bool2sl(io_mosi.addr(19 downto 16) = "0101");
-    sel_rx_pq_lo   <= io_mosi.astb and bool2sl(io_mosi.addr(19 downto 17) = "011" and io_mosi.addr(2) = '0');
-    sel_rx_pq_hi   <= io_mosi.astb and bool2sl(io_mosi.addr(19 downto 17) = "011" and io_mosi.addr(2) = '1');
-    sel_md         <= io_mosi.astb and io_mosi.addr(19);
+    sel_tx_buf_std <= bool2sl(io_mosi.addr(19 downto 16) = "0000");
+    sel_tx_buf_err <= bool2sl(io_mosi.addr(19 downto 16) = "0001");
+    sel_tx_pq_lo   <= bool2sl(io_mosi.addr(19 downto 17) = "001" and io_mosi.addr(2) = '0');
+    sel_tx_pq_hi   <= bool2sl(io_mosi.addr(19 downto 17) = "001" and io_mosi.addr(2) = '1');
+    sel_rx_buf_std <= bool2sl(io_mosi.addr(19 downto 16) = "0100");
+    sel_rx_buf_err <= bool2sl(io_mosi.addr(19 downto 16) = "0101");
+    sel_rx_pq_lo   <= bool2sl(io_mosi.addr(19 downto 17) = "011" and io_mosi.addr(2) = '0');
+    sel_rx_pq_hi   <= bool2sl(io_mosi.addr(19 downto 17) = "011" and io_mosi.addr(2) = '1');
+    sel_md         <= io_mosi.addr(19);
 
     tx_prq_len  <= io_mosi.wdata(tx_prq_len'range);
     tx_prq_idx  <= io_mosi.wdata(16+tx_prq_idx'high downto 16);
@@ -191,29 +191,29 @@ begin
     tx_prq_opt  <= tx_prq_opt_r;
     tx_prq_stb  <= sel_tx_pq_lo and io_mosi.wstb;
 
-    tx_pfq_stb  <= sel_tx_pq_lo and not io_mosi.wstb;
+    tx_pfq_stb  <= sel_tx_pq_lo and io_mosi.rstb;
 
-    tx_buf_en   <= sel_tx_buf_std or sel_tx_buf_err;
+    tx_buf_en   <= io_mosi.astb and (sel_tx_buf_std or sel_tx_buf_err);
     tx_buf_bwe  <= io_mosi.be when (io_mosi.wstb = '1' or wstb_l = '1') else (others => '0');
-    tx_buf_addr <= io_mosi.addr(tx_buf_addr'range);
+    tx_buf_addr <= io_mosi.addr(tx_buf_addr'high downto 2);
     tx_buf_din  <= io_mosi.wdata;
     tx_buf_dpin <= io_mosi.be when sel_tx_buf_err else (others => '0');
 
-    rx_prq_stb  <= sel_rx_pq_lo and not io_mosi.wstb;
+    rx_prq_stb  <= sel_rx_pq_lo and io_mosi.rstb;
 
     rx_pfq_len  <= io_mosi.wdata(rx_pfq_len'range);
     rx_pfq_stb  <= sel_rx_pq_lo and io_mosi.wstb;
 
-    rx_buf_en   <= sel_rx_buf_std or sel_rx_buf_err;
+    rx_buf_en   <= io_mosi.astb and (sel_rx_buf_std or sel_rx_buf_err);
     rx_buf_bwe  <= io_mosi.be when (io_mosi.wstb = '1' or wstb_l = '1') else (others => '0');
-    rx_buf_addr <= io_mosi.addr(rx_buf_addr'range);
+    rx_buf_addr <= io_mosi.addr(rx_buf_addr'high downto 2);
     rx_buf_din  <= io_mosi.wdata;
     rx_buf_dpin <= io_mosi.be when sel_rx_buf_err else (others => '0');
 
-    md_stb <= sel_md and (io_mosi.wstb or io_mosi.rstb);
+    md_stb <= io_mosi.astb and sel_md;
     md_r_w <= io_mosi.rstb;
-    md_pa  <= io_mosi.addr(9 downto 5);
-    md_ra  <= io_mosi.addr(4 downto 0);
+    md_pa  <= io_mosi.addr(11 downto 7);
+    md_ra  <= io_mosi.addr(6 downto 2);
     md_wd  <= io_mosi.wdata(15 downto 0);
 
     io_miso.rdy <=

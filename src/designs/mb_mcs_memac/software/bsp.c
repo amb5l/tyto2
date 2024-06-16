@@ -1,19 +1,22 @@
 // bsp.c
 
-#include <stdio.h>
-
 #include "xparameters.h"
 #include "xiomodule.h"
+#include "xil_printf.h"
 #include "printf.h"
 
 XIOModule io;
 
-void my_putc(void *p, char c) {
-	putchar((int)c);
+void putchar(char c) {
+	outbyte(c);
+}
+
+void outchar(void *p, char c) {
+	outbyte(c);
 }
 
 int bsp_init() {
     XIOModule_Initialize(&io, XPAR_IOMODULE_0_DEVICE_ID);
-    init_printf(NULL,my_putc);
+    init_printf(NULL,outchar);
     return 0;
 }
