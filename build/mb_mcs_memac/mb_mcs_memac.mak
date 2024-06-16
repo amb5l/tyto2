@@ -22,13 +22,12 @@ LOG_FILE=$(call xpath,./log.txt)
 VITIS_FLOW=classic
 VITIS_SRC=\
 	$(toplevel)/src/common/basic/microblaze/printf.c \
-	$(toplevel)/src/common/ethernet/mdio.h \
 	$(toplevel)/src/designs/$(DESIGN)/software/memac_mcs.c \
 	$(toplevel)/src/designs/$(DESIGN)/software/bsp.c \
 	$(toplevel)/src/designs/$(DESIGN)/software/main.c
 VITIS_INC=\
 	$(toplevel)/src/common/basic/microblaze \
-	$(toplevel)/src/common/ethernet \
+	$(toplevel)/src/common/ethernet/software \
 	$(toplevel)/src/designs/$(DESIGN)/software
 VITIS_SYM=APP_NAME=$(CPU)_mcs_test
 VITIS_SYM_RLS=BUILD_CONFIG_RLS
