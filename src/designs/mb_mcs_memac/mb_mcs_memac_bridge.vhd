@@ -217,16 +217,28 @@ begin
     md_wd  <= io_mosi.wdata(15 downto 0);
 
     io_miso.rdy <=
-      '1'        when (io_mosi.wstb = '1' or wstb_l = '1') and io_mosi.addr(19 downto 16) = "000" else -- TX buffer write
-      rrdy       when (io_mosi.rstb = '1' or rstb_l = '1') and io_mosi.addr(19 downto 16) = "000" else -- TX buffer read
-      tx_prq_rdy when (io_mosi.wstb = '1' or wstb_l = '1') and io_mosi.addr(19 downto 17) = "001" else -- TX PRQ write
-      tx_pfq_rdy when (io_mosi.rstb = '1' or rstb_l = '1') and io_mosi.addr(19 downto 17) = "001" else -- TX PFQ read
-      '1'        when (io_mosi.wstb = '1' or wstb_l = '1') and io_mosi.addr(19 downto 16) = "010" else -- RX buffer write
-      rrdy       when (io_mosi.rstb = '1' or rstb_l = '1') and io_mosi.addr(19 downto 16) = "010" else -- RX buffer read
-      rx_prq_rdy when (io_mosi.rstb = '1' or rstb_l = '1') and io_mosi.addr(19 downto 17) = "011" else -- RX PRQ read
-      rx_pfq_rdy when (io_mosi.wstb = '1' or wstb_l = '1') and io_mosi.addr(19 downto 17) = "011" else -- RX PFQ write
-      md_rdy     when (io_mosi.astb = '1' or astb_l = '1') and io_mosi.addr(19) = '1'             else -- MDIO
-      '0';
+      (io_mosi.wstb and (
+        sel_tx_buf_std or
+        sel_tx_buf_err or
+        sel_tx_pq_lo   or
+        sel_tx_pq_hi   or
+        sel_rx_buf_std or
+        sel_rx_buf_err or
+        sel_rx_pq_lo   or
+        sel_rx_pq_hi   or
+        sel_md
+      )) or
+      (rstb_l and (
+        sel_tx_buf_std or
+        sel_tx_buf_err or
+        sel_tx_pq_lo   or
+        sel_tx_pq_hi   or
+        sel_rx_buf_std or
+        sel_rx_buf_err or
+        sel_rx_pq_lo   or
+        sel_rx_pq_hi   or
+        (sel_md and md_rdy)
+      ));
 
     if    sel_tx_buf_std then
       io_miso.rdata <= tx_buf_dout;
