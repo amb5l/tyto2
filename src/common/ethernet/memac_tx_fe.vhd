@@ -190,7 +190,7 @@ begin
             s1_pfq_tag <= s1_prq_tag;
             s1_pkt_opt <= s1_prq_opt;
             s1_umi_sel <= PRE;
-            s1_buf_re  <= '0' when s1_pkt_opt(TX_OPT_PRE_AUTO_BIT) = '1' else '1';
+            s1_buf_re  <= '0' when s1_prq_opt(TX_OPT_PRE_AUTO_BIT) = '1' else '1';
             s1_buf_len <= s1_prq_len;
             s1_buf_idx <= s1_prq_idx;
             s1_state <= PRE;
