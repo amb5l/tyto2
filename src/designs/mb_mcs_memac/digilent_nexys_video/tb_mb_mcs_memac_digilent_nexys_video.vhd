@@ -20,19 +20,19 @@ architecture sim of tb_mb_mcs_memac_digilent_nexys_video is
   constant PHYID1       : std_ulogic_vector(15 downto 0) := PHY_OUI(21 downto 6);
   constant PHYID2       : std_ulogic_vector(15 downto 0) := PHY_OUI(5 downto 0) & PHY_MODEL & PHY_REVISION;
 
-  signal clki_100m     : std_logic;
-  signal led           : std_logic_vector(7 downto 0);
-  signal btn_rst_n     : std_logic;
-  signal uart_rx_out   : std_logic;
-  signal uart_tx_in    : std_logic;
-  signal eth_rst_n     : std_logic;
-  signal eth_txck      : std_logic;
-  signal eth_txctl     : std_logic;
-  signal eth_txd       : std_logic_vector(3 downto 0);
-  signal eth_rxck      : std_logic;
-  signal eth_rxctl     : std_logic;
-  signal eth_rxd       : std_logic_vector(3 downto 0);
-  signal eth_mdc       : std_logic;
+  signal clki_100m     : std_ulogic;
+  signal led           : std_ulogic_vector(7 downto 0);
+  signal btn_rst_n     : std_ulogic;
+  signal uart_rx_out   : std_ulogic;
+  signal uart_tx_in    : std_ulogic;
+  signal eth_rst_n     : std_ulogic;
+  signal eth_txck      : std_ulogic;
+  signal eth_txctl     : std_ulogic;
+  signal eth_txd       : std_ulogic_vector(3 downto 0);
+  signal eth_rxck      : std_ulogic;
+  signal eth_rxctl     : std_ulogic;
+  signal eth_rxd       : std_ulogic_vector(3 downto 0);
+  signal eth_mdc       : std_ulogic;
   signal eth_mdio      : std_logic;
 
 begin
