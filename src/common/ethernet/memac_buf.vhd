@@ -81,6 +81,7 @@ architecture rtl of memac_buf is
 
   signal dout_a     : sulv_vector(3 downto 0)(8 downto 0);
   signal dout_b     : sulv_vector(3 downto 0)(8 downto 0);
+  signal umi_bsel   : std_ulogic_vector(1 downto 0);
   signal umi_bwe    : std_ulogic_vector(3 downto 0);
   signal umi_bdout  : sulv_vector(3 downto 0)(7 downto 0);
   signal umi_bdpout : std_ulogic_vector(3 downto 0);
@@ -91,13 +92,21 @@ begin
   begin
     umi_bwe <= (others => '0');
     umi_bwe(to_integer(unsigned(umi_addr(1 downto 0)))) <= umi_we;
-    case umi_addr(1 downto 0) is
-      when "11"   => umi_dout <= umi_bdout(3); umi_dpout <= umi_bdpout(3);
-      when "10"   => umi_dout <= umi_bdout(2); umi_dpout <= umi_bdpout(2);
+    case umi_bsel is
+      when "00"   => umi_dout <= umi_bdout(0); umi_dpout <= umi_bdpout(0);
       when "01"   => umi_dout <= umi_bdout(1); umi_dpout <= umi_bdpout(1);
-      when others => umi_dout <= umi_bdout(0); umi_dpout <= umi_bdpout(0);
+      when "10"   => umi_dout <= umi_bdout(2); umi_dpout <= umi_bdpout(2);
+      when "11"   => umi_dout <= umi_bdout(3); umi_dpout <= umi_bdpout(3);
+      when others => umi_dout <= (others => 'X'); umi_dpout <= 'X';
     end case;
   end process P_COMB;
+
+  P_SYNC: process(umi_clk)
+  begin
+    if rising_edge(umi_clk) then
+      umi_bsel <= umi_addr(1 downto 0);
+    end if;
+  end process P_SYNC;
 
   GEN_BUF: for i in 0 to 3 generate
     U_BUF: component ram_tdp
