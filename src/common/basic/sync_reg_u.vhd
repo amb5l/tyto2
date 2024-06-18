@@ -68,7 +68,6 @@ begin
     if rst = '1' then
       reg <= (others => (others => rst_state));
     elsif rising_edge(clk) then
-      assert stages >= 2 report "stages must be >= 2" severity failure;
       for x in 1 to stages loop
         if x = 1 then
           reg(x) <= i;
