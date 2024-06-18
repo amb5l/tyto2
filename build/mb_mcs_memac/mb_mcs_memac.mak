@@ -77,6 +77,7 @@ VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
 VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/ethernet/test/model_mdio.vhd \
+	$(toplevel)/src/common/ethernet/test/model_rgmii_rx.vhd \
 	$(toplevel)/src/common/uart/test/model_uart_rx.vhd \
 	$(toplevel)/src/common/uart/test/model_console.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/tb_$(VIVADO_DSN_TOP).vhd

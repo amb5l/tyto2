@@ -1,4 +1,5 @@
 use work.model_mdio_pkg.all;
+use work.model_rgmii_rx_pkg.all;
 use work.model_console_pkg.all;
 
 library ieee;
@@ -34,6 +35,10 @@ architecture sim of tb_mb_mcs_memac_digilent_nexys_video is
   signal eth_rxd       : std_ulogic_vector(3 downto 0);
   signal eth_mdc       : std_ulogic;
   signal eth_mdio      : std_logic;
+
+  signal model_rgmii_rx_en : std_ulogic;
+  signal model_rgmii_rx_er : std_ulogic;
+  signal model_rgmii_rx_d  : std_ulogic_vector(7 downto 0);
 
 begin
 
@@ -87,7 +92,7 @@ begin
         ddr3_reset_n  => open
     );
 
-  PHY: component model_mdio
+  MDIO: component model_mdio
     generic map (
       PHYID1 => PHYID1,
       PHYID2 => PHYID2
@@ -96,6 +101,16 @@ begin
       rst  => not btn_rst_n,
       mdc  => eth_mdc,
       mdio => eth_mdio
+    );
+
+  RGMII_TX: component model_rgmii_rx
+    port map (
+      i_clk => eth_txck,
+      i_ctl => eth_txctl,
+      i_d   => eth_txd,
+      o_en  => model_rgmii_rx_en,
+      o_er  => model_rgmii_rx_er,
+      o_d   => model_rgmii_rx_d
     );
 
   CONSOLE: component model_console
