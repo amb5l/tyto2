@@ -22,6 +22,7 @@ package model_mdio_pkg is
 
   component model_mdio is
     generic (
+      PHYAD  : std_ulogic_vector(4 downto 0);
       PHYID1 : std_ulogic_vector(15 downto 0);
       PHYID2 : std_ulogic_vector(15 downto 0)
     );
@@ -42,6 +43,7 @@ library ieee;
 
 entity model_mdio is
   generic (
+    PHYAD  : std_ulogic_vector(4 downto 0);
     PHYID1 : std_ulogic_vector(15 downto 0);
     PHYID2 : std_ulogic_vector(15 downto 0)
   );
@@ -58,12 +60,15 @@ architecture model of model_mdio is
   constant RA_PHYID2 : std_ulogic_vector(4 downto 0) := "00011";
 
   type state_t is (PREAMBLE,ADDRCTRL,DATA);
+  type regs_t is array(0 to 31) of std_ulogic_vector(15 downto 0);
 
   signal mdi   : std_ulogic;
   signal mdo   : std_ulogic;
   signal mdoe  : std_ulogic;
   signal state : state_t;
   signal count : integer;
+
+  signal regs  : regs_t := (3 => PHYID1, 4 => PHYID2, others => (others => 'X'));
 
   signal r_w   : std_ulogic;
   signal pa    : std_ulogic_vector(4 downto 0);
@@ -101,18 +106,14 @@ begin
               pa <= pa(3 downto 0) & mdi;
             when 9 | 10 | 11 | 12 | 13 =>
               ra <= ra(3 downto 0) & mdi;
-            when 14 => assert mdi = 'Z' report "transaction bit 14: expected Z" severity failure;
-            when 15 => assert mdi = '0' report "transaction bit 15: expected 0" severity failure;
+            when 14 => if r_w = '1' then assert mdi = 'Z' report "transaction bit 14: expected Z" severity failure; end if;
+            when 15 => if r_w = '1' then assert mdi = '0' report "transaction bit 15: expected 0" severity failure; end if;
             when others => report "unexpected count" severity failure;
           end case;
           if count = 15 then
             if r_w = '1' then
-              if unsigned(pa) = 0 then
-                case ra is
-                  when RA_PHYID1 => rd <= PHYID1;
-                  when RA_PHYID2 => rd <= PHYID2;
-                  when others =>    rd <= (others => 'X');
-                end case;
+              if pa = PHYAD then
+                rd <= regs(to_integer(unsigned(ra)));
               else
                 rd <= (others => 'X');
               end if;
@@ -125,7 +126,11 @@ begin
             count <= count + 1;
           end if;
         when DATA =>
+          wd <= wd(14 downto 0) & mdi;
           if count = 15 then
+            if pa = PHYAD and r_w = '0' then
+              regs(to_integer(unsigned(ra))) <= wd(14 downto 0) & mdi;
+            end if;
             state <= PREAMBLE;
             count <= 0;
           else
@@ -139,17 +144,9 @@ begin
     elsif falling_edge(mdc) then
       if state = ADDRCTRL then
         if count = 14 then
-          if unsigned(pa) = 0 and r_w = '1' then
-            case ra is
-              when RA_PHYID1 => rd <= PHYID1;
-              when RA_PHYID2 => rd <= PHYID2;
-              when others =>    rd <= (others => 'X');
-            end case;
-          else
-            rd <= (others => 'X');
-          end if;
+          rd <= regs(to_integer(unsigned(ra)));
         elsif count = 15 then
-          if unsigned(pa) = 0 and r_w = '1' then
+          if pa = PHYAD and r_w = '1' then
             mdoe <= '1';
             mdo  <= '0';
           end if;

@@ -14,6 +14,7 @@ FPGA_FAMILY=$(word 2,$(FPGA))
 FPGA_DEVICE=$(word 3,$(FPGA))
 
 CPU=mb$(CPU_VARIANT)
+CPU_DEBUG=1
 LOG_FILE=$(call xpath,./log.txt)
 
 #################################################################################
@@ -22,14 +23,26 @@ LOG_FILE=$(call xpath,./log.txt)
 VITIS_FLOW=classic
 VITIS_SRC=\
 	$(toplevel)/src/common/basic/microblaze/printf.c \
-	$(toplevel)/src/designs/$(DESIGN)/software/memac_mcs.c \
+	$(toplevel)/src/common/basic/microblaze/printf.h \
 	$(toplevel)/src/designs/$(DESIGN)/software/bsp.c \
+	$(toplevel)/src/designs/$(DESIGN)/software/bsp.h \
+	$(toplevel)/src/designs/$(DESIGN)/software/memac_raw_bsp.c \
+	$(toplevel)/src/designs/$(DESIGN)/software/memac_raw_bsp.h \
+	$(toplevel)/src/common/ethernet/software/memac_raw_mdio.h \
+	$(toplevel)/src/common/ethernet/software/$(PHY).c \
+	$(toplevel)/src/common/ethernet/software/$(PHY).h \
+	$(toplevel)/src/common/ethernet/software/memac_raw.c \
+	$(toplevel)/src/common/ethernet/software/memac_raw.h \
 	$(toplevel)/src/designs/$(DESIGN)/software/main.c
 VITIS_INC=\
 	$(toplevel)/src/common/basic/microblaze \
-	$(toplevel)/src/common/ethernet/software \
-	$(toplevel)/src/designs/$(DESIGN)/software
-VITIS_SYM=APP_NAME=$(CPU)_mcs_test
+	$(toplevel)/src/designs/$(DESIGN)/software \
+	$(toplevel)/src/common/ethernet/software
+VITIS_SYM=\
+	APP_NAME=$(DESIGN)_$(BOARD) \
+	TX_BUF_SIZE=$(MEMAC_TX_BUF_SIZE) \
+	RX_BUF_SIZE=$(MEMAC_RX_BUF_SIZE) \
+	PHY=$(PHY)
 VITIS_SYM_RLS=BUILD_CONFIG_RLS
 VITIS_SYM_DBG=BUILD_CONFIG_DBG
 
@@ -63,15 +76,15 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/ethernet/memac_tx.vhd \
 	$(toplevel)/src/common/ethernet/memac_rx.vhd \
 	$(toplevel)/src/common/ethernet/memac_spd.vhd \
-	$(toplevel)/src/common/ethernet/memac_tx_$(PHY).vhd \
-	$(toplevel)/src/common/ethernet/memac_rx_$(PHY).vhd \
-	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)_$(FPGA_FAMILY)/memac_rx_$(PHY)_io.vhd \
+	$(toplevel)/src/common/ethernet/memac_tx_$(PHY_IF).vhd \
+	$(toplevel)/src/common/ethernet/memac_rx_$(PHY_IF).vhd \
+	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)_$(FPGA_FAMILY)/memac_rx_$(PHY_IF)_io.vhd \
 	$(toplevel)/src/common/ethernet/memac_mdio.vhd \
 	$(toplevel)/src/common/ethernet/memac_raw_rgmii.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN)_bridge.vhd \
 	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
-VIVADO_BD_TCL=$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=$(CPU);100000000
+VIVADO_BD_TCL=$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=$(CPU);100000000;$(CPU_DEBUG)
 VIVADO_PROC_REF=mb_mcs
 VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)

@@ -1,9 +1,13 @@
 set bd_name [file rootname [file tail [file normalize [info script]]]]
 create_bd_design $bd_name
 
+if {$argc < 3} {
+    error "missing arguments: $argv"
+}
 set cpu_type [lindex $argv 0]
 set freq_hz  [lindex $argv 1]
-puts "$bd_name: CPU type = $cpu_type  frequency = $freq_hz Hz"
+set debug    [lindex $argv 2]
+puts "$bd_name: CPU type = $cpu_type  frequency = $freq_hz Hz  debug = $debug"
 
 if {"$cpu_type" == "mbv"} {
   set cpu_ip xilinx.com:ip:microblaze_mcs_riscv:1.0
@@ -27,6 +31,11 @@ set_property -dict [list \
     CONFIG.USE_UART_RX   {1}      \
     CONFIG.USE_UART_TX   {1}      \
   ] $cpu
+if {$debug == 1} {
+    set_property -dict [list \
+        CONFIG.DEBUG_ENABLED {1} \
+      ] $cpu
+}
 
 set clk   [ create_bd_port -dir I -type clk -freq_hz $freq_hz clk ]
 set rst_n [ create_bd_port -dir I -type rst rst_n ]

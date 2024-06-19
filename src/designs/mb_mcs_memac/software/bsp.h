@@ -5,18 +5,18 @@
 
 #include "xiomodule.h"
 
-#define poke8(a,d)  {*(volatile uint8_t *)(a)=d}
-#define poke16(a,d) {*(volatile uint16_t *)(a)=d}
-#define poke32(a,d) {*(volatile uint32_t *)(a)=d}
-#define peek8(a)    (*(volatile uint8_t *)(a))
-#define peek16(a)   (*(volatile uint16_t *)(a))
-#define peek32(a)   (*(volatile uint32_t *)(a))
+#include "peekpoke.h"
 
-#define led(d) {XIOModule_DiscreteWrite(&io,4,d);}
+#define gpi(n) XIOModule_DiscreteRead(&io,n)
+#define gpo(n,d) XIOModule_DiscreteWrite(&io,n,d)
+#define gpobit(n,b,d) XIOModule_DiscreteWrite(&io,n,((io.GpoValue[n-1] & ~(1 << (b))) | ((d) << (b))))
+#define gpormw(n,m,d) XIOModule_DiscreteWrite(&io,n,((io.GpoValue[n-1] & ~(m)) | (d)))
+
+#define led(d) gpo(4,d)
 
 extern XIOModule io;
 
+int putchar(int c);
 int bsp_init();
-void putchar(char c);
 
 #endif

@@ -225,8 +225,7 @@ begin
         sel_rx_buf_std or
         sel_rx_buf_err or
         sel_rx_pq_lo   or
-        sel_rx_pq_hi   or
-        sel_md
+        sel_rx_pq_hi
       )) or
       (rstb_l and (
         sel_tx_buf_std or
@@ -236,9 +235,9 @@ begin
         sel_rx_buf_std or
         sel_rx_buf_err or
         sel_rx_pq_lo   or
-        sel_rx_pq_hi   or
-        (sel_md and md_rdy)
-      ));
+        sel_rx_pq_hi
+      )) or
+      ((wstb_l or rstb_l) and sel_md and md_rdy);
 
     if    sel_tx_buf_std then
       io_miso.rdata <= tx_buf_dout;

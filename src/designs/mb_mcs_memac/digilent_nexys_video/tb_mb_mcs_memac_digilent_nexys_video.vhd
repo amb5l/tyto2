@@ -15,6 +15,7 @@ architecture sim of tb_mb_mcs_memac_digilent_nexys_video is
 
   constant BAUD : integer := 115200;
 
+  constant PHYAD        : std_ulogic_vector(4 downto 0) := "00001";
   constant PHY_OUI      : std_ulogic_vector(21 downto 0) := "10" & x"ABCDE";
   constant PHY_MODEL    : std_ulogic_vector(5 downto 0) := "01" & "0101";
   constant PHY_REVISION : std_ulogic_vector(3 downto 0) := x"A";
@@ -94,6 +95,7 @@ begin
 
   MDIO: component model_mdio
     generic map (
+      PHYAD  => PHYAD,
       PHYID1 => PHYID1,
       PHYID2 => PHYID2
     )

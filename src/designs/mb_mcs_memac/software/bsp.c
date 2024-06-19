@@ -7,8 +7,9 @@
 
 XIOModule io;
 
-void putchar(char c) {
-	outbyte(c);
+int putchar(int c) {
+	outbyte(c & 0xFF);
+	return 0;
 }
 
 void outchar(void *p, char c) {
