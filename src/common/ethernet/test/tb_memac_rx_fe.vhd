@@ -16,8 +16,9 @@
 --------------------------------------------------------------------------------
 -- definitions required for generic package instances
 
+use work.tyto_types_pkg.all;
+use work.memac_pkg.all;
 use work.memac_util_pkg.all;
-use work.memac_rx_fe_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -29,15 +30,15 @@ package tb_memac_rx_fe_pkg is
   constant TAG_WIDTH : positive := 2;
 
   --------------------------------------------------------------------------------
-  -- packet descriptor queues
+  -- DUT packet descriptor queue types
 
   -- packet reservation
   type prd_t is record
     len  : std_ulogic_vector(log2(MTU)-1 downto 0);
     idx  : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
-    flag : memac_rx_flag_t;
+    flag : rx_flag_t;
   end record prd_t;
-  constant RX_PRQ_EMPTY : prd_t := (
+  constant PRQ_EMPTY : prd_t := (
     len  => (log2(MTU)-1 downto 0 => 'X'),
     idx  => (log2(BUF_SIZE)-1 downto 0 => 'X'),
     flag => (others => 'X')
@@ -47,16 +48,16 @@ package tb_memac_rx_fe_pkg is
   type rx_pfd_t is record
     len : std_ulogic_vector(log2(MTU)-1 downto 0);
   end record rx_pfd_t;
-  constant RX_PFQ_EMPTY : rx_pfd_t := (len => (log2(MTU)-1 downto 0 => 'X'));
+  constant PFQ_EMPTY : rx_pfd_t := (len => (log2(MTU)-1 downto 0 => 'X'));
 
   --------------------------------------------------------------------------------
-  -- expected packet queue
+  -- expected packet queue type
 
   type packet_t is record
-    size : natural;
-    data : sulv_array_t(0 to MTU-1)(8 downto 0);
+    len  : natural range 0 to MTU-1;
+    data : uint8_array_t(0 to MTU-1);
   end record packet_t;
-  constant PACKET_EMPTY : packet_t := (size => 0, data => (others => (others => 'X')));
+  constant PACKET_EMPTY : packet_t := (len => 0, data => (others => 0));
 
   --------------------------------------------------------------------------------
 
@@ -80,8 +81,10 @@ package packet_queue_pkg is
 --------------------------------------------------------------------------------
 -- testbench entity and architecture
 
-use work.crc32_eth_8_pkg.all;
+use work.tyto_types_pkg.all;
+use work.memac_pkg.all;
 use work.memac_util_pkg.all;
+use work.crc32_eth_8_pkg.all;
 use work.memac_rx_fe_pkg.all;
 use work.tb_memac_rx_fe_pkg.all;
 use work.prq_pkg.all;
@@ -108,33 +111,44 @@ architecture sim of tb_memac_rx_fe is
   --------------------------------------------------------------------------------
   -- signals
 
-  signal rst         : std_ulogic;
-  signal clk         : std_ulogic;
+  -- DUT
+  signal rst          : std_ulogic;
+  signal clk          : std_ulogic;
+  signal clken        : std_ulogic;
+  signal ipg_min      : std_ulogic_vector(3 downto 0);
+  signal pre_inc      : std_ulogic;
+  signal fcs_inc      : std_ulogic;
+  signal drops        : std_ulogic_vector(31 downto 0);
+  signal dut_prq_rdy  : std_ulogic;
+  signal dut_prq_len  : std_ulogic_vector(log2(MTU)-1 downto 0); -- 2kB max
+  signal dut_prq_idx  : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
+  signal dut_prq_flag : rx_flag_t;
+  signal dut_prq_stb  : std_ulogic;
+  signal dut_pfq_rdy  : std_ulogic;
+  signal dut_pfq_len  : std_ulogic_vector(log2(MTU)-1 downto 0);
+  signal dut_pfq_stb  : std_ulogic;
+  signal dut_buf_we   : std_ulogic;
+  signal dut_buf_idx  : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0); -- 8kB
+  signal dut_buf_data : std_ulogic_vector(7 downto 0);
+  signal dut_buf_er   : std_ulogic;
+  signal umi_dv       : std_ulogic;
+  signal umi_er       : std_ulogic;
+  signal umi_data     : std_ulogic_vector(7 downto 0);
 
-  -- RX DUT
-  signal opt      : memac_rx_opt_t;
-  signal drops    : std_ulogic_vector(31 downto 0);
-  signal prq_rdy  : std_ulogic;
-  signal prq_len  : std_ulogic_vector(log2(MTU)-1 downto 0);
-  signal prq_idx  : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
-  signal prq_flag : memac_rx_flag_t;
-  signal prq_stb  : std_ulogic;
-  signal pfq_rdy  : std_ulogic;
-  signal pfq_len  : std_ulogic_vector(log2(MTU)-1 downto 0);
-  signal pfq_stb  : std_ulogic;
-  signal buf_we   : std_ulogic;
-  signal buf_wptr : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
-  signal buf_data : std_ulogic_vector(7 downto 0);
-  signal buf_er   : std_ulogic;
-
-  -- PHY
-  signal phy_dv      : std_ulogic;
-  signal phy_er      : std_ulogic;
-  signal phy_data    : std_ulogic_vector(7 downto 0);
+  -- testbench side of queues
+  signal tb_prq_rdy   : std_ulogic;
+  signal tb_prq_len  : std_ulogic_vector(log2(MTU)-1 downto 0); -- 2kB max
+  signal tb_prq_idx  : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
+  signal tb_prq_flag : rx_flag_t;
+  signal tb_prq_stb  : std_ulogic;
+  signal tb_pfq_rdy  : std_ulogic;
+  signal tb_pfq_len  : std_ulogic_vector(log2(MTU)-1 downto 0);
+  signal tb_pfq_stb  : std_ulogic;
 
   -- simulation only: signals to allow shared variables to be added to waveform
   signal sim_prq_items : integer; -- v4p ignore w-303
   signal sim_pfq_items : integer; -- v4p ignore w-303
+  signal sim_exp_items : integer; -- v4p ignore w-303
   signal sim_buf_space : integer; -- v4p ignore w-303
 
   --------------------------------------------------------------------------------
@@ -146,7 +160,7 @@ architecture sim of tb_memac_rx_fe is
   end protected shared_buffer_t;
 
   type shared_buffer_t is protected body
-    variable memory : sulv_array_t(0 to BUF_SIZE-1)(8 downto 0);
+    variable memory : sulv_vector(0 to BUF_SIZE-1)(8 downto 0);
     procedure set(addr : natural; data : std_ulogic_vector) is
     begin
       memory(addr) := data;
@@ -219,32 +233,90 @@ begin
     '0' after CLK_PERIOD-(CLK_PERIOD/2) when clk = '1' else
     '0';
 
+  clken <= '1';
+
   rst <= '1', '0' after CLK_PERIOD;
 
   --------------------------------------------------------------------------------
   -- transmit random packets
 
   P_TX: process
+    variable pkt  : packet_t;
   begin
-    -- IPG
-    -- random packet length and contents (length is constrained by available space)
-    -- copy packet into tx buffer
-    -- wait until there is space in the buffer and the packet reservation queue
-    -- enqueue packet descriptor and expected packet
+    umi_dv   <= '0';
+    umi_er   <= '0';
+    umi_data <= (others => 'X');
+    for i in 1 to PACKET_COUNT loop
+      -- random IPG
+      for j in 1 to prng.rand_int(1,MTU) loop
+        wait until rising_edge(clk);
+      end loop;
+      -- start of packet
+      umi_dv   <= '1';
+      umi_er   <= '0';
+      -- random packet (including premable)
+      pkt.len := prng.rand_int(1,MTU);
+      for j in 0 to pkt.len-1 loop
+        pkt.data(j) := prng.rand_int(0,255);
+      end loop;
+      for j in 0 to pkt.len-1 loop
+        umi_data <= std_ulogic_vector(to_unsigned(pkt.data(j),8));
+        wait until rising_edge(clk);
+      end loop;
+      report "enqueing packet - len = " & integer'image(pkt.len);
+      expected.enq(pkt);
+      -- end of packet
+      umi_dv   <= '0';
+      umi_er   <= '0';
+      umi_data <= (others => 'X');
+    end loop;
   end process P_TX;
 
   --------------------------------------------------------------------------------
   -- receive and check packets
 
   P_RX: process
+    variable count : integer;
+    variable pkt   : packet_t;
+    variable rd    : std_ulogic_vector(7 downto 0);
+    variable xd    : std_ulogic_vector(7 downto 0);
   begin
-     -- wait for packet
-     -- read packet from buffer
-     -- get expected packet
-     -- check size
-     -- check data
-     -- check FCS
-     -- finish
+    count      := 0;
+    ipg_min    <= x"8";
+    pre_inc    <= '1';
+    fcs_inc    <= '1';
+    tb_prq_stb <= '0';
+    loop
+      wait until rising_edge(clk) and tb_prq_rdy = '1';
+      pkt := expected.front;
+      expected.deq;
+      if not tb_prq_flag(RX_FLAG_TRUNCATE_BIT) then
+        assert pkt.len = to_integer(unsigned(tb_prq_len)) report "length mismatch:" &
+          " received = " & integer'image(to_integer(unsigned(tb_prq_len))) &
+          " expected = " & integer'image(pkt.len)
+          severity failure;
+      end if;
+      for i in 0 to to_integer(unsigned(tb_prq_len))-1 loop
+        rd := buf.get(to_integer(unsigned(tb_prq_idx)+i) mod BUF_SIZE)(7 downto 0);
+        xd := std_ulogic_vector(to_unsigned(pkt.data(i),8));
+        assert rd = xd report "data mismatch:" &
+          " received = " & to_hstring(rd) &
+          " expected = " & to_hstring(xd)
+          severity failure;
+      end loop;
+      count := count + 1;
+      if count = PACKET_COUNT then
+        report "SUCCESS";
+        std.env.finish;
+      end if;
+      tb_prq_stb <= '1';
+      tb_pfq_stb <= '1';
+      tb_pfq_len <= tb_prq_len;
+      wait until rising_edge(clk);
+      tb_prq_stb <= '0';
+      tb_pfq_stb <= '0';
+      tb_pfq_len <= (others => 'X');
+    end loop;
   end process P_RX;
 
   --------------------------------------------------------------------------------
@@ -252,25 +324,36 @@ begin
 
   P_RX_BUF: process(clk)
   begin
-    if rising_edge(clk) and buf_we = '1' then
-      buf.set(to_integer(unsigned(buf_wptr)),buf_er & buf_data);
+    if rising_edge(clk) and dut_buf_we = '1' then
+      buf.set(to_integer(unsigned(dut_buf_idx)),dut_buf_er & dut_buf_data);
     end if;
   end process P_RX_BUF;
 
   --------------------------------------------------------------------------------
-  -- RX packet reservation queue
+  -- packet reservation queue
   -- descriptors are...
-  --  enqueued here when prq_stb is asserted
-  --  dequeued in P_TX
+  --  enqueued here when dut_prq_stb is asserted
+  --  dequeued in ...
 
   P_RX_PRQ: process(rst,clk)
   begin
     if rst = '1' then
-      prq_rdy <= '0';
+      dut_prq_rdy <= '1';
+      tb_prq_rdy  <= '0';
+      tb_prq_len  <= (others => 'X');
+      tb_prq_idx  <= (others => 'X');
+      tb_prq_flag <= (others => 'X');
     elsif rising_edge(clk) then
-      prq_rdy <= '1' when prq.items < PDQ_LEN-1;
-      if prq_stb = '1' then
-        prq.enq((len  => prq_len,idx  => prq_idx,flag => prq_flag));
+      dut_prq_rdy <= '0' when prq.items >= PDQ_LEN else '1';
+      tb_prq_rdy <= '1' when prq.items > 0  and tb_prq_stb = '0' else '0';
+      tb_prq_len  <= prq.front.len;
+      tb_prq_idx  <= prq.front.idx;
+      tb_prq_flag <= prq.front.flag;
+      if dut_prq_stb = '1' then
+        prq.enq((len  => dut_prq_len,idx  => dut_prq_idx,flag => dut_prq_flag));
+      end if;
+      if tb_prq_stb = '1' then
+        prq.deq;
       end if;
     end if;
   end process P_RX_PRQ;
@@ -284,14 +367,19 @@ begin
   P_RX_PFQ: process(rst,clk)
   begin
     if rst = '1' then
-      pfq_rdy <= '0';
-      pfq_len <= (others => 'X');
+      dut_pfq_rdy <= '0';
+      dut_pfq_len <= (others => 'X');
+      tb_pfq_rdy  <= '1';
     elsif rising_edge(clk) then
-      if pfq_stb = '1' then
+      tb_pfq_rdy <= '0' when pfq.items >= PDQ_LEN else '1';
+      dut_pfq_rdy <= '1' when pfq.items > 0 and dut_pfq_stb = '0' else '0';
+      dut_pfq_len <= pfq.front.len;
+      if tb_prq_stb = '1' then
+        pfq.enq((len  => tb_prq_len));
+      end if;
+      if dut_pfq_stb = '1' then
         pfq.deq;
       end if;
-      pfq_rdy <= '0' when pfq.items = 0 or (pfq.items = 1 and pfq_stb = '1') else '1';
-      pfq_len <= pfq.front.len;
     end if;
   end process P_RX_PFQ;
 
@@ -300,25 +388,28 @@ begin
 
   DUT: component memac_rx_fe
     port map (
-      rst      => rst,
-      clk      => clk,
-      opt      => opt,
-      drops    => drops,
-      prq_rdy  => prq_rdy,
-      prq_len  => prq_len,
-      prq_idx  => prq_idx,
-      prq_flag => prq_flag,
-      prq_stb  => prq_stb,
-      pfq_rdy  => pfq_rdy,
-      pfq_len  => pfq_len,
-      pfq_stb  => pfq_stb,
-      buf_we   => buf_we,
-      buf_idx  => buf_wptr,
-      buf_data => buf_data,
-      buf_er   => buf_er,
-      phy_dv   => phy_dv,
-      phy_er   => phy_er,
-      phy_data => phy_data
+    rst      => rst,
+    clk      => clk,
+    clken    => clken,
+    ipg_min  => ipg_min,
+    pre_inc  => pre_inc,
+    fcs_inc  => fcs_inc,
+    drops    => drops,
+    prq_rdy  => dut_prq_rdy,
+    prq_len  => dut_prq_len,
+    prq_idx  => dut_prq_idx,
+    prq_flag => dut_prq_flag,
+    prq_stb  => dut_prq_stb,
+    pfq_rdy  => dut_pfq_rdy,
+    pfq_len  => dut_pfq_len,
+    pfq_stb  => dut_pfq_stb,
+    buf_we   => dut_buf_we,
+    buf_idx  => dut_buf_idx,
+    buf_data => dut_buf_data,
+    buf_er   => dut_buf_er,
+    umi_dv   => umi_dv,
+    umi_er   => umi_er,
+    umi_data => umi_data
     );
 
   --------------------------------------------------------------------------------
@@ -329,8 +420,8 @@ begin
     if falling_edge(clk) then
       sim_prq_items <= prq.items;
       sim_pfq_items <= pfq.items;
+      sim_exp_items <= expected.items;
       sim_buf_space <= buf_space.get;
-      sim_prq_items <= prq.items;
     end if;
   end process P_SIM;
 

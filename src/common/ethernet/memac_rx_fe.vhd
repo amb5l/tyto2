@@ -14,7 +14,6 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
--- TODO check IPG length flexibility
 
 use work.memac_pkg.all;
 
@@ -125,6 +124,7 @@ begin
       prq_idx    <= (prq_idx'range => '0');
       prq_flag   <= (others => '0');
       prq_stb    <= '0';
+      buf_wr     <= '0';
       buf_wptr   <= (buf_wptr'range => '0');
       buf_rptr   <= (buf_rptr'range => '0');
       buf_ff     <= '0';
@@ -154,7 +154,11 @@ begin
               prq_len <= (prq_len'range => '0');
               prq_flag(RX_FLAG_PRE_INC_BIT) <= pre_inc;
               prq_flag(RX_FLAG_FCS_BAD_BIT) <= '1';
-              state <= PRE;
+              if pre_inc then
+                state <= PKT;
+              else
+                state <= PRE;
+              end if;
               count <= 0;
             else
               incr(drops);
@@ -212,8 +216,14 @@ begin
           elsif umi_dv_r(4) = '0' then -- this is last byte
             buf_wr  <= '0';
             prq_stb <= '1';
-            state   <= IPG;
             count   <= 0;
+            if umi_dv_r(3) = '1' then
+              prq_flag <= (others => '0');
+              prq_flag(RX_FLAG_IPG_SHORT_BIT) <= '1';
+              state <= IDLE;
+            else
+              state <= IPG;
+            end if;
           end if;
 
         when FCS =>
@@ -229,8 +239,14 @@ begin
           elsif count = 3 then
             buf_wr  <= '0';
             prq_stb <= '1';
-            state   <= IPG;
             count   <= 0;
+            if umi_dv_r(3) = '1' then
+              prq_flag <= (others => '0');
+              prq_flag(RX_FLAG_IPG_SHORT_BIT) <= '1';
+              state <= IDLE;
+            else
+              state <= IPG;
+            end if;
           else
             count <= count + 1;
           end if;
