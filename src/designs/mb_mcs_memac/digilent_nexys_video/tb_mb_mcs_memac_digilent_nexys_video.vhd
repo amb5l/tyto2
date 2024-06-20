@@ -1,5 +1,6 @@
 use work.model_mdio_pkg.all;
 use work.model_rgmii_rx_pkg.all;
+use work.model_rgmii_tx_pkg.all;
 use work.model_console_pkg.all;
 
 library ieee;
@@ -7,7 +8,9 @@ library ieee;
 
 entity tb_mb_mcs_memac_digilent_nexys_video is
   generic (
-    FILENAME : string
+    FILENAME       : string;
+    RGMII_TX_ALIGN : string;
+    RGMII_RX_ALIGN : string
   );
 end entity tb_mb_mcs_memac_digilent_nexys_video;
 
@@ -41,21 +44,19 @@ architecture sim of tb_mb_mcs_memac_digilent_nexys_video is
   signal model_rgmii_rx_er : std_ulogic;
   signal model_rgmii_rx_d  : std_ulogic_vector(7 downto 0);
 
+  signal rgmii_rx_pkt : model_rgmii_tx_pkt_t;
+
 begin
 
   btn_rst_n <= '0', '1' after 10 ns;
   clki_100m <= '0' when clki_100m = 'U' else not clki_100m after 5 ns;
 
-  eth_rxck  <= '0';
-  eth_rxctl <= '0';
-  eth_rxd   <= (others => '0');
-
   uart_tx_in <= '1';
 
   DUT: entity work.mb_mcs_memac_digilent_nexys_video
     generic map (
-        RGMII_TX_ALIGN => "CENTER",
-        RGMII_RX_ALIGN => "CENTER",
+        RGMII_TX_ALIGN => RGMII_TX_ALIGN,
+        RGMII_RX_ALIGN => RGMII_RX_ALIGN,
         TX_BUF_SIZE    => 8192,
         RX_BUF_SIZE    => 8192
     )
@@ -105,6 +106,8 @@ begin
       mdio => eth_mdio
     );
 
+  -- DUT transmit is center aligned
+  -- TODO generic required here
   RGMII_TX: component model_rgmii_rx
     port map (
       i_clk => eth_txck,
@@ -114,6 +117,31 @@ begin
       o_er  => model_rgmii_rx_er,
       o_d   => model_rgmii_rx_d
     );
+
+  -- DUT rx is edge aligned
+  RGMII_RX: component model_rgmii_tx
+    generic map (
+      ALIGN => RGMII_RX_ALIGN
+    )
+    port map (
+      spd   => "10",
+      i_pkt => rgmii_rx_pkt,
+      i_ack => open,
+      o_clk => eth_rxck,
+      o_ctl => eth_rxctl,
+      o_d   => eth_rxd
+    );
+
+  P_RGMII_RX: process
+  begin
+    wait until led = x"04";
+    wait for 10 us;
+    rgmii_rx_pkt <= (
+      len  => 10,
+      data => (0 to 6 => 16#55#, 7 => 16#D5#, others => 16#AA#)
+    );
+    wait;
+  end process P_RGMII_RX;
 
   CONSOLE: component model_console
     generic map (

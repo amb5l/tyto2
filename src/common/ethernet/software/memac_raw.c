@@ -1,5 +1,5 @@
 #include "bsp.h"
-#include "memac_raw.h"
+//#include "memac_raw.h"
 #include "memac_raw_bsp.h"
 #include "memac_raw_mdio.h"
 
@@ -8,17 +8,12 @@
 #define IP_PROTOCOL_UDP   0x11
 #define IP_PROTOCOL_ICMP  0x01
 
-PhyID_t   PhyID;
+uint32_t  PhyID;
 MacAddr_t MyMacAddr = {0xEE,0xEE,0xEE,0xEE,0xEE,0xEE};
 IpAddr_t  MyIpAddr = {192,168,1,155};
 
 void phy_id(void) {
-	uint16_t id1, id2;
-    id1 = phy_mdio_peek(1, MDIO_RA_PHYID1);
-    id2 = phy_mdio_peek(1, MDIO_RA_PHYID2);
-    PhyID.oui = (id1 << 6) | (id2 >> 10);
-    PhyID.model = (id2 >> 4) & 0x3F;
-    PhyID.rev = id2 & 0xF;
+    PhyID = (phy_mdio_peek(1, MDIO_RA_PHYID1) << 16) | phy_mdio_peek(1, MDIO_RA_PHYID2);
 }
 
 uint16_t memac_raw_tx_init(

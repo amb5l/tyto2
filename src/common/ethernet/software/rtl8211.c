@@ -5,11 +5,11 @@
 #include "memac_raw_bsp.h"
 
 void phy_reset(void) {
-    gpobit(1,MEMAC_GPO_PHY_RST_N,0);
+    gpobit(1,MEMAC_GPOB_PHY_RST_N,0);
 #ifndef BUILD_CONFIG_DBG
     usleep(15000); // 10ms recommended
 #endif
-    gpobit(1,MEMAC_GPO_PHY_RST_N,1);
+    gpobit(1,MEMAC_GPOB_PHY_RST_N,1);
 #ifndef BUILD_CONFIG_DBG
     usleep(45000); // 30ms recommended
 #endif

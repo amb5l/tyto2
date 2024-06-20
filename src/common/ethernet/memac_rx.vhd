@@ -140,7 +140,7 @@ begin
       w_clken => '1',
       w_rdy   => umi_prq_rdy,
       w_stb   => umi_prq_stb,
-      w_data  => umi_prq_flag & umi_prq_len & umi_prq_idx,
+      w_data  => umi_prq_flag & umi_prq_idx & umi_prq_len,
       r_clk   => sys_clk,
       r_clken => umi_clken,
       r_rdy   => prq_rdy,

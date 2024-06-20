@@ -185,7 +185,7 @@ begin
     sel_rx_pq_hi   <= bool2sl(io_mosi.addr(19 downto 17) = "011" and io_mosi.addr(2) = '1');
     sel_md         <= io_mosi.addr(19);
 
-    tx_prq_len  <= io_mosi.wdata(tx_prq_len'range);
+    tx_prq_len  <= io_mosi.wdata(tx_prq_len'high downto 0);
     tx_prq_idx  <= io_mosi.wdata(16+tx_prq_idx'high downto 16);
     tx_prq_tag  <= tx_prq_tag_r;
     tx_prq_opt  <= tx_prq_opt_r;
@@ -201,7 +201,7 @@ begin
 
     rx_prq_stb  <= sel_rx_pq_lo and io_mosi.rstb;
 
-    rx_pfq_len  <= io_mosi.wdata(rx_pfq_len'range);
+    rx_pfq_len  <= io_mosi.wdata(rx_pfq_len'high downto 0);
     rx_pfq_stb  <= sel_rx_pq_lo and io_mosi.wstb;
 
     rx_buf_en   <= io_mosi.astb and (sel_rx_buf_std or sel_rx_buf_err);
@@ -217,17 +217,7 @@ begin
     md_wd  <= io_mosi.wdata(15 downto 0);
 
     io_miso.rdy <=
-      (io_mosi.wstb and (
-        sel_tx_buf_std or
-        sel_tx_buf_err or
-        sel_tx_pq_lo   or
-        sel_tx_pq_hi   or
-        sel_rx_buf_std or
-        sel_rx_buf_err or
-        sel_rx_pq_lo   or
-        sel_rx_pq_hi
-      )) or
-      (rstb_l and (
+      ((io_mosi.wstb or rstb_l) and (
         sel_tx_buf_std or
         sel_tx_buf_err or
         sel_tx_pq_lo   or
@@ -249,11 +239,11 @@ begin
          7 downto  0 => tx_buf_dpout(0)
       );
     elsif sel_tx_pq_lo then
-      io_miso.rdata(15 downto  0) <= (tx_pfq_len'range => tx_pfq_len, others => '0');
-      io_miso.rdata(31 downto 16) <= (16+tx_pfq_idx'length-1 downto 16 => tx_pfq_idx, others => '0');
+      io_miso.rdata(15 downto  0) <= (tx_pfq_len'high downto 0 => tx_pfq_len, others => '0');
+      io_miso.rdata(31 downto 16) <= (16+tx_pfq_idx'high downto 16 => tx_pfq_idx, others => '0');
     elsif sel_tx_pq_hi then
       io_miso.rdata(15 downto  0) <= (others => '0');
-      io_miso.rdata(31 downto 16) <= (16+tx_pfq_tag'length-1 downto 16 => tx_pfq_tag, others => '0');
+      io_miso.rdata(31 downto 16) <= (16+tx_pfq_tag'high downto 16 => tx_pfq_tag, others => '0');
     elsif sel_rx_buf_std then
       io_miso.rdata <= rx_buf_dout;
     elsif sel_rx_buf_err then
@@ -264,12 +254,10 @@ begin
          7 downto  0 => rx_buf_dpout(0)
       );
     elsif sel_rx_pq_lo then
-      rx_pfq_stb <= io_mosi.wstb;
-      rx_prq_stb <= not io_mosi.wstb;
-      io_miso.rdata(15 downto  0) <= (rx_prq_len'range => rx_prq_len, others => '0');
-      io_miso.rdata(31 downto 16) <= (16+rx_prq_idx'length-1 downto 16 => rx_prq_idx, others => '0');
+      io_miso.rdata(15 downto  0) <= (rx_prq_len'high downto 0 => rx_prq_len, others => '0');
+      io_miso.rdata(31 downto 16) <= (16+rx_prq_idx'high downto 16 => rx_prq_idx, others => '0');
     elsif sel_rx_pq_hi then
-      io_miso.rdata <= (rx_prq_flag'range => rx_prq_flag, others => '0');
+      io_miso.rdata <= (rx_prq_flag'high downto 0 => rx_prq_flag, others => '0');
     elsif sel_md then
       io_miso.rdata <= x"0000" & md_rd;
     else
@@ -289,7 +277,7 @@ begin
     elsif rising_edge(clk) then
       if sel_tx_pq_hi and io_mosi.wstb then
         if io_mosi.be(0) then
-          tx_prq_opt_r <= io_mosi.wdata(tx_prq_opt_r'range);
+          tx_prq_opt_r <= io_mosi.wdata(tx_prq_opt_r'high downto 0);
         end if;
         if io_mosi.be(2) then
           tx_prq_tag_r <= io_mosi.wdata(16+tx_prq_tag'high downto 16);

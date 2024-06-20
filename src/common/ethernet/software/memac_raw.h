@@ -1,17 +1,20 @@
 #ifndef _memac_raw_h_
 #define _memac_raw_h_
 
-#include "memac_raw_bsp.h"
-
-typedef struct {
-    uint32_t oui;
-    uint8_t  model;
-    uint8_t  rev;
-} PhyID_t;
 typedef uint8_t MacAddr_t[6];
 typedef uint8_t IpAddr_t[4];
 
-extern PhyID_t   PhyID;
+typedef struct {
+    uint16_t len;
+    uint16_t idx;
+    uint16_t flags;
+} RxPktRsrvDesc_t;
+
+typedef struct {
+    uint16_t len;
+} RxPktFreeDesc_t;
+
+extern uint32_t  PhyID;
 extern MacAddr_t MyMacAddr;
 extern IpAddr_t  MyIpAddr;
 

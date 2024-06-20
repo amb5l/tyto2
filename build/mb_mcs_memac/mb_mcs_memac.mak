@@ -91,12 +91,13 @@ VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
 VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/ethernet/test/model_mdio.vhd \
 	$(toplevel)/src/common/ethernet/test/model_rgmii_rx.vhd \
+	$(toplevel)/src/common/ethernet/test/model_rgmii_tx.vhd \
 	$(toplevel)/src/common/uart/test/model_uart_rx.vhd \
 	$(toplevel)/src/common/uart/test/model_console.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/tb_$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_ELF=$(VITIS_DIR)/$(VITIS_ELF_DBG)
 VIVADO_SIM_RUN=\
-	tb_$(DESIGN)_$(BOARD);FILENAME=$(LOG_FILE)
+	tb_$(DESIGN)_$(BOARD);FILENAME=$(LOG_FILE),RGMII_TX_ALIGN=$(RGMII_TX_ALIGN),RGMII_RX_ALIGN=$(RGMII_RX_ALIGN)
 VIVADO_XDC=\
 	$(toplevel)/src/boards/$(BOARD)/$(BOARD).tcl=IMPL \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).tcl=SYNTH,IMPL \

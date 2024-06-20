@@ -132,6 +132,7 @@ begin
       drops      <= (drops'range => '0');
       pfq_rdy_r  <= '0';
       pfq_len_r  <= (pfq_len_r'range => '0');
+      pfq_stb    <= '0';
       pfq_stb_r  <= (pfq_stb_r'range => '0');
 
     elsif rising_edge(clk) and clken = '1' then

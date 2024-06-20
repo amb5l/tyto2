@@ -91,7 +91,17 @@ begin
   P_COMB: process(all)
   begin
     umi_bwe <= (others => '0');
-    umi_bwe(to_integer(unsigned(umi_addr(1 downto 0)))) <= umi_we;
+    -- this doesn't work in Vivado simulator
+    -- umi_bwe(to_integer(unsigned(umi_addr(1 downto 0)))) <= umi_we;
+    if umi_we = '1' then
+      case umi_addr(1 downto 0) is
+        when "00"   => umi_bwe(0) <= '1';
+        when "01"   => umi_bwe(1) <= '1';
+        when "10"   => umi_bwe(2) <= '1';
+        when "11"   => umi_bwe(3) <= '1';
+        when others => umi_bwe <= (others => 'X');
+      end case;
+    end if;
     case umi_bsel is
       when "00"   => umi_dout <= umi_bdout(0); umi_dpout <= umi_bdpout(0);
       when "01"   => umi_dout <= umi_bdout(1); umi_dpout <= umi_bdpout(1);

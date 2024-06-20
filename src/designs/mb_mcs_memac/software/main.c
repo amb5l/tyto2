@@ -7,17 +7,19 @@
 
 #include "bsp.h"
 #include "memac_raw.h"
-#include "printf.h"
-
-#include "memac_raw.h"
+#include "memac_raw_bsp.h"
 #include "memac_raw_mdio.h"
 #include QUOTE(PHY.h)
+#include "printf.h"
 
 #define CTRL_C 3
 
 char *test_message = "hello!";
 MacAddr_t DstMacAddr = {0x00,0xE0,0x4C,0x78,0x14,0x5B};
 IpAddr_t DstIpAddr = {192, 168, 1, 128};
+
+RxPktRsrvDesc_t RxPRD;
+RxPktFreeDesc_t RxPFD;
 
 int main() {
 
@@ -26,69 +28,64 @@ int main() {
 #ifdef BUILD_CONFIG_RLS
     printf(QUOTE(APP_NAME) " app 1220\r\n");
 #endif
-#ifdef BUILD_CONFIG_DBG
-    printf("debug");
-#endif
     led(2);
+    memac_raw_rx_ctrl(0b1000, 0b1000, 1, 1);
     memac_raw_init();
     memac_raw_set_speed(MEMAC_SPD_1000);
     memac_raw_reset(0);
-    gpobit(1,MEMAC_GPO_PHY_RST_N,1);
+    gpobit(1,MEMAC_GPOB_PHY_RST_N,1);
 #ifdef BUILD_CONFIG_RLS
     usleep(45000);
 #endif
     led(3);
 
-#if 0
-    while(1) {
-        phy_mdio_poke(1, 0x12, 0x0100);
-        usleep(1);
-        phy_mdio_peek(1, 0x12);
-        usleep(1);
-        phy_mdio_poke(1, 0x12, 0x0200);
-        usleep(1);
-        phy_mdio_peek(1, 0x12);
-        usleep(1);
-    }
-#endif
-
-#if 0
-    while(1) {
-        uint8_t a;
-        uint16_t d;
-        a = 0x12;
-
-        d = 0x0100;
-        printf("poking 0x%02X with 0x%04X ...", a, d);
-        phy_mdio_poke(1, a, d);
-        printf("peeking 0x%02X ... %04X\r\n", a, phy_mdio_peek(1, a));
-        d = 0x0200;
-        printf("poking 0x%02X with 0x%04X ...", a, d);
-        phy_mdio_poke(1, a, d);
-        printf("peeking 0x%02X ... %04X\r\n", a, phy_mdio_peek(1, a));
-        d = 0x0400;
-        printf("poking 0x%02X with 0x%04X ...", a, d);
-        phy_mdio_poke(1, a, d);
-        printf("peeking 0x%02X ... %04X\r\n", a, phy_mdio_peek(1, a));
-        d = 0x0800;
-        printf("poking 0x%02X with 0x%04X ...", a, d);
-        phy_mdio_poke(1, a, d);
-        printf("peeking 0x%02X ... %04X\r\n", a, phy_mdio_peek(1, a));
-        d = 0x1000;
-        printf("poking 0x%02X with 0x%04X ...", a, d);
-        phy_mdio_poke(1, a, d);
-        printf("peeking 0x%02X ... %04X\r\n", a, phy_mdio_peek(1, a));
+    phy_id();
+#ifndef BUILD_CONFIG_DBG
+    printf("PHY ID: %06X %02X %X\r\n", PhyID.oui, PhyID.model, PhyID.rev);
+    do {
+        printf("waiting for auto-negotiation to complete...\r\n");
         usleep(500000);
-    }
+    } while(!((phy_mdio_peek(1, MDIO_RA_BMSR) >> MDIO_RB_BMSR_ANC) & 1));
+    printf("        RX speed : %d\r\n", memac_raw_get_speed());
+    printf("            link : %d\r\n", phy_link());
+    printf("           speed : %d\r\n", phy_speed());
+    printf("          duplex : %d\r\n", phy_duplex());
 #endif
+    led(4);
 
-    phy_mdio_poke(1,30,44); // set ext page 44
-    printf(" reg 28 : %04X\r\n", phy_mdio_peek(1,28));
-    printf(" reg 26 : %04X\r\n", phy_mdio_peek(1,26));
-    phy_mdio_poke(1,31,0); // set page 0
+    while(!memac_raw_rx_rdy())
+        ;
+    memac_raw_rx_get(&RxPRD);
+    printf("%d\r\n", RxPRD.len);
+    for (uint16_t i = 0; i < RxPRD.len; i++) {
+        printf("%02X ", peek8(MEMAC_BASE_RX_BUF + RxPRD.idx + i));
+    }
+    printf("\r\n");
+
+    while(1) {
+#ifdef BUILD_CONFIG_DBG
+        putchar(CTRL_C); // simulator sees this and stops running
+#endif
+    }
+
+    while(1) {
+        printf("%d", phy_mdio_peek(1, MDIO_RA_BMSR) >> MDIO_RB_BMSR_LINK & 1);
+        usleep(200000);
+    }
+
+    // this screws things up somehow? why?
+    //phy_mdio_poke(1,30,44); // set ext page 44
+    //printf(" reg 28 : %04X\r\n", phy_mdio_peek(1,28));
+    //printf(" reg 26 : %04X\r\n", phy_mdio_peek(1,26));
+    //phy_mdio_poke(1,31,0); // set page 0
 
     printf("waiting...\r\n");
     while(1) {
+        // read all PHY registers
+        for (int i = 0; i < 32; i++) {
+            uint16_t data = phy_mdio_peek(1, i);
+            printf("PHY %02X: %04X\r\n", i, data);
+        }
         printf("        RX speed : %d\r\n", memac_raw_get_speed());
         printf("            link : %d\r\n", phy_link());
         printf("           speed : %d\r\n", phy_speed());
@@ -99,7 +96,7 @@ int main() {
     phy_reset();
     phy_id();
 #ifndef BUILD_CONFIG_DBG
-    printf("PHY ID: %06X %02X %X\r\n", PhyID.oui, PhyID.model, PhyID.rev);
+    printf("PHY ID: %08lX\r\n", PhyID);
 #endif
     // read all PHY registers
     for (int i = 0; i < 32; i++) {
