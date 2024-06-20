@@ -41,7 +41,7 @@ int main() {
 
     phy_id();
 #ifndef BUILD_CONFIG_DBG
-    printf("PHY ID: %06X %02X %X\r\n", PhyID.oui, PhyID.model, PhyID.rev);
+    printf("PHY ID: %08lX\r\n", PhyID);
     do {
         printf("waiting for auto-negotiation to complete...\r\n");
         usleep(500000);
@@ -56,7 +56,7 @@ int main() {
     while(!memac_raw_rx_rdy())
         ;
     memac_raw_rx_get(&RxPRD);
-    printf("%d\r\n", RxPRD.len);
+    printf("len %d flags %04X\r\n", RxPRD.len, RxPRD.flags);
     for (uint16_t i = 0; i < RxPRD.len; i++) {
         printf("%02X ", peek8(MEMAC_BASE_RX_BUF + RxPRD.idx + i));
     }
