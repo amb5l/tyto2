@@ -29,7 +29,7 @@ int main() {
     printf(QUOTE(APP_NAME) " app 21\r\n");
 #endif
     led(2);
-    memac_raw_rx_ctrl(0b1000, 0b1000, 0, 1);
+    memac_raw_rx_ctrl(0b1000, 0b1000, 0, 0);
     memac_raw_init();
     memac_raw_set_speed(MEMAC_SPD_1000);
     memac_raw_reset(0);
