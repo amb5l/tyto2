@@ -212,6 +212,6 @@ begin
       umi_data => umi_data
     );
 
-    -- BUFG for phy clk out
+    -- TODO: BUFG for phy clk out ?
 
 end architecture rtl;

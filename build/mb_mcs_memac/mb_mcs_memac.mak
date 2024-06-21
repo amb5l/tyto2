@@ -67,6 +67,7 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm_v2.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/ram_tdp.vhd=VHDL-1993 \
 	$(toplevel)/src/common/crc/crc32_eth_8_pkg.vhd \
+	$(toplevel)/src/common/crc/crc_eth.vhd \
 	$(toplevel)/src/common/ethernet/memac_pkg.vhd \
 	$(toplevel)/src/common/ethernet/memac_util_pkg.vhd \
 	$(toplevel)/src/common/ethernet/memac_pdq.vhd \

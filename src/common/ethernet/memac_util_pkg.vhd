@@ -37,6 +37,7 @@ package memac_util_pkg is
   function bool2sl( b : boolean ) return std_ulogic;
   function bin2gray( bin : std_ulogic_vector ) return std_ulogic_vector;
   function gray2bin( gray : std_ulogic_vector ) return std_ulogic_vector;
+  function rev(i : std_ulogic_vector) return std_ulogic_vector;
   function log2(x : integer) return integer;
 
   procedure incr(signal x : inout std_ulogic_vector);
@@ -104,6 +105,15 @@ package body memac_util_pkg is
     end loop;
     return bin;
   end function gray2bin;
+
+  function rev(i : std_ulogic_vector) return std_ulogic_vector is
+    variable o : std_ulogic_vector(i'reverse_range);
+  begin
+    for n in i'range loop
+      o(n) := i(n);
+    end loop;
+    return o;
+  end function rev;
 
   -- return lowest power of 2 that is greater than or equal to x
   function log2(x : integer) return integer is

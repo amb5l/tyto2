@@ -26,10 +26,10 @@ int main() {
     bsp_init();
     led(1);
 #ifdef BUILD_CONFIG_RLS
-    printf(QUOTE(APP_NAME) " app 1220\r\n");
+    printf(QUOTE(APP_NAME) " app 21\r\n");
 #endif
     led(2);
-    memac_raw_rx_ctrl(0b1000, 0b1000, 1, 1);
+    memac_raw_rx_ctrl(0b1000, 0b1000, 0, 1);
     memac_raw_init();
     memac_raw_set_speed(MEMAC_SPD_1000);
     memac_raw_reset(0);

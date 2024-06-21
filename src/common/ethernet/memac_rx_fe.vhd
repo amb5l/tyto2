@@ -56,7 +56,7 @@ end package memac_rx_fe_pkg;
 use work.tyto_types_pkg.all;
 use work.memac_pkg.all;
 use work.memac_util_pkg.all;
-use work.crc32_eth_8_pkg.all;
+use work.crc_eth_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -104,10 +104,15 @@ architecture rtl of memac_rx_fe is
   signal buf_wptr   : std_ulogic_vector(buf_idx'range);
   signal buf_rptr   : std_ulogic_vector(buf_idx'range);
   signal buf_ff     : std_ulogic;
-  signal crc32      : std_ulogic_vector(31 downto 0);
   signal pfq_rdy_r  : std_ulogic;
   signal pfq_len_r  : std_ulogic_vector(pfq_len'range);
   signal pfq_stb_r  : std_ulogic_vector(1 to 4);
+
+  signal crc_init   : std_ulogic;
+  signal crc_en     : std_ulogic;
+  signal crc_dv     : std_ulogic;
+  signal crc_d      : std_ulogic_vector(7 downto 0);
+  signal crc_q      : std_ulogic_vector(7 downto 0);
 
 begin
 
@@ -128,7 +133,6 @@ begin
       buf_wptr   <= (buf_wptr'range => '0');
       buf_rptr   <= (buf_rptr'range => '0');
       buf_ff     <= '0';
-      crc32      <= (crc32'range => '1');
       drops      <= (drops'range => '0');
       pfq_rdy_r  <= '0';
       pfq_len_r  <= (pfq_len_r'range => '0');
@@ -148,7 +152,6 @@ begin
       case state is
 
         when IDLE =>
-          crc32 <= (others => '1');
           if umi_dv_r(4) = '1' then
             if prq_rdy = '1' then
               buf_wr  <= pre_inc;
@@ -205,7 +208,6 @@ begin
           end if;
 
         when PKT =>
-          crc32 <= crc32_eth_8(umi_data_r(5),crc32);
           if umi_er_r(5) = '1' then
             prq_flag(RX_FLAG_DATA_ERR_BIT) <= '1';
           end if;
@@ -230,14 +232,12 @@ begin
         when FCS =>
           count <= count + 1;
           if count = 0 then
-            if  crc32( 31 downto 24 ) = umi_data_r(5)
-            and crc32( 23 downto 16 ) = umi_data_r(4)
-            and crc32( 15 downto  8 ) = umi_data_r(3)
-            and crc32(  7 downto  0 ) = umi_data_r(2)
-            then
-              prq_flag(RX_FLAG_FCS_BAD_BIT) <= '0';
-            end if;
-          elsif count = 3 then
+             prq_flag(RX_FLAG_FCS_BAD_BIT) <= '0';
+          end if;
+          if  crc_q /= umi_data_r(5) then
+            prq_flag(RX_FLAG_FCS_BAD_BIT) <= '1';
+          end if;
+          if count = 3 then
             buf_wr  <= '0';
             prq_stb <= '1';
             count   <= 0;
@@ -303,5 +303,22 @@ begin
   buf_idx  <= buf_wptr;
   buf_data <= umi_data_r(5);
   buf_er   <= umi_er_r(5);
+
+  crc_init <= '1' when state = IDLE or state = IPG else '0';
+  crc_en   <= '1' when state = PKT or state = FCS else '0';
+  crc_dv   <= '1' when state = PKT else '0';
+  crc_d    <= umi_data_r(5);
+
+  U_CRC: crc_eth
+    port map (
+      rst   => rst,
+      clk   => clk,
+      clken => clken,
+      init  => crc_init,
+      en    => crc_en,
+      dv    => crc_dv,
+      d     => crc_d,
+      q     => crc_q
+    );
 
 end architecture rtl;
