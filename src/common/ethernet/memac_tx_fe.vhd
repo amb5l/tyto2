@@ -55,6 +55,7 @@ end package memac_tx_fe_pkg;
 use work.memac_pkg.all;
 use work.memac_util_pkg.all;
 use work.crc32_eth_8_pkg.all;
+use work.crc_eth_pkg.all;
 use work.memac_tx_fe_pkg.all;
 
 library ieee;
@@ -95,37 +96,42 @@ architecture rtl of memac_tx_fe is
 
   type umi_sel_t is (IPG,PRE,SFD,DATA,FCS1,FCS2,FCS3,FCS4);
 
-  signal s1_state   : state_t;
-  signal s1_count   : integer range 0 to COUNT_MAX;
-  signal s1_prq_rdy : std_ulogic;
-  signal s1_prq_len : std_ulogic_vector(prq_len'range);
-  signal s1_prq_idx : std_ulogic_vector(prq_idx'range);
-  signal s1_prq_tag : std_ulogic_vector(prq_tag'range);
-  signal s1_prq_opt : tx_opt_t;
-  signal s1_prq_stb : std_ulogic;
-  signal s1_pfq_rdy : std_ulogic;
-  signal s1_pfq_len : std_ulogic_vector(pfq_len'range);
-  signal s1_pfq_idx : std_ulogic_vector(pfq_idx'range);
-  signal s1_pfq_tag : std_ulogic_vector(pfq_tag'range);
-  signal s1_pfq_stb : std_ulogic;
-  signal s1_pkt_opt : tx_opt_t;
-  signal s1_umi_sel : umi_sel_t;
-  signal s1_buf_re  : std_ulogic;
-  signal s1_buf_len : std_ulogic_vector(prq_len'range);
-  signal s1_buf_idx : std_ulogic_vector(buf_idx'range);
+  signal s1_state    : state_t;
+  signal s1_count    : integer range 0 to COUNT_MAX;
+  signal s1_prq_rdy  : std_ulogic;
+  signal s1_prq_len  : std_ulogic_vector(prq_len'range);
+  signal s1_prq_idx  : std_ulogic_vector(prq_idx'range);
+  signal s1_prq_tag  : std_ulogic_vector(prq_tag'range);
+  signal s1_prq_opt  : tx_opt_t;
+  signal s1_prq_stb  : std_ulogic;
+  signal s1_pfq_rdy  : std_ulogic;
+  signal s1_pfq_len  : std_ulogic_vector(pfq_len'range);
+  signal s1_pfq_idx  : std_ulogic_vector(pfq_idx'range);
+  signal s1_pfq_tag  : std_ulogic_vector(pfq_tag'range);
+  signal s1_pfq_stb  : std_ulogic;
+  signal s1_pkt_opt  : tx_opt_t;
+  signal s1_umi_sel  : umi_sel_t;
+  signal s1_buf_re   : std_ulogic;
+  signal s1_buf_len  : std_ulogic_vector(prq_len'range);
+  signal s1_buf_idx  : std_ulogic_vector(buf_idx'range);
 
-  signal s2_umi_sel : umi_sel_t;
-  signal s2_buf_d   : std_ulogic_vector(buf_d'range);
-  signal s2_buf_er  : std_ulogic;
+  signal s2_umi_sel  : umi_sel_t;
+  signal s2_buf_d    : std_ulogic_vector(buf_d'range);
+  signal s2_buf_er   : std_ulogic;
 
-  signal s3_umi_sel : umi_sel_t;
-  signal s3_buf_d   : std_ulogic_vector(buf_d'range);
-  signal s3_buf_er  : std_ulogic;
-  signal s3_crc32   : std_ulogic_vector(31 downto 0);
+  signal s3_umi_sel  : umi_sel_t;
+  signal s3_buf_d    : std_ulogic_vector(buf_d'range);
+  signal s3_buf_er   : std_ulogic;
+  signal s3_crc32    : std_ulogic_vector(31 downto 0);
+  signal s3_crc_init : std_ulogic;
+  signal s3_crc_en   : std_ulogic;
+  signal s3_crc_dv   : std_ulogic;
+  signal s3_crc_d    : std_ulogic_vector(7 downto 0);
+  signal s3_crc_q    : std_ulogic_vector(7 downto 0);
 
-  signal s4_umi_dv  : std_ulogic;
-  signal s4_umi_er  : std_ulogic;
-  signal s4_umi_d   : std_ulogic_vector(7 downto 0);
+  signal s4_umi_dv   : std_ulogic;
+  signal s4_umi_er   : std_ulogic;
+  signal s4_umi_d    : std_ulogic_vector(7 downto 0);
 
 begin
 
@@ -265,9 +271,9 @@ begin
       --------------------------------------------------------------------------------
       -- stage 3
 
-      s3_umi_sel  <= s2_umi_sel;
-      s3_buf_d <= s2_buf_d;
-      s3_buf_er   <= s2_buf_er;
+      s3_umi_sel <= s2_umi_sel;
+      s3_buf_d   <= s2_buf_d;
+      s3_buf_er  <= s2_buf_er;
 
       if s2_umi_sel = SFD then
         s3_crc32 <= (others => '1');
@@ -287,15 +293,39 @@ begin
         when PRE  => s4_umi_d <= x"55";
         when SFD  => s4_umi_d <= x"D5";
         when DATA => s4_umi_d <= s3_buf_d;
-        when FCS1 => s4_umi_d <= s3_crc32(31 downto 24);
-        when FCS2 => s4_umi_d <= s3_crc32(23 downto 16);
-        when FCS3 => s4_umi_d <= s3_crc32(15 downto  8);
-        when FCS4 => s4_umi_d <= s3_crc32( 7 downto  0);
+        when FCS1 | FCS2 | FCS3 | FCS4 => s4_umi_d <= s3_crc_q;
       end case;
 
       --------------------------------------------------------------------------------
 
     end if;
   end process P_MAIN;
+
+  --------------------------------------------------------------------------------
+
+  s3_crc_en   <= '1' when
+      s3_umi_sel /= DATA or
+      s3_umi_sel /= FCS1 or
+      s3_umi_sel /= FCS2 or
+      s3_umi_sel /= FCS3 or
+      s3_umi_sel /= FCS4
+    else '0';
+  s3_crc_init <= not s3_crc_en;
+  s3_crc_dv   <= '1' when s3_umi_sel = DATA else '0';
+  s3_crc_d    <= s3_buf_d;
+
+  U_CRC: component crc_eth
+    port map (
+      rst   => rst,
+      clk   => clk,
+      clken => clken,
+      init  => s3_crc_init,
+      en    => s3_crc_en,
+      dv    => s3_crc_dv,
+      d     => s3_crc_d,
+      q     => s3_crc_q
+    );
+
+  --------------------------------------------------------------------------------
 
 end architecture rtl;

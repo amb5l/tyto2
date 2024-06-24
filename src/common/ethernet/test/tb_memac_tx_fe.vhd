@@ -16,6 +16,8 @@
 --------------------------------------------------------------------------------
 -- definitions required for generic package instances
 
+use work.tyto_types_pkg.all;
+use work.memac_pkg.all;
 use work.memac_util_pkg.all;
 use work.memac_tx_fe_pkg.all;
 
@@ -36,13 +38,17 @@ package tb_memac_fe_pkg is
     len : std_ulogic_vector(log2(MTU)-1 downto 0);
     idx : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
     tag : std_ulogic_vector(TAG_WIDTH-1 downto 0);
-    opt : memac_tx_opt_t;
+    opt : tx_opt_t;
   end record prd_t;
   constant PRQ_EMPTY : prd_t := (
     len  => (log2(MTU)-1 downto 0 => 'X'),
     idx  => (log2(BUF_SIZE)-1 downto 0 => 'X'),
     tag  => (TAG_WIDTH-1 downto 0 => 'X'),
-    opt => (pre_len => x"8",pre_auto => 'X',fcs_auto => 'X')
+    opt => (
+        TX_OPT_PRE_LEN_RANGE => x"8",
+        TX_OPT_PRE_AUTO_BIT  => '1',
+        TX_OPT_FCS_AUTO_BIT  => '1'
+    )
   );
 
   -- packet free
@@ -62,7 +68,7 @@ package tb_memac_fe_pkg is
 
   type packet_t is record
     size : natural;
-    data : sulv_array_t(0 to MTU-1)(8 downto 0);
+    data : sulv_vector(0 to MTU-1)(8 downto 0);
   end record packet_t;
   constant PACKET_EMPTY : packet_t := (size => 0, data => (others => (others => 'X')));
 
@@ -88,7 +94,9 @@ package packet_queue_pkg is
 --------------------------------------------------------------------------------
 -- testbench entity and architecture
 
+use work.tyto_types_pkg.all;
 use work.crc32_eth_8_pkg.all;
+use work.memac_pkg.all;
 use work.memac_util_pkg.all;
 use work.memac_tx_fe_pkg.all;
 use work.tb_memac_fe_pkg.all;
@@ -116,15 +124,16 @@ architecture sim of tb_memac_tx_fe is
   --------------------------------------------------------------------------------
   -- signals
 
-  signal rst         : std_ulogic;
-  signal clk         : std_ulogic;
+  signal rst   : std_ulogic;
+  signal clk   : std_ulogic;
+  signal clken : std_ulogic;
 
   -- DUT
   signal prq_rdy  : std_ulogic;
   signal prq_len  : std_ulogic_vector(log2(MTU)-1 downto 0);
   signal prq_idx  : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
   signal prq_tag  : std_ulogic_vector(1 downto 0);
-  signal prq_opt  : memac_tx_opt_t := MEMAC_TX_OPT_DEFAULT;
+  signal prq_opt  : tx_opt_t;
   signal prq_stb  : std_ulogic;
   signal pfq_rdy  : std_ulogic;
   signal pfq_len  : std_ulogic_vector(log2(MTU)-1 downto 0);
@@ -133,21 +142,24 @@ architecture sim of tb_memac_tx_fe is
   signal pfq_stb  : std_ulogic;
   signal buf_re   : std_ulogic;
   signal buf_rptr : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
-  signal buf_data : std_ulogic_vector(7 downto 0);
+  signal buf_d    : std_ulogic_vector(7 downto 0);
   signal buf_er   : std_ulogic;
 
   -- packet generator
   signal buf_wptr : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
 
   -- PHY
-  signal phy_dv   : std_ulogic;
-  signal phy_er   : std_ulogic;
-  signal phy_data : std_ulogic_vector(7 downto 0);
+  signal umi_dv : std_ulogic;
+  signal umi_er : std_ulogic;
+  signal umi_d  : std_ulogic_vector(7 downto 0);
 
   -- simulation only: signals to allow shared variables to be added to waveform
-  signal sim_prq_items : integer; -- v4p ignore w-303
-  signal sim_pfq_items : integer; -- v4p ignore w-303
-  signal sim_buf_space : integer; -- v4p ignore w-303
+  signal sim_prq_items : integer;                        -- v4p ignore w-303
+  signal sim_pfq_items : integer;                        -- v4p ignore w-303
+  signal sim_buf_space : integer;                        -- v4p ignore w-303
+  signal sim_crc       : std_ulogic_vector(31 downto 0); -- v4p ignore w-303
+  signal sim_rfcs      : std_ulogic_vector(31 downto 0); -- v4p ignore w-303
+  signal sim_xfcs      : std_ulogic_vector(31 downto 0); -- v4p ignore w-303
 
   --------------------------------------------------------------------------------
   -- buffer RAM
@@ -158,7 +170,7 @@ architecture sim of tb_memac_tx_fe is
   end protected shared_buffer_t;
 
   type shared_buffer_t is protected body
-    variable memory : sulv_array_t(0 to BUF_SIZE-1)(8 downto 0);
+    variable memory : sulv_vector(0 to BUF_SIZE-1)(8 downto 0);
     procedure set(addr : natural; data : std_ulogic_vector) is
     begin
       memory(addr) := data;
@@ -231,6 +243,8 @@ begin
     '0' after CLK_PERIOD-(CLK_PERIOD/2) when clk = '1' else
     '0';
 
+  clken <= '1';
+
   rst <= '1', '0' after CLK_PERIOD;
 
   --------------------------------------------------------------------------------
@@ -260,9 +274,13 @@ begin
         prd.len := std_ulogic_vector(to_unsigned(pkt.size,prq_len'length));
         prd.idx := buf_wptr;
         prd.tag := "00";
-        prd.opt := (pre_len => x"8",pre_auto => '1',fcs_auto => '1');
+        prd.opt := (
+          TX_OPT_PRE_LEN_RANGE => x"8",
+          TX_OPT_PRE_AUTO_BIT  => '1',
+          TX_OPT_FCS_AUTO_BIT  => '1'
+        );
         prq.enq(prd);
-        if prd.opt.fcs_auto = '1' then
+        if prd.opt(TX_OPT_FCS_AUTO_BIT) = '1' then
           pkt.size := pkt.size + 4; -- FCS
         end if;
         expected.enq(pkt);
@@ -280,11 +298,11 @@ begin
   P_BUF: process(rst,clk)
   begin
     if rst = '1' then
-      buf_data <= (others => 'X');
-      buf_er   <= 'X';
+      buf_d  <= (others => 'X');
+      buf_er <= 'X';
     elsif rising_edge(clk) and buf_re = '1' then
-      buf_data <= buf.get(to_integer(unsigned(buf_rptr)))(7 downto 0);
-      buf_er   <= buf.get(to_integer(unsigned(buf_rptr)))(8);
+      buf_d  <= buf.get(to_integer(unsigned(buf_rptr)))(7 downto 0);
+      buf_er <= buf.get(to_integer(unsigned(buf_rptr)))(8);
     end if;
   end process P_BUF;
 
@@ -301,7 +319,11 @@ begin
       prq_len <= (others => 'X');
       prq_idx <= (others => 'X');
       prq_tag <= (others => 'X');
-      prq_opt <= MEMAC_TX_OPT_DEFAULT;
+      prq_opt <= (
+        TX_OPT_PRE_LEN_RANGE => 'X',
+        TX_OPT_PRE_AUTO_BIT  => 'X',
+        TX_OPT_FCS_AUTO_BIT  => 'X'
+      );
     elsif rising_edge(clk) then
       if prq_stb = '1' then
         prq.deq;
@@ -348,15 +370,16 @@ begin
     variable xpkt   : packet_t;
     variable pcount : integer;
     variable count  : integer;
-    variable fcs    : std_ulogic_vector(31 downto 0);
     variable crc    : std_ulogic_vector(31 downto 0);
+    variable rfcs   : std_ulogic_vector(31 downto 0); -- received FCS
+    variable xfcs   : std_ulogic_vector(31 downto 0); -- expected FCS
   begin
     pcount := 0;
     wait until falling_edge(rst);
     while pcount < PACKET_COUNT loop
       -- IPG
       count := 0;
-      while phy_dv /= '1' loop
+      while umi_dv /= '1' loop
         count := count + 1;
         wait until falling_edge(clk);
       end loop;
@@ -364,26 +387,26 @@ begin
         report "IPG too short (" & integer'image(count) & " cycles)" severity failure;
       -- preamble
       for i in 1 to 7 loop
-        assert phy_dv = '1'
+        assert umi_dv = '1'
           report "unexpected DV negation" severity failure;
-        assert phy_er = '0'
+        assert umi_er = '0'
           report "unexpected ER assertion" severity failure;
-        assert phy_data(7 downto 0) = x"55"
-          report "preamble error - expected 055, received " & to_hstring(phy_data(7 downto 0)) severity failure;
+        assert umi_d(7 downto 0) = x"55"
+          report "preamble error - expected 055, received " & to_hstring(umi_d(7 downto 0)) severity failure;
         wait until falling_edge(clk);
       end loop;
       -- SFD
-      assert phy_dv = '1'
+      assert umi_dv = '1'
         report "unexpected DV negation" severity failure;
-      assert phy_er = '0'
+      assert umi_er = '0'
         report "unexpected ER assertion" severity failure;
-      assert phy_data(7 downto 0) = x"D5"
-          report "SFD error - expected 0D5, received " & to_hstring(phy_data(7 downto 0)) severity failure;
+      assert umi_d(7 downto 0) = x"D5"
+          report "SFD error - expected 0D5, received " & to_hstring(umi_d(7 downto 0)) severity failure;
         wait until falling_edge(clk);
       -- packet data
       count := 0;
-      while phy_dv = '1' loop
-        rpkt.data(count) := phy_er & phy_data;
+      while umi_dv = '1' loop
+        rpkt.data(count) := umi_er & umi_d;
         count := count + 1;
         wait until falling_edge(clk);
       end loop;
@@ -412,14 +435,24 @@ begin
         report "received packet: data error" severity failure;
       end if;
       -- check FCS
-      fcs := rpkt.data(rpkt.size-4)(7 downto 0) & rpkt.data(rpkt.size-3)(7 downto 0) & rpkt.data(rpkt.size-2)(7 downto 0) & rpkt.data(rpkt.size-1)(7 downto 0);
+      rfcs :=
+        rpkt.data(rpkt.size-4)(7 downto 0) &
+        rpkt.data(rpkt.size-3)(7 downto 0) &
+        rpkt.data(rpkt.size-2)(7 downto 0) &
+        rpkt.data(rpkt.size-1)(7 downto 0);
       crc := (others => '1');
       for i in 0 to rpkt.size-5 loop
-        crc := crc32_eth_8(rpkt.data(i)(7 downto 0),crc);
+        crc := crc32_eth_8(rev(rpkt.data(i)(7 downto 0)),crc);
       end loop;
-      assert fcs = crc
-        report "received packet: FCS error - expected " & to_hstring(fcs) &
-          " received " & to_hstring(crc)
+      xfcs := not(rev(crc));
+      xfcs := xfcs(7 downto 0) & xfcs(15 downto 8) & xfcs(23 downto 16) & xfcs(31 downto 24);
+      sim_crc  <= crc;
+      sim_rfcs <= rfcs;
+      sim_xfcs <= xfcs;
+      wait for 0 ps;
+      assert xfcs = rfcs
+        report "received packet: FCS error - expected " & to_hstring(xfcs) &
+          " received " & to_hstring(rfcs)
         severity failure;
       rpkt.size := rpkt.size - 4;
       -- finish
@@ -439,6 +472,10 @@ begin
     port map (
       rst      => rst,
       clk      => clk,
+      clken    => clken,
+      dv       => umi_dv,
+      er       => umi_er,
+      d        => umi_d,
       prq_rdy  => prq_rdy,
       prq_len  => prq_len,
       prq_idx  => prq_idx,
@@ -452,11 +489,8 @@ begin
       pfq_stb  => pfq_stb,
       buf_re   => buf_re,
       buf_idx  => buf_rptr,
-      buf_data => buf_data,
-      buf_er   => buf_er,
-      phy_dv   => phy_dv,
-      phy_er   => phy_er,
-      phy_data => phy_data
+      buf_d    => buf_d,
+      buf_er   => buf_er
     );
 
   --------------------------------------------------------------------------------
