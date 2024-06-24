@@ -17,13 +17,12 @@
 
 set_msg_config -id {Common 17-1548} -new_severity {ERROR}
 
-set script_file_tail [file tail [file normalize [info script]]]
-set script_file_root [file rootname $script_file_tail]
-
 set rgmii_ports_tx_clk [get_ports eth_txck]
 set rgmii_ports_tx_out [get_port {eth_txctl eth_txd[*]}]
 set rgmii_ports_rx_clk [get_port {eth_rxck}]
 set rgmii_ports_rx_in  [get_port {eth_rxctl eth_rxd[*]}]
+
+set dsn_gen_file [file normalize "[pwd]/../generics.txt"]
 
 set dsn_gen [get_property -quiet generic [get_filesets sources_1]]
 if {[llength $dsn_gen]} {
@@ -31,24 +30,27 @@ if {[llength $dsn_gen]} {
     #################################################################################
     # synthesis specific
 
-    # get required design generics
+    # check for generics required here
+
     foreach c {RGMII_TX_ALIGN RGMII_RX_ALIGN} {
         set found 0
         foreach g $dsn_gen {
             if {[string match "$c=*" $g]} {
-                set $c [lindex [split $g "="] 1]
                 set found 1
             }
         }
         if {!$found} {
-            error "$c not found in design generics ($dsn_gen)"
+            error "$c not found in design generics"
         }
     }
 
-    # set associated properties
-    create_property -quiet USER_ALIGN port
-    set_property USER_ALIGN $RGMII_TX_ALIGN $rgmii_ports_tx_clk
-    set_property USER_ALIGN $RGMII_RX_ALIGN $rgmii_ports_rx_clk
+    # write generics to a temporary file
+
+    set f [open "$dsn_gen_file" "w"]
+    foreach g $dsn_gen {
+        puts $f $g
+    }
+    close $f
 
     #################################################################################
 
@@ -74,8 +76,17 @@ if {[llength $dsn_gen]} {
 
     set rgmii_tx_clk_src [get_pins U_MAC/U_RGMII_TX/GEN_ALIGN.U_ODDR_CLK/GEN[0].U_ODDR/C]
     set rgmii_gtx_clk    [get_clocks clk_125m_0]
-    set RGMII_TX_ALIGN   [get_property USER_ALIGN $rgmii_ports_tx_clk]
-    set RGMII_RX_ALIGN   [get_property USER_ALIGN $rgmii_ports_rx_clk]
+	set f [open "$dsn_gen_file" "r"]
+	set lines [split [read $f] "\n"]
+	close $f
+    foreach c {RGMII_TX_ALIGN RGMII_RX_ALIGN} {
+        foreach l $lines {
+            if {[string match "$c=*" $l]} {
+                puts "debug: $l"
+                set $c [lindex [split $l "="] 1]
+            }
+        }
+    }
     source [get_files "memac_tx_rgmii.tcl"]
     source [get_files "memac_rx_rgmii.tcl"]
 

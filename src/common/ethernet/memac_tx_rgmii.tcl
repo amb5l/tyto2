@@ -8,10 +8,12 @@ foreach v $check_vars {
     }
 }
 
-create_generated_clock -name rgmii_tx_clk -source $rgmii_tx_clk_src -divide_by 1 $rgmii_ports_tx_clk
+if {![llength [get_clocks -quiet rgmii_tx_clk]]} {
+    create_generated_clock -name rgmii_tx_clk -source $rgmii_tx_clk_src -divide_by 1 $rgmii_ports_tx_clk
+}
 set rgmii_tx_clk [get_clocks rgmii_tx_clk]
 
-if {$RGMII_TX_ALIGN == "EDGE"} {
+if {$RGMII_TX_ALIGN == {"EDGE"}} {
 
     # edge aligned
 
@@ -28,7 +30,7 @@ if {$RGMII_TX_ALIGN == "EDGE"} {
     set_output_delay -min  $Tskew -clock $rgmii_tx_clk             $rgmii_ports_tx_out
     set_output_delay -min  $Tskew -clock $rgmii_tx_clk -clock_fall $rgmii_ports_tx_out -add_delay
 
-} else {
+} elseif {$RGMII_TX_ALIGN == {"CENTER"}}  {
 
     # center aligned
 
@@ -39,4 +41,6 @@ if {$RGMII_TX_ALIGN == "EDGE"} {
     set_output_delay -min -$Th  -clock $rgmii_tx_clk             $rgmii_ports_tx_out
     set_output_delay -min -$Th  -clock $rgmii_tx_clk -clock_fall $rgmii_ports_tx_out -add_delay
 
+} else {
+  error "RGMII TX alignment should be EDGE or CENTER... got $RGMII_TX_ALIGN instead"
 }

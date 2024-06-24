@@ -14,7 +14,7 @@ create_clock -add -name rgmii_rx_rclk -period 8.00 $rgmii_ports_rx_clk
 set rgmii_rx_rclk [get_clocks rgmii_rx_rclk]
 
 # apply constraints according to alignment used in the design
-if {$RGMII_RX_ALIGN == "EDGE"} {
+if {$RGMII_RX_ALIGN == {"EDGE"}} {
 
     # edge aligned
 
@@ -31,7 +31,7 @@ if {$RGMII_RX_ALIGN == "EDGE"} {
     set_input_delay -clock $rgmii_rx_tclk             -min -$Tskew $rgmii_ports_rx_in
     set_input_delay -clock $rgmii_rx_tclk -clock_fall -min -$Tskew $rgmii_ports_rx_in -add_delay
 
-} else {
+} elseif {$RGMII_RX_ALIGN == {"CENTER"}} {
 
     # center aligned
 
@@ -42,4 +42,6 @@ if {$RGMII_RX_ALIGN == "EDGE"} {
     set_input_delay -clock $rgmii_rx_tclk             -min $Th             $rgmii_ports_rx_in
     set_input_delay -clock $rgmii_rx_tclk -clock_fall -min $Th             $rgmii_ports_rx_in -add_delay
 
+} else {
+  error "RGMII RX alignment should be EDGE or CENTER... got $RGMII_RX_ALIGN instead"
 }
