@@ -71,7 +71,7 @@ uint16_t memac_raw_udp_tx_init(
     i = memac_raw_ip_tx_init(pBuf, pDstMac, pSrcIp, pDstIp, IP_PROTOCOL_UDP, len+8);
     poke16be ( &pBuf[i+0], srcPort ); // source port
     poke16be ( &pBuf[i+2], dstPort ); // destination port
-    poke16be ( &pBuf[i+4],     len ); // length
+    poke16be ( &pBuf[i+4],   8+len ); // length (includes header)
     poke16   ( &pBuf[i+6],       0 ); // checksum
     return i+8;
 }

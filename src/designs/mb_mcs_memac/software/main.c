@@ -26,7 +26,7 @@ int main() {
     bsp_init();
     led(1);
 #ifdef BUILD_CONFIG_RLS
-    printf(QUOTE(APP_NAME) " app 21\r\n");
+    printf(QUOTE(APP_NAME) " app 23\r\n");
 #endif
     led(2);
     memac_raw_rx_ctrl(0b1000, 0b1000, 0, 0);
@@ -53,6 +53,7 @@ int main() {
 #endif
     led(4);
 
+    printf("waiting for RX packet...\r\n");
     while(!memac_raw_rx_rdy())
         ;
     memac_raw_rx_get(&RxPRD);
@@ -61,6 +62,34 @@ int main() {
         printf("%02X ", peek8(MEMAC_BASE_RX_BUF + RxPRD.idx + i));
     }
     printf("\r\n");
+
+    printf("sending TX packet...\r\n");
+
+    // initialise UDP packet
+    // TODO use ARP to get DstMacAddr
+    uint16_t i = memac_raw_udp_tx_init(
+        (uint8_t *)MEMAC_BASE_TX_BUF, // buffer
+        &DstMacAddr,                  // destination MAC address = all 1s
+        &MyIpAddr,                    // source IP address = all 0s
+        &DstIpAddr,                   // destination IP address = all 1s
+        65001,                        // source port
+        65002,                        // destination port
+        strlen(test_message)          // length of payload
+    );
+    led(5);
+
+    // write payload
+    memcpy((void *)(MEMAC_BASE_TX_BUF + i), test_message, strlen(test_message));
+    led(6);
+
+    // checksum
+    memac_raw_udp_tx_cks((uint8_t *)MEMAC_BASE_TX_BUF, strlen(test_message));
+    led(7);
+
+    // send
+    while(1)
+        memac_raw_udp_tx_send((uint8_t *)MEMAC_BASE_TX_BUF, strlen(test_message));
+    led(8);
 
     while(1) {
 #ifdef BUILD_CONFIG_DBG
@@ -132,32 +161,6 @@ int main() {
         printf("       crossover : %d\r\n", (phy_mdio_peek(1, RTL8211_PHYSR) >> 6) & 1);
         printf("        RX speed : %d\r\n", memac_raw_get_speed());
     }
-
-    // initialise UDP packet
-    // TODO use ARP to get DstMacAddr
-    uint16_t i = memac_raw_udp_tx_init(
-        (uint8_t *)MEMAC_BASE_TX_BUF, // buffer
-        &DstMacAddr,                  // destination MAC address = all 1s
-        &MyIpAddr,                    // source IP address = all 0s
-        &DstIpAddr,                   // destination IP address = all 1s
-        68,                           // source port = 68
-        67,                           // destination port = 67
-        strlen(test_message)          // length of payload
-    );
-    led(3);
-
-    // write payload
-    memcpy((void *)(MEMAC_BASE_TX_BUF + i), test_message, strlen(test_message));
-    led(4);
-
-    // checksum
-    memac_raw_udp_tx_cks((uint8_t *)MEMAC_BASE_TX_BUF, strlen(test_message));
-    led(5);
-
-    // send
-    while(1)
-        memac_raw_udp_tx_send((uint8_t *)MEMAC_BASE_TX_BUF, strlen(test_message));
-    led(6);
 
     while(1) {
 #ifdef BUILD_CONFIG_DBG
