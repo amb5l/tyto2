@@ -82,7 +82,6 @@ if {[llength $dsn_gen]} {
     foreach c {RGMII_TX_ALIGN RGMII_RX_ALIGN} {
         foreach l $lines {
             if {[string match "$c=*" $l]} {
-                puts "debug: $l"
                 set $c [lindex [split $l "="] 1]
             }
         }

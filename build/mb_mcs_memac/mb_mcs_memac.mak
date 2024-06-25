@@ -79,7 +79,7 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/ethernet/memac_spd.vhd \
 	$(toplevel)/src/common/ethernet/memac_tx_$(PHY_IF).vhd \
 	$(toplevel)/src/common/ethernet/memac_rx_$(PHY_IF).vhd \
-	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)_$(FPGA_FAMILY)/memac_rx_$(PHY_IF)_io.vhd \
+	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/$(FPGA_FAMILY)/memac_rx_$(PHY_IF)_io.vhd \
 	$(toplevel)/src/common/ethernet/memac_mdio.vhd \
 	$(toplevel)/src/common/ethernet/memac_raw_rgmii.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN)_bridge.vhd \
@@ -102,8 +102,8 @@ VIVADO_SIM_RUN=\
 VIVADO_XDC=\
 	$(toplevel)/src/boards/$(BOARD)/$(BOARD).tcl=IMPL \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).tcl=SYNTH,IMPL \
-	$(toplevel)/src/common/ethernet/memac_tx_rgmii.tcl=IMPL \
-	$(toplevel)/src/common/ethernet/memac_rx_rgmii.tcl=IMPL
+	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/memac_tx_rgmii.tcl=IMPL \
+	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/memac_rx_rgmii.tcl=IMPL
 VIVADO_DSN_XLIB=unisim
 VIVADO_DSN_XSRC.unisim=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
