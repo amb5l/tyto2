@@ -11,10 +11,12 @@
 
 int main() {
 
+    uint8_t link = 0;
+
     bsp_init();
 
 #ifdef BUILD_CONFIG_RLS
-    printf(QUOTE(APP_NAME) " app 28\r\n");
+    printf(QUOTE(APP_NAME) " app 30\r\n");
 #endif
     memac_raw_init();
 
@@ -29,6 +31,10 @@ printf("Initialised...\r\n");
 
     while (1) {
         memac_raw_poll();
+        if (phy_link() != link) {
+            link = !link;
+            printf("%d", link);
+        }
         //printf("Rx: %d\r\n", memacCountRx);
         //printf("Rx u: %d\r\n", memacCountRxUnhandled);
         //printf("ARP Rx: %d\r\n", memacRawCountArpReqRx);
