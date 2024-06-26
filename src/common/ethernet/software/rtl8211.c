@@ -6,7 +6,7 @@
 void phy_reset(uint8_t r) {
     memac_raw_phy_reset(r);
 #ifndef BUILD_CONFIG_DBG
-    usleep(r ? 15000 : 45000); // recommended: 10ms assertion, 30ms delay
+    bsp_interval(r ? 15 * BSP_INTERVAL_1mS : 45 * BSP_INTERVAL_1mS); // recommended: 10ms assertion, 30ms delay
 #endif
 }
 

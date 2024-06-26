@@ -18,7 +18,6 @@ retcode_t memac_raw_ip_rx(RxPktDesc_t *pPD) {
     uint16_t checkSum = (~((checkSum32 & 0xFFFF) + (checkSum32 >> 16)));
     if (checkSum != memac_raw_rx_peek16(pPD, FRAME_HDR_LEN+10))
         return RET_RX_BAD;
-    printf("IP proto 0x%02X\r\n", memac_raw_rx_peek8(pPD, FRAME_HDR_LEN+9));
 
     if (true)
 #ifdef MEMAC_RAW_ENABLE_ICMP
@@ -79,11 +78,5 @@ retcode_t memac_raw_ip_tx_free(TxPktDesc_t *pPD) {
 
 retcode_t memac_raw_ip_init(void) {
     myIpAddr = memac_raw_ipaddr(192,168,2,155);
-    printf("myIpAddr = %d %d %d %d\r\n",
-        (myIpAddr >> 24),
-        (myIpAddr >> 16) & 0xFF,
-        (myIpAddr >>  8) & 0xFF,
-        (myIpAddr >>  0) & 0xFF
-    );
     return RET_SUCCESS;
 }

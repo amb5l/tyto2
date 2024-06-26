@@ -27,6 +27,7 @@ set_property -dict [list \
     CONFIG.USE_GPO2      {1}      \
     CONFIG.USE_GPO3      {1}      \
     CONFIG.USE_GPO4      {1}      \
+    CONFIG.USE_PIT1      {1}      \
     CONFIG.USE_IO_BUS    {1}      \
     CONFIG.USE_UART_RX   {1}      \
     CONFIG.USE_UART_TX   {1}      \

@@ -12,22 +12,21 @@
 int main() {
 
     bsp_init();
+
 #ifdef BUILD_CONFIG_RLS
-    printf(QUOTE(APP_NAME) " app 25\r\n");
+    printf(QUOTE(APP_NAME) " app 28\r\n");
 #endif
     memac_raw_init();
 
+printf("Initialised...\r\n");
 #ifndef BUILD_CONFIG_DBG
-    printf("PHY ID: %08X\r\n", phyID);
-    while (phy_anc())
-        ;
-    printf("  RX speed : %d\r\n", memac_raw_get_speed());
-    printf("      link : %d\r\n", phy_link());
-    printf("     speed : %d\r\n", phy_speed());
-    printf("    duplex : %d\r\n", phy_duplex());
+    do {
+        printf("Waiting for PHY auto negotiation...\r\n");
+        bsp_interval(500 * BSP_INTERVAL_1mS);
+    } while (phy_anc());
+    printf("link speed : %d\r\n", memac_raw_get_speed());
 #endif
 
-    // handle inbound ping (and associated ARP) requests
     while (1) {
         memac_raw_poll();
         //printf("Rx: %d\r\n", memacCountRx);
