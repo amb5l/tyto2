@@ -24,6 +24,7 @@ VITIS_FLOW=classic
 VITIS_SRC=\
 	$(toplevel)/src/common/basic/microblaze/printf.c \
 	$(toplevel)/src/common/basic/microblaze/printf.h \
+	$(toplevel)/src/common/basic/microblaze/peekpoke.h \
 	$(toplevel)/src/designs/$(DESIGN)/software/bsp.c \
 	$(toplevel)/src/designs/$(DESIGN)/software/bsp.h \
 	$(toplevel)/src/designs/$(DESIGN)/software/memac_raw_bsp.c \
@@ -33,6 +34,14 @@ VITIS_SRC=\
 	$(toplevel)/src/common/ethernet/software/$(PHY).h \
 	$(toplevel)/src/common/ethernet/software/memac_raw.c \
 	$(toplevel)/src/common/ethernet/software/memac_raw.h \
+	$(toplevel)/src/common/ethernet/software/memac_raw_arp.c \
+	$(toplevel)/src/common/ethernet/software/memac_raw_arp.h \
+	$(toplevel)/src/common/ethernet/software/memac_raw_ip.c \
+	$(toplevel)/src/common/ethernet/software/memac_raw_ip.h \
+	$(toplevel)/src/common/ethernet/software/memac_raw_icmp.c \
+	$(toplevel)/src/common/ethernet/software/memac_raw_icmp.h \
+	$(toplevel)/src/common/ethernet/software/memac_raw_udp.c \
+	$(toplevel)/src/common/ethernet/software/memac_raw_udp.h \
 	$(toplevel)/src/designs/$(DESIGN)/software/main.c
 VITIS_INC=\
 	$(toplevel)/src/common/basic/microblaze \
@@ -42,7 +51,10 @@ VITIS_SYM=\
 	APP_NAME=$(DESIGN)_$(BOARD) \
 	TX_BUF_SIZE=$(MEMAC_TX_BUF_SIZE) \
 	RX_BUF_SIZE=$(MEMAC_RX_BUF_SIZE) \
-	PHY=$(PHY)
+	PHY=$(PHY) \
+	MEMAC_RAW_ENABLE_IP \
+	MEMAC_RAW_ENABLE_ARP \
+	MEMAC_RAW_ENABLE_ICMP
 VITIS_SYM_RLS=BUILD_CONFIG_RLS
 VITIS_SYM_DBG=BUILD_CONFIG_DBG
 

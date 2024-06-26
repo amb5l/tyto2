@@ -26,8 +26,8 @@
     #define MDIO_RB_BMSR_100TXF   14
     #define MDIO_RB_BMSR_100T4    15
 
-#define MDIO_RA_PHYID1  2
-#define MDIO_RA_PHYID2  3
+#define MDIO_RA_phyID1  2
+#define MDIO_RA_phyID2  3
 #define MDIO_RA_ANAR    4
 #define MDIO_RA_ANLPAR  5
 #define MDIO_RA_ANER    6

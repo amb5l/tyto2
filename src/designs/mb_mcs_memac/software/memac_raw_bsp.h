@@ -1,8 +1,7 @@
 #ifndef _memac_raw_bsp_h_
 #define _memac_raw_bsp_h_
 
-#include <stdint.h>
-
+#include "bsp.h"
 #include "memac_raw.h"
 
 #define MEMAC_SIZE_TX_BUF     TX_BUF_SIZE
@@ -55,21 +54,22 @@
 #define MEMAC_SPD_100  0b01
 #define MEMAC_SPD_10   0b00
 
-void phy_mdio_poke(uint8_t pa, uint8_t ra, uint16_t d);
-uint16_t phy_mdio_peek(uint8_t pa, uint8_t ra);
-uint8_t memac_raw_get_speed(void);
-void memac_raw_set_speed(uint8_t spd);
-void memac_raw_reset(uint8_t rst);
-uint8_t memac_raw_tx_rdy(void);
-uint8_t memac_raw_tx_send(uint8_t *pBuf, uint16_t len);
-void memac_raw_rx_ctrl(
-    uint8_t ipg_min,
-    uint8_t pre_len,
-    uint8_t pre_inc,
-    uint8_t fcs_inc
-);
-uint8_t memac_raw_rx_rdy(void);
-uint8_t memac_raw_rx_get(RxPktRsrvDesc_t *p);
-uint8_t memac_raw_bsp_init(void);
+void memac_raw_phy_reset(uint8_t r);
+void memac_raw_phy_mdio_poke(uint8_t pa, uint8_t ra, uint16_t d);
+uint16_t memac_raw_phy_mdio_peek(uint8_t pa, uint8_t ra);
+uint16_t memac_raw_get_speed(void);
+retcode_t memac_raw_set_speed(uint16_t s) ;
+void memac_raw_reset(uint8_t r);
+#define memac_raw_tx_prq_rdy() (gpi(1) & (1 << MEMAC_GPIB_TX_PRQ_RDY) ? true : false)
+#define memac_raw_tx_pfq_rdy() (gpi(1) & (1 << MEMAC_GPIB_TX_PFQ_RDY) ? true : false)
+#define memac_raw_rx_prq_rdy() (gpi(1) & (1 << MEMAC_GPIB_RX_PRQ_RDY) ? true : false)
+#define memac_raw_rx_pfq_rdy() (gpi(1) & (1 << MEMAC_GPIB_RX_PFQ_RDY) ? true : false)
+retcode_t memac_raw_tx_send(TxPktDesc_t *p);
+void memac_raw_rx_ctrl(uint8_t ipgMin, uint8_t preLen, uint8_t preInc, uint8_t fcsInc);
+retcode_t memac_raw_rx_get(RxPktDesc_t *pPD);
+retcode_t memac_raw_tx_send(TxPktDesc_t *pPD);
+retcode_t memac_raw_tx_free(TxPktDesc_t *pPD);
+retcode_t memac_raw_rx_free(RxPktDesc_t *pPD);
+retcode_t memac_raw_bsp_init(void);
 
 #endif

@@ -1,18 +1,21 @@
-#include <stdint.h>
+#include "sleep.h"
 
-#include "rtl8211.h"
-#include "bsp.h"
 #include "memac_raw_bsp.h"
+#include "rtl8211.h"
 
-void phy_reset(void) {
-    gpobit(1,MEMAC_GPOB_PHY_RST_N,0);
+void phy_reset(uint8_t r) {
+    memac_raw_phy_reset(r);
 #ifndef BUILD_CONFIG_DBG
-    usleep(15000); // 10ms recommended
+    usleep(r ? 15000 : 45000); // recommended: 10ms assertion, 30ms delay
 #endif
-    gpobit(1,MEMAC_GPOB_PHY_RST_N,1);
-#ifndef BUILD_CONFIG_DBG
-    usleep(45000); // 30ms recommended
-#endif
+}
+
+void phy_mdio_poke(uint8_t pa, uint8_t ra, uint16_t d) {
+    memac_raw_phy_mdio_poke(pa, ra, d);
+}
+
+uint16_t phy_mdio_peek(uint8_t pa, uint8_t ra) {
+    return memac_raw_phy_mdio_peek(pa, ra);
 }
 
 uint8_t phy_link(void) {
