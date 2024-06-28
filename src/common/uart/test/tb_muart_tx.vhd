@@ -60,7 +60,9 @@ architecture sim of tb_muart_tx is
   shared variable dq : work.data_queue_pkg.queue_t;
 
   signal q_front : integer range 0 to 255; -- v4p ignore w-303
-  signal q_items : integer; -- v4p ignore w-303
+  signal q_items : integer;                -- v4p ignore w-303
+  signal t_count : integer;                -- v4p ignore w-303
+  signal r_count : integer;                -- v4p ignore w-303
 
 begin
 
@@ -71,12 +73,14 @@ begin
     variable di : integer range 0 to 255;
   begin
     prng.rand_seed(123,456);
-    d     <= (others => 'X');
-    valid <= '0';
+    t_count <= 0;
+    d       <= (others => 'X');
+    valid   <= '0';
     for i in 0 to TEST_COUNT-1 loop
       wait for prng.rand_int(0, GAP_MAX-1) * tCLK;
       di := prng.rand_int(0,255);
       dq.enq(di); -- add data to queue
+      t_count <= t_count+1;
       d     <= std_ulogic_vector(to_unsigned(di,8));
       valid <= '1';
       loop
@@ -86,12 +90,13 @@ begin
       d     <= (others => 'X');
       valid <= '0';
     end loop;
-    std.env.finish;
+    wait;
   end process P_MAIN;
 
   P_CHECK: process
   begin
-    loop
+    r_count <= 0;
+    for i in 0 to TEST_COUNT-1 loop
       wait until dr'transaction'event;
       assert dr = std_ulogic_vector(to_unsigned(dq.front,8))
         report
@@ -101,8 +106,10 @@ begin
           " (" & integer'image(dq.front) & ")"
         severity failure;
       dq.deq;
+      r_count <= r_count+1;
       wait for 0 ps;
     end loop;
+    std.env.finish;
   end process P_CHECK;
 
   P_WAVE: process(clk)
