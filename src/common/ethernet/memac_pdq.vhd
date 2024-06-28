@@ -22,7 +22,7 @@ package memac_pdq_pkg is
 
   component memac_pdq is
     generic (
-      DEPTH_LOG2 : integer := 5 -- effective DEPTH is (2**DEPTH_log2)-1
+      DEPTH_LOG2 : integer := 5
     );
     port (
       a_rst   : in    std_ulogic;
@@ -52,7 +52,7 @@ library ieee;
 
 entity memac_pdq is
   generic (
-    DEPTH_LOG2 : integer := 5 -- effective DEPTH is (2**DEPTH_log2)-1
+    DEPTH_LOG2 : integer := 5 -- effective DEPTH is (2^DEPTH_LOG2)-1
   );
   port (
     a_rst   : in    std_ulogic;
