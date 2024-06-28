@@ -20,18 +20,14 @@ library ieee;
 
 package model_uart_rx_pkg is
 
-  type model_uart_rx_t is record
-    change : bit;
-    data   : std_ulogic_vector(7 downto 0);
-  end record model_uart_rx_t;
-
   component model_uart_rx is
     generic (
       BAUD : integer
     );
     port (
       i : in  std_ulogic;
-      o : out model_uart_rx_t
+      o : out std_ulogic_vector(7 downto 0);
+      e : out std_logic
     );
   end component model_uart_rx;
 
@@ -49,8 +45,9 @@ entity model_uart_rx is
     BAUD : integer
   );
   port (
-    i : in  std_ulogic;
-    o : out model_uart_rx_t
+    i : in  std_ulogic;                    -- serial data in
+    o : out std_ulogic_vector(7 downto 0); -- parallel data out (use o'transaction)
+    e : out std_logic                      -- error (bad stop bit)
   );
 end entity model_uart_rx;
 
@@ -71,9 +68,9 @@ begin
       wait for P * 1 ns;
       data <= i & data(7 downto 1);
     end loop;
-    wait for P * 1 ns;
-    o.data   <= data;
-    o.change <= not o.change;
+    wait for P * 1 ns; -- wait until middle of stop bit
+    o <= data;         -- output data
+    e <= not i;        -- error if stop bit is not high
   end process P_MAIN;
 
 end architecture model;
