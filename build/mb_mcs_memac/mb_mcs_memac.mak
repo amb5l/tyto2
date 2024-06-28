@@ -116,8 +116,8 @@ VIVADO_XDC=\
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).tcl=SYNTH,IMPL \
 	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/memac_tx_rgmii.tcl=IMPL \
 	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/memac_rx_rgmii.tcl=IMPL
-VIVADO_DSN_XLIB=unisim
-VIVADO_DSN_XSRC.unisim=\
+VIVADO_XLIB=unisim
+VIVADO_XSRC.unisim=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd
