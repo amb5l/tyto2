@@ -60,7 +60,7 @@ architecture sim of tb_muart_tx is
   shared variable dq : work.data_queue_pkg.queue_t;
 
   signal q_front : integer range 0 to 255; -- v4p ignore w-303
-  signal q_items : integer;
+  signal q_items : integer; -- v4p ignore w-303
 
   signal debug : bit;
 
@@ -135,7 +135,8 @@ begin
     )
     port map (
       i => q,
-      o => dr
+      o => dr,
+      e => open
     );
 
 end architecture sim;
