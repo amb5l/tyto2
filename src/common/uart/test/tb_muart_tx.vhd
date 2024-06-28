@@ -62,8 +62,6 @@ architecture sim of tb_muart_tx is
   signal q_front : integer range 0 to 255; -- v4p ignore w-303
   signal q_items : integer; -- v4p ignore w-303
 
-  signal debug : bit;
-
 begin
 
   rst <= '1', '0' after tCLK;
@@ -103,7 +101,6 @@ begin
           " (" & integer'image(dq.front) & ")"
         severity failure;
       dq.deq;
-      debug <= not debug;
       wait for 0 ps;
     end loop;
   end process P_CHECK;
