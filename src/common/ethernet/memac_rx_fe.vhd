@@ -93,7 +93,7 @@ architecture rtl of memac_rx_fe is
 
   constant COUNT_MAX : integer := 15;
 
-  type state_t is (IDLE,DROP,PRE,PKT,FCS,IPG);
+  type state_t is (STARTUP,IDLE,DROP,PRE,PKT,FCS,IPG);
 
   signal state      : state_t;
   signal count      : integer range 0 to COUNT_MAX;
@@ -120,7 +120,7 @@ begin
   begin
     if rst = '1' then
 
-      state      <= IDLE;
+      state      <= STARTUP;
       count      <= 0;
       umi_dv_r   <= (umi_dv_r'range => '0');
       umi_er_r   <= (umi_er_r'range => '0');
@@ -150,6 +150,11 @@ begin
       prq_stb    <= '0';
 
       case state is
+
+        when STARTUP => -- wait for solid IPG
+          if unsigned(umi_dv & umi_dv_r) = 0 then
+            state <= IDLE;
+          end if;
 
         when IDLE =>
           if umi_dv_r(4) = '1' then
@@ -216,7 +221,7 @@ begin
             prq_flag(RX_FLAG_FCS_INC_BIT) <= fcs_inc;
             state  <= FCS;
             count  <= 0;
-          elsif umi_dv_r(4) = '0' then -- this is last byte
+          elsif umi_dv_r(4) = '0' then -- this is last byte of truncated packet
             buf_wr  <= '0';
             prq_stb <= '1';
             count   <= 0;
