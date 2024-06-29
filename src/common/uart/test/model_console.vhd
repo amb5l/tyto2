@@ -56,7 +56,7 @@ architecture model of model_console is
 
   constant CTRL_C : std_ulogic_vector(7 downto 0) := x"03";
 
-  signal uart_rx : model_uart_rx_t;
+  signal rd : std_ulogic_vector(7 downto 0);
 
 begin
 
@@ -66,23 +66,24 @@ begin
   begin
     file_open(f, FILENAME, WRITE_MODE);
     loop
-      wait on uart_rx;
-      if uart_rx.data = CTRL_C then
+      wait until rd'transaction'event;
+      if rd = CTRL_C then
         report "CTRL C : quitting..." severity note;
         file_close(f);
         std.env.finish;
       end if;
-      write(f, character'val(to_integer(unsigned(uart_rx.data))));
+      write(f, character'val(to_integer(unsigned(rd))));
     end loop;
   end process P_MAIN;
 
-  UART: model_uart_rx
+  UART: component model_uart_rx
     generic map (
       BAUD => BAUD
     )
     port map (
       i => i,
-      o => uart_rx
+      o => rd,
+      e => open
     );
 
 end architecture model;
