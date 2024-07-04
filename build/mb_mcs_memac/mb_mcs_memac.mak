@@ -2,11 +2,10 @@
 # mb_mcs_memac.mak
 #################################################################################
 
-all: bit
+default: bit
 
-toplevel=$(if $(filter Windows_NT,$(OS)),$(shell cygpath -m $(shell git rev-parse --show-toplevel)),$(shell git rev-parse --show-toplevel))
+toplevel=$(shell git rev-parse --show-toplevel)
 make_fpga=$(toplevel)/submodules/make-fpga
-
 include $(make_fpga)/head.mak
 
 FPGA_VENDOR=$(word 1,$(FPGA))
@@ -64,7 +63,8 @@ include $(make_fpga)/vitis.mak
 # Vivado
 
 VIVADO_PART=$(FPGA_DEVICE)
-VIVADO_LANGUAGE=VHDL-2008
+VIVADO_LANGUAGE=VHDL
+VIVADO_VHDL_LRM=2008
 VIVADO_DSN_TOP=$(DESIGN)_$(BOARD)
 VIVADO_DSN_GEN=\
 	RGMII_TX_ALIGN=$(MEMAC_RGMII_TX_ALIGN) \
@@ -77,7 +77,7 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/oddr.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/iddr.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm_v2.vhd \
-	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/ram_tdp.vhd=VHDL-1993 \
+	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/ram_tdp.vhd;VHDL-2000 \
 	$(toplevel)/src/common/crc/crc32_eth_8_pkg.vhd \
 	$(toplevel)/src/common/crc/crc_eth.vhd \
 	$(toplevel)/src/common/ethernet/memac_pkg.vhd \
@@ -97,7 +97,8 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN)_bridge.vhd \
 	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
-VIVADO_BD_TCL=$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=$(CPU);100000000;$(CPU_DEBUG)
+VIVADO_BD_TCL=\
+	$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=$(CPU);100000000;$(CPU_DEBUG)
 VIVADO_PROC_REF=mb_mcs
 VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
@@ -116,11 +117,10 @@ VIVADO_XDC=\
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).tcl=SYNTH,IMPL \
 	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/memac_tx_rgmii.tcl=IMPL \
 	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/memac_rx_rgmii.tcl=IMPL
-VIVADO_XLIB=unisim
-VIVADO_XSRC.unisim=\
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd
+VIVADO_LIB_SRC=\
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd=unisim
 
 include $(make_fpga)/vivado.mak
 
