@@ -1,75 +1,98 @@
+#################################################################################
 # hdmi_tpg.mak
+#################################################################################
 
-ifndef REPO_ROOT
-REPO_ROOT:=$(shell git rev-parse --show-toplevel)
-ifeq ($(OS),Windows_NT)
-REPO_ROOT:=$(shell cygpath -m $(REPO_ROOT))
-endif
-endif
-SUBMODULES:=$(REPO_ROOT)/submodules
-MAKE_FPGA:=$(SUBMODULES)/make-fpga/make-fpga.mak
-SRC:=$(REPO_ROOT)/src
+default: bit
 
-BOARD_VARIANT:=$(BOARD)$(addprefix _,$(BOARD_VARIANT))
-FPGA_VENDOR:=$(word 1,$(FPGA))
-FPGA_FAMILY:=$(word 2,$(FPGA))
+toplevel=$(shell git rev-parse --show-toplevel)
+make_fpga=$(toplevel)/submodules/make-fpga
+include $(make_fpga)/head.mak
 
-FPGA_TOOL:=vivado
+FPGA_VENDOR=$(word 1,$(FPGA))
+FPGA_FAMILY=$(word 2,$(FPGA))
+FPGA_DEVICE=$(word 3,$(FPGA))
 
-NEEDS_MMCM:=qmtech_wukong digilent_zybo_z7
+################################################################################
+# Vivado
 
-VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD_VARIANT)
-VIVADO_DSN_VHDL:=\
-	$(SRC)/common/tyto_types_pkg.vhd \
-	$(SRC)/common/tyto_utils_pkg.vhd \
-	$(SRC)/common/basic/sync_reg.vhd \
-	$(SRC)/common/video/video_mode.vhd \
-	$(SRC)/common/video/xilinx_7series/video_out_clock.vhd \
-	$(SRC)/common/video/video_out_timing.vhd \
-	$(SRC)/common/video/video_out_test_pattern.vhd \
-	$(SRC)/common/video/hdmi_tx_encoder.vhd \
-	$(SRC)/common/video/vga_to_hdmi.vhd \
-	$(SRC)/common/audio_io/xilinx_7series/audio_clock.vhd \
-	$(SRC)/common/audio_io/audio_out_test_tone.vhd \
-	$(SRC)/common/video/xilinx_7series/hdmi_tx_selectio.vhd \
-	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
-	$(if $(filter $(NEEDS_MMCM),$(BOARD)),$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd) \
-	$(if $(filter mega65r3,$(BOARD)),$(SRC)/contrib/mega65/keyboard.vhd) \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
-VIVADO_DSN_XDC_IMPL:=\
-	$(SRC)/boards/$(BOARD)/$(BOARD_VARIANT).tcl \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).xdc
-VIVADO_SIM_TOP:=tb_$(VIVADO_DSN_TOP)
-VIVADO_SIM_VHDL_2008:=\
-	$(SRC)/common/tyto_sim_pkg.vhd \
-	$(SRC)/common/video/model_video_out_clock.vhd \
-	$(SRC)/common/video/model_tmds_cdr_des.vhd \
-	$(SRC)/common/video/model_hdmi_decoder.vhd \
-	$(SRC)/common/video/model_vga_sink.vhd \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
+src=$(toplevel)/src
 
-SIM_TOP:=$(VIVADO_SIM_TOP)
-SIM_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
-NO_SECURE_IP:=ghdl nvc vsim
-ifneq ($(filter $(NO_SECURE_IP),$(MAKECMDGOALS)),)
-SIM_SRC+=\
-	$(SRC)/common/basic/xilinx_7series/model_secureip.vhd \
-	$(SRC)/designs/$(DESIGN)/$(BOARD)/cfg_$(VIVADO_SIM_TOP)_n.vhd
-SIM_TOP:=cfg_$(VIVADO_SIM_TOP)
-endif
-SIM_RUN:=$(SIM_TOP)
-GHDL_LIBS:=xilinx-vivado
-NVC_GOPTS:=-H 32m
+VIVADO_PART=$(FPGA_DEVICE)
+VIVADO_LANGUAGE=VHDL
+VIVADO_VHDL_LRM=2008
+VIVADO_DSN_TOP=$(DESIGN)_$(BOARD)$(addprefix _,$(BOARD_VARIANT))
+VIVADO_DSN_SRC=\
+	$(src)/common/tyto_types_pkg.vhd \
+	$(src)/common/tyto_utils_pkg.vhd \
+	$(src)/common/basic/sync_reg.vhd \
+	$(src)/common/video/video_mode.vhd \
+	$(src)/common/video/xilinx_7series/video_out_clock.vhd \
+	$(src)/common/video/video_out_timing.vhd \
+	$(src)/common/video/video_out_test_pattern.vhd \
+	$(src)/common/video/hdmi_tx_encoder.vhd \
+	$(src)/common/video/vga_to_hdmi.vhd \
+	$(src)/common/audio_io/xilinx_7series/audio_clock.vhd \
+	$(src)/common/audio_io/audio_out_test_tone.vhd \
+	$(src)/common/video/xilinx_7series/hdmi_tx_selectio.vhd \
+	$(src)/designs/$(DESIGN)/$(DESIGN).vhd \
+	$(if $(filter qmtech_wukong digilent_zybo_z7,$(BOARD)),$(src)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd) \
+	$(if $(filter mega65,$(BOARD)),$(src)/contrib/mega65/keyboard.vhd) \
+	$(src)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
+VIVADO_SIM_SRC=\
+	$(src)/common/tyto_sim_pkg.vhd \
+	$(src)/common/video/model_video_out_clock.vhd \
+	$(src)/common/video/model_tmds_cdr_des.vhd \
+	$(src)/common/video/model_hdmi_decoder.vhd \
+	$(src)/common/video/model_vga_sink.vhd \
+	$(src)/designs/$(DESIGN)/$(BOARD)/tb_$(VIVADO_DSN_TOP).vhd
+VIVADO_SIM_RUN=sim=tb_$(VIVADO_DSN_TOP)
+VIVADO_XDC=\
+	$(src)/boards/$(BOARD)/$(BOARD)_$(BOARD_VARIANT).tcl=IMPL \
+	$(src)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).xdc=IMPL
+VIVADO_LIB_SRC=\
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd=unisim
 
-VSCODE_TOP:=$(VIVADO_DSN_TOP),$(VIVADO_SIM_TOP)
-VSCODE_SRC:=$(VIVADO_DSN_VHDL) $(VIVADO_SIM_VHDL_2008)
-VSCODE_XLIB:=unisim
-VSCODE_XSRC.unisim:=\
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd \
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd \
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd
+include $(make_fpga)/vivado.mak
 
-include $(MAKE_FPGA)
+################################################################################
+# NVC
 
-sim:: $(wildcard $(SRC)/designs/$(DESIGN)/test/*.sha256)
+NVC_LRM=2008
+NVC_SRC=\
+	$(VIVADO_DSN_SRC) \
+	$(VIVADO_SIM_SRC) \
+	$(src)/common/basic/xilinx_7series/model_secureip.vhd \
+	$(src)/designs/$(DESIGN)/$(BOARD)/cfg_$(VIVADO_SIM_TOP)_n.vhd
+NVC_RUN=sim=cfg_$(VIVADO_SIM_TOP)
+
+include $(make_fpga)/nvc.mak
+
+################################################################################
+# GHDL
+
+GHDL_LRM=$(NVC_LRM)
+GHDL_SRC=$(NVC_SRC)
+GHDL_RUN=$(NVC_RUN)
+GHDL_LIB=xilinx-vivado
+
+#include $(make_fpga)/ghdl.mak
+
+################################################################################
+# ModelSim, Questa etc
+
+VSIM_LRM=$(NVC_LRM)
+VSIM_SRC=$(NVC_SRC)
+VSIM_RUN=$(NVC_RUN)
+VSIM_LIB=xilinx-vivado
+
+#include $(make_fpga)/vsim.mak
+
+################################################################################
+# post simulation check
+
+sim:: $(wildcard $(src)/designs/$(DESIGN)/test/*.sha256)
 	cd $(SIM_DIR) && sha256sum --check $^
+
+################################################################################
