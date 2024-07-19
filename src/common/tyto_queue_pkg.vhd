@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- tyto_queue_pkg.vhd                                                         --
--- Generic package: queues for simulation only.                               --
+-- Generic package: queue for simulation only.                                --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -27,7 +27,7 @@ package tyto_queue_pkg is
     procedure deq;
     impure function front return queue_item_t;
     impure function items return natural;
-  end protected;
+  end protected queue_t;
 
 end package tyto_queue_pkg;
 
