@@ -425,6 +425,11 @@ begin
   -- timing checks
 
   P_CHECK: process(all)
+
+    -- timestamps
+    variable ts_cs_r : time := 0 ps; -- chip select rising edge
+    variable ts_cs_f : time := 0 ps; -- chip select falling edge
+
     procedure proc_check(
       signal rst_n : in    std_ulogic;
       signal clk   : in    std_ulogic;
@@ -435,42 +440,57 @@ begin
     begin
       --------------------------------------------------------------------------------
 
-      -- check tRP (reset pulse width)
-
-      -- check tRH (reset negation to chip select assertion)
-
-      -- check tRPH (reset assertion to chip select assertion)
-
-      -- check tCSHI (CS high time)
-      if falling_edge(cs_n) then
-        if (now-cs_n'last_event < tCSHI) then
-          report PREFIX & "tCSHI violation - chip select high time not met" severity SEV_tCSHI;
-        end if;
-      end if;
-
-      -- check tCSM (CS active time)
       if rising_edge(cs_n) then
-        if (now-cs_n'last_event >= tCSM) then
-          report PREFIX & "tCSM violation - chip select active time exceeded" severity SEV_tCSM;
-        end if;
+        ts_cs_r := now;
+      end if;
+      if falling_edge(cs_n) then
+        ts_cs_f := now;
       end if;
 
-      -- check tIS and tIH (CA and write data setup and hold)
-      if (cycle_counter < 6) or write_active then
-        if clk'event then
-          if (tIS > 0 ps and dq'event)
-          or (dq'event or (now-dq'last_event < tIS))
-          then
-            report PREFIX & "tIS violation - input setup time not met" severity SEV_tIS;
+
+      if now > 0 ps then
+
+        -- check tRP (reset pulse width)
+
+        -- check tRH (reset negation to chip select assertion)
+
+        -- check tRPH (reset assertion to chip select assertion)
+
+        -- check tCSHI (CS high time)
+        if falling_edge(cs_n) then
+          if now-ts_cs_r < tCSHI then
+            report PREFIX & "tCSHI violation - chip select high time not met:"
+              & " measured " & time'image(now-ts_cs_r)
+              & " required " & time'image(tCSHI)
+              severity SEV_tCSHI;
           end if;
         end if;
-        if dq'event then
-          if (tIH > 0 ps and clk'event)
-          or (now-clk'last_event < tIH)
-          then
-            report PREFIX & "tIH violation - input hold time not met" severity SEV_tIH;
+
+        -- check tCSM (CS active time)
+        if rising_edge(cs_n) then
+          if cs_n'last_event >= tCSM then
+            report PREFIX & "tCSM violation - chip select active time exceeded" severity SEV_tCSM;
           end if;
         end if;
+
+        -- check tIS and tIH (CA and write data setup and hold)
+        if (cycle_counter < 6) or write_active then
+          if clk'event then
+            if (tIS > 0 ps and dq'event)
+            or (dq'last_event < tIS)
+            then
+              report PREFIX & "tIS violation - input setup time not met" severity SEV_tIS;
+            end if;
+          end if;
+          if dq'event then
+            if (tIH > 0 ps and clk'event)
+            or (clk'last_event < tIH)
+            then
+              report PREFIX & "tIH violation - input hold time not met" severity SEV_tIH;
+            end if;
+          end if;
+        end if;
+
       end if;
       --------------------------------------------------------------------------------
     end procedure proc_check;
@@ -486,27 +506,32 @@ begin
 
   --------------------------------------------------------------------------------
 
-  P_MAIN: process(all)
-    variable mem : mem_t;
-    procedure handle_event(
-        signal rst_n : in    std_ulogic;
-        signal clk   : in    std_ulogic;
-        signal cs_n  : in    std_ulogic;
-        signal rwds  : inout std_ulogic;
-        signal dq    : inout std_ulogic_vector(7 downto 0)
-     ) is
-    begin
-      --------------------------------------------------------------------------------
+--  P_MAIN: process(all)
+--    variable mem : mem_t;
+--    procedure handle_event(
+--        signal rst_n  : in    std_ulogic;
+--        signal clk    : in    std_ulogic;
+--        signal cs_n   : in    std_ulogic;
+--        signal rwds_i : in    std_ulogic;
+--        signal rwds_o : out   std_ulogic;
+--        signal dq_i   : in    std_ulogic_vector(7 downto 0)
+--        signal dq_o   : out   std_ulogic_vector(7 downto 0)
+--     ) is
+--    begin
+--      --------------------------------------------------------------------------------
+--
+--
+--
+--
+--
+--      --------------------------------------------------------------------------------
+--    end procedure handle_event;
+--  begin
+--    handle_event(rst_n_i, clk_i, cs_n_i, rwds_i, dq_i);
+--  end process P_MAIN;
 
-
-
-
-
-      --------------------------------------------------------------------------------
-    end procedure handle_event;
-  begin
-    handle_event(rst_n_i, clk_i, cs_n_i, rwds_i, dq_i);
-  end process P_MAIN;
+  rwds <= 'Z';
+  dq   <= (others => 'Z');
 
   --------------------------------------------------------------------------------
   -- registers, with reset states

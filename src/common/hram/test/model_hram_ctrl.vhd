@@ -282,9 +282,11 @@ begin
   -- measure quarter clock period for phase shifted h_clk
 
   P_QCLK: process(s_clk)
+    variable t : time := 0 ps;
   begin
     if res01x(s_clk) /= 'X' then
-      qclk <= (now - s_clk'last_event) / 4;
+      qclk <= (now - t) / 4;
+      t := now;
     end if;
   end process;
 
@@ -328,9 +330,9 @@ begin
       end if;
 
       --------------------------------------------------------------------------------
-      -- leading edge of reset
+      -- reset
 
-      if rising_edge(s_rst) then
+      if res01x(s_rst) = '1' then
         s_a_ready <= '0';
         s_w_ready <= '0';
         s_r_valid <= '0';
@@ -398,9 +400,11 @@ begin
         case state is
 
           when RESET =>
+            count <= count + 1;
             if count = tRP-1 then
               h_rst_n <= '1';
-            elsif count = tRPH-1 then
+            end if;
+            if count = tRPH-1 then
               s_a_ready <= '1';
               s_w_ready <= '1';
               count     <= 0;
@@ -576,6 +580,7 @@ begin
       end if;
 
       --------------------------------------------------------------------------------
+      -- falling edge
 
       if falling_edge(s_clk) then
         case state is

@@ -135,6 +135,7 @@ begin
     s_w_valid <= '0';
     s_w_be    <= (others => 'X');
     s_w_data  <= (others => 'X');
+    s_r_ready <= '0';
 
     wait until rising_edge(s_clk);
     wait until rising_edge(s_clk);
