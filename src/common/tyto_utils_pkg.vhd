@@ -21,126 +21,15 @@ library ieee;
 
 package tyto_utils_pkg is
 
-  function "=" (L: std_logic; R: std_logic) return std_logic;
-  function "/=" (L: std_logic; R: std_logic) return std_logic;
-  function "=" (L: std_logic_vector; R: std_logic_vector) return std_logic;
-  function "/=" (L: std_logic_vector; R: std_logic_vector) return std_logic;
-  function "<" (L: integer; R: std_logic_vector) return boolean;
-  function ">" (L: integer; R: std_logic_vector) return boolean;
-  function "<=" (L: integer; R: std_logic_vector) return boolean;
-  function ">=" (L: integer; R: std_logic_vector) return boolean;
-  function "+" (L: integer; R: std_logic_vector) return integer;
-  function "+" (L: std_logic_vector; R: std_logic_vector) return std_logic_vector;
-  function "+" (L: std_logic_vector; R: integer) return std_logic_vector;
-  function "+" (L: std_logic_vector; R: boolean) return std_logic_vector;
-  function "-" (L: integer; R: std_logic_vector) return integer;
-  function "-" (L: std_logic_vector; R: std_logic_vector) return std_logic_vector;
-  function "-" (L: std_logic_vector; R: integer) return std_logic_vector;
-  function "-" (L: std_logic_vector; R: boolean) return std_logic_vector;
-  function ternary (c : boolean; a : std_logic; b : std_logic) return std_logic;
-  function ternary (c : boolean; a : std_logic_vector; b : std_logic_vector) return std_logic_vector;
+  function ternary (c : boolean; a, b : std_logic) return std_logic;
+  function ternary (c : boolean; a, b : std_logic_vector) return std_logic_vector;
+  function log2 (x : integer) return integer;
 
 end package tyto_utils_pkg;
 
 package body tyto_utils_pkg is
 
-  function "=" (L: std_logic; R: std_logic) return std_logic is
-  begin
-    return L xnor R;
-  end function "=";
-
-  function "/=" (L: std_logic; R: std_logic) return std_logic is
-  begin
-    return L xor R;
-  end function "/=";
-
-  function "=" (L: std_logic_vector; R: std_logic_vector) return std_logic is
-  begin
-    if L = R then
-      return '1';
-    else
-      return '0';
-    end if;
-  end function "=";
-
-  function "/=" (L: std_logic_vector; R: std_logic_vector) return std_logic is
-  begin
-    if L /= R then
-      return '1';
-    else
-      return '0';
-    end if;
-  end function "/=";
-
-  function "<" (L: integer; R: std_logic_vector) return boolean is
-  begin
-    return L < to_integer(unsigned(R));
-  end function "<";
-
-  function ">" (L: integer; R: std_logic_vector) return boolean is
-  begin
-    return L > to_integer(unsigned(R));
-  end function ">";
-
-  function "<=" (L: integer; R: std_logic_vector) return boolean is
-  begin
-    return L <= to_integer(unsigned(R));
-  end function "<=";
-
-  function ">=" (L: integer; R: std_logic_vector) return boolean is
-  begin
-    return L >= to_integer(unsigned(R));
-  end function ">=";
-
-  function "+" (L: integer; R: std_logic_vector) return integer is
-  begin
-    return L+to_integer(unsigned(R));
-  end function "+";
-
-  function "+" (L: std_logic_vector; R: std_logic_vector) return std_logic_vector is
-  begin
-    return std_logic_vector(unsigned(L)+unsigned(R));
-  end function "+";
-
-  function "+" (L: std_logic_vector; R: integer) return std_logic_vector is
-  begin
-    return std_logic_vector(unsigned(L)+R);
-  end function "+";
-
-  function "+" (L: std_logic_vector; R: boolean) return std_logic_vector is
-  begin
-    if R then
-      return std_logic_vector(unsigned(L)+1);
-    else
-      return L;
-    end if;
-  end function "+";
-
-  function "-" (L: integer; R: std_logic_vector) return integer is
-  begin
-    return L-to_integer(unsigned(R));
-  end function "-";
-
-  function "-" (L: std_logic_vector; R: std_logic_vector) return std_logic_vector is
-  begin
-    return std_logic_vector(unsigned(L)-unsigned(R));
-  end function "-";
-
-  function "-" (L: std_logic_vector; R: integer) return std_logic_vector is
-  begin
-    return std_logic_vector(unsigned(L)-R);
-  end function "-";
-
-  function "-" (L: std_logic_vector; R: boolean) return std_logic_vector is
-  begin
-    if R then
-      return std_logic_vector(unsigned(L)-1);
-    else
-      return L;
-    end if;
-  end function "-";
-
-  function ternary (c : boolean; a : std_logic; b : std_logic) return std_logic is
+  function ternary (c : boolean; a, b : std_logic) return std_logic is
   begin
     if c then
       return a;
@@ -149,7 +38,7 @@ package body tyto_utils_pkg is
     end if;
   end function ternary;
 
-  function ternary (c : boolean; a : std_logic_vector; b : std_logic_vector) return std_logic_vector is
+  function ternary (c : boolean; a, b : std_logic_vector) return std_logic_vector is
   begin
     if c then
       return a;
@@ -158,4 +47,13 @@ package body tyto_utils_pkg is
     end if;
   end function ternary;
 
+  function log2 (x : integer) return integer is
+    variable i : integer := 0;
+  begin
+    while 2**i < x loop
+      i := i + 1;
+    end loop;
+    return i;
+  end function log2;
+  
 end package body tyto_utils_pkg;
