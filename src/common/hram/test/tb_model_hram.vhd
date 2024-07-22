@@ -15,12 +15,14 @@
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
 
+use work.tyto_sim_pkg.all;
 use work.model_hram_pkg.all;
 use work.model_hram_ctrl_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
+  use std.textio.all;
 
 entity tb_model_hram is
 end tb_model_hram;
@@ -28,6 +30,8 @@ end tb_model_hram;
 architecture sim of tb_model_hram is
 
   type data_vector is array(natural range <>) of std_ulogic_vector(15 downto 0);
+
+  constant TEST_SIZE : integer := 2**16;
 
   signal s_rst     : std_ulogic;
   signal s_clk     : std_ulogic;
@@ -52,10 +56,10 @@ architecture sim of tb_model_hram is
   signal h_rwds    : std_logic;
   signal h_dq      : std_logic_vector(7 downto 0);
 
-  constant ADDR_IDREG0  : std_ulogic_vector(31 downto 0) := x"0000_0000";
-  constant ADDR_IDREG1  : std_ulogic_vector(31 downto 0) := x"0000_0002";
-  constant ADDR_CFGREG0 : std_ulogic_vector(31 downto 0) := x"0000_1000";
-  constant ADDR_CFGREG1 : std_ulogic_vector(31 downto 0) := x"0000_1002";
+  constant ADDR_IDREG0  : integer := 16#0000#;
+  constant ADDR_IDREG1  : integer := 16#0002#;
+  constant ADDR_CFGREG0 : integer := 16#1000#;
+  constant ADDR_CFGREG1 : integer := 16#1002#;
 
   constant DATA_IDREG0  : std_ulogic_vector(15 downto 0) := "0000110010000011";
   constant DATA_IDREG1  : std_ulogic_vector(15 downto 0) := x"0000";
@@ -84,15 +88,18 @@ begin
     constant B_WRAP: std_ulogic := '1';
     constant B_LIN : std_ulogic := '0';
 
+    variable addr   : integer;
+    variable size   : integer;
     variable w_data : data_vector(0 to 63) := (others => (others => 'X'));
     variable r_data : data_vector(0 to 63) := (others => (others => 'X'));
+    variable prng   : prng_t;
 
     procedure burst(
       r_w  : in    std_ulogic;
       reg  : in    std_ulogic;
       wrap : in    std_ulogic;
       size : in    integer;
-      addr : in    std_ulogic_vector;
+      addr : in    integer;
       data : inout data_vector
     ) is
     begin
@@ -101,7 +108,7 @@ begin
       s_a_reg   <= reg;
       s_a_wrap  <= wrap;
       s_a_size  <= std_ulogic_vector(to_unsigned(size,s_a_size'length));
-      s_a_addr  <= addr;
+      s_a_addr  <= std_ulogic_vector(to_unsigned(addr,s_a_addr'length));
       loop
         wait until rising_edge(s_clk);
         if s_a_ready = '1' then exit; end if;
@@ -177,6 +184,34 @@ begin
     assert r_data(0) = DATA_CFGREG1
       report "CFGREG1 mismatch - read " & to_hstring(r_data(0)) & " expected " & to_hstring(DATA_CFGREG1) severity failure;
 
+    -- fill
+    prng.rand_seed(123,456);
+    addr := 0;
+    loop
+      size := prng.rand_int(1,64);
+      for i in 0 to size-1 loop
+        w_data(i) := prng.rand_slv(0,65535,16);
+      end loop;
+      burst(B_WR,B_MEM,B_LIN,size,addr,w_data);
+      addr := addr + (2*size);
+      if addr >= TEST_SIZE then exit; end if;
+    end loop;
+
+    -- test
+    prng.rand_seed(123,456);
+    addr := 0;
+    loop
+      size := prng.rand_int(1,64);
+      for i in 0 to size-1 loop
+        w_data(i) := prng.rand_slv(0,65535,16);
+      end loop;
+      burst(B_RD,B_MEM,B_LIN,size,addr,r_data);
+      assert r_data(0 to size-1) = w_data(0 to size-1)
+        report "data mismatch at address " & integer'image(addr) severity failure;
+      addr := addr + (2*size);
+      if addr >= TEST_SIZE then exit; end if;
+    end loop;
+
     std.env.finish;
 
     wait;
@@ -184,7 +219,7 @@ begin
 
   MEM: component model_hram
     generic map (
-      SIM_MEM_SIZE => 1024,
+      SIM_MEM_SIZE => TEST_SIZE,
       OUTPUT_DELAY => "MAX",
       PARAMS       => hram_params(HRAM_8Mx8_133_3V0)
     )

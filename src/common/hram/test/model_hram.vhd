@@ -15,6 +15,7 @@
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
 -- assumption: simulator time resolution is 1 ps
+-- TODO add wrap and hybrid wrap burst support
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -800,7 +801,7 @@ begin
 
           when LAT =>
             if count = get_lat-1 then
-              dq_oe <= '1' after tDQLZmin;
+              dq_oe <= ca(47) after tDQLZmin;
               dq_o  <= (others => 'X');
             end if;
 

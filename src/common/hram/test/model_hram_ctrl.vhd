@@ -26,10 +26,8 @@ package model_hram_ctrl_pkg is
   type hram_ctrl_params_t is record
     tRP      : positive;  -- reset pulse width
     tRPH     : positive;  -- reset assertion to chip select assertion
-    tCSHI    : positive;  -- chip select high
     tRWR     : positive;  -- read-write recovery
     tLAT     : positive;  -- latency
-    tCSH     : natural;   -- chip select hold (half clk period is added)
     tCSM     : positive;  -- chip select, max
   end record hram_ctrl_params_t;
 
@@ -37,10 +35,8 @@ package model_hram_ctrl_pkg is
   constant HRAM_CTRL_PARAMS_133_100 : hram_ctrl_params_t := (
     tRP      => 20,    -- 200 ns
     tRPH     => 40,    -- 400 ns
-    tCSHI    => 1,     -- 10 ns
     tRWR     => 4,     -- 40 ns
     tLAT     => 4,     -- 40 ns
-    tCSH     => 0,     -- 5 ns (min is 1/2 clock period)
     tCSM     => 400    -- 4 us
   );
 
@@ -221,10 +217,8 @@ architecture model of model_hram_ctrl is
 
   constant tRP      : positive := PARAMS.tRP      ;
   constant tRPH     : positive := PARAMS.tRPH     ;
-  constant tCSHI    : positive := PARAMS.tCSHI    ;
   constant tRWR     : positive := PARAMS.tRWR     ;
   constant tLAT     : positive := PARAMS.tLAT     ;
-  constant tCSH     : natural  := PARAMS.tCSH     ;
   constant tCSM     : positive := PARAMS.tCSM     ;
 
   --------------------------------------------------------------------------------
@@ -487,6 +481,7 @@ begin
             null;
 
           when CSH =>
+            h_cs_n <= '1';
             null;
 
           when RWR =>
@@ -596,11 +591,11 @@ begin
 
           when WR =>
             v_pause := '0';
-            if (bcount /= unsigned(bsize)-1) and (w_fifo.level = 1 or count = tCSM-1) then
+            if (bcount /= unsigned(bsize)-1) and (w_fifo.level = 0 or count = tCSM-1) then
               v_pause := '1';
             end if;
             if bcount = unsigned(bsize)-1
-            or w_fifo.level = 1
+            or w_fifo.level = 0
             or count = tCSM-1
             then
               h_rwds_o  <= 'X';
@@ -615,6 +610,7 @@ begin
               h_dq_o   <= w_fifo.q.data(15 downto 8);
             end if;
             (ca(44 downto 16),ca(2 downto 0)) <= incr((ca(44 downto 16),ca(2 downto 0)));
+            bcount <= bcount + 1;
 
           when RD =>
             v_pause := '0';
@@ -633,17 +629,12 @@ begin
             bcount <= bcount + 1;
 
           when CSH =>
-            if count >= tCSH then
-              h_cs_n <= '1';
-              count <= 0;
-              if tRWR >= 4 then
-                state <= RWR;
-              else
-                s_a_ready <= not pause;
-                state     <= IDLE;
-              end if;
+            h_cs_n <= '1';
+            if tRWR >= 4 then
+              state <= RWR;
             else
-              count <= count + 1;
+              s_a_ready <= not pause;
+              state     <= IDLE;
             end if;
 
           when RWR =>
