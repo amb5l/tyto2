@@ -45,9 +45,10 @@ architecture sim of tb_model_hram is
   signal s_r_ready : std_ulogic;
   signal s_r_valid : std_ulogic;
   signal s_r_data  : std_ulogic_vector(15 downto 0);
+
   signal h_rst_n   : std_logic;
-  signal h_clk     : std_logic;
   signal h_cs_n    : std_logic;
+  signal h_clk     : std_logic;
   signal h_rwds    : std_logic;
   signal h_dq      : std_logic_vector(7 downto 0);
 
@@ -58,6 +59,16 @@ architecture sim of tb_model_hram is
 
   constant DATA_IDREG0  : std_ulogic_vector(15 downto 0) := "0000110010000011";
   constant DATA_IDREG1  : std_ulogic_vector(15 downto 0) := x"0000";
+  constant DATA_CFGREG0 : std_ulogic_vector(15 downto 0) := "1000111111110111";
+  constant DATA_CFGREG1 : std_ulogic_vector(15 downto 0) := x"0002";
+
+  function hram_params(i : hram_params_t) return hram_params_t is
+    variable r : hram_params_t;
+  begin
+    r := i;
+    r.tVCS := 10.0; -- override tVCS to shorten simulation time
+    return r;
+  end function hram_params;
 
 begin
 
@@ -91,7 +102,18 @@ begin
       s_a_wrap  <= wrap;
       s_a_size  <= std_ulogic_vector(to_unsigned(size,s_a_size'length));
       s_a_addr  <= addr;
+      loop
+        wait until rising_edge(s_clk);
+        if s_a_ready = '1' then exit; end if;
+      end loop;
+      s_a_valid <= '0';
+      s_a_r_w   <= 'X';
+      s_a_reg   <= 'X';
+      s_a_wrap  <= 'X';
+      s_a_size  <= (others => 'X');
+      s_a_addr  <= (others => 'X');
       s_w_valid <= not r_w;
+      s_r_ready <= r_w;
       for i in 0 to size-1 loop
         if r_w = '0' then
           s_w_be   <= "11";
@@ -99,14 +121,6 @@ begin
         end if;
         loop
           wait until rising_edge(s_clk);
-          if s_a_valid and s_a_ready then
-            s_a_valid <= '0';
-            s_a_r_w   <= 'X';
-            s_a_reg   <= 'X';
-            s_a_wrap  <= 'X';
-            s_a_size  <= (others => 'X');
-            s_a_addr  <= (others => 'X');
-          end if;
           if (s_w_valid and s_w_ready)
           or (s_r_valid and s_r_ready)
           then
@@ -117,10 +131,10 @@ begin
           data(i) := s_r_data;
         end if;
       end loop;
-      if r_w = '0' then
-        s_w_be    <= (others => 'X');
-        s_w_data  <= (others => 'X');
-      end if;
+      s_w_valid <= '0';
+      s_w_be    <= (others => 'X');
+      s_w_data  <= (others => 'X');
+      s_r_ready <= '0';
     end procedure burst;
 
   begin
@@ -141,6 +155,12 @@ begin
     wait until rising_edge(s_clk);
     s_rst     <= '0';
 
+    w_data(0) := DATA_CFGREG0;
+    burst(B_WR,B_REG,B_LIN,1,ADDR_CFGREG0,w_data);
+
+    w_data(0) := DATA_CFGREG1;
+    burst(B_WR,B_REG,B_LIN,1,ADDR_CFGREG1,w_data);
+
     burst(B_RD,B_REG,B_LIN,1,ADDR_IDREG0,r_data);
     assert r_data(0) = DATA_IDREG0
       report "IDREG0 mismatch - read " & to_hstring(r_data(0)) & " expected " & to_hstring(DATA_IDREG0) severity failure;
@@ -149,30 +169,41 @@ begin
     assert r_data(0) = DATA_IDREG1
       report "IDREG1 mismatch - read " & to_hstring(r_data(0)) & " expected " & to_hstring(DATA_IDREG1) severity failure;
 
+    burst(B_RD,B_REG,B_LIN,1,ADDR_CFGREG0,r_data);
+    assert r_data(0) = DATA_CFGREG0
+      report "CFGREG0 mismatch - read " & to_hstring(r_data(0)) & " expected " & to_hstring(DATA_CFGREG0) severity failure;
+
+    burst(B_RD,B_REG,B_LIN,1,ADDR_CFGREG1,r_data);
+    assert r_data(0) = DATA_CFGREG1
+      report "CFGREG1 mismatch - read " & to_hstring(r_data(0)) & " expected " & to_hstring(DATA_CFGREG1) severity failure;
+
     std.env.finish;
 
     wait;
   end process P_TEST;
 
-
   MEM: component model_hram
     generic map (
-      SIM_MEM => 1024,
-      PARAMS  => HRAM_8Mx8_133_3V0
+      SIM_MEM_SIZE => 1024,
+      OUTPUT_DELAY => "MAX",
+      PARAMS       => hram_params(HRAM_8Mx8_133_3V0)
     )
     port map (
       rst_n => h_rst_n,
-      clk   => h_clk,
       cs_n  => h_cs_n,
+      clk   => h_clk,
       rwds  => h_rwds,
       dq    => h_dq
     );
 
   CTRL: component model_hram_ctrl
     generic map (
-      A_MSB  => 22,
-      B_MSB  => s_a_size'high,
-      PARAMS => HRAM_CTRL_PARAMS_133_100
+      A_MSB    => 22,
+      B_MSB    => s_a_size'high,
+      CLK_FREE => false,
+      W_DEPTH  => 64,
+      R_DEPTH  => 64,
+      PARAMS   => HRAM_CTRL_PARAMS_133_100
     )
     port map (
       s_rst     => s_rst,
@@ -192,8 +223,8 @@ begin
       s_r_valid => s_r_valid,
       s_r_data  => s_r_data,
       h_rst_n   => h_rst_n,
-      h_clk     => h_clk,
       h_cs_n    => h_cs_n,
+      h_clk     => h_clk,
       h_rwds    => h_rwds,
       h_dq      => h_dq
     );
