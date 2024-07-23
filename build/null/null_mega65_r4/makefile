@@ -8,8 +8,6 @@ board_variant=r4
 default: bit
 
 toplevel=$(shell git rev-parse --show-toplevel)
-make_fpga=$(toplevel)/submodules/make-fpga
-include $(make_fpga)/head.mak
 src=$(toplevel)/src
 
 VIVADO_PART=xc7a200tfbg484-2
@@ -22,4 +20,4 @@ VIVADO_LIB_SRC=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd=unisim
 
-include $(make_fpga)/vivado.mak
+include $(toplevel)/submodules/make-fpga/vivado.mak

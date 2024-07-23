@@ -6,7 +6,6 @@ default: bit
 
 toplevel=$(shell git rev-parse --show-toplevel)
 make_fpga=$(toplevel)/submodules/make-fpga
-include $(make_fpga)/head.mak
 
 FPGA_VENDOR=$(word 1,$(FPGA))
 FPGA_FAMILY=$(word 2,$(FPGA))
@@ -77,17 +76,17 @@ GHDL_SRC=$(NVC_SRC)
 GHDL_RUN=$(NVC_RUN)
 GHDL_LIB=xilinx-vivado
 
-#include $(make_fpga)/ghdl.mak
+include $(make_fpga)/ghdl.mak
 
 ################################################################################
 # ModelSim, Questa etc
 
-VSIM_LRM=$(NVC_LRM)
+VSIM_VHDL_LRM=$(NVC_LRM)
 VSIM_SRC=$(NVC_SRC)
 VSIM_RUN=$(NVC_RUN)
 VSIM_LIB=xilinx-vivado
 
-#include $(make_fpga)/vsim.mak
+include $(make_fpga)/vsim.mak
 
 ################################################################################
 # post simulation check

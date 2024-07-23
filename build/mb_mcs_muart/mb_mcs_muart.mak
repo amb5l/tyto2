@@ -6,7 +6,6 @@ default: bit
 
 toplevel=$(shell git rev-parse --show-toplevel)
 make_fpga=$(toplevel)/submodules/make-fpga
-include $(make_fpga)/head.mak
 
 FPGA_VENDOR=$(word 1,$(FPGA))
 FPGA_FAMILY=$(word 2,$(FPGA))
