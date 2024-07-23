@@ -5,8 +5,6 @@
 default: sim
 
 toplevel=$(shell git rev-parse --show-toplevel)
-make_fpga=$(toplevel)/submodules/make-fpga
-include $(make_fpga)/head.mak
 
 ################################################################################
 # Vivado
@@ -25,7 +23,25 @@ VIVADO_SIM_SRC=\
 VIVADO_SIM_RUN=\
 	sim=tb_model_hram
 
-include $(make_fpga)/vivado.mak
+include $(toplevel)/submodules/make-fpga/vivado.mak
+
+################################################################################
+# GHDL
+
+GHDL_LRM=$(VIVADO_VHDL_LRM)
+GHDL_SRC=$(VIVADO_SIM_SRC)
+GHDL_RUN=$(VIVADO_SIM_RUN)
+
+include $(toplevel)/submodules/make-fpga/ghdl.mak
+
+################################################################################
+# NVC
+
+NVC_VHDL_LRM=$(VIVADO_VHDL_LRM)
+NVC_SRC=$(VIVADO_SIM_SRC)
+NVC_RUN=$(VIVADO_SIM_RUN)
+
+include $(toplevel)/submodules/make-fpga/nvc.mak
 
 ################################################################################
 # ModelSim/Questa/etc
@@ -34,6 +50,6 @@ VSIM_VHDL_LRM=$(VIVADO_VHDL_LRM)
 VSIM_SRC=$(VIVADO_SIM_SRC)
 VSIM_RUN=$(VIVADO_SIM_RUN)
 
-include $(make_fpga)/vsim.mak
+include $(toplevel)/submodules/make-fpga/vsim.mak
 
 ################################################################################
