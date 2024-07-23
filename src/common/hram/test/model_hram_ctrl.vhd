@@ -104,6 +104,9 @@ end package model_hram_ctrl_types_pkg;
 -- FIFO package instances
 
 use work.model_hram_ctrl_types_pkg.all;
+library ieee;
+  use ieee.std_logic_1164.all;
+
 package w_fifo_pkg is
   new work.tyto_fifo_pkg generic map(
     item_t => w_item_t,
@@ -112,6 +115,9 @@ package w_fifo_pkg is
   );
 
 use work.model_hram_ctrl_types_pkg.all;
+library ieee;
+  use ieee.std_logic_1164.all;
+
 package r_fifo_pkg is
   new work.tyto_fifo_pkg generic map(
     item_t => r_item_t,
