@@ -535,112 +535,116 @@ begin
           end if;
         end if;
 
-        -- check tVCS (power on and reset high to first access)
-        if falling_edge(cs_n) then
-          if state_por /= POR_DONE then
-            report PREFIX & "tVCS violation - power on and reset high to first access not met"
-              severity SEV_tVCS;
-          end if;
-        end if;
+        if rst_n = '1' then
 
-        -- check tCSHI (CS high time)
-        if falling_edge(cs_n) then
-          if now-ts_cs_n < tCSHI then
-            report PREFIX & "tCSHI violation - chip select high time not met:"
-              & " measured " & time'image(now-ts_cs_n)
-              & " required " & time'image(tCSHI)
-              severity SEV_tCSHI;
+          -- check tVCS (power on and reset high to first access)
+          if falling_edge(cs_n) then
+            if state_por /= POR_DONE then
+              report PREFIX & "tVCS violation - power on and reset high to first access not met"
+                severity SEV_tVCS;
+            end if;
           end if;
-        end if;
 
-        -- check tCSS (CS to clock setup time)
-        if rising_edge(clk) then
-          if now-ts_cs < tCSS then
-            report PREFIX & "tCSS violation - chip select setup time not met:"
-              & " measured " & time'image(now-ts_cs)
-              & " required " & time'image(tCSS)
-              severity SEV_tCSS;
+          -- check tCSHI (CS high time)
+          if falling_edge(cs_n) then
+            if now-ts_cs_n < tCSHI then
+              report PREFIX & "tCSHI violation - chip select high time not met:"
+                & " measured " & time'image(now-ts_cs_n)
+                & " required " & time'image(tCSHI)
+                severity SEV_tCSHI;
+            end if;
           end if;
-        end if;
 
-        -- check tCSH (clock to CS hold time)
-        if cs_n'event then
-          if now-ts_clk_f < tCSH then
-            report PREFIX & "tCSH violation - chip select hold time not met:"
-              & " measured " & time'image(now-ts_clk_f)
-              & " required " & time'image(tCSH)
-              severity SEV_tCSH;
+          -- check tCSS (CS to clock setup time)
+          if rising_edge(clk) then
+            if now-ts_cs < tCSS then
+              report PREFIX & "tCSS violation - chip select setup time not met:"
+                & " measured " & time'image(now-ts_cs)
+                & " required " & time'image(tCSS)
+                severity SEV_tCSS;
+            end if;
           end if;
-        end if;
 
-        -- check tCSM (CS active time)
-        if rising_edge(cs_n) then
-          if now-ts_cs_a > tCSM then
-            report PREFIX & "tCSM violation - chip select active time exceeded:"
-              & " measured " & time'image(now-ts_cs_a)
-              & " required " & time'image(tCSHI)
-              severity SEV_tCSM;
+          -- check tCSH (clock to CS hold time)
+          if cs_n'event then
+            if now-ts_clk_f < tCSH then
+              report PREFIX & "tCSH violation - chip select hold time not met:"
+                & " measured " & time'image(now-ts_clk_f)
+                & " required " & time'image(tCSH)
+                severity SEV_tCSH;
+            end if;
           end if;
-        end if;
 
-        -- check tIS (RWDS and DQ to clock setup time)
-        if clk'event then
-          if state = WR and (now-ts_rwds < tIS) then
-            report PREFIX & "tIS violation - RWDS to clock input setup time not met:"
-              & " measured " & time'image(now-ts_rwds)
-              & " required " & time'image(tIS)
-              severity SEV_tIS;
+          -- check tCSM (CS active time)
+          if rising_edge(cs_n) then
+            if now-ts_cs_a > tCSM then
+              report PREFIX & "tCSM violation - chip select active time exceeded:"
+                & " measured " & time'image(now-ts_cs_a)
+                & " required " & time'image(tCSHI)
+                severity SEV_tCSM;
+            end if;
           end if;
-          if (count < 6 or state = WR) and (now-ts_dq < tIS) then
-            report PREFIX & "tIS violation - DQ to clock input setup time not met:"
-              & " measured " & time'image(now-ts_dq)
-              & " required " & time'image(tIS)
-              severity SEV_tIS;
-          end if;
-        end if;
 
-        -- check tIH (clock to RWDS and DQ hold time)
-        if rwds'event then
-          if (state = WR and ca(46) = '0' and (now-ts_clk_w_m < tIH)) then
-            report PREFIX & "tIH violation - clock to RWDS input hold time not met:"
-              & " measured " & time'image(now-ts_clk_w_m)
-              & " required " & time'image(tIH)
-              severity SEV_tIH;
+          -- check tIS (RWDS and DQ to clock setup time)
+          if clk'event then
+            if state = WR and (now-ts_rwds < tIS) then
+              report PREFIX & "tIS violation - RWDS to clock input setup time not met:"
+                & " measured " & time'image(now-ts_rwds)
+                & " required " & time'image(tIS)
+                severity SEV_tIS;
+            end if;
+            if (count < 6 or state = WR) and (now-ts_dq < tIS) then
+              report PREFIX & "tIS violation - DQ to clock input setup time not met:"
+                & " measured " & time'image(now-ts_dq)
+                & " required " & time'image(tIS)
+                severity SEV_tIS;
+            end if;
           end if;
-          if (state = WR and ca(46) = '1' and (now-ts_clk_w_r < tIH)) then
-            report PREFIX & "tIH violation - clock to RWDS input hold time not met:"
-              & " measured " & time'image(now-ts_clk_w_r)
-              & " required " & time'image(tIH)
-              severity SEV_tIH;
-          end if;
-        end if;
-        if dq'event then
-          if ((count < 6) or state = WR) and (now-ts_clk < tIH) then
-            report PREFIX & "tIH violation - clock to DQ input hold time not met:"
-              & " measured " & time'image(now-ts_clk)
-              & " required " & time'image(tIH)
-              severity SEV_tIH;
-          end if;
-        end if;
 
-        -- check tRWR
-        if falling_edge(clk) and state = CA2 then
-          if now-ts_cs_n < tRWR then
-            report PREFIX & "tRWR violation - read-write recovery time not met:"
-              & " measured " & time'image(now-ts_cs_n)
-              & " required " & time'image(tRWR)
-              severity SEV_tRWR;
+          -- check tIH (clock to RWDS and DQ hold time)
+          if rwds'event then
+            if (state = WR and ca(46) = '0' and (now-ts_clk_w_m < tIH)) then
+              report PREFIX & "tIH violation - clock to RWDS input hold time not met:"
+                & " measured " & time'image(now-ts_clk_w_m)
+                & " required " & time'image(tIH)
+                severity SEV_tIH;
+            end if;
+            if (state = WR and ca(46) = '1' and (now-ts_clk_w_r < tIH)) then
+              report PREFIX & "tIH violation - clock to RWDS input hold time not met:"
+                & " measured " & time'image(now-ts_clk_w_r)
+                & " required " & time'image(tIH)
+                severity SEV_tIH;
+            end if;
           end if;
-        end if;
+          if dq'event then
+            if ((count < 6) or state = WR) and (now-ts_clk < tIH) then
+              report PREFIX & "tIH violation - clock to DQ input hold time not met:"
+                & " measured " & time'image(now-ts_clk)
+                & " required " & time'image(tIH)
+                severity SEV_tIH;
+            end if;
+          end if;
 
-        -- check tACC (access time)
-        if falling_edge(clk) and ca(46) = '0' and state = LAT and count = get_lat-1 then
-          if now-ts_acc < tACC then
-            report PREFIX & "tACC violation - access time violation:"
-              & " measured " & time'image(now-ts_acc)
-              & " required " & time'image(tACC)
-              severity SEV_tACC;
+          -- check tRWR
+          if falling_edge(clk) and state = CA2 then
+            if now-ts_cs_n < tRWR then
+              report PREFIX & "tRWR violation - read-write recovery time not met:"
+                & " measured " & time'image(now-ts_cs_n)
+                & " required " & time'image(tRWR)
+                severity SEV_tRWR;
+            end if;
           end if;
+
+          -- check tACC (access time)
+          if falling_edge(clk) and ca(46) = '0' and state = LAT and count = get_lat-1 then
+            if now-ts_acc < tACC then
+              report PREFIX & "tACC violation - access time violation:"
+                & " measured " & time'image(now-ts_acc)
+                & " required " & time'image(tACC)
+                severity SEV_tACC;
+            end if;
+          end if;
+
         end if;
 
         -- update timestamps
@@ -801,7 +805,7 @@ begin
 
           when LAT =>
             if count = get_lat-1 then
-              dq_oe <= ca(47) after tDQLZmin;
+              dq_oe <= ca(47) after tDQLZmin; -- drive DQ for reads
               dq_o  <= (others => 'X');
             end if;
 
