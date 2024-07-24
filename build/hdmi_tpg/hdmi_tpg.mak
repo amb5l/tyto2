@@ -34,7 +34,7 @@ VIVADO_DSN_SRC=\
 	$(src)/common/audio_io/audio_out_test_tone.vhd \
 	$(src)/common/video/xilinx_7series/hdmi_tx_selectio.vhd \
 	$(src)/designs/$(DESIGN)/$(DESIGN).vhd \
-	$(if $(filter qmtech_wukong digilent_zybo_z7,$(BOARD)),$(src)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd) \
+	$(if $(filter qmtech_wukong digilent_zybo_z7,$(BOARD)),$(src)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm.vhd) \
 	$(if $(filter mega65,$(BOARD)),$(src)/contrib/mega65/keyboard.vhd) \
 	$(src)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_SRC=\
