@@ -14,6 +14,7 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
+-- TODO sort out RWDS output (write masking)
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -90,9 +91,6 @@ entity hram_ctrl is
   generic (
     A_MSB    : integer range 19 to 27; -- 8..2048Mbits (1..256MBytes)
     B_MSB    : integer range 0 to 19;  -- 1..1024 words
-    CLK_FREE : boolean;
-    W_DEPTH  : positive;
-    R_DEPTH  : positive;
     PARAMS   : hram_ctrl_params_t
   );
   port (
@@ -190,7 +188,6 @@ architecture rtl of hram_ctrl is
 
   signal busy_cs    : std_ulogic;
   signal busy_clk   : std_ulogic;
-  signal busy_wr    : std_ulogic;
   signal busy_rd    : std_ulogic;
   signal strobe_wr  : std_ulogic_vector(1 to 2);
   signal strobe_rd  : std_ulogic_vector(1 to 2);
@@ -289,7 +286,6 @@ begin
       count_rd   <= 0;
       busy_cs   <= '0';
       busy_clk  <= '0';
-      busy_wr   <= '0';
       busy_rd   <= '0';
       r_fifo_ra <= (others => '0');
       strobe_rd <= (others => '0');
@@ -437,7 +433,7 @@ begin
 
         when CSH =>
           count     <= 0;
-          if tLAT >= 4 then
+          if tRWR >= 4 then
             h_rwds_t <= '1';
             h_dq_t   <= '1';
             busy_cs  <= '0';
