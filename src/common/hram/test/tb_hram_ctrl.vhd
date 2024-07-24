@@ -222,7 +222,7 @@ begin
   MEM: component model_hram
     generic map (
       SIM_MEM_SIZE => TEST_SIZE,
-      OUTPUT_DELAY => "MAX",
+      OUTPUT_DELAY => "UNIFORM",
       PARAMS       => hram_params(HRAM_8Mx8_133_3V0)
     )
     port map (

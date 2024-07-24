@@ -593,7 +593,7 @@ begin
                 & " required " & time'image(tIS)
                 severity SEV_tIS;
             end if;
-            if (count < 6 or state = WR) and (now-ts_dq < tIS) then
+            if (count_hclk < 6 or state = WR) and (now-ts_dq < tIS) then
               report PREFIX & "tIS violation - DQ to clock input setup time not met:"
                 & " measured " & time'image(now-ts_dq)
                 & " required " & time'image(tIS)
@@ -617,7 +617,7 @@ begin
             end if;
           end if;
           if dq'event then
-            if ((count < 6) or state = WR) and (now-ts_clk < tIH) then
+            if (count_hclk < 6 or state = WR) and (now-ts_clk < tIH) then
               report PREFIX & "tIH violation - clock to DQ input hold time not met:"
                 & " measured " & time'image(now-ts_clk)
                 & " required " & time'image(tIH)
