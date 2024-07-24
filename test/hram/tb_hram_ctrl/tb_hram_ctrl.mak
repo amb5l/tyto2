@@ -27,8 +27,14 @@ VIVADO_SIM_SRC=\
 VIVADO_SIM_RUN=$(TB)
 VIVADO_LIB_SRC=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_VPKG.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/ODDR.vhd=unisim \
-	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUF.vhd=unisim
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUF.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFT.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/IBUF.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFR.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/IDDR.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/RAM32M.vhd=unisim \
 
 include $(make_fpga)/vivado.mak
 
