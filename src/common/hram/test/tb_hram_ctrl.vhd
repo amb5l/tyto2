@@ -87,7 +87,7 @@ begin
     constant B_WR  : std_ulogic := '0';
     constant B_REG : std_ulogic := '1';
     constant B_MEM : std_ulogic := '0';
-    constant B_WRAP: std_ulogic := '1';
+    constant B_WRAP: std_ulogic := '1'; -- v4p ignore w-303
     constant B_LIN : std_ulogic := '0';
 
     variable addr   : integer;
@@ -237,9 +237,6 @@ begin
     generic map (
       A_MSB    => 22,
       B_MSB    => s_a_size'high,
-      CLK_FREE => false,
-      W_DEPTH  => 64,
-      R_DEPTH  => 64,
       PARAMS   => HRAM_CTRL_PARAMS_133_100
     )
     port map (

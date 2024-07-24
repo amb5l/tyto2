@@ -43,9 +43,6 @@ package hram_ctrl_pkg is
     generic (
       A_MSB    : integer range 19 to 29;
       B_MSB    : integer range 0 to 19;
-      CLK_FREE : boolean;
-      W_DEPTH  : positive;
-      R_DEPTH  : positive;
       PARAMS   : hram_ctrl_params_t
     );
     port (
