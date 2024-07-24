@@ -64,7 +64,7 @@ VIVADO_DSN_VHDL:=\
 	$(SRC)/common/retro/np65/np6532_core.vhd \
 	$(SRC)/common/retro/np65/np6532.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
-	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
+	$(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
 VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \
@@ -100,8 +100,8 @@ FPGA_TOOL:=quartus
 QUARTUS_TOP:=$(DESIGN)_$(RAM_SIZE)k_$(BOARD)
 QUARTUS_MAP_OPTIMIZE:=speed
 QUARTUS_FIT_EFFORT:=auto
-QUARTUS_QIP:=$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/pll_otus_50m_96m_32m__28/pll_otus_50m_96m_32m.qip
-QUARTUS_SIP:=$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/pll_otus_50m_96m_32m__28/pll_otus_50m_96m_32m.sip
+QUARTUS_QIP:=$(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/pll_otus_50m_96m_32m__28/pll_otus_50m_96m_32m.qip
+QUARTUS_SIP:=$(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/pll_otus_50m_96m_32m__28/pll_otus_50m_96m_32m.sip
 QUARTUS_MIF:=$(DECODER_MIF)
 QUARTUS_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
@@ -134,7 +134,7 @@ GHDL_LIBS:=intel
 VSCODE_TOP:=$(QUARTUS_TOP),$(SIM_TOP)
 VSCODE_SRC:=\
 	$(SIM_SRC) \
-	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/pll_otus_50m_96m_32m/pll_otus_50m_96m_32m_sim/pll_otus_50m_96m_32m.vho
+	$(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/pll_otus_50m_96m_32m/pll_otus_50m_96m_32m_sim/pll_otus_50m_96m_32m.vho
 VSCODE_XLIB:=altera_lnsim,altera_mf
 VSCODE_XSRC.altera_lnsim:=$(QUARTUS_ROOTDIR)/libraries/vhdl/altera_lnsim/altera_lnsim_components.vhd \
 VSCODE_XSRC.altera_mf:=$(QUARTUS_ROOTDIR)/libraries/vhdl/altera_mf/altera_mf_components.vhd

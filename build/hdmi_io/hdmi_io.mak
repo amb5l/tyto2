@@ -18,12 +18,12 @@ VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD_VARIANT)
 VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/basic/sync_reg.vhd \
-	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
-    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_fm.vhd \
-    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_clk.vhd \
-    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_align.vhd \
-    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
-    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
+	$(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hdmi_rx_selectio_fm.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hdmi_rx_selectio_clk.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hdmi_rx_selectio_align.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD_VARIANT).vhd
 VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD_VARIANT).tcl \

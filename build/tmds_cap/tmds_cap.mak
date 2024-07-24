@@ -19,21 +19,21 @@ FPGA_DEVICE?=$(word 3,$(FPGA))
 FPGA_TOOL:=vivado
 
 ifneq (,$(findstring xc7z,$(FPGA_DEVICE)))
-CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_z7ps.vhd
+CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)/$(FPGA_FAMILY)/$(DESIGN)_z7ps.vhd
 else
-CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_mb.vhd
+CORE_VHD:=$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)/$(FPGA_FAMILY)/$(DESIGN)_mb.vhd
 endif
 
 VIVADO_DSN_TOP:=$(DESIGN)_$(BOARD_VARIANT)
 VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/basic/sync_reg.vhd \
-	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
-    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_fm.vhd \
-    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_clk.vhd \
-    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio_align.vhd \
-    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
-    $(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
+	$(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hdmi_rx_selectio_fm.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hdmi_rx_selectio_clk.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hdmi_rx_selectio_align.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hdmi_rx_selectio.vhd \
+    $(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hdmi_tx_selectio.vhd \
 	$(SRC)/common/axi/axi4_pkg.vhd \
 	$(SRC)/common/axi/axi4s_pkg.vhd \
 	$(SRC)/common/basic/fifo_pkg.vhd \
@@ -41,7 +41,7 @@ VIVADO_DSN_VHDL_2008:=\
 	$(CSR_RA_VHD) \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN)_csr.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN)_stream.vhd \
-	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_io.vhd \
+	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)/$(FPGA_FAMILY)/$(DESIGN)_io.vhd \
 	$(SRC)/common/i2c/i2c_rep_uni.vhd \
     $(if $(findstring xc7z,$(FPGA_DEVICE)),,$(SRC)/common/ethernet/memac_axi4_rgmii.vhd) \
 	$(CORE_VHD) \
@@ -51,8 +51,8 @@ VIVADO_DSN_BD_TCL:=$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_z7ps_sys.tcl
 else
 VIVADO_DSN_BD_TCL:=\
 	$(SRC)/common/ddr3/$(BOARD)/axi_ddr3.tcl \
-	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_mb_cpu.tcl \
-	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_mb_sys.tcl
+	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)/$(FPGA_FAMILY)/$(DESIGN)_mb_cpu.tcl \
+	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)/$(FPGA_FAMILY)/$(DESIGN)_mb_sys.tcl
 endif
 ifeq (,$(findstring xc7z,$(FPGA_DEVICE)))
 VIVADO_DSN_PROC_INST:=cpu
@@ -60,8 +60,8 @@ VIVADO_DSN_PROC_REF:=microblaze
 endif
 VIVADO_DSN_XDC_IMPL:=\
 	$(SRC)/boards/$(BOARD)/$(BOARD_VARIANT).tcl \
-	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_x7.xdc \
-	$(if $(findstring xc7z,$(FPGA_DEVICE)),$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)_$(FPGA_FAMILY)/$(DESIGN)_z7.xdc) \
+	$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)/$(FPGA_FAMILY)/$(DESIGN)_x7.xdc \
+	$(if $(findstring xc7z,$(FPGA_DEVICE)),$(SRC)/designs/$(DESIGN)/$(FPGA_VENDOR)/$(FPGA_FAMILY)/$(DESIGN)_z7.xdc) \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).xdc
 
 # workaround for synthesis crashes
@@ -117,7 +117,7 @@ VSCODE_XSRC.unisim:=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/IBUFDS.vhd \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd \
-    $(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/model_secureip.vhd
+    $(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/model_secureip.vhd
 
 include $(MAKE_FPGA)
 

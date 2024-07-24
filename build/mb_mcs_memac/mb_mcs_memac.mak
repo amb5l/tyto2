@@ -75,7 +75,7 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/basic/sync_reg_u.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/oddr.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/iddr.vhd \
-	$(toplevel)/src/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm_v2.vhd \
+	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm_v2.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/ram_tdp.vhd;VHDL-2000 \
 	$(toplevel)/src/common/crc/crc32_eth_8_pkg.vhd \
 	$(toplevel)/src/common/crc/crc_eth.vhd \

@@ -3,7 +3,7 @@ RAM_SIZE=256
 BOARD=digilent_nexys_video
 VIVADO_PART=xc7a200tsbg484-1
 VENDOR=xilinx
-VENDOR_FAMILY=xilinx_7series
+FAMILY=7series
 
 REPO_ROOT=$(shell cygpath -m $(shell git rev-parse --show-toplevel))
 MAKE_DIR=$(REPO_ROOT)/$(shell git rev-parse --show-prefix)
@@ -47,7 +47,7 @@ VIVADO_DSN_VHDL=\
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/tyto_utils_pkg.vhd \
 	$(SRC)/common/basic/sync_reg.vhd \
-	$(SRC)/common/basic/$(VENDOR_FAMILY)/mmcm.vhd \
+	$(SRC)/common/basic/$(VENDOR)/$(FAMILY)/mmcm.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_conductor.vhd \
 	$(SRC)/common/retro/np65/np6532.vhd \
@@ -73,7 +73,7 @@ VIVADO_DSN_VHDL=\
 	$(SRC)/common/ps2/ps2_to_usbhid.vhd \
 	$(SRC)/common/ps2/ps2set2_to_usbhid_pkg.vhd \
 	$(SRC)/common/usb/usb_hid_codes_pkg.vhd \
-	$(SRC)/common/video/$(VENDOR_FAMILY)/video_out_clock.vhd \
+	$(SRC)/common/video/$(VENDOR)/$(FAMILY)/video_out_clock.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_hdtv.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_overscan.vhd \
 	$(SRC)/designs/$(DESIGN)/bpp_genlock.vhd \
@@ -84,7 +84,7 @@ VIVADO_DSN_VHDL=\
 	$(SRC)/designs/$(DESIGN)/bpp_hdtv_pcm_to_hdmi.vhd \
 	$(SRC)/common/video/vga_to_hdmi.vhd \
 	$(SRC)/common/video/hdmi_tx_encoder.vhd \
-	$(SRC)/common/basic/$(VENDOR_FAMILY)/serialiser_10to1_selectio.vhd
+	$(SRC)/common/basic/$(VENDOR)/$(FAMILY)/serialiser_10to1_selectio.vhd
 
 VIVADO_DSN_XDC_IMPL=\
 	$(SRC)/boards/$(BOARD)/$(BOARD).tcl \

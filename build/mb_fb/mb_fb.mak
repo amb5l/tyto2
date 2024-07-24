@@ -27,8 +27,8 @@ VIVADO_DSN_VHDL_2008:=\
 	$(SRC)/common/video/video_mode.vhd \
 	$(SRC)/common/video/video_out_timing.vhd \
 	$(SRC)/common/video/dvi_tx_encoder.vhd \
-	$(SRC)/common/video/$(FPGA_VENDOR)_$(FPGA_FAMILY)/video_out_clock.vhd \
-	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/serialiser_10to1_selectio.vhd \
+	$(SRC)/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/video_out_clock.vhd \
+	$(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/serialiser_10to1_selectio.vhd \
 	$(SRC)/common/basic/sync_reg.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/global_pkg_$(BOARD).vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \

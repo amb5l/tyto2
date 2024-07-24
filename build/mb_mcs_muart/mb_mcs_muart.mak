@@ -45,7 +45,7 @@ VIVADO_DSN_TOP=$(DESIGN)_$(BOARD)
 VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/tyto_types_pkg.vhd \
 	$(toplevel)/src/common/basic/sync_reg_u.vhd \
-	$(toplevel)/src/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm_v2.vhd \
+	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm_v2.vhd \
 	$(toplevel)/src/common/uart/$(FPGA_VENDOR)/$(FPGA_FAMILY)/muart_fifo.vhd \
 	$(toplevel)/src/common/uart/muart_tx.vhd \
 	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \

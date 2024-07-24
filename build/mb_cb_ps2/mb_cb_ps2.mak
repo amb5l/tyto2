@@ -20,7 +20,7 @@ VIVADO_DSN_VHDL:=\
 	$(SRC)/common/tyto_types_pkg.vhd \
 	$(SRC)/common/tyto_utils_pkg.vhd \
 	$(SRC)/common/basic/sync_reg.vhd \
-	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/ram_tdp_ar_2kx32_4kx16.vhd \
+	$(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/ram_tdp_ar_2kx32_4kx16.vhd \
 	$(SRC)/common/ps2/ps2_host.vhd \
 	$(SRC)/common/ps2/ps2_to_usbhid.vhd \
 	$(SRC)/common/ps2/ps2set2_to_usbhid_pkg.vhd \
@@ -29,8 +29,8 @@ VIVADO_DSN_VHDL:=\
 	$(SRC)/common/video/video_out_timing.vhd \
 	$(SRC)/common/video/vga_to_hdmi.vhd \
 	$(SRC)/common/video/hdmi_tx_encoder.vhd \
-	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/mmcm.vhd \
-	$(SRC)/common/basic/$(FPGA_VENDOR)_$(FPGA_FAMILY)/serialiser_10to1_selectio.vhd \
+	$(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm.vhd \
+	$(SRC)/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/serialiser_10to1_selectio.vhd \
 	$(SRC)/designs/mb_cb/cb.vhd \
 	$(SRC)/designs/$(DESIGN)/$(DESIGN).vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
