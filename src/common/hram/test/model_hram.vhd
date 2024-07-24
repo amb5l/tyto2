@@ -459,7 +459,6 @@ begin
     variable ts_cs_n    : time := 0 ps; -- chip select edge
     variable ts_clk     : time := 0 ps; -- most recent clock event
     variable ts_clk_1   : time := 0 ps; -- most recent clock event but one
-    variable ts_clk_r   : time := 0 ps; -- clock rising edge
     variable ts_clk_f   : time := 0 ps; -- clock falling edge
     variable ts_clk_w_m : time := 0 ps; -- clock event for mem write
     variable ts_clk_w_r : time := 0 ps; -- clock event for reg write
@@ -652,7 +651,6 @@ begin
         if rising_edge  ( rst_n ) then  ts_rst_n := now; end if;
         if falling_edge ( cs_n  ) then  ts_cs_a  := now; end if;
         if rising_edge  ( cs_n  ) then  ts_cs_n  := now; end if;
-        if rising_edge  ( clk   ) then  ts_clk_r := now; end if;
         if falling_edge ( clk   ) then  ts_clk_f := now; end if;
         if clk'event  then
           ts_clk_1 := ts_clk;
