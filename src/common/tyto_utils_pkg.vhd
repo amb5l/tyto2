@@ -23,7 +23,10 @@ package tyto_utils_pkg is
 
   function ternary (c : boolean; a, b : std_logic) return std_logic;
   function ternary (c : boolean; a, b : std_logic_vector) return std_logic_vector;
+  function bool2sl( b : boolean ) return std_ulogic;
   function log2 (x : integer) return integer;
+  function incr(x : std_ulogic_vector) return std_ulogic_vector;
+  function decr(x : std_ulogic_vector) return std_ulogic_vector;
 
 end package tyto_utils_pkg;
 
@@ -47,6 +50,11 @@ package body tyto_utils_pkg is
     end if;
   end function ternary;
 
+  function bool2sl( b : boolean ) return std_ulogic is
+  begin
+    if b then return '1'; else return '0'; end if;
+  end function bool2sl;
+
   function log2 (x : integer) return integer is
     variable i : integer := 0;
   begin
@@ -55,5 +63,15 @@ package body tyto_utils_pkg is
     end loop;
     return i;
   end function log2;
-  
+
+  function incr(x : std_ulogic_vector) return std_ulogic_vector is
+  begin
+    return std_ulogic_vector(unsigned(x)+1);
+  end function incr;
+
+  function decr(x : std_ulogic_vector) return std_ulogic_vector is
+  begin
+    return std_ulogic_vector(unsigned(x)-1);
+  end function decr;
+
 end package body tyto_utils_pkg;
