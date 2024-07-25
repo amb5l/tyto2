@@ -237,7 +237,8 @@ begin
 
     en_cs     <= (bool2sl(state = IDLE) and start) or en_cs_next;
 
-    a32 := (A_MSB downto 1 => burst.addr, others =>'0');
+    a32 := (others => '0');
+    a32(A_MSB downto 1) := burst.addr;
     ca(0) :=
       s_a_r_w & s_a_reg & not s_a_wrap & "00000" when pause = '0' else
       burst.r_w & burst.reg & not burst.wrap & "00000";
