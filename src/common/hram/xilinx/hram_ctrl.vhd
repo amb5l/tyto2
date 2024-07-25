@@ -274,7 +274,7 @@ begin
       s_r_valid   <= '0';
       h_rst_n     <= '0';
       h_rwds_t    <= '1';
-      h_dq_t      <= '1';
+      h_dq_t      <= '0';
       burst.r_w   <= 'X';
       burst.reg   <= 'X';
       burst.wrap  <= 'X';
@@ -321,7 +321,6 @@ begin
               burst.addr <= s_a_addr;
             end if;
             s_a_ready <= '0';
-            h_dq_t    <= '0';
             en_cs_next  <= '1';
             en_clk <= '1';
             count    <= 1;
@@ -353,11 +352,16 @@ begin
 
         when LAT =>
           count <= count + 1;
-          if count = 1 and burst.r_w = '1' then -- tristate DQ for read
-            h_dq_t <= '1';
-          elsif count = tLAT-2 then -- ready for write data
+          if count = 1 then -- tristate DQ for read
+            h_dq_t <= burst.r_w;
+          end if;
+          if count = 2 then -- drive RWDS for write
+            h_rwds_t <= burst.r_w;
+          end if;
+          if count = tLAT-2 then -- ready for write data
             s_w_ready <= not burst.r_w;
-          elsif count = tLAT-1 then -- data transfer (or stall)
+          end if;
+          if count = tLAT-1 then -- data transfer (or stall)
             count <= 0;
             if burst.r_w = '1' then
               if s_r_ready = '1' then
@@ -369,7 +373,6 @@ begin
               end if;
             else
               if s_w_valid = '1'  then
-                h_rwds_t  <= '0';
                 s_w_ready <= '1';
                 state     <= WR;
               else
@@ -388,7 +391,6 @@ begin
             end if;
           else
             if s_w_valid = '1' then
-              h_rwds_t  <= '0';
               s_w_ready <= '1';
               en_clk  <= '1';
               state     <= WR;
@@ -434,26 +436,25 @@ begin
         when CSH =>
           count     <= 0;
           if tRWR >= 4 then
-            h_rwds_t <= '1';
-            h_dq_t   <= '1';
-            en_cs_next  <= '0';
-            ce_rd  <= '0';
-            state    <= RWR;
+            h_rwds_t   <= '1';
+            h_dq_t     <= '0';
+            en_cs_next <= '0';
+            ce_rd      <= '0';
+            state      <= RWR;
           else
-            s_a_ready <= not pause;
-            h_rwds_t  <= '1';
-            h_dq_t    <= '1';
-            phase     <= '0';
-            en_cs_next   <= '0';
-            ce_rd   <= '0';
-            state     <= IDLE;
+            s_a_ready  <= not pause;
+            h_rwds_t   <= '1';
+            h_dq_t     <= '0';
+            phase      <= '0';
+            en_cs_next <= '0';
+            ce_rd      <= '0';
+            state      <= IDLE;
           end if;
 
         when RWR =>
           count <= count + 1;
           if count = tLAT-4 then
             s_a_ready <= not pause;
-            h_dq_t    <= '1';
             phase     <= '0';
             count     <= 0;
             state     <= IDLE;
@@ -586,7 +587,7 @@ begin
       DELAY_SRC             => "IDATAIN",
       IDELAY_TYPE           => "FIXED",
       PIPE_SEL              => "FALSE",
-      IDELAY_VALUE          => 31,
+      IDELAY_VALUE          => 1,
       SIGNAL_PATTERN        => "DATA",
       REFCLK_FREQUENCY      => 200.0,
       HIGH_PERFORMANCE_MODE => "TRUE",
@@ -623,31 +624,32 @@ begin
         o => h_dq_i_u(i)
       );
 
-    U_IDELAY: component idelaye2
-      generic map (
-        DELAY_SRC             => "IDATAIN",
-        IDELAY_TYPE           => "FIXED",
-        PIPE_SEL              => "FALSE",
-        IDELAY_VALUE          => 0,
-        SIGNAL_PATTERN        => "DATA",
-        REFCLK_FREQUENCY      => 200.0,
-        HIGH_PERFORMANCE_MODE => "TRUE",
-        CINVCTRL_SEL          => "FALSE"
-      )
-      port map (
-        regrst      => '0',
-        cinvctrl    => '0',
-        c           => '0',
-        ce          => '0',
-        inc         => '0',
-        ld          => '0',
-        ldpipeen    => '0',
-        cntvaluein  => (others => '0'),
-        cntvalueout => open,
-        idatain     => h_dq_i_u(i),
-        datain      => '0',
-        dataout     => h_dq_i_d(i)
-      );
+    h_dq_i_d(i) <= h_dq_i_u(i);
+    --U_IDELAY: component idelaye2
+    --  generic map (
+    --    DELAY_SRC             => "IDATAIN",
+    --    IDELAY_TYPE           => "FIXED",
+    --    PIPE_SEL              => "FALSE",
+    --    IDELAY_VALUE          => 0,
+    --    SIGNAL_PATTERN        => "DATA",
+    --    REFCLK_FREQUENCY      => 200.0,
+    --    HIGH_PERFORMANCE_MODE => "TRUE",
+    --    CINVCTRL_SEL          => "FALSE"
+    --  )
+    --  port map (
+    --    regrst      => '0',
+    --    cinvctrl    => '0',
+    --    c           => '0',
+    --    ce          => '0',
+    --    inc         => '0',
+    --    ld          => '0',
+    --    ldpipeen    => '0',
+    --    cntvaluein  => (others => '0'),
+    --    cntvalueout => open,
+    --    idatain     => h_dq_i_u(i),
+    --    datain      => '0',
+    --    dataout     => h_dq_i_d(i)
+    --  );
 
     U_IDDR: component iddr
       generic map (
