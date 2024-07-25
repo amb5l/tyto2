@@ -126,18 +126,59 @@ package model_hram_pkg is
     manuf    => "XXXX"
   );
 
+  -- parameter bundle for ISSI 8Mx8 100MHz 3.0V e.g. IS66WVH8M8DBLL-100B1LI
+  constant HRAM_8Mx8_100_3V0 : hram_params_t := (
+    ra_bits  => 13,       -- log2(memory array rows) (c.w. 8192)
+    ca_bits  => 9,        -- log2(memory array columns) (c.w. 512)
+    tDRI     => 4000.0,   -- distributed refresh interval (4 uS)
+    tVCS     => 150000.0, -- power on and reset high to first access (150uS)
+    tRP      => 200.0,    -- reset pulse width, min
+    tRH      => 200.0,    -- reset negation to chip select assertion, min
+    tRPH     => 400.0,    -- reset assertion to chip select assertion, min
+    tCK      => 10.0,     -- clock period, min
+    CKHPmin  => 0.45,     -- half clock period, min
+    CKHPmax  => 0.55,     -- half clock period, min
+    tCSHI    => 10.0,     -- chip select high, min
+    tRWR     => 40.0,     -- read-write recovery time, min
+    tCSS     => 3.0,      -- chip select setup
+    tDSVmin  => 0.0,      -- data strobe valid, min
+    tDSVmax  => 12.0,     -- data strobe valid, max
+    tIS      => 1.0,      -- input setup, min
+    tIH      => 1.0,      -- input hold, min
+    tACC     => 40.0,     -- access, max
+    tDQLZmin => 0.0,      -- clock to DQ low Z, min
+    tCKDmin  => 1.0,      -- clock to DQ valid, min
+    tCKDmax  => 7.0,      -- clock to DQ valid, max
+    tCKDImin => 0.5,      -- clock to DQ invalid, min
+    tCKDImax => 5.2,      -- clock to DQ invalid, max
+    tCKDSmin => 1.0,      -- clock to RDWS valid, min
+    tCKDSmax => 7.0,      -- clock to RDWS valid, max
+    tDSSmin  => -0.8,     -- RDWS to DQ valid, min
+    tDSSmax  => +0.8,     -- RDWS to DQ valid, max
+    tDSHmin  => -0.8,     -- RDWS to DQ hold, min
+    tDSHmax  => +0.8,     -- RDWS to DQ hold, max
+    tCSH     => 0.0,      -- chip select hold, min
+    tDSZmin  => 0.0,      -- chip select inactive to RWDS hi Z, min
+    tDSZmax  => 7.0,      -- chip select inactive to RWDS hi Z, max
+    tOZmin   => 0.0,      -- chip select inactive to DQ hi Z, min
+    tOZmax   => 7.0,      -- chip select inactive to DQ hi Z, max
+    tCSM     => 4000.0,   -- chip select, max
+    tRFH     => 40.0,     -- refresh
+    manuf    => "0011"    -- ISSI manufacturer ID
+  );
+
   -- parameter bundle for ISSI 8Mx8 133MHz 3.0V e.g. IS66WVH8M8DBLL-133B1LI
   constant HRAM_8Mx8_133_3V0 : hram_params_t := (
     ra_bits  => 13,       -- log2(memory array rows) (c.w. 8192)
     ca_bits  => 9,        -- log2(memory array columns) (c.w. 512)
     tDRI     => 4000.0,   -- distributed refresh interval (4 uS)
-    tVCS     => 150000.0, -- power on and reset high to first access
+    tVCS     => 150000.0, -- power on and reset high to first access (150uS)
     tRP      => 200.0,    -- reset pulse width, min
     tRH      => 200.0,    -- reset negation to chip select assertion, min
     tRPH     => 400.0,    -- reset assertion to chip select assertion, min
     tCK      => 7.5,      -- clock period, min
-    CKHPmin  => 0.45, -- half clock period, min
-    CKHPmax  => 0.55, -- half clock period, min
+    CKHPmin  => 0.45,     -- half clock period, min
+    CKHPmax  => 0.55,     -- half clock period, min
     tCSHI    => 7.5,      -- chip select high, min
     tRWR     => 37.5,     -- read-write recovery time, min
     tCSS     => 3.0,      -- chip select setup
