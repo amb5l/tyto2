@@ -616,7 +616,7 @@ begin
             end if;
           end if;
           if dq'event then
-            if (count_hclk < 6 or state = WR) and (now-ts_clk < tIH) then
+            if (count_hclk < 7 or state = WR) and (now-ts_clk < tIH) then
               report PREFIX & "tIH violation - clock to DQ input hold time not met:"
                 & " measured " & time'image(now-ts_clk)
                 & " required " & time'image(tIH)
