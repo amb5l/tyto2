@@ -25,6 +25,9 @@ library ieee;
   use std.textio.all;
 
 entity tb_hram_ctrl is
+  generic (
+    OUTPUT_DELAY : string
+  );
 end tb_hram_ctrl;
 
 architecture sim of tb_hram_ctrl is
@@ -222,8 +225,8 @@ begin
   MEM: component model_hram
     generic map (
       SIM_MEM_SIZE => TEST_SIZE,
-      OUTPUT_DELAY => "UNIFORM",
-      PARAMS       => hram_params(HRAM_8Mx8_133_3V0)
+      OUTPUT_DELAY => OUTPUT_DELAY,
+      PARAMS       => hram_params(HRAM_8Mx8_100_3V0)
     )
     port map (
       rst_n => h_rst_n,

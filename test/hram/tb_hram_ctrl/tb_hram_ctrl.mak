@@ -24,7 +24,11 @@ VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/basic/xilinx/7series/ram_sdp_32x6.vhd \
 	$(toplevel)/src/common/hram/$(FPGA_FAMILY)/$(DUT).vhd \
 	$(toplevel)/src/common/hram/test/$(TB).vhd
-VIVADO_SIM_RUN=$(TB)
+VIVADO_SIM_RUN=\
+	min=$(TB);OUTPUT_DELAY="MIN" \
+	max=$(TB);OUTPUT_DELAY="MAX" \
+	max_min=$(TB);OUTPUT_DELAY="MAX_MIN" \
+	uniform=$(TB);OUTPUT_DELAY="UNIFORM"
 VIVADO_LIB_SRC=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_VPKG.vhd=unisim \
@@ -44,6 +48,7 @@ include $(make_fpga)/vivado.mak
 GHDL_LRM=$(VIVADO_VHDL_LRM)
 GHDL_SRC=$(VIVADO_SIM_SRC)
 GHDL_RUN=$(VIVADO_SIM_RUN)
+GHDL_VENDOR_LIB=xilinx-vivado
 
 include $(toplevel)/submodules/make-fpga/ghdl.mak
 
