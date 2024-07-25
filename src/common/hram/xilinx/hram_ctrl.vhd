@@ -671,9 +671,9 @@ begin
   -- read FIFO: accepts data in h_rwds_i_c domain, forwards to system read port
   -- clocked by falling edge so that a single additional RWDS pulse is enough
 
-  P_R_FIFO_WE: process(h_cs_n_u,h_rwds_i_c)
+  P_R_FIFO_WE: process(ce_rd,h_rwds_i_c)
   begin
-    if h_cs_n = '1' then
+    if ce_rd = '0' then
       r_fifo_we <= '0';
     elsif falling_edge(h_rwds_i_c) then
       r_fifo_we <= ce_rd;
