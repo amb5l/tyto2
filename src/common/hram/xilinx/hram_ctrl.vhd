@@ -208,7 +208,8 @@ architecture rtl of hram_ctrl is
   signal h_cs_n_u   : std_ulogic;
   signal h_rwds_i_u : std_logic;                      -- RWDS IBUF output
   signal h_rwds_i_d : std_logic;                      -- RWDS IDELAY output
-  signal h_rwds_i_c : std_logic;                      -- RWDS BUFR output
+  signal h_rwds_i_b : std_logic;                      -- RWDS BUFR output
+  signal h_rwds_i_c : std_logic;                      -- RWDS BUFR output with delay for functional simulation
   signal h_rwds_o_1 : std_logic;
   signal h_rwds_o_2 : std_logic;
   signal h_rwds_o   : std_logic;
@@ -613,8 +614,9 @@ begin
       clr => '0',
       ce  => '1',
       i => h_rwds_i_d,
-      o => h_rwds_i_c
+      o => h_rwds_i_b
     );
+    h_rwds_i_c <= transport h_rwds_i_b after 2 ns;
 
   GEN_DQ_I: for i in 0 to 7 generate
 
