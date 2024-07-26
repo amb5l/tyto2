@@ -39,10 +39,10 @@ VIVADO_DSN_SRC=\
 	$(src)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_SRC=\
 	$(src)/common/tyto_sim_pkg.vhd \
-	$(src)/common/video/model_video_out_clock.vhd \
-	$(src)/common/video/model_tmds_cdr_des.vhd \
-	$(src)/common/video/model_hdmi_decoder.vhd \
-	$(src)/common/video/model_vga_sink.vhd \
+	$(src)/common/video/test/model_video_out_clock.vhd \
+	$(src)/common/video/test/model_tmds_cdr_des.vhd \
+	$(src)/common/video/test/model_hdmi_decoder.vhd \
+	$(src)/common/video/test/model_vga_sink.vhd \
 	$(src)/designs/$(DESIGN)/$(BOARD)/tb_$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_RUN=sim=tb_$(VIVADO_DSN_TOP)
 VIVADO_XDC=\

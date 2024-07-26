@@ -40,9 +40,9 @@ VIVADO_DSN_ELF_CFG:=Release
 VIVADO_SIM_TOP:=tb_$(VIVADO_DSN_TOP)
 VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/tyto_sim_pkg.vhd \
-	$(SRC)/common/video/model_tmds_cdr_des.vhd \
-	$(SRC)/common/video/model_dvi_decoder.vhd \
-	$(SRC)/common/video/model_vga_sink.vhd \
+	$(SRC)/common/video/test/model_tmds_cdr_des.vhd \
+	$(SRC)/common/video/test/model_dvi_decoder.vhd \
+	$(SRC)/common/video/test/model_vga_sink.vhd \
 	$(SRC)/designs/$(DESIGN)/tb_$(DESIGN).vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
 VIVADO_SIM_ELF_CFG:=Debug

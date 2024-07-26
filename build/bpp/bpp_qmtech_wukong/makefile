@@ -97,9 +97,9 @@ VIVADO_SIM_VHDL=\
 	$(SRC)/designs/$(DESIGN)/test/tb_$(DESIGN).vhd \
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/basic/model_clk_src.vhd \
-	$(SRC)/common/video/model_hdmi_decoder.vhd \
-	$(SRC)/common/video/model_tmds_cdr_des.vhd \
-	$(SRC)/common/video/model_vga_sink.vhd
+	$(SRC)/common/video/test/model_hdmi_decoder.vhd \
+	$(SRC)/common/video/test/model_tmds_cdr_des.vhd \
+	$(SRC)/common/video/test/model_vga_sink.vhd
 
 include $(XILINX_MK)/xilinx.mk
 

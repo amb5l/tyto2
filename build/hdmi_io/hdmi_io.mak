@@ -33,12 +33,12 @@ VIVADO_SIM_VHDL_2008:=\
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/tyto_utils_pkg.vhd \
 	$(SRC)/common/video/video_mode.vhd \
-	$(SRC)/common/video/model_video_out_clock.vhd \
+	$(SRC)/common/video/test/model_video_out_clock.vhd \
 	$(SRC)/common/video/video_out_timing.vhd \
 	$(SRC)/common/video/video_out_test_pattern.vhd \
-	$(SRC)/common/video/model_tmds_cdr_des.vhd \
-	$(SRC)/common/video/model_hdmi_decoder.vhd \
-	$(SRC)/common/video/model_vga_sink.vhd \
+	$(SRC)/common/video/test/model_tmds_cdr_des.vhd \
+	$(SRC)/common/video/test/model_hdmi_decoder.vhd \
+	$(SRC)/common/video/test/model_vga_sink.vhd \
 	$(SRC)/designs/$(DESIGN)/$(BOARD)/$(VIVADO_SIM_TOP).vhd
 
 # note that Xilinx Vivado libraries must be pre-compiled

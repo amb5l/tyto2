@@ -96,9 +96,9 @@ VIVADO_SIM_VHDL=\
 	$(SRC)/designs/$(DESIGN)/test/tb_bpp_hdtv.vhd \
 	$(SRC)/common/tyto_sim_pkg.vhd \
 	$(SRC)/common/basic/model_clk_src.vhd \
-	$(SRC)/common/video/model_hdmi_decoder.vhd \
-	$(SRC)/common/video/model_tmds_cdr_des.vhd \
-	$(SRC)/common/video/model_vga_sink.vhd
+	$(SRC)/common/video/test/model_hdmi_decoder.vhd \
+	$(SRC)/common/video/test/model_tmds_cdr_des.vhd \
+	$(SRC)/common/video/test/model_vga_sink.vhd
 VIVADO_SIM_GENERICS=\
 	mode7_binfile=$(abspath $(MODE7_BIN)) \
 	mode2_binfile=$(abspath $(MODE2_BIN))
