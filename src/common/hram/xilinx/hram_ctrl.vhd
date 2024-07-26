@@ -233,7 +233,7 @@ begin
 
     start  <= (s_a_valid and s_a_ready) or                  -- new burst
               (pause and (s_w_valid and not burst.r_w)) or  -- resume write
-              (pause and (burst.r_w and s_r_ready));        -- resume read
+              (pause and (s_r_ready and     burst.r_w));    -- resume read
 
     en_cs     <= (bool2sl(state = IDLE) and start) or en_cs_next;
 
