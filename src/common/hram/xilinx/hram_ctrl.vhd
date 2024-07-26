@@ -403,7 +403,7 @@ begin
             en_clk <= '0';
             en_cs_next <= '0';
             state <= CSH;
-          elsif not s_w_ready then
+          elsif not s_w_valid then
             pause <= '1';
             en_clk <= '0';
             en_cs_next <= '0';
@@ -418,7 +418,7 @@ begin
           if unsigned(burst.size) = 1 then -- end of burst
             pause <= '0';
             state <= RDX;
-          elsif not s_w_ready then
+          elsif not s_r_ready then
             pause <= '1';
             state <= RDX;
           end if;
