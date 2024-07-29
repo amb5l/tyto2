@@ -160,6 +160,7 @@ architecture rtl of hram_ctrl is
     STALL,  -- stall for data
     WR,     -- write
     RD,     -- read
+    RDX,    -- extra read (to clock final read data)
     CSHR,   -- hold for final RWDS pulse
     CSH,    -- hold before negating chip select to meet tCSH
     RWR     -- read-write recovery
@@ -194,9 +195,6 @@ architecture rtl of hram_ctrl is
   signal ce_rd       : std_ulogic;                    -- clock enable read IDDR
   signal s_w_data_1  : std_ulogic_vector(7 downto 0); -- write data  delayed by 1 clock
   signal s_w_ready_1 : std_ulogic;                    -- write ready delayed by 1 clock
-  signal r_clksel    : std_ulogic;                    -- read clock select
-  signal r_xclken    : std_ulogic;                    -- enable extra clock for read
-  signal r_xclk      : std_ulogic;                    -- extra clock for read
 
   -- read FIFO
   signal r_fifo_we  : std_ulogic;
@@ -266,8 +264,6 @@ begin
       s_w_data(15 downto 8) when ((burst.reg = '1' and burst.r_w = '0') or (s_w_ready = '1')) else
       (others => 'X');
 
-    r_xclk <= r_xclken and not s_clk;
-
   end process;
 
   P_MAIN: process(s_rst,s_clk)
@@ -297,16 +293,13 @@ begin
       ce_rd       <= '0';
       s_w_data_1  <= (others => '0');
       s_w_ready_1 <= '0';
-      r_clksel    <= '0';
-      r_xclken    <= '0';
       r_fifo_ra   <= (others => '0');
 
     elsif rising_edge(s_clk) then
 
-      s_w_ready   <= '0';
       s_w_ready_1 <= s_w_ready;
+      s_w_ready   <= '0';
       s_w_data_1  <= s_w_data(7 downto 0);
-      r_xclken    <= '0';
 
       case state is
 
@@ -320,7 +313,6 @@ begin
           count_rst <= count_rst + 1;
 
         when IDLE =>
-          ce_rd <= '0';
           if start then
             if not pause then -- new burst
               burst.r_w  <= s_a_r_w;
@@ -374,9 +366,8 @@ begin
             count <= 0;
             if burst.r_w = '1' then
               if s_r_ready = '1' then
-                ce_rd    <= '1';
-                r_clksel <= '1';
-                state    <= RD;
+                ce_rd <= '1';
+                state   <= RD;
               else
                 en_clk <= '0';
                 state    <= STALL;
@@ -395,31 +386,29 @@ begin
         when STALL =>
           if burst.r_w = '1' then
             if s_r_ready = '1' then
-              en_clk   <= '1';
-              ce_rd    <= '1';
-              r_clksel <= '1';
+              en_clk <= '1';
+              ce_rd  <= '1';
               state    <= RD;
             end if;
           else
             if s_w_valid = '1' then
               s_w_ready <= '1';
-              en_clk    <= '1';
+              en_clk  <= '1';
               state     <= WR;
             end if;
           end if;
 
         when WR =>
           if unsigned(burst.size) = 1 then -- end of burst
-            pause      <= '0';
-            en_clk     <= '0';
+            pause <= '0';
+            en_clk <= '0';
             en_cs_next <= '0';
-            state      <= CSH;
+            state <= CSH;
           elsif not s_w_valid then
             pause <= '1';
-            pause      <= '1';
-            en_clk     <= '0';
+            en_clk <= '0';
             en_cs_next <= '0';
-            state      <= CSH;
+            state <= CSH;
           else
             s_w_ready <= '1';
           end if;
@@ -428,22 +417,22 @@ begin
 
         when RD =>
           if unsigned(burst.size) = 1 then -- end of burst
-            en_clk  <= '0';
-            pause   <= '0';
-            state   <= CSHR;
+            pause <= '0';
+            state <= RDX;
           elsif not s_r_ready then
-            en_clk  <= '0';
-            pause   <= '1';
-            state   <= CSHR;
+            pause <= '1';
+            state <= RDX;
           end if;
           burst.addr(s_a_addr'range) <= incr(burst.addr(s_a_addr'range));
           burst.size <= decr(burst.size);
 
+        when RDX =>
+          en_clk <= '0';
+          state    <= CSHR;
+
         when CSHR =>
           en_cs_next <= '0';
-          r_clksel   <= '0';
-          r_xclken   <= '1';
-          state      <= CSH;
+          state   <= CSH;
 
         when CSH =>
           count     <= 0;
@@ -451,6 +440,7 @@ begin
             h_rwds_t   <= '1';
             h_dq_t     <= '0';
             en_cs_next <= '0';
+            ce_rd      <= '0';
             state      <= RWR;
           else
             s_a_ready  <= not pause;
@@ -458,11 +448,11 @@ begin
             h_dq_t     <= '0';
             phase      <= '0';
             en_cs_next <= '0';
+            ce_rd      <= '0';
             state      <= IDLE;
           end if;
 
         when RWR =>
-          ce_rd <= '0';
           count <= count + 1;
           if count = tLAT-4 then
             s_a_ready <= not pause;
@@ -619,15 +609,12 @@ begin
       dataout     => h_rwds_i_d
     );
 
-  U_BUFR_RWDS: component bufgmux
-    generic map (
-      CLK_SEL_TYPE => "ASYNC"
-    )
+  U_BUFR_RWDS: component bufr
     port map (
-      s  => r_clksel,
-      i0 => r_xclk,
-      i1 => h_rwds_i_d,
-      o  => h_rwds_i_b
+      clr => '0',
+      ce  => '1',
+      i => h_rwds_i_d,
+      o => h_rwds_i_b
     );
     h_rwds_i_c <= transport h_rwds_i_b after 2 ns;
 
@@ -701,7 +688,7 @@ begin
   begin
     if s_rst = '1' then
       r_fifo_wa <= (others => '0');
-    elsif rising_edge(h_rwds_i_c) and r_fifo_we = '1' then
+    elsif falling_edge(h_rwds_i_c) and r_fifo_we = '1' then
       r_fifo_wa <= incr(r_fifo_wa);
     end if;
   end process P_R_FIFO_WA;
@@ -713,7 +700,7 @@ begin
   GEN_RAM: for i in 0 to 2 generate
     RAM: component ram_sdp_32x6
       generic map (
-        CLK_EDGE =>"rising"
+        CLK_EDGE =>"falling"
       )
       port map (
         clk => h_rwds_i_c,
