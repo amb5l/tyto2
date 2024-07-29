@@ -55,7 +55,8 @@ architecture rtl of cpu is
 
 begin
 
-  vtg_mode <= gpo(1)(3 downto 0);
+  vtg_mode        <= gpo(1)(3 downto 0);
+  txt_params.bcol <= gpo(1)(7 downto 4);
   txt_params.repx <= gpo(1)(8);
   txt_params.repy <= gpo(1)(9);
   txt_params.cols <= gpo(1)(23 downto 16);

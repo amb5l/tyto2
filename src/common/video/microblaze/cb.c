@@ -22,9 +22,7 @@
 #include "xil_types.h"
 #include "xil_mem.h"
 
-#include "peekpoke.h"
-#include "axi_gpio.h"
-#include "printf.h"
+#include "bsp.h"
 #include "cb.h"
 
 uint8_t cb_width = 0;
@@ -77,11 +75,7 @@ void cb_set_pos(uint8_t x, uint8_t y)
 
 void cb_set_border(uint8_t col)
 {
-	uint32_t r;
-
-	r = axi_gpio_get_gpi(0);
-	r = (r & ~0xF0) | (col << 4);
-	axi_gpio_set_gpo(0, r);
+	bsp_cb_border(col);
 }
 
 void cb_set_attr(uint8_t attr)

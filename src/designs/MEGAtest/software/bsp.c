@@ -19,6 +19,10 @@ void bsp_interval(uint32_t t) {
 		;
 }
 
+void bsp_cb_border(uint8_t c) {
+	gpormw(1, 0xF << 4, (c & 0xF) << 4);
+}
+
 int bsp_init() {
     XIOModule_Initialize(&io, XPAR_IOMODULE_0_DEVICE_ID);
 	XIOModule_Timer_SetOptions(&io, 0, 0);

@@ -70,6 +70,8 @@ VIVADO_SIM_SRC=\
 	$(toplevel)/src/designs/$(DESIGN)/tb_$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_ELF=$(VITIS_DIR)/$(VITIS_ELF_DBG)
 VIVADO_SIM_RUN=tb_$(VIVADO_DSN_TOP)
+VIVADO_XDC=\
+	$(toplevel)/src/boards/$(BOARD)/$(BOARD)$(addprefix _,$(BOARD_VARIANT)).tcl=IMPL
 VIVADO_LIB_SRC=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd=unisim \

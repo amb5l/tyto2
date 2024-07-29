@@ -18,11 +18,12 @@
 #define gpormw(n,m,d) XIOModule_DiscreteWrite(&io,n,((io.GpoValue[n-1] & ~(m)) | (d)))
 
 #include "xparameters.h"
-#define CB_BUF	XPAR_BRAM_S_AXI_BASEADDR
+#define CB_BUF	XPAR_CPU_IOMODULE_0_IO_BASEADDR
 
 extern XIOModule io;
 
 void bsp_interval(uint32_t t);
+void bsp_cb_border(uint8_t c);
 int bsp_init();
 
 #endif

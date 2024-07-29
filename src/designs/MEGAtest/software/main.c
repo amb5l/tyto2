@@ -1,5 +1,7 @@
+#include <string.h>
+
 #include "bsp.h"
-#include "printf.h"
+#include "cb.h"
 
 #define Q(x) #x
 #define QUOTE(x) Q(x)
@@ -8,14 +10,25 @@
 
 int main() {
 
-    bsp_init();
+	int i;
+	uint8_t attr;
+	unsigned int u;
+	char s[256];
 
-    printf(QUOTE(APP_NAME) " application\r\n");
+	bsp_init();
+	cb_set_border(CB_LIGHT_BLUE);
+	cb_set_col(CB_YELLOW, CB_BLUE);
+	printf("MicroBlaze demo application for mb_cb design...\n");
 
-    while(1) {
-#ifdef BUILD_CONFIG_DBG
-        putchar(CTRL_C); // simulator sees this and stops running
-#endif
-    }
+	strcpy(s, "HELLO! ");
+	attr = 0x34;
+	u = (cb_width*(cb_height-1))/strlen(s);
+	for (i = 0; i < u; i++) {
+		cb_set_attr(attr++);
+		printf("%s", s);
+	}
+
+	while(1)
+		;
 
 }
