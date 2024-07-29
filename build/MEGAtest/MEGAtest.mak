@@ -16,6 +16,8 @@ FPGA_DEVICE=$(word 3,$(FPGA))
 
 VITIS_FLOW=classic
 VITIS_SRC=\
+	$(toplevel)/src/common/video/microblaze/cb.c \
+	$(toplevel)/src/common/video/microblaze/cb.h \
 	$(toplevel)/src/common/basic/microblaze/printf.c \
 	$(toplevel)/src/common/basic/microblaze/printf.h \
 	$(toplevel)/src/common/basic/microblaze/peekpoke.h \
@@ -24,6 +26,7 @@ VITIS_SRC=\
 	$(toplevel)/src/designs/$(DESIGN)/software/main.c
 VITIS_INC=\
 	$(toplevel)/src/common/basic/microblaze \
+	$(toplevel)/src/common/video/microblaze \
 	$(toplevel)/src/designs/$(DESIGN)/software
 VITIS_SYM=APP_NAME=$(DESIGN)$(addprefix _,$(BOARD_VARIANT))
 VITIS_SYM_RLS=BUILD_CONFIG_RLS

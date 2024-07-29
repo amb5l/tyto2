@@ -6,23 +6,11 @@
 #include "peekpoke.h"
 #include "printf.h"
 #include "bsp.h"
+#include "cb.h"
 
 XIOModule io;
 
-#define IO_BASE XPAR_CPU_IOMODULE_0_IO_BASEADDR
-
-int putchar(int c) {
-	while (!(gpi(1) & 1))
-		;
-	poke8(IO_BASE, (uint8_t)(c & 0xFF));
-	return 0;
-}
-
-void outchar(void *p, char c) {
-	while (!(gpi(1) & 1))
-		;
-	poke8(IO_BASE, (uint8_t)(c & 0xFF));
-}
+//#define IO_BASE XPAR_CPU_IOMODULE_0_IO_BASEADDR
 
 void bsp_interval(uint32_t t) {
     XIOModule_SetResetValue(&io, 0, t);
@@ -34,6 +22,13 @@ void bsp_interval(uint32_t t) {
 int bsp_init() {
     XIOModule_Initialize(&io, XPAR_IOMODULE_0_DEVICE_ID);
 	XIOModule_Timer_SetOptions(&io, 0, 0);
-    init_printf(NULL,outchar);
+    gpormw(1, 0xF, 3);                  // set video mode (1280x720p60)
+    gpormw(1, 0x3 << 8, 0 << 8);        // text params: no pixel repetition
+    gpormw(1, 0xFF << 16, 128 << 16);   // text params: width
+    gpormw(1, 0xFF << 24, 40 << 24);    // text params: height
+    gpormw(2, 0xFFFF <<  0, 128 <<  0); // text params: offset X
+    gpormw(2, 0xFFFF << 16, 104 << 16); // text params: offset Y
+    cb_init(128,40);
+    init_printf(NULL,cb_putc);
     return 0;
 }

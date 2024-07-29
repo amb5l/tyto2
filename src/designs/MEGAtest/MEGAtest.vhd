@@ -44,16 +44,15 @@ end entity MEGAtest;
 
 architecture rtl of MEGAtest is
 
-  signal s_rst          : std_ulogic;
-  signal s_clk          : std_ulogic;
-
-  signal txt_en         : std_ulogic;
-  signal txt_bwe        : std_ulogic_vector(3 downto 0);
-  signal txt_addr       : std_ulogic_vector(14 downto 2);
-  signal txt_dout       : std_ulogic_vector(31 downto 0);
-  signal txt_din        : std_ulogic_vector(31 downto 0);
-
-  signal txt_params     : txt_params_t;
+  signal s_rst      : std_ulogic;
+  signal s_clk      : std_ulogic;
+  signal vtg_mode   : std_ulogic_vector(3 downto 0);
+  signal txt_params : txt_params_t;
+  signal buf_en     : std_ulogic;
+  signal buf_bwe    : std_ulogic_vector(3 downto 0);
+  signal buf_addr   : std_ulogic_vector(14 downto 2);
+  signal buf_dout   : std_ulogic_vector(31 downto 0);
+  signal buf_din    : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -68,32 +67,26 @@ begin
 
   U_CPU: component cpu
     port map (
-      rst      => s_rst,
-      clk      => s_clk,
-      txt_en   => txt_en,
-      txt_bwe  => txt_bwe,
-      txt_addr => txt_addr,
-      txt_dout => txt_dout,
-      txt_din  => txt_din
+      rst        => s_rst,
+      clk        => s_clk,
+      vtg_mode   => vtg_mode,
+      txt_params => txt_params,
+      buf_en     => buf_en,
+      buf_bwe    => buf_bwe,
+      buf_addr   => buf_addr,
+      buf_dout   => buf_dout,
+      buf_din    => buf_din
     );
-
-  txt_params.cols <= std_ulogic_vector(to_unsigned(128,txt_params.cols'length));
-  txt_params.rows <= std_ulogic_vector(to_unsigned( 32,txt_params.rows'length));
-  txt_params.repx <= '0';
-  txt_params.repy <= '0';
-  txt_params.ox   <= std_ulogic_vector(to_unsigned(128,txt_params.ox'length));
-  txt_params.oy   <= std_ulogic_vector(to_unsigned(104,txt_params.oy'length));
-  txt_params.bcol <= x"9"; -- light blue
 
   U_DISPLAY: component display
     port map (
       cpu_clk     => s_clk,
-      cpu_en      => txt_en,
-      cpu_bwe     => txt_bwe,
-      cpu_addr    => txt_addr,
-      cpu_din     => txt_dout,
-      cpu_dout    => txt_din,
-      vtg_mode    => "0011", -- 1280x720p60
+      cpu_en      => buf_en,
+      cpu_bwe     => buf_bwe,
+      cpu_addr    => buf_addr,
+      cpu_din     => buf_dout,
+      cpu_dout    => buf_din,
+      vtg_mode    => vtg_mode,
       txt_params  => txt_params,
       ref_rst     => ref_rst,
       ref_clk     => ref_clk,

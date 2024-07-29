@@ -17,11 +17,11 @@
 #define gpobit(n,b,d) XIOModule_DiscreteWrite(&io,n,((io.GpoValue[n-1] & ~(1 << (b))) | ((d) << (b))))
 #define gpormw(n,m,d) XIOModule_DiscreteWrite(&io,n,((io.GpoValue[n-1] & ~(m)) | (d)))
 
-#define led(d) gpo(4,d)
+#include "xparameters.h"
+#define CB_BUF	XPAR_BRAM_S_AXI_BASEADDR
 
 extern XIOModule io;
 
-int putchar(int c);
 void bsp_interval(uint32_t t);
 int bsp_init();
 
