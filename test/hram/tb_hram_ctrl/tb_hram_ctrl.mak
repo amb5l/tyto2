@@ -43,6 +43,15 @@ VIVADO_LIB_SRC=\
 include $(make_fpga)/vivado.mak
 
 ################################################################################
+# XSim
+
+XSIM_LRM=$(VIVADO_VHDL_LRM)
+XSIM_SRC=$(VIVADO_SIM_SRC)
+XSIM_RUN=$(VIVADO_SIM_RUN)
+
+include $(toplevel)/submodules/make-fpga/xsim.mak
+
+################################################################################
 # GHDL
 
 GHDL_LRM=$(VIVADO_VHDL_LRM)
