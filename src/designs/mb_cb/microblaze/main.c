@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include "bsp.h"
 #include "cb.h"
 
 #define MODE 0 // 0 = 80x25 (NTSC), 1 = 80x32 (PAL)
@@ -28,7 +29,7 @@ int main()
 	unsigned int u;
 	char s[256];
 
-	cb_init(MODE);
+	bsp_init(MODE);
 	cb_set_border(CB_LIGHT_BLUE);
 	cb_set_col(CB_YELLOW, CB_BLUE);
 	printf("MicroBlaze demo application for mb_cb design...\n");

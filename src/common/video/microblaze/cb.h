@@ -18,10 +18,9 @@
 #ifndef _CB_H_
 #define _CB_H_
 
+#include "bsp.h"
+#include "peekpoke.h"
 #include "printf.h"
-
-#include "xparameters.h"
-#define CB_BUF	XPAR_BRAM_S_AXI_BASEADDR
 
 #define CB_BLACK			0x0
 #define CB_BLUE			    0x1
@@ -40,7 +39,21 @@
 #define CB_YELLOW			0xE
 #define CB_WHITE			0xF
 
-void cb_init(uint8_t mode);
+extern uint8_t cb_width;
+extern uint8_t cb_height;
+extern uint8_t cb_x;
+extern uint8_t cb_y;
+extern uint8_t cb_attr;
+
+#define POKE_CHAR(x,y,c) poke8(CB_BUF+((x+(y*cb_width))<<1),c)
+#define PEEK_CHAR(x,y) peek8(CB_BUF+((x+(y*cb_width))<<1))
+#define POKE_ATTR(x,y,a) poke8(CB_BUF+((x+(y*cb_width))<<1)+1,a)
+#define PEEK_ATTR(x,y) peek8(CB_BUF+((x+(y*cb_width))<<1)+1)
+#define POKE_COL_FG(x,y,col) POKE_ATTR(x,y,(PEEK_ATTR(x,y) & 0xF0)|(col & 0x0F))
+#define POKE_COL_BG(x,y,col) POKE_ATTR(x,y,(PEEK_ATTR(x,y) & 0x0F)|((col & 0x0F)<<4))
+#define POKE_CHAR_ATTR(x,y,c,a) poke16(CB_BUF+((x+(y*cb_width))<<1),(a << 8)|c)
+
+void cb_init(uint8_t w, uint8_t h);
 void cb_poke_char(uint8_t x, uint8_t y, uint8_t c);
 void cb_poke_attr(uint8_t x, uint8_t y, uint8_t a);
 void cb_poke_col_fg(uint8_t x, uint8_t y, uint8_t col);

@@ -16,6 +16,8 @@ FPGA_DEVICE=$(word 3,$(FPGA))
 
 VITIS_FLOW=classic
 VITIS_SRC=\
+	$(toplevel)/src/designs/$(DESIGN)/microblaze/bsp.h \
+	$(toplevel)/src/designs/$(DESIGN)/microblaze/bsp.c \
 	$(toplevel)/src/designs/$(DESIGN)/microblaze/main.c \
 	$(toplevel)/src/common/basic/microblaze/peekpoke.h \
 	$(toplevel)/src/common/basic/microblaze/axi_gpio_p.h \

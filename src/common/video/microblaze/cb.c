@@ -27,37 +27,21 @@
 #include "printf.h"
 #include "cb.h"
 
-static uint8_t cb_width = 0;
-static uint8_t cb_height = 0;
-static uint8_t cb_x = 0;
-static uint8_t cb_y = 0;
-static uint8_t cb_attr = 0x0F;
+uint8_t cb_width = 0;
+uint8_t cb_height = 0;
+uint8_t cb_x = 0;
+uint8_t cb_y = 0;
+uint8_t cb_attr = 0x0F;
 
-#define POKE_CHAR(x,y,c) poke8(CB_BUF+((x+(y*cb_width))<<1),c)
-#define PEEK_CHAR(x,y) peek8(CB_BUF+((x+(y*cb_width))<<1))
-#define POKE_ATTR(x,y,a) poke8(CB_BUF+((x+(y*cb_width))<<1)+1,a)
-#define PEEK_ATTR(x,y) peek8(CB_BUF+((x+(y*cb_width))<<1)+1)
-#define POKE_COL_FG(x,y,col) POKE_ATTR(x,y,(PEEK_ATTR(x,y) & 0xF0)|(col & 0x0F))
-#define POKE_COL_BG(x,y,col) POKE_ATTR(x,y,(PEEK_ATTR(x,y) & 0x0F)|((col & 0x0F)<<4))
-#define POKE_CHAR_ATTR(x,y,c,a) poke16(CB_BUF+((x+(y*cb_width))<<1),(a << 8)|c)
-
-void cb_init(uint8_t mode)
+void cb_init(uint8_t w, uint8_t h)
 {
-	uint32_t r;
-	uint8_t x, y;
-
-	r = axi_gpio_get_gpi(0);
-	r = (r & ~1) | (mode & 1);
-	axi_gpio_set_gpo(0, r);
-	cb_width = 80;
-	cb_height = mode ? 32 : 25;
-	cb_x = 0;
-	cb_y = 0;
-	cb_attr = 0x0F;
-	for (x = 0; x < cb_width; x++)
-		for (y = 0; y < cb_height; y++)
+    cb_width  = w;
+    cb_height = h;
+	for (uint8_t x = 0; x < cb_width; x++)
+		for (uint8_t y = 0; y < cb_height; y++) {
 			POKE_CHAR_ATTR(x,y,0,cb_attr);
-    init_printf(NULL,cb_putc);
+            POKE_CHAR(x,y,0);
+        }
 }
 
 void cb_poke_char(uint8_t x, uint8_t y, uint8_t c)
