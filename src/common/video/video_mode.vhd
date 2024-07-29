@@ -20,34 +20,34 @@ library ieee;
 
 package video_mode_pkg is
 
-  type     video_clk_sel_t is (
+  type video_clk_sel_t is (
     clk_sel_25m2,
     clk_sel_27m0,
     clk_sel_74m25,
     clk_sel_148m5
   );
 
-  type     aspect_t is (
+  type aspect_t is (
     aspect_null,
     aspect_4_3,
     aspect_16_9
   );
 
-  constant mode_640x480p60   : std_logic_vector(3 downto 0) := "0000";
-  constant mode_720x480p60   : std_logic_vector(3 downto 0) := "0001";
-  constant mode_720x480p60w  : std_logic_vector(3 downto 0) := "0010";
-  constant mode_1280x720p60  : std_logic_vector(3 downto 0) := "0011";
-  constant mode_1920x1080i60 : std_logic_vector(3 downto 0) := "0100";
-  constant mode_720x480i60   : std_logic_vector(3 downto 0) := "0101";
-  constant mode_720x480i60w  : std_logic_vector(3 downto 0) := "0110";
-  constant mode_1920x1080p60 : std_logic_vector(3 downto 0) := "0111";
-  constant mode_720x576p50   : std_logic_vector(3 downto 0) := "1000";
-  constant mode_720x576p50w  : std_logic_vector(3 downto 0) := "1001";
-  constant mode_1280x720p50  : std_logic_vector(3 downto 0) := "1010";
-  constant mode_1920x1080i50 : std_logic_vector(3 downto 0) := "1011";
-  constant mode_720x576i50   : std_logic_vector(3 downto 0) := "1100";
-  constant mode_720x576i50w  : std_logic_vector(3 downto 0) := "1101";
-  constant mode_1920x1080p50 : std_logic_vector(3 downto 0) := "1110";
+  constant MODE_640x480p60   : std_logic_vector(3 downto 0) := "0000";
+  constant MODE_720x480p60   : std_logic_vector(3 downto 0) := "0001";
+  constant MODE_720x480p60w  : std_logic_vector(3 downto 0) := "0010";
+  constant MODE_1280x720p60  : std_logic_vector(3 downto 0) := "0011";
+  constant MODE_1920x1080i60 : std_logic_vector(3 downto 0) := "0100";
+  constant MODE_720x480i60   : std_logic_vector(3 downto 0) := "0101";
+  constant MODE_720x480i60w  : std_logic_vector(3 downto 0) := "0110";
+  constant MODE_1920x1080p60 : std_logic_vector(3 downto 0) := "0111";
+  constant MODE_720x576p50   : std_logic_vector(3 downto 0) := "1000";
+  constant MODE_720x576p50w  : std_logic_vector(3 downto 0) := "1001";
+  constant MODE_1280x720p50  : std_logic_vector(3 downto 0) := "1010";
+  constant MODE_1920x1080i50 : std_logic_vector(3 downto 0) := "1011";
+  constant MODE_720x576i50   : std_logic_vector(3 downto 0) := "1100";
+  constant MODE_720x576i50w  : std_logic_vector(3 downto 0) := "1101";
+  constant MODE_1920x1080p50 : std_logic_vector(3 downto 0) := "1110";
 
   component video_mode is
     port (
@@ -112,7 +112,7 @@ end entity video_mode;
 
 architecture synth of video_mode is
 
-  type     video_timing_t is record
+  type video_timing_t is record
     name      : string(1 to 16);
     dmt       : boolean;
     id        : integer;
@@ -132,9 +132,9 @@ architecture synth of video_mode is
     hs_pol    : bit;
   end record video_timing_t;
 
-  type     video_timings_t is array (0 to 14) of video_timing_t;
+  type video_timings_t is array (0 to 14) of video_timing_t;
 
-  constant video_timings : video_timings_t :=
+  constant VIDEO_TIMINGS : video_timings_t :=
   (
     (
       name      => "640x480p60      ",
