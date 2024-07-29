@@ -5,6 +5,14 @@
 #include "cb.h"
 #include "printf.h"
 
+void bsp_cb_border(uint8_t c) {
+	uint32_t r;
+
+	r = axi_gpio_get_gpi(0);
+	r = (r & ~0xF0) | (c << 4);
+	axi_gpio_set_gpo(0, r);
+}
+
 void bsp_init(uint8_t mode)
 {
 	uint32_t r;
