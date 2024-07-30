@@ -39,8 +39,12 @@ set_input_delay -min [expr $tCKHP+$tDSSmin] -clock h_rwds [get_ports h_dq[*]] -c
 set_multicycle_path 2 -setup -end -from [get_cells {U_CTRL/h_rwds_t_reg* U_CTRL/h_dq_t_reg*}]
 set_multicycle_path 1  -hold -end -from [get_cells {U_CTRL/h_rwds_t_reg* U_CTRL/h_dq_t_reg*}]
 
-# clock domain crossing
-set_false_path -from h_rwds -to s_clk
-set_false_path -from h_rwds -to h_clk
+# multicycle to relax ce_rd timing
+set_multicycle_path 2 -setup -end -from [get_cells U_CTRL/ce_rd_reg] -to [get_cells U_CTRL/GEN_DQ_I[*].U_IDDR]
+set_multicycle_path 1  -hold -end -from [get_cells U_CTRL/ce_rd_reg] -to [get_cells U_CTRL/GEN_DQ_I[*].U_IDDR]
+
+# false path on h_rwds to itself
+set_false_path -from h_rwds -to [get_ports h_rwds]
+
 
 ################################################################################

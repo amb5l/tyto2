@@ -145,11 +145,11 @@ architecture rtl of hram_ctrl is
   constant SIZE_MAX : integer := 2**s_a_size'length;
 
   -- break parameter bundle out to discrete signals (better for linting)
-  constant tRP      : positive := PARAMS.tRP      ;
-  constant tRPH     : positive := PARAMS.tRPH     ;
-  constant tRWR     : positive := PARAMS.tRWR     ;
-  constant tLAT     : positive := PARAMS.tLAT     ;
-  constant tCSM     : positive := PARAMS.tCSM     ;
+  constant tRP      : positive := PARAMS.tRP  ;
+  constant tRPH     : positive := PARAMS.tRPH ;
+  constant tRWR     : positive := PARAMS.tRWR ;
+  constant tLAT     : positive := PARAMS.tLAT ;
+  constant tCSM     : positive := PARAMS.tCSM ; -- TODO use this
 
   type state_t is (
     RESET,  -- reset
@@ -160,7 +160,6 @@ architecture rtl of hram_ctrl is
     STALL,  -- stall for data
     WR,     -- write
     RD,     -- read
-    RDX,    -- extra read (to clock final read data)
     CSHR,   -- hold for final RWDS pulse
     CSH,    -- hold before negating chip select to meet tCSH
     RWR     -- read-write recovery
@@ -210,8 +209,8 @@ architecture rtl of hram_ctrl is
   signal h_rwds_i_d : std_logic;                      -- RWDS IDELAY output
   signal h_rwds_i_b : std_logic;                      -- RWDS BUFR output
   signal h_rwds_i_c : std_logic;                      -- RWDS BUFR output with delay for functional simulation
-  signal h_rwds_o_1 : std_logic;
-  signal h_rwds_o_2 : std_logic;
+  signal h_rwds_o_1 : std_logic;                      -- TODO sort this out
+  signal h_rwds_o_2 : std_logic;                      -- TODO sort this out
   signal h_rwds_o   : std_logic;
   signal h_rwds_t   : std_logic;
   signal h_dq_i_u   : std_ulogic_vector(7 downto 0);  -- DQ IBUF output
@@ -417,18 +416,14 @@ begin
 
         when RD =>
           if unsigned(burst.size) = 1 then -- end of burst
-            pause <= '0';
-            state <= RDX;
+            en_clk <= '0';
+            state    <= CSHR;
           elsif not s_r_ready then
-            pause <= '1';
-            state <= RDX;
+            en_clk <= '0';
+            state    <= CSHR;
           end if;
           burst.addr(s_a_addr'range) <= incr(burst.addr(s_a_addr'range));
           burst.size <= decr(burst.size);
-
-        when RDX =>
-          en_clk <= '0';
-          state    <= CSHR;
 
         when CSHR =>
           en_cs_next <= '0';
@@ -466,16 +461,19 @@ begin
       -- read tracking
       strobe_rd(1) <= '1' when state = RD else '0';
       strobe_rd(2 to strobe_rd'high) <= strobe_rd(1 to strobe_rd'high-1);
+      if (s_r_valid and s_r_ready) then
+        r_fifo_ra <= incr(r_fifo_ra);
+      end if;
       if strobe_rd(strobe_rd'high) and not (s_r_valid and s_r_ready) then
         s_r_valid <= '1';
         count_rd  <= (count_rd + 1) mod (2**s_a_size'length);
       elsif (s_r_valid and s_r_ready) and not strobe_rd(strobe_rd'high) then
         if count_rd = 1 then
           s_r_valid <= '0';
+          r_fifo_ra <= r_fifo_ra;
         end if;
         count_rd <= count_rd - 1;
       end if;
-      r_fifo_ra <= incr(r_fifo_ra) when s_r_valid and s_r_ready else r_fifo_ra;
 
     end if;
   end process;
@@ -588,7 +586,7 @@ begin
       DELAY_SRC             => "IDATAIN",
       IDELAY_TYPE           => "FIXED",
       PIPE_SEL              => "FALSE",
-      IDELAY_VALUE          => 1,
+      IDELAY_VALUE          => 9,
       SIGNAL_PATTERN        => "DATA",
       REFCLK_FREQUENCY      => 200.0,
       HIGH_PERFORMANCE_MODE => "TRUE",
@@ -688,7 +686,7 @@ begin
   begin
     if s_rst = '1' then
       r_fifo_wa <= (others => '0');
-    elsif falling_edge(h_rwds_i_c) and r_fifo_we = '1' then
+    elsif rising_edge(h_rwds_i_c) and r_fifo_we = '1' then
       r_fifo_wa <= incr(r_fifo_wa);
     end if;
   end process P_R_FIFO_WA;
@@ -700,7 +698,7 @@ begin
   GEN_RAM: for i in 0 to 2 generate
     RAM: component ram_sdp_32x6
       generic map (
-        CLK_EDGE =>"falling"
+        CLK_EDGE =>"rising"
       )
       port map (
         clk => h_rwds_i_c,
@@ -712,9 +710,9 @@ begin
       );
   end generate GEN_RAM;
 
-  s_r_data( 4 downto  0) <= r_fifo_rd(0)(4 downto 0);
-  s_r_data( 9 downto  5) <= r_fifo_rd(1)(4 downto 0);
-  s_r_data(15 downto 10) <= r_fifo_rd(2)(5 downto 0);
+  s_r_data( 4 downto  0) <= r_fifo_rd(0)(4 downto 0) when strobe_rd(2) = '1' else r_fifo_wd(0)(4 downto 0);
+  s_r_data( 9 downto  5) <= r_fifo_rd(1)(4 downto 0) when strobe_rd(2) = '1' else r_fifo_wd(1)(4 downto 0);
+  s_r_data(15 downto 10) <= r_fifo_rd(2)(5 downto 0) when strobe_rd(2) = '1' else r_fifo_wd(2)(5 downto 0);
 
   --------------------------------------------------------------------------------
 
