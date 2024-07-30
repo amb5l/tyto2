@@ -67,6 +67,10 @@ VIVADO_PROC_REF=mb_mcs
 VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
 VIVADO_SIM_SRC=\
+	$(toplevel)/src/common/tyto_sim_pkg.vhd \
+	$(toplevel)/src/common/video/test/model_tmds_cdr_des.vhd \
+	$(toplevel)/src/common/video/test/model_dvi_decoder.vhd \
+	$(toplevel)/src/common/video/test/model_vga_sink.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/tb_$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_ELF=$(VITIS_DIR)/$(VITIS_ELF_DBG)
 VIVADO_SIM_RUN=tb_$(VIVADO_DSN_TOP)

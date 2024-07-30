@@ -35,11 +35,13 @@ void cb_init(uint8_t w, uint8_t h)
 {
     cb_width  = w;
     cb_height = h;
+#ifdef BUILD_CFG_DBG
 	for (uint8_t x = 0; x < cb_width; x++)
 		for (uint8_t y = 0; y < cb_height; y++) {
 			POKE_CHAR_ATTR(x,y,0,cb_attr);
             POKE_CHAR(x,y,0);
         }
+#endif
 }
 
 void cb_poke_char(uint8_t x, uint8_t y, uint8_t c)
