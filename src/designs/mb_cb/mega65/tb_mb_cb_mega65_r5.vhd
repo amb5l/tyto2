@@ -462,7 +462,7 @@ begin
       vga_b    => vga_b,
       cap_rst  => '0',
       cap_stb  => cap_stb,
-      cap_name => "tb_mb_cb_digilent_nexys_video"
+      cap_name => "tb_mb_cb_mega65_r5"
     );
 
 end architecture sim;
