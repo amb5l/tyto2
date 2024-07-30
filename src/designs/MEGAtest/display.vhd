@@ -34,9 +34,10 @@ end package display_pkg;
 --------------------------------------------------------------------------------
 
 use work.tyto_types_pkg.all;
-use work.ram_tdp_ar_8kx32_16kx16_pkg.all;
+use work.tyto_utils_pkg.all;
+use work.ram_tdp_ar_8kx32_pkg.all;
 use work.video_mode_v2_pkg.all;
-use work.video_out_clock_pkg.all;
+use work.video_out_clock_v2_pkg.all;
 use work.video_out_timing_v2_pkg.all;
 use work.char_rom_437_8x16_pkg.all;
 use work.vga_text_pkg.all;
@@ -74,6 +75,8 @@ architecture rtl of display is
 
   signal buf_en      : std_ulogic;
   signal buf_addr    : std_ulogic_vector(14 downto 1);
+  signal buf_rsel    : std_ulogic;
+  signal buf_d32     : std_ulogic_vector(31 downto 0);
   signal buf_data    : std_ulogic_vector(15 downto 0);
   signal vga_rst     : std_ulogic;
   signal vga_clk     : std_ulogic;
@@ -88,7 +91,7 @@ architecture rtl of display is
 begin
 
   -- RAM
-  U_RAM: component ram_tdp_ar_8kx32_16kx16
+  U_RAM: component ram_tdp_ar_8kx32
     port map (
       clk_a  => cpu_clk,
       clr_a  => '0',
@@ -101,10 +104,13 @@ begin
       clr_b  => '0',
       en_b   => buf_en,
       we_b   => (others => '0'),
-      addr_b => buf_addr,
+      addr_b => buf_addr(14 downto 2),
       din_b  => (others => '0'),
-      dout_b => buf_data
+      dout_b => buf_d32
     );
+
+  fd(cpu_clk,buf_addr(1),buf_rsel);
+  buf_data <= buf_d32(31 downto 16) when buf_rsel = '1' else buf_d32(15 downto 0);
 
   U_MODE: video_mode_v2
     port map (
@@ -112,10 +118,7 @@ begin
       params => vtg_params
     );
 
-  U_MMCM: component video_out_clock
-    generic map (
-      fref => 100.0
-    )
+  U_MMCM: component video_out_clock_v2
     port map (
       rsti    => ref_rst,
       clki    => ref_clk,

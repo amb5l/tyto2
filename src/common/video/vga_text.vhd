@@ -260,14 +260,14 @@ begin
           end if;
         end if;
       end if;
-      if s1_hs = '1' and vtg.hs = '0' and vtg.ay = params.oy then --  at beginning of line
+      if vtg.hs = '0' and s1_hs = '1' and vtg.ay = params.oy then --  at beginning of line
         s1_cvy   <= '1';
         s1_repy  <= not params.repy;
         s1_cpy   <= 0;
         s1_ccy   <= 0;
         s1_cca   <= (others => '0');
         s1_cra   <= (others => '0');
-      elsif vtg.hs and not s1_hs and s1_cvy then -- at end of line
+      elsif vtg.hs = '1' and s1_hs = '0' and s1_cvy = '1' then -- at end of line
         s1_repy <= s1_repy xor params.repy;
         if s1_repy then
           if s1_cpy = 15 then
@@ -276,7 +276,7 @@ begin
               s1_cvy <= '0';
             end if;
             s1_ccy <= s1_ccy + 1;
-            s1_cra <= incr(s1_cra);
+            s1_cra <= s1_cca;
           else
             s1_cpy <= s1_cpy + 1;
           end if;

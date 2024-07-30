@@ -45,13 +45,13 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/tyto_types_pkg.vhd \
 	$(toplevel)/src/common/tyto_utils_pkg.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm_v2.vhd \
+	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm_drp.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/clk_rst.vhd \
 	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/cpu.vhd \
-	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/ram_tdp_ar_8kx32_16kx16.vhd \
+	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/ram_tdp_ar_8kx32.vhd \
 	$(toplevel)/src/common/video/video_mode_v2.vhd \
-	$(toplevel)/src/common/basic/sync_reg.vhd \
-	$(toplevel)/src/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/video_out_clock.vhd \
+	$(toplevel)/src/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/video_out_clock_v2.vhd \
 	$(toplevel)/src/common/basic/sync_reg_u.vhd \
 	$(toplevel)/src/common/video/video_out_timing_v2.vhd \
 	$(toplevel)/src/common/video/char_rom_437_8x16.vhd \
@@ -71,14 +71,19 @@ VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/video/test/model_tmds_cdr_des.vhd \
 	$(toplevel)/src/common/video/test/model_dvi_decoder.vhd \
 	$(toplevel)/src/common/video/test/model_vga_sink.vhd \
-	$(toplevel)/src/designs/$(DESIGN)/tb_$(VIVADO_DSN_TOP).vhd
+	$(toplevel)/src/designs/$(DESIGN)/test/tb_$(VIVADO_DSN_TOP).vhd \
+	$(toplevel)/src/designs/$(DESIGN)/test/cfg_tb_$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_ELF=$(VITIS_DIR)/$(VITIS_ELF_DBG)
-VIVADO_SIM_RUN=tb_$(VIVADO_DSN_TOP)
+VIVADO_SIM_RUN=\
+	std=tb_$(VIVADO_DSN_TOP) \
+	fast=cfg_tb_$(VIVADO_DSN_TOP)_fast
 VIVADO_XDC=\
-	$(toplevel)/src/boards/$(BOARD)/$(BOARD)$(addprefix _,$(BOARD_VARIANT)).tcl=IMPL
+	$(toplevel)/src/boards/$(BOARD)/$(BOARD)$(addprefix _,$(BOARD_VARIANT)).tcl=IMPL \
+	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN).tcl=IMPL
 VIVADO_LIB_SRC=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/BUFG.vhd=unisim
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd=unisim
 
 include $(make_fpga)/vivado.mak

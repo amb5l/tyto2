@@ -10,8 +10,6 @@
 
 XIOModule io;
 
-//#define IO_BASE XPAR_CPU_IOMODULE_0_IO_BASEADDR
-
 void bsp_interval(uint32_t t) {
     XIOModule_SetResetValue(&io, 0, t);
 	XIOModule_Timer_Start(&io, 0);
@@ -28,11 +26,11 @@ int bsp_init() {
 	XIOModule_Timer_SetOptions(&io, 0, 0);
     gpormw(1, 0xF, 3);                  // set video mode (1280x720p60)
     gpormw(1, 0x3 << 8, 0 << 8);        // text params: no pixel repetition
-    gpormw(1, 0xFF << 16, 128 << 16);   // text params: width
+    gpormw(1, 0xFF << 16, 132 << 16);   // text params: width
     gpormw(1, 0xFF << 24, 40 << 24);    // text params: height
-    gpormw(2, 0xFFFF <<  0, 128 <<  0); // text params: offset X
-    gpormw(2, 0xFFFF << 16, 104 << 16); // text params: offset Y
-    cb_init(128,40);
+    gpormw(2, 0xFFFF <<  0, 112 <<  0); // text params: offset X
+    gpormw(2, 0xFFFF << 16,  40 << 16); // text params: offset Y
+    cb_init(132,40);
     init_printf(NULL,cb_putc);
     return 0;
 }

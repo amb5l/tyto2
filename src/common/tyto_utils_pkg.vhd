@@ -28,6 +28,12 @@ package tyto_utils_pkg is
   function incr(x : std_ulogic_vector) return std_ulogic_vector;
   function decr(x : std_ulogic_vector) return std_ulogic_vector;
 
+  procedure fd(
+    signal c : in std_ulogic;
+    signal d : in std_ulogic;
+    signal q : out std_ulogic
+  );
+
 end package tyto_utils_pkg;
 
 package body tyto_utils_pkg is
@@ -73,5 +79,15 @@ package body tyto_utils_pkg is
   begin
     return std_ulogic_vector(unsigned(x)-1);
   end function decr;
+
+  procedure fd(
+    signal c : in std_ulogic;
+    signal d : in std_ulogic;
+    signal q : out std_ulogic
+  ) is
+  begin
+    wait until rising_edge(c);
+    q <= d;
+  end procedure fd;
 
 end package body tyto_utils_pkg;

@@ -18,7 +18,7 @@ int main() {
 	bsp_init();
 	cb_set_border(CB_LIGHT_BLUE);
 	cb_set_col(CB_YELLOW, CB_BLUE);
-	printf("MicroBlaze demo application for mb_cb design...\n");
+	printf("MEGAtest application...\n");
 
 	strcpy(s, "HELLO! ");
 	attr = 0x34;
