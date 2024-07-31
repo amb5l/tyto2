@@ -27,7 +27,7 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/tyto_utils_pkg.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm_v2.vhd \
 	$(toplevel)/src/common/basic/xilinx/7series/ram_sdp_32x6.vhd \
-	$(toplevel)/src/common/hram/$(FPGA_VENDOR)/$(DUT).vhd \
+	$(toplevel)/src/common/hram/$(FPGA_VENDOR)/$(FPGA_FAMILY)/$(DUT).vhd \
 	$(toplevel)/src/common/hram/test/$(TOP).vhd
 VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/tyto_types_pkg.vhd \

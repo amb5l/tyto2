@@ -22,7 +22,7 @@ VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/tyto_sim_pkg.vhd \
 	$(toplevel)/src/common/hram/test/model_hram.vhd \
 	$(toplevel)/src/common/basic/xilinx/7series/ram_sdp_32x6.vhd \
-	$(toplevel)/src/common/hram/$(FPGA_FAMILY)/$(DUT).vhd \
+	$(toplevel)/src/common/hram/$(FPGA_VENDOR)/$(FPGA_FAMILY)/$(DUT).vhd \
 	$(toplevel)/src/common/hram/test/$(TB).vhd
 VIVADO_SIM_RUN=\
 	min=$(TB);OUTPUT_DELAY="MIN" \
