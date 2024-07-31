@@ -44,21 +44,21 @@ VIVADO_DSN_TOP=$(DESIGN)$(addprefix _,$(BOARD_VARIANT))
 VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/tyto_types_pkg.vhd \
 	$(toplevel)/src/common/tyto_utils_pkg.vhd \
+	$(toplevel)/src/common/basic/sync_reg_u.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm_v2.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm_drp.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/clk_rst.vhd \
-	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
-	$(toplevel)/src/designs/$(DESIGN)/cpu.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/ram_tdp_ar_8kx32.vhd \
 	$(toplevel)/src/common/video/video_mode_v2.vhd \
 	$(toplevel)/src/common/video/$(FPGA_VENDOR)/$(FPGA_FAMILY)/video_out_clock_v2.vhd \
-	$(toplevel)/src/common/basic/sync_reg_u.vhd \
 	$(toplevel)/src/common/video/video_out_timing_v2.vhd \
 	$(toplevel)/src/common/video/char_rom_437_8x16.vhd \
 	$(toplevel)/src/common/video/vga_text.vhd \
 	$(toplevel)/src/common/video/dvi_tx_encoder.vhd \
  	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/serialiser_10to1_selectio.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/display.vhd \
+	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
+	$(toplevel)/src/designs/$(DESIGN)/cpu.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN).vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(VIVADO_DSN_TOP).vhd
 VIVADO_BD_TCL=\
