@@ -19,6 +19,8 @@ FPGA_DEVICE=$(word 3,$(FPGA))
 ################################################################################
 # Vivado
 
+VIVADO_PATH=$(abspath $(value XILINX_VIVADO))
+
 VIVADO_PART=$(FPGA_DEVICE)
 VIVADO_LANGUAGE=VHDL
 VIVADO_VHDL_LRM=2008
@@ -30,6 +32,7 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/hram/$(FPGA_VENDOR)/$(FPGA_FAMILY)/$(DUT).vhd \
 	$(toplevel)/src/common/hram/test/$(TOP).vhd
 VIVADO_SIM_SRC=\
+	$(VIVADO_PATH)/data/verilog/src/glbl.v \
 	$(toplevel)/src/common/tyto_types_pkg.vhd \
 	$(toplevel)/src/common/tyto_sim_pkg.vhd \
 	$(toplevel)/src/common/hram/test/model_hram.vhd \

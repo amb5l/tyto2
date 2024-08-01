@@ -48,3 +48,14 @@ set_false_path -from h_rwds -to [get_ports h_rwds]
 
 
 ################################################################################
+
+set_property -dict "PACKAGE_PIN F20 IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12" [get_ports h_clk]
+set_property -dict "PACKAGE_PIN F19 IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12" [get_ports h_rwds]
+set_property -dict "PACKAGE_PIN F22 IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12" [get_ports h_dq[0]]
+set_property -dict "PACKAGE_PIN F21 IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12" [get_ports h_dq[1]]
+set_property -dict "PACKAGE_PIN D22 IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12" [get_ports h_dq[2]]
+set_property -dict "PACKAGE_PIN E22 IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12" [get_ports h_dq[3]]
+set_property -dict "PACKAGE_PIN C22 IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12" [get_ports h_dq[4]]
+set_property -dict "PACKAGE_PIN D21 IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12" [get_ports h_dq[5]]
+set_property -dict "PACKAGE_PIN C20 IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12" [get_ports h_dq[6]]
+set_property -dict "PACKAGE_PIN D20 IOSTANDARD LVCMOS33 SLEW FAST DRIVE 12" [get_ports h_dq[7]]
