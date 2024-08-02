@@ -95,8 +95,8 @@ begin
 
   U_SYNC_W_RST: component sync_reg_u
     generic map (
-      stages    => 3,
-      rst_state => '1'
+      STAGES    => 3,
+      RST_STATE => '1'
     )
     port map (
       rst  => a_rst,
@@ -107,8 +107,8 @@ begin
 
   U_SYNC_W_FF: component sync_reg_u
     generic map (
-      stages    => 3,
-      rst_state => '0'
+      STAGES    => 3,
+      RST_STATE => '0'
     )
     port map (
       rst => '0',
@@ -137,8 +137,8 @@ begin
 
   U_SYNC_R_RST: component sync_reg_u
     generic map (
-      stages    => 3,
-      rst_state => '1'
+      STAGES    => 3,
+      RST_STATE => '1'
     )
     port map (
       rst  => a_rst,
@@ -149,8 +149,8 @@ begin
 
   U_SYNC_R_EF: component sync_reg_u
     generic map (
-      stages    => 3,
-      rst_state => '1'
+      STAGES    => 3,
+      RST_STATE => '1'
     )
     port map (
       rst  => a_rst,
@@ -161,8 +161,8 @@ begin
 
   U_SYNC_R_D: component sync_reg_u
     generic map (
-      stages    => 1,
-      rst_state => '0'
+      STAGES    => 1,
+      RST_STATE => '0'
     )
     port map (
       rst  => a_rst,

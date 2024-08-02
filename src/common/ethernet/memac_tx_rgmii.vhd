@@ -98,8 +98,8 @@ begin
 
   U_SYNC: component sync_reg_u
     generic map (
-      stages    => 2,
-      rst_state => '0'
+      STAGES    => 2,
+      RST_STATE => '0'
     )
     port map (
       rst  => umi_rst,

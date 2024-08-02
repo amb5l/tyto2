@@ -22,8 +22,8 @@ package sync_reg_u_pkg is
 
   component sync_reg_u is
     generic (
-      stages    : positive;
-      rst_state : std_ulogic := '0'
+      STAGES    : positive;
+      RST_STATE : std_ulogic := '0'
     );
     port (
       rst : in  std_ulogic := '0';
@@ -42,8 +42,8 @@ library ieee;
 
 entity sync_reg_u is
   generic (
-    stages    : positive;
-    rst_state : std_ulogic := '0'
+    STAGES    : positive;
+    RST_STATE : std_ulogic := '0'
   );
   port (
     rst : in  std_ulogic := '0';
@@ -55,7 +55,7 @@ end entity sync_reg_u;
 
 architecture rtl of sync_reg_u is
 
-  type reg_t is array (1 to stages) of std_ulogic_vector(i'range);
+  type reg_t is array (1 to STAGES) of std_ulogic_vector(i'range);
   signal reg : reg_t;
 
   attribute ASYNC_REG : string;
@@ -66,9 +66,9 @@ begin
   process(rst,clk)
   begin
     if rst = '1' then
-      reg <= (others => (others => rst_state));
+      reg <= (others => (others => RST_STATE));
     elsif rising_edge(clk) then
-      for x in 1 to stages loop
+      for x in 1 to STAGES loop
         if x = 1 then
           reg(x) <= i;
         else
@@ -78,6 +78,6 @@ begin
     end if;
   end process;
 
-  o <= reg(stages);
+  o <= reg(STAGES);
 
 end architecture rtl;

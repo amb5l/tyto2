@@ -235,8 +235,8 @@ begin
 
   U_SYNC_RST_100M: component sync_reg_u
     generic map (
-      stages    => 3,
-      rst_state => '1'
+      STAGES    => 3,
+      RST_STATE => '1'
     )
     port map (
       rst  => '0',
