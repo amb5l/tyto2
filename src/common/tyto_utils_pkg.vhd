@@ -32,6 +32,7 @@ package tyto_utils_pkg is
   function ternary (c : boolean; a, b : std_logic_vector) return std_logic_vector;
   function bool2sl( b : boolean ) return std_ulogic;
   function log2 (x : integer) return integer;
+  function mirror(x : std_ulogic_vector) return std_ulogic_vector;
   function incr(x : std_ulogic_vector) return std_ulogic_vector;
   function decr(x : std_ulogic_vector) return std_ulogic_vector;
 
@@ -106,6 +107,15 @@ package body tyto_utils_pkg is
     end loop;
     return i;
   end function log2;
+
+  function mirror(x : std_ulogic_vector) return std_ulogic_vector is
+    variable y : std_ulogic_vector(x'range);
+  begin
+    for i in x'range loop
+      y(i) := x(x'high-i);
+    end loop;
+    return y;
+  end function mirror;
 
   function incr(x : std_ulogic_vector) return std_ulogic_vector is
   begin
