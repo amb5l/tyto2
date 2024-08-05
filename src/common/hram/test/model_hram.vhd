@@ -249,7 +249,7 @@ end package model_hram_pkg;
 
 --------------------------------------------------------------------------------
 
-use work.tyto_sim_pkg.all;
+use work.tyto_utils_pkg.all;
 use work.model_hram_pkg.all;
 
 library ieee;
