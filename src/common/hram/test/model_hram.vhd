@@ -739,6 +739,7 @@ begin
     variable tCKDS    : time;
     variable tCKD     : time;
     variable tDSS     : time;
+    variable wm       : std_ulogic_vector(1 downto 0);
     variable wdata    : word_t;
     variable rdata    : word_t;
 
@@ -854,6 +855,7 @@ begin
             end if;
 
           when WR =>
+            wm(1) := rwds_i;
             wdata := (15 downto 8 => dq_i, others => 'X');
 
           when RD =>
@@ -939,6 +941,7 @@ begin
             end if;
 
           when WR =>
+            wm(0) := rwds_i;
             wdata(7 downto 0) := dq_i;
             if ca(46) = '1' then
               case ca is
@@ -947,7 +950,12 @@ begin
                 when others               => null;
               end case;
             else
-              mem(to_integer(unsigned(ca(44 downto 16)) & unsigned(ca(2 downto 0)))) := wdata;
+              if wm(0) = '0' then
+                mem(to_integer(unsigned(ca(44 downto 16)) & unsigned(ca(2 downto 0))))(7 downto 0) := wdata(7 downto 0);
+              end if;
+              if wm(1) = '0' then
+                mem(to_integer(unsigned(ca(44 downto 16)) & unsigned(ca(2 downto 0))))(15 downto 8) := wdata(15 downto 8);
+              end if;
             end if;
             (ca(44 downto 16),ca(2 downto 0)) <= incr((ca(44 downto 16),ca(2 downto 0)));
             count <= count + 1;
