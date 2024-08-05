@@ -2,7 +2,7 @@
 # tb_hram_ctrl.mak
 #################################################################################
 
-default: bit
+default: sim_gui
 
 toplevel=$(shell git rev-parse --show-toplevel)
 make_fpga=$(toplevel)/submodules/make-fpga

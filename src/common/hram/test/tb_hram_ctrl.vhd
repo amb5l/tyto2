@@ -44,14 +44,16 @@ architecture sim of tb_hram_ctrl is
   signal s_a_r_w   : std_ulogic;
   signal s_a_reg   : std_ulogic;
   signal s_a_wrap  : std_ulogic;
-  signal s_a_size  : std_ulogic_vector(5 downto 0);  -- max 64 word burst
+  signal s_a_len   : std_ulogic_vector(5 downto 0);  -- max 64 word burst
   signal s_a_addr  : std_ulogic_vector(31 downto 0);
   signal s_w_ready : std_ulogic;
   signal s_w_valid : std_ulogic;
+  signal s_w_last  : std_ulogic;
   signal s_w_be    : std_ulogic_vector(1 downto 0);
   signal s_w_data  : std_ulogic_vector(15 downto 0);
   signal s_r_ready : std_ulogic;
   signal s_r_valid : std_ulogic;
+  signal s_r_last  : std_ulogic;
   signal s_r_data  : std_ulogic_vector(15 downto 0);
 
   signal h_rst_n   : std_logic;
@@ -94,7 +96,7 @@ begin
     constant B_LIN : std_ulogic := '0';
 
     variable addr   : integer;
-    variable size   : integer;
+    variable len    : integer;
     variable w_data : data_vector(0 to 63) := (others => (others => 'X'));
     variable r_data : data_vector(0 to 63) := (others => (others => 'X'));
     variable prng   : prng_t;
@@ -103,7 +105,7 @@ begin
       r_w  : in    std_ulogic;
       reg  : in    std_ulogic;
       wrap : in    std_ulogic;
-      size : in    integer;
+      len  : in    integer;
       addr : in    integer;
       data : inout data_vector
     ) is
@@ -112,7 +114,7 @@ begin
       s_a_r_w   <= r_w;
       s_a_reg   <= reg;
       s_a_wrap  <= wrap;
-      s_a_size  <= std_ulogic_vector(to_unsigned(size,s_a_size'length));
+      s_a_len  <= std_ulogic_vector(to_unsigned(len,s_a_len'length));
       s_a_addr  <= std_ulogic_vector(to_unsigned(addr,s_a_addr'length));
       loop
         wait until rising_edge(s_clk);
@@ -122,11 +124,11 @@ begin
       s_a_r_w   <= 'X';
       s_a_reg   <= 'X';
       s_a_wrap  <= 'X';
-      s_a_size  <= (others => 'X');
+      s_a_len  <= (others => 'X');
       s_a_addr  <= (others => 'X');
       s_w_valid <= not r_w;
       s_r_ready <= r_w;
-      for i in 0 to size-1 loop
+      for i in 0 to len-1 loop
         if r_w = '0' then
           s_w_be   <= "11";
           s_w_data <= data(i);
@@ -156,7 +158,7 @@ begin
     s_a_r_w   <= 'X';
     s_a_reg   <= 'X';
     s_a_wrap  <= 'X';
-    s_a_size  <= (others => 'X');
+    s_a_len  <= (others => 'X');
     s_a_addr  <= (others => 'X');
     s_w_valid <= '0';
     s_w_be    <= (others => 'X');
@@ -193,12 +195,12 @@ begin
     prng.rand_seed(123,456);
     addr := 0;
     loop
-      size := prng.rand_int(1,64);
-      for i in 0 to size-1 loop
+      len := prng.rand_int(1,64);
+      for i in 0 to len-1 loop
         w_data(i) := prng.rand_slv(0,65535,16);
       end loop;
-      burst(B_WR,B_MEM,B_LIN,size,addr,w_data);
-      addr := addr + (2*size);
+      burst(B_WR,B_MEM,B_LIN,len,addr,w_data);
+      addr := addr + (2*len);
       if addr >= TEST_SIZE then exit; end if;
     end loop;
 
@@ -206,14 +208,14 @@ begin
     prng.rand_seed(123,456);
     addr := 0;
     loop
-      size := prng.rand_int(1,64);
-      for i in 0 to size-1 loop
+      len := prng.rand_int(1,64);
+      for i in 0 to len-1 loop
         w_data(i) := prng.rand_slv(0,65535,16);
       end loop;
-      burst(B_RD,B_MEM,B_LIN,size,addr,r_data);
-      assert r_data(0 to size-1) = w_data(0 to size-1)
+      burst(B_RD,B_MEM,B_LIN,len,addr,r_data);
+      assert r_data(0 to len-1) = w_data(0 to len-1)
         report "data mismatch at address " & integer'image(addr) severity failure;
-      addr := addr + (2*size);
+      addr := addr + (2*len);
       if addr >= TEST_SIZE then exit; end if;
     end loop;
 
@@ -238,9 +240,7 @@ begin
 
   CTRL: component hram_ctrl
     generic map (
-      A_MSB    => 22,
-      B_MSB    => s_a_size'high,
-      PARAMS   => HRAM_CTRL_PARAMS_133_100
+      PARAMS   => HRAM_CTRL_PARAMS_100_100
     )
     port map (
       s_rst     => s_rst,
@@ -251,14 +251,16 @@ begin
       s_a_r_w   => s_a_r_w,
       s_a_reg   => s_a_reg,
       s_a_wrap  => s_a_wrap,
-      s_a_size  => s_a_size,
+      s_a_len   => s_a_len,
       s_a_addr  => s_a_addr(22 downto 1),
       s_w_ready => s_w_ready,
       s_w_valid => s_w_valid,
+      s_w_last  => s_w_last,
       s_w_be    => s_w_be,
       s_w_data  => s_w_data,
       s_r_ready => s_r_ready,
       s_r_valid => s_r_valid,
+      s_r_last  => s_r_last,
       s_r_data  => s_r_data,
       h_rst_n   => h_rst_n,
       h_cs_n    => h_cs_n,

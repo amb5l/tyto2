@@ -28,22 +28,18 @@ package hram_ctrl_pkg is
     tRPH     : positive;  -- reset assertion to chip select assertion
     tRWR     : positive;  -- read-write recovery
     tLAT     : positive;  -- latency
-    tCSM     : positive;  -- chip select, max
   end record hram_ctrl_params_t;
 
-  -- parameters for: 133MHz HyperRAM, 100MHz clock
-  constant HRAM_CTRL_PARAMS_133_100 : hram_ctrl_params_t := (
+  -- parameters for: 100MHz HyperRAM, 100MHz clock
+  constant HRAM_CTRL_PARAMS_100_100 : hram_ctrl_params_t := (
     tRP      => 20,    -- 200 ns
     tRPH     => 40,    -- 400 ns
-    tRWR     => 4,     -- 40 ns
-    tLAT     => 4,     -- 40 ns
-    tCSM     => 400    -- 4 us
+    tRWR     => 4,     -- 40 ns (marginal)
+    tLAT     => 4      -- 40 ns (marginal)
   );
 
   component hram_ctrl is
     generic (
-      A_MSB    : integer range 19 to 29;
-      B_MSB    : integer range 0 to 19;
       PARAMS   : hram_ctrl_params_t
     );
     port (
@@ -55,14 +51,16 @@ package hram_ctrl_pkg is
       s_a_r_w   : in    std_ulogic;
       s_a_reg   : in    std_ulogic;
       s_a_wrap  : in    std_ulogic;
-      s_a_size  : in    std_ulogic_vector(B_MSB downto 0);
-      s_a_addr  : in    std_ulogic_vector(A_MSB downto 1);
+      s_a_len   : in    std_ulogic_vector;
+      s_a_addr  : in    std_ulogic_vector;
       s_w_ready : out   std_ulogic;
       s_w_valid : in    std_ulogic;
+      s_w_last  : out   std_ulogic;
       s_w_be    : in    std_ulogic_vector(1 downto 0);
       s_w_data  : in    std_ulogic_vector(15 downto 0);
       s_r_ready : in    std_ulogic;
       s_r_valid : out   std_ulogic;
+      s_r_last  : out   std_ulogic;
       s_r_data  : out   std_ulogic_vector(15 downto 0);
       h_rst_n   : out   std_logic;
       h_cs_n    : out   std_logic;
@@ -89,8 +87,6 @@ library unisim;
 
 entity hram_ctrl is
   generic (
-    A_MSB    : integer range 19 to 27; -- 8..2048Mbits (1..256MBytes)
-    B_MSB    : integer range 0 to 19;  -- 1..1024 words
     PARAMS   : hram_ctrl_params_t
   );
   port (
@@ -99,38 +95,40 @@ entity hram_ctrl is
     -- system interface
 
     -- reset and clock
-    s_rst     : in    std_ulogic;                        -- reset (asynchronous)
-    s_clk     : in    std_ulogic;                        -- clock
-    s_clk_dly : in    std_ulogic;                        -- delayed clock (=> h_clk) (nominally 270 degrees)
+    s_rst     : in    std_ulogic;                     -- reset (asynchronous)
+    s_clk     : in    std_ulogic;                     -- clock
+    s_clk_dly : in    std_ulogic;                     -- delayed clock (=> h_clk) (nominally 270 degrees)
 
     -- A (address) channel
     s_a_ready : out   std_ulogic;
-    s_a_valid : in    std_ulogic;                        -- strobe
-    s_a_r_w   : in    std_ulogic;                        -- 1 = read, 0 = write
-    s_a_reg   : in    std_ulogic;                        -- space: 0 = memory, 1 = register
-    s_a_wrap  : in    std_ulogic;                        -- burst: 0 = linear, 1 = wrapped/hybrid
-    s_a_size  : in    std_ulogic_vector(B_MSB downto 0); -- burst size
-    s_a_addr  : in    std_ulogic_vector(A_MSB downto 1); -- address
+    s_a_valid : in    std_ulogic;                     -- strobe
+    s_a_r_w   : in    std_ulogic;                     -- 1 = read, 0 = write
+    s_a_reg   : in    std_ulogic;                     -- space: 0 = memory, 1 = register
+    s_a_wrap  : in    std_ulogic;                     -- burst: 0 = linear, 1 = wrapped/hybrid
+    s_a_len   : in    std_ulogic_vector;              -- burst length in 16 bit words (MSB downto 0)
+    s_a_addr  : in    std_ulogic_vector;              -- address (MSB downto 1)
 
     -- W (write data) channel
-    s_w_ready : out   std_ulogic;                        -- ready
-    s_w_valid : in    std_ulogic;                        -- valid
-    s_w_be    : in    std_ulogic_vector(1 downto 0);     -- byte enable
-    s_w_data  : in    std_ulogic_vector(15 downto 0);    -- data
+    s_w_ready : out   std_ulogic;                     -- ready
+    s_w_valid : in    std_ulogic;                     -- valid
+    s_w_last  : out   std_ulogic;                     -- last word of burst
+    s_w_be    : in    std_ulogic_vector(1 downto 0);  -- byte enable
+    s_w_data  : in    std_ulogic_vector(15 downto 0); -- data
 
     -- R (read data) channel
-    s_r_ready : in    std_ulogic;                        -- ready
-    s_r_valid : out   std_ulogic;                        -- valid
-    s_r_data  : out   std_ulogic_vector(15 downto 0);    -- data
+    s_r_ready : in    std_ulogic;                     -- ready
+    s_r_valid : out   std_ulogic;                     -- valid
+    s_r_last  : out   std_ulogic;                     -- last word of burst
+    s_r_data  : out   std_ulogic_vector(15 downto 0); -- data
 
     --------------------------------------------------------------------------------
     -- HyperRAM interface
 
-    h_rst_n   : out   std_logic;                         -- reset
-    h_cs_n    : out   std_logic;                         -- chip select
-    h_clk     : out   std_logic;                         -- clock
-    h_rwds    : inout std_logic;                         -- read/write data strobe
-    h_dq      : inout std_logic_vector(7 downto 0)       -- data bus
+    h_rst_n   : out   std_logic;                      -- reset
+    h_cs_n    : out   std_logic;                      -- chip select
+    h_clk     : out   std_logic;                      -- clock
+    h_rwds    : inout std_logic;                      -- read/write data strobe
+    h_dq      : inout std_logic_vector(7 downto 0)    -- command/address/data bus
 
     --------------------------------------------------------------------------------
 
@@ -142,14 +140,13 @@ architecture rtl of hram_ctrl is
   --------------------------------------------------------------------------------
   -- constants and types
 
-  constant SIZE_MAX : integer := 2**s_a_size'length;
+  constant LEN_MAX : integer := 2**s_a_len'length;
 
   -- break parameter bundle out to discrete signals (better for linting)
   constant tRP      : positive := PARAMS.tRP  ;
   constant tRPH     : positive := PARAMS.tRPH ;
   constant tRWR     : positive := PARAMS.tRWR ;
   constant tLAT     : positive := PARAMS.tLAT ;
-  constant tCSM     : positive := PARAMS.tCSM ; -- TODO use this
 
   type state_t is (
     RESET,  -- reset
@@ -157,7 +154,6 @@ architecture rtl of hram_ctrl is
     CA,     -- command/address
     ALAT,   -- additional latency
     LAT,    -- latency
-    STALL,  -- stall for data
     WR,     -- write
     RD,     -- read
     CSHR,   -- hold for final RWDS pulse
@@ -169,7 +165,8 @@ architecture rtl of hram_ctrl is
     r_w  : std_ulogic;
     reg  : std_ulogic;
     wrap : std_ulogic;
-    size : std_ulogic_vector(s_a_size'range);
+    len  : std_ulogic_vector(s_a_len'range);
+    trk  : std_ulogic_vector(s_a_len'range);  -- tracking down-counter
     addr : std_ulogic_vector(s_a_addr'range);
   end record;
 
@@ -178,48 +175,52 @@ architecture rtl of hram_ctrl is
   --------------------------------------------------------------------------------
   -- signals
 
-  -- main control
-  signal start       : std_ulogic;                    -- start burst
-  signal burst       : burst_t;                       -- details of current burst
-  signal state       : state_t;                       -- state machine state
-  signal phase       : std_ulogic;                    -- access phase: 0 = CA and latency, 1 = data
-  signal pause       : std_ulogic;                    -- pause when data starvation interrupts burst
-  signal count_rst   : integer range 0 to tRP+tRPH;   -- reset counter
-  signal count       : integer range 0 to 7;          -- general purpose counter
-  signal count_rd    : integer range 0 to SIZE_MAX-1; -- read data counting
-  signal en_clk      : std_ulogic;                    -- enable h_clk pulse
-  signal en_cs       : std_ulogic;                    -- enable h_cs_n assertion
-  signal en_cs_next  : std_ulogic;                    -- enable h_cs_n assertion for next cycle
-  signal strobe_rd   : std_ulogic_vector(1 to 2);     -- drives read data counter
-  signal ce_rd       : std_ulogic;                    -- clock enable read IDDR
-  signal s_w_data_1  : std_ulogic_vector(7 downto 0); -- write data  delayed by 1 clock
-  signal s_w_ready_1 : std_ulogic;                    -- write ready delayed by 1 clock
+  -- delayed system interface signals
+  signal s_w_be_1    : std_ulogic_vector(1 downto 0);   -- write byte enable delayed by 1 clock
+  signal s_w_data_1  : std_ulogic_vector(7 downto 0);   -- write data  delayed by 1 clock
+  signal s_w_ready_1 : std_ulogic;                      -- write ready delayed by 1 clock
 
-  -- read FIFO
+  -- main control
+  signal burst       : burst_t;                         -- details of current burst
+  signal state       : state_t;                         -- state machine state
+  signal phase       : std_ulogic;                      -- access phase: 0 = CA and latency, 1 = data
+  signal count_rst   : integer range 0 to tRP+tRPH;     -- reset counter
+  signal count       : integer range 0 to 7;            -- general purpose counter
+  signal en_clk      : std_ulogic;                      -- enable h_clk pulse
+  signal en_cs       : std_ulogic;                      -- enable h_cs_n assertion
+  signal en_cs_next  : std_ulogic;                      -- enable h_cs_n assertion for next cycle
+  signal ce_rd       : std_ulogic;                      -- clock enable read IDDR
+  signal ce_rd_1     : std_ulogic;                      -- ce_rd delayed by 1 clock
+
+  -- read related
+  signal r_strobe   : std_ulogic_vector(1 to 2);        -- drives read data counter
+  signal r_level    : integer range 0 to LEN_MAX-1;     -- read FIFO level
+  signal r_count    : std_ulogic_vector(s_a_len'range);
+  signal r_last     : std_ulogic;
   signal r_fifo_we  : std_ulogic;
-  signal r_fifo_wa  : std_ulogic_vector(4 downto 0);  -- write address
+  signal r_fifo_wa  : std_ulogic_vector(4 downto 0);    -- write address
   signal r_fifo_wd  : r_fifo_d_t;
-  signal r_fifo_ra  : std_ulogic_vector(4 downto 0);  -- read address
+  signal r_fifo_ra  : std_ulogic_vector(4 downto 0);    -- read address
   signal r_fifo_rd  : r_fifo_d_t;
 
   -- HyperRAM I/O related
-  signal h_clk_u    : std_ulogic;
-  signal h_cs_n_u   : std_ulogic;
-  signal h_rwds_i_u : std_logic;                      -- RWDS IBUF output
-  signal h_rwds_i_d : std_logic;                      -- RWDS IDELAY output
-  signal h_rwds_i_b : std_logic;                      -- RWDS BUFR output
-  signal h_rwds_i_c : std_logic;                      -- RWDS BUFR output with delay for functional simulation
-  signal h_rwds_o_1 : std_logic;                      -- TODO sort this out
-  signal h_rwds_o_2 : std_logic;                      -- TODO sort this out
-  signal h_rwds_o   : std_logic;
-  signal h_rwds_t   : std_logic;
-  signal h_dq_i_u   : std_ulogic_vector(7 downto 0);  -- DQ IBUF output
-  signal h_dq_i_d   : std_ulogic_vector(7 downto 0);  -- DQ IDELAY output
-  signal h_dq_i_r   : std_ulogic_vector(15 downto 0); -- DQ IDDR output
-  signal h_dq_o_1   : std_ulogic_vector(7 downto 0);
-  signal h_dq_o_2   : std_ulogic_vector(7 downto 0);
-  signal h_dq_o     : std_ulogic_vector(7 downto 0);
-  signal h_dq_t     : std_ulogic;
+  signal h_rst_n_o  : std_logic;
+  signal h_cs_n_o   : std_logic;
+  signal h_clk_o    : std_logic;                        -- clock ODDR Q output to OBUF
+  signal h_rwds_i   : std_ulogic;                       -- RWDS input from IOBUF to IDELAY
+  signal h_rwds_i_d : std_ulogic;                       -- RWDS IDELAY output
+  signal h_rwds_i_b : std_ulogic;                       -- RWDS BUFR output
+  signal h_rwds_i_c : std_ulogic;                       -- RWDS BUFR output with delay for functional simulation
+  signal h_rwds_o_1 : std_ulogic;                       -- RWDS ODDR D1
+  signal h_rwds_o_2 : std_ulogic;                       -- RWDS ODDR D2
+  signal h_rwds_o   : std_ulogic;                       -- RWDS ODDR Q output to IOBUF
+  signal h_rwds_t   : std_ulogic;                       -- RWDS IOBUF tristate control
+  signal h_dq_i     : std_ulogic_vector(7 downto 0);    -- DQ input from IOBUF to IDDR
+  signal h_dq_i_r   : std_ulogic_vector(15 downto 0);   -- DQ IDDR Q
+  signal h_dq_o_1   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D1
+  signal h_dq_o_2   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D2
+  signal h_dq_o     : std_ulogic_vector(7 downto 0);    -- DQ ODDR Q output to IOBUF
+  signal h_dq_t     : std_ulogic;                       -- DQ IOBUF tristate control
 
   --------------------------------------------------------------------------------
 
@@ -231,22 +232,19 @@ begin
     variable ca  : ca_t;
   begin
 
-    start  <= (s_a_valid and s_a_ready) or                  -- new burst
-              (pause and (s_w_valid and not burst.r_w)) or  -- resume write
-              (pause and (s_r_ready and     burst.r_w));    -- resume read
+    en_cs <= (bool2sl(state = IDLE) and s_a_valid and s_a_ready) or en_cs_next;
 
-    en_cs     <= (bool2sl(state = IDLE) and start) or en_cs_next;
-
-    a32 := (others => '0');
-    a32(A_MSB downto 1) := burst.addr;
-    ca(0) :=
-      s_a_r_w & s_a_reg & not s_a_wrap & "00000" when pause = '0' else
-      burst.r_w & burst.reg & not burst.wrap & "00000";
+    a32 := (s_a_addr'length downto 1 => burst.addr, others => '0');
+    ca(0) := s_a_r_w & s_a_reg & not s_a_wrap & "00000";
     ca(1) := a32(27 downto 20);
     ca(2) := a32(19 downto 12);
     ca(3) := a32(11 downto 4);
     ca(4) := x"00";
     ca(5) := "00000" & a32(3 downto 1);
+
+    h_rwds_o_1 <= not s_w_be_1(0);
+
+    h_rwds_o_2 <= not s_w_be(1);
 
     h_dq_o_1 <=
       ca(0) when phase = '0' and (count mod 4) = 0 else
@@ -271,25 +269,28 @@ begin
 
       s_a_ready   <= '0';
       s_w_ready   <= '0';
+      s_w_last    <= '0';
+      s_w_be_1    <= (others => '0');
       s_r_valid   <= '0';
-      h_rst_n     <= '0';
+      h_rst_n_o   <= '0';
       h_rwds_t    <= '1';
       h_dq_t      <= '0';
       burst.r_w   <= 'X';
       burst.reg   <= 'X';
       burst.wrap  <= 'X';
-      burst.size  <= (others => 'X');
+      burst.len   <= (others => 'X');
+      burst.trk   <= (others => 'X');
       burst.addr  <= (others => 'X');
       state       <= RESET;
       phase       <= '0';
-      pause       <= '0';
       count_rst   <= 0;
       count       <= 0;
-      count_rd    <= 0;
+      r_level    <= 0;
       en_clk      <= '0';
       en_cs_next  <= '0';
-      strobe_rd   <= (others => '0');
+      r_strobe   <= (others => '0');
       ce_rd       <= '0';
+      ce_rd_1     <= '0';
       s_w_data_1  <= (others => '0');
       s_w_ready_1 <= '0';
       r_fifo_ra   <= (others => '0');
@@ -297,14 +298,15 @@ begin
     elsif rising_edge(s_clk) then
 
       s_w_ready_1 <= s_w_ready;
-      s_w_ready   <= '0';
+      s_w_be_1    <= s_w_be;
       s_w_data_1  <= s_w_data(7 downto 0);
+      ce_rd_1     <= ce_rd;
 
       case state is
 
         when RESET =>
           if count_rst = tRP-1 then
-            h_rst_n <= '1';
+            h_rst_n_o <= '1';
           elsif count_rst = tRP+tRPH-1 then
             s_a_ready <= '1';
             state     <= IDLE;
@@ -312,32 +314,40 @@ begin
           count_rst <= count_rst + 1;
 
         when IDLE =>
-          if start then
-            if not pause then -- new burst
-              burst.r_w  <= s_a_r_w;
-              burst.reg  <= s_a_reg;
-              burst.wrap <= s_a_wrap;
-              burst.size <= s_a_size;
-              burst.addr <= s_a_addr;
-            end if;
-            s_a_ready <= '0';
-            en_cs_next  <= '1';
-            en_clk <= '1';
-            count    <= 1;
-            state    <= CA;
+          if s_a_valid and s_a_ready then
+            burst.r_w  <= s_a_r_w;
+            burst.reg  <= s_a_reg;
+            burst.wrap <= s_a_wrap;
+            burst.len  <= s_a_len;
+            burst.trk  <= s_a_len;
+            burst.addr <= s_a_addr;
+            s_a_ready  <= '0';
+            en_cs_next <= '1';
+            en_clk     <= '1';
+            count      <= 1;
+            state      <= CA;
           end if;
 
         when CA =>
           count <= count + 1;
           if count = 2 then
             s_w_ready <= burst.reg and not burst.r_w;
+            s_w_last  <= not burst.r_w when unsigned(burst.trk) = 1 else '0';
           elsif count = 3 then
-            if burst.r_w = '0' and burst.reg = '1' then -- register write
-              phase    <= '1';
-              en_clk <= '1';
-              state    <= WR;
+            phase <= '1';
+            if burst.reg and not burst.r_w then -- register write
+              if s_w_valid then
+                if s_w_last then
+                  s_w_ready <= '0';
+                  s_w_last  <= '0';
+                else
+                  s_w_last <= '1' when unsigned(burst.trk) = 2 else '0';
+                end if;
+                burst.trk <= decr(burst.trk);
+                en_clk <= '1';
+              end if;
+              state <= WR;
             else
-              phase <= '1';
               count <= 1;
               state <= ALAT when h_rwds_i_d = '1' else LAT;
             end if;
@@ -354,76 +364,63 @@ begin
           count <= count + 1;
           if count = 1 then -- tristate DQ for read
             h_dq_t <= burst.r_w;
-          end if;
-          if count = 2 then -- drive RWDS for write
+          elsif count = 2 then -- drive RWDS for write
             h_rwds_t <= burst.r_w;
           end if;
           if count = tLAT-2 then -- ready for write data
             s_w_ready <= not burst.r_w;
-          end if;
-          if count = tLAT-1 then -- data transfer (or stall)
+            s_w_last  <= not burst.r_w when unsigned(burst.trk) = 1 else '0';
+          elsif count = tLAT-1 then -- data transfer (or stall)
             count <= 0;
-            if burst.r_w = '1' then
-              if s_r_ready = '1' then
-                ce_rd <= '1';
-                state   <= RD;
-              else
-                en_clk <= '0';
-                state    <= STALL;
-              end if;
-            else
-              if s_w_valid = '1'  then
-                s_w_ready <= '1';
-                state     <= WR;
-              else
-                en_clk <= '0';
-                state    <= STALL;
-              end if;
-            end if;
-          end if;
-
-        when STALL =>
-          if burst.r_w = '1' then
-            if s_r_ready = '1' then
-              en_clk <= '1';
+            if burst.r_w then
+              en_clk <= s_r_ready;
               ce_rd  <= '1';
-              state    <= RD;
-            end if;
-          else
-            if s_w_valid = '1' then
-              s_w_ready <= '1';
-              en_clk  <= '1';
-              state     <= WR;
+              state  <= RD;
+            else
+              if s_w_valid then
+                if s_w_last then
+                  s_w_ready <= '0';
+                  s_w_last  <= '0';
+                else
+                  s_w_last <= '1' when unsigned(burst.trk) = 2 else '0';
+                end if;
+                burst.trk <= decr(burst.trk);
+                en_clk <= '1';
+              end if;
+              state <= WR;
             end if;
           end if;
 
         when WR =>
-          if unsigned(burst.size) = 1 then -- end of burst
-            pause <= '0';
-            en_clk <= '0';
-            en_cs_next <= '0';
-            state <= CSH;
-          elsif not s_w_valid then
-            pause <= '1';
-            en_clk <= '0';
-            en_cs_next <= '0';
-            state <= CSH;
-          else
-            s_w_ready <= '1';
+          en_clk <= s_w_valid and s_w_ready;
+          if s_w_valid then
+            if s_w_last then
+              s_w_ready <= '0';
+              s_w_last  <= '0';
+            else
+              s_w_last <= '1' when unsigned(burst.trk) = 2 else '0';
+            end if;
+            burst.trk <= decr(burst.trk);
+            en_clk <= '1';
           end if;
-          burst.addr(s_a_addr'range) <= incr(burst.addr(s_a_addr'range));
-          burst.size <= decr(burst.size);
+          if en_clk = '1' then
+            if unsigned(burst.trk) = 0 then -- end of burst
+              en_clk     <= '0';
+              en_cs_next <= '0';
+              state      <= CSH;
+            end if;
+          end if;
 
         when RD =>
-          if unsigned(burst.size) = 1 then -- end of burst
+          en_clk <= s_r_ready;
+          if unsigned(burst.trk) = 1 then -- end of burst
             en_clk <= '0';
-            state    <= CSHR;
+            state  <= CSHR;
           elsif not s_r_ready then
             en_clk <= '0';
-            state    <= CSHR;
+            state  <= CSHR;
           end if;
-          burst.addr(s_a_addr'range) <= incr(burst.addr(s_a_addr'range));
-          burst.size <= decr(burst.size);
+          burst.trk <= decr(burst.trk);
 
         when CSHR =>
           en_cs_next <= '0';
@@ -438,7 +435,7 @@ begin
             ce_rd      <= '0';
             state      <= RWR;
           else
-            s_a_ready  <= not pause;
+            s_a_ready  <= '1';
             h_rwds_t   <= '1';
             h_dq_t     <= '0';
             phase      <= '0';
@@ -450,7 +447,7 @@ begin
         when RWR =>
           count <= count + 1;
           if count = tLAT-4 then
-            s_a_ready <= not pause;
+            s_a_ready <= '1';
             phase     <= '0';
             count     <= 0;
             state     <= IDLE;
@@ -458,28 +455,34 @@ begin
 
       end case;
 
-      -- read tracking
-      strobe_rd(1) <= '1' when state = RD else '0';
-      strobe_rd(2 to strobe_rd'high) <= strobe_rd(1 to strobe_rd'high-1);
+      -- read level tracking
+      r_strobe(1) <= '1' when state = RD else '0';
+      r_strobe(2 to r_strobe'high) <= r_strobe(1 to r_strobe'high-1);
       if (s_r_valid and s_r_ready) then
         r_fifo_ra <= incr(r_fifo_ra);
       end if;
-      if strobe_rd(strobe_rd'high) and not (s_r_valid and s_r_ready) then
+      if r_strobe(r_strobe'high) and not (s_r_valid and s_r_ready) then
         s_r_valid <= '1';
-        count_rd  <= (count_rd + 1) mod (2**s_a_size'length);
-      elsif (s_r_valid and s_r_ready) and not strobe_rd(strobe_rd'high) then
-        if count_rd = 1 then
+        r_level  <= r_level + 1;
+      elsif (s_r_valid and s_r_ready) and not r_strobe(r_strobe'high) then
+        if r_level = 1 then
           s_r_valid <= '0';
           r_fifo_ra <= r_fifo_ra;
         end if;
-        count_rd <= count_rd - 1;
+        r_level <= r_level - 1;
       end if;
 
     end if;
   end process;
 
   --------------------------------------------------------------------------------
-  -- output registers and buffers
+  -- I/O primitives
+
+  U_OBUF_RST: component obuf
+    port map (
+      i => h_rst_n_o,
+      o => h_rst_n
+    );
 
   U_ODDR_CLK: component oddr
     generic map(
@@ -493,12 +496,12 @@ begin
       ce => '1',
       d1 => en_clk,
       d2 => '0',
-      q  => h_clk_u
+      q  => h_clk_o
     );
 
   U_OBUF_CLK: component obuf
     port map (
-      i => h_clk_u,
+      i => h_clk_o,
       o => h_clk
     );
 
@@ -515,12 +518,12 @@ begin
       ce => '1',
       d1 => not en_cs,
       d2 => not en_cs,
-      q  => h_cs_n_u
+      q  => h_cs_n_o
     );
 
   U_OBUF_CS: component obuf
     port map (
-      i => h_cs_n_u,
+      i => h_cs_n_o,
       o => h_cs_n
     );
 
@@ -539,14 +542,50 @@ begin
         q  => h_rwds_o
       );
 
-  U_OBUFT_RWDS: component obuft
+  U_IDELAY_RWDS: component idelaye2
+    generic map (
+      DELAY_SRC             => "IDATAIN",
+      IDELAY_TYPE           => "FIXED",
+      PIPE_SEL              => "FALSE",
+      IDELAY_VALUE          => 6,
+      SIGNAL_PATTERN        => "DATA",
+      REFCLK_FREQUENCY      => 200.0,
+      HIGH_PERFORMANCE_MODE => "TRUE",
+      CINVCTRL_SEL          => "FALSE"
+    )
     port map (
-      i => h_rwds_o,
-      o => h_rwds,
-      t => h_rwds_t
+      regrst      => '0',
+      cinvctrl    => '0',
+      c           => '0',
+      ce          => '0',
+      inc         => '0',
+      ld          => '0',
+      ldpipeen    => '0',
+      cntvaluein  => (others => '0'),
+      cntvalueout => open,
+      idatain     => h_rwds_i,
+      datain      => '0',
+      dataout     => h_rwds_i_d
     );
 
-  GEN_DQ_O: for i in 0 to 7 generate
+  U_BUFR_RWDS: component bufr
+    port map (
+      clr => '0',
+      ce  => '1',
+      i => h_rwds_i_d,
+      o => h_rwds_i_b
+    );
+    h_rwds_i_c <= h_rwds_i_b'delayed(2 ns);
+
+  U_IOBUF_RWDS: component iobuf
+    port map (
+      O  => h_rwds_i,
+      I  => h_rwds_o,
+      T  => h_rwds_t,
+      IO => h_rwds
+    );
+
+  GEN_DQ: for i in 0 to 7 generate
 
     U_ODDR: component oddr
       generic map(
@@ -563,93 +602,13 @@ begin
         q  => h_dq_o(i)
       );
 
-    U_OBUFT: component obuft
+    U_IOBUF: component iobuf
       port map (
-        i => h_dq_o(i),
-        o => h_dq(i),
-        t => h_dq_t
+        O  => h_dq_i(i),
+        I  => h_dq_o(i),
+        T  => h_dq_t,
+        IO => h_dq(i)
       );
-
-  end generate GEN_DQ_O;
-
-  --------------------------------------------------------------------------------
-  -- input buffers, delay elements and registers
-
-  U_IBUF_RWDS: component ibuf
-    port map (
-      i => h_rwds,
-      o => h_rwds_i_u
-    );
-
-  U_IDELAY_RWDS: component idelaye2
-    generic map (
-      DELAY_SRC             => "IDATAIN",
-      IDELAY_TYPE           => "FIXED",
-      PIPE_SEL              => "FALSE",
-      IDELAY_VALUE          => 9,
-      SIGNAL_PATTERN        => "DATA",
-      REFCLK_FREQUENCY      => 200.0,
-      HIGH_PERFORMANCE_MODE => "TRUE",
-      CINVCTRL_SEL          => "FALSE"
-    )
-    port map (
-      regrst      => '0',
-      cinvctrl    => '0',
-      c           => '0',
-      ce          => '0',
-      inc         => '0',
-      ld          => '0',
-      ldpipeen    => '0',
-      cntvaluein  => (others => '0'),
-      cntvalueout => open,
-      idatain     => h_rwds_i_u,
-      datain      => '0',
-      dataout     => h_rwds_i_d
-    );
-
-  U_BUFR_RWDS: component bufr
-    port map (
-      clr => '0',
-      ce  => '1',
-      i => h_rwds_i_d,
-      o => h_rwds_i_b
-    );
-    h_rwds_i_c <= transport h_rwds_i_b after 2 ns;
-
-  GEN_DQ_I: for i in 0 to 7 generate
-
-    U_IBUF: component ibuf
-      port map (
-        i => h_dq(i),
-        o => h_dq_i_u(i)
-      );
-
-    h_dq_i_d(i) <= h_dq_i_u(i);
-    --U_IDELAY: component idelaye2
-    --  generic map (
-    --    DELAY_SRC             => "IDATAIN",
-    --    IDELAY_TYPE           => "FIXED",
-    --    PIPE_SEL              => "FALSE",
-    --    IDELAY_VALUE          => 0,
-    --    SIGNAL_PATTERN        => "DATA",
-    --    REFCLK_FREQUENCY      => 200.0,
-    --    HIGH_PERFORMANCE_MODE => "TRUE",
-    --    CINVCTRL_SEL          => "FALSE"
-    --  )
-    --  port map (
-    --    regrst      => '0',
-    --    cinvctrl    => '0',
-    --    c           => '0',
-    --    ce          => '0',
-    --    inc         => '0',
-    --    ld          => '0',
-    --    ldpipeen    => '0',
-    --    cntvaluein  => (others => '0'),
-    --    cntvalueout => open,
-    --    idatain     => h_dq_i_u(i),
-    --    datain      => '0',
-    --    dataout     => h_dq_i_d(i)
-    --  );
 
     U_IDDR: component iddr
       generic map (
@@ -662,22 +621,25 @@ begin
         s  => '0',
         c  => h_rwds_i_c,
         ce => ce_rd,
-        d  => h_dq_i_d(i),
+        d  => h_dq_i(i),
         q1 => h_dq_i_r(0+i),
         q2 => h_dq_i_r(8+i)
       );
 
-  end generate GEN_DQ_I;
+  end generate GEN_DQ;
 
   --------------------------------------------------------------------------------
   -- read FIFO: accepts data in h_rwds_i_c domain, forwards to system read port
   -- clocked by falling edge so that a single additional RWDS pulse is enough
+  -- TODO: we will probably use only a few words of the 32 word depth
+  --  so we could make the address signals maybe 2 bits wide
 
+  -- start writing to FIFO on 2nd RWDS pulse to allow for IDDR latency
   P_R_FIFO_WE: process(ce_rd,h_rwds_i_c)
   begin
     if ce_rd = '0' then
       r_fifo_we <= '0';
-    elsif falling_edge(h_rwds_i_c) then
+    elsif rising_edge(h_rwds_i_c) then
       r_fifo_we <= ce_rd;
     end if;
   end process P_R_FIFO_WE;
@@ -691,15 +653,23 @@ begin
     end if;
   end process P_R_FIFO_WA;
 
-  r_fifo_wd(0) <= '0' & h_dq_i_r( 4 downto  0);
-  r_fifo_wd(1) <= '0' & h_dq_i_r( 9 downto  5);
-  r_fifo_wd(2) <= h_dq_i_r(15 downto 10);
+  P_R_LAST: process(ce_rd,ce_rd_1,h_rwds_i_c)
+  begin
+    if ce_rd nor ce_rd_1 then
+      r_count <= (0 => '1', others => '0');
+      r_last  <= '0';
+    elsif falling_edge(h_rwds_i_c) and ce_rd = '1' then
+      r_last  <= '1' when r_count = burst.len else '0';
+      r_count <= incr(r_count);
+    end if;
+  end process P_R_LAST;
+
+  r_fifo_wd(0) <=                h_dq_i_r( 5 downto  0);
+  r_fifo_wd(1) <=                h_dq_i_r(11 downto  6);
+  r_fifo_wd(2) <= '0' & r_last & h_dq_i_r(15 downto 12);
 
   GEN_RAM: for i in 0 to 2 generate
     RAM: component ram_sdp_32x6
-      generic map (
-        CLK_EDGE =>"rising"
-      )
       port map (
         clk => h_rwds_i_c,
         we  => r_fifo_we,
@@ -710,9 +680,10 @@ begin
       );
   end generate GEN_RAM;
 
-  s_r_data( 4 downto  0) <= r_fifo_rd(0)(4 downto 0) when strobe_rd(2) = '1' else r_fifo_wd(0)(4 downto 0);
-  s_r_data( 9 downto  5) <= r_fifo_rd(1)(4 downto 0) when strobe_rd(2) = '1' else r_fifo_wd(1)(4 downto 0);
-  s_r_data(15 downto 10) <= r_fifo_rd(2)(5 downto 0) when strobe_rd(2) = '1' else r_fifo_wd(2)(5 downto 0);
+  s_r_data( 5 downto  0) <= r_fifo_rd(0)(5 downto 0) when r_strobe(2) = '1' else r_fifo_wd(0)(5 downto 0);
+  s_r_data(11 downto  6) <= r_fifo_rd(1)(5 downto 0) when r_strobe(2) = '1' else r_fifo_wd(1)(5 downto 0);
+  s_r_data(15 downto 12) <= r_fifo_rd(2)(3 downto 0) when r_strobe(2) = '1' else r_fifo_wd(2)(3 downto 0);
+  s_r_last               <= r_fifo_rd(2)(4)          when r_strobe(2) = '1' else r_fifo_wd(2)(4);
 
   --------------------------------------------------------------------------------
 
