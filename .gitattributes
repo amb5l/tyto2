@@ -1,1 +1,3 @@
 * text eol=off
+*.bit binary
+*.xls* binary
