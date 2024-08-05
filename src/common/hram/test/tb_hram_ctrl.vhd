@@ -15,7 +15,7 @@
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
 
-use work.tyto_sim_pkg.all;
+use work.tyto_utils_pkg.all;
 use work.model_hram_pkg.all;
 use work.hram_ctrl_pkg.all;
 
