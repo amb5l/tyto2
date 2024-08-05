@@ -21,6 +21,13 @@ library ieee;
 
 package tyto_utils_pkg is
 
+  type prng_t is protected
+    procedure rand_seed(s1, s2 : in integer);
+    impure function rand_real (min, max        : in real    ) return real;
+    impure function rand_int  (min, max        : in integer ) return integer;
+    impure function rand_slv  (min, max, width : in integer ) return std_ulogic_vector;
+  end protected prng_t;
+
   function ternary (c : boolean; a, b : std_logic) return std_logic;
   function ternary (c : boolean; a, b : std_logic_vector) return std_logic_vector;
   function bool2sl( b : boolean ) return std_ulogic;
@@ -36,7 +43,37 @@ package tyto_utils_pkg is
 
 end package tyto_utils_pkg;
 
+library ieee;
+  use ieee.math_real.all;
+
 package body tyto_utils_pkg is
+
+  type prng_t is protected body
+    variable seed1, seed2 : integer := 0;
+    procedure rand_seed(s1, s2 : in integer) is
+    begin
+      seed1 := s1;
+      seed2 := s2;
+    end procedure rand_seed;
+    impure function rand_real(min, max : in real) return real is
+      variable r : real;
+    begin
+      uniform(seed1, seed2, r);
+      return (r * (max - min)) + min;
+    end function rand_real;
+    impure function rand_int(min, max : in integer) return integer is
+      variable r : real;
+    begin
+      uniform(seed1, seed2, r);
+      return integer(r * real(max - min) + real(min));
+    end function rand_int;
+    impure function rand_slv(min, max, width : in integer) return std_ulogic_vector is
+      variable r : real;
+    begin
+      uniform(seed1, seed2, r);
+      return std_ulogic_vector(to_unsigned(integer(r * real(max - min) + real(min)), width));
+    end function rand_slv;
+  end protected body prng_t;
 
   function ternary (c : boolean; a, b : std_logic) return std_logic is
   begin
