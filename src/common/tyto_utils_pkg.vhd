@@ -23,9 +23,9 @@ package tyto_utils_pkg is
 
   type prng_t is protected
     procedure rand_seed(s1, s2 : in integer);
-    impure function rand_real (min, max        : in real    ) return real;
-    impure function rand_int  (min, max        : in integer ) return integer;
-    impure function rand_slv  (min, max, width : in integer ) return std_ulogic_vector;
+    impure function rand_real (min, max         : in real    ) return real;
+    impure function rand_int  (min, max         : in integer ) return integer;
+    impure function rand_slv  (min, max, length : in integer ) return std_ulogic_vector;
   end protected prng_t;
 
   function ternary (c : boolean; a, b : std_logic) return std_logic;
@@ -68,11 +68,11 @@ package body tyto_utils_pkg is
       uniform(seed1, seed2, r);
       return integer(r * real(max - min) + real(min));
     end function rand_int;
-    impure function rand_slv(min, max, width : in integer) return std_ulogic_vector is
+    impure function rand_slv(min, max, length : in integer) return std_ulogic_vector is
       variable r : real;
     begin
       uniform(seed1, seed2, r);
-      return std_ulogic_vector(to_unsigned(integer(r * real(max - min) + real(min)), width));
+      return std_ulogic_vector(to_unsigned(integer(r * real(max - min) + real(min)), length));
     end function rand_slv;
   end protected body prng_t;
 
