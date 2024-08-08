@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb_hram_test_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="csr_pkg" />
+            <top_module name="hram_ctrl_pkg" />
+            <top_module name="hram_test_pkg" />
+            <top_module name="mmcm_drp_pkg" />
+            <top_module name="model_hram_pkg" />
+            <top_module name="overclock_pkg" />
+            <top_module name="ram_sdp_32x6_pkg" />
+            <top_module name="sync_reg_u_pkg" />
+            <top_module name="tb_hram_test" />
+            <top_module name="tyto_types_pkg" />
+            <top_module name="tyto_utils_pkg" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0.000000 us"></ZoomStartTime>
+      <ZoomEndTime time="845.615001 us"></ZoomEndTime>
+      <Cursor1Time time="845.615000 us"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="161"></NameColumnWidth>
+      <ValueColumnWidth column_width="97"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="123" />
+   <wvobject fp_name="/tb_hram_test/clk_100m" type="logic">
+      <obj_property name="ElementShortName">clk_100m</obj_property>
+      <obj_property name="ObjectShortName">clk_100m</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/x_rst" type="logic">
+      <obj_property name="ElementShortName">x_rst</obj_property>
+      <obj_property name="ObjectShortName">x_rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/x_clk" type="logic">
+      <obj_property name="ElementShortName">x_clk</obj_property>
+      <obj_property name="ObjectShortName">x_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/s_rst" type="logic">
+      <obj_property name="ElementShortName">s_rst</obj_property>
+      <obj_property name="ObjectShortName">s_rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/s_clk" type="logic">
+      <obj_property name="ElementShortName">s_clk</obj_property>
+      <obj_property name="ObjectShortName">s_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/s_en" type="logic">
+      <obj_property name="ElementShortName">s_en</obj_property>
+      <obj_property name="ObjectShortName">s_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/s_we" type="array">
+      <obj_property name="ElementShortName">s_we[3:0]</obj_property>
+      <obj_property name="ObjectShortName">s_we[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/s_addr" type="array">
+      <obj_property name="ElementShortName">s_addr[7:2]</obj_property>
+      <obj_property name="ObjectShortName">s_addr[7:2]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/s_din" type="array">
+      <obj_property name="ElementShortName">s_din[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_din[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/s_dout" type="array">
+      <obj_property name="ElementShortName">s_dout[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_dout[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/h_rst_n" type="logic">
+      <obj_property name="ElementShortName">h_rst_n</obj_property>
+      <obj_property name="ObjectShortName">h_rst_n</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/h_cs_n" type="logic">
+      <obj_property name="ElementShortName">h_cs_n</obj_property>
+      <obj_property name="ObjectShortName">h_cs_n</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/h_clk" type="logic">
+      <obj_property name="ElementShortName">h_clk</obj_property>
+      <obj_property name="ObjectShortName">h_clk</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/h_rwds" type="logic">
+      <obj_property name="ElementShortName">h_rwds</obj_property>
+      <obj_property name="ObjectShortName">h_rwds</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/h_dq" type="array">
+      <obj_property name="ElementShortName">h_dq[7:0]</obj_property>
+      <obj_property name="ObjectShortName">h_dq[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider22">
+      <obj_property name="label">/hram_test</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/s_csr_w" type="array">
+      <obj_property name="ElementShortName">s_csr_w[0:7][31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_csr_w[0:7][31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/s_csr_p" type="array">
+      <obj_property name="ElementShortName">s_csr_p[0:7][31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_csr_p[0:7][31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/s_csr_r" type="array">
+      <obj_property name="ElementShortName">s_csr_r[0:7][31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_csr_r[0:7][31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_csr_ctrl_run" type="logic">
+      <obj_property name="ElementShortName">i_csr_ctrl_run</obj_property>
+      <obj_property name="ObjectShortName">i_csr_ctrl_run</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_rst" type="logic">
+      <obj_property name="ElementShortName">i_rst</obj_property>
+      <obj_property name="ObjectShortName">i_rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_clk" type="logic">
+      <obj_property name="ElementShortName">i_clk</obj_property>
+      <obj_property name="ObjectShortName">i_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_clk_dly" type="logic">
+      <obj_property name="ElementShortName">i_clk_dly</obj_property>
+      <obj_property name="ObjectShortName">i_clk_dly</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_a_ready" type="logic">
+      <obj_property name="ElementShortName">i_a_ready</obj_property>
+      <obj_property name="ObjectShortName">i_a_ready</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_a_valid" type="logic">
+      <obj_property name="ElementShortName">i_a_valid</obj_property>
+      <obj_property name="ObjectShortName">i_a_valid</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_a_r_w" type="logic">
+      <obj_property name="ElementShortName">i_a_r_w</obj_property>
+      <obj_property name="ObjectShortName">i_a_r_w</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_a_reg" type="logic">
+      <obj_property name="ElementShortName">i_a_reg</obj_property>
+      <obj_property name="ObjectShortName">i_a_reg</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_a_wrap" type="logic">
+      <obj_property name="ElementShortName">i_a_wrap</obj_property>
+      <obj_property name="ObjectShortName">i_a_wrap</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_a_len" type="array">
+      <obj_property name="ElementShortName">i_a_len[15:0]</obj_property>
+      <obj_property name="ObjectShortName">i_a_len[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_a_addr" type="array">
+      <obj_property name="ElementShortName">i_a_addr[22:1]</obj_property>
+      <obj_property name="ObjectShortName">i_a_addr[22:1]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_w_ready" type="logic">
+      <obj_property name="ElementShortName">i_w_ready</obj_property>
+      <obj_property name="ObjectShortName">i_w_ready</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_w_valid" type="logic">
+      <obj_property name="ElementShortName">i_w_valid</obj_property>
+      <obj_property name="ObjectShortName">i_w_valid</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_w_last" type="logic">
+      <obj_property name="ElementShortName">i_w_last</obj_property>
+      <obj_property name="ObjectShortName">i_w_last</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_w_be" type="array">
+      <obj_property name="ElementShortName">i_w_be[1:0]</obj_property>
+      <obj_property name="ObjectShortName">i_w_be[1:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_w_data" type="array">
+      <obj_property name="ElementShortName">i_w_data[15:0]</obj_property>
+      <obj_property name="ObjectShortName">i_w_data[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_r_ready" type="logic">
+      <obj_property name="ElementShortName">i_r_ready</obj_property>
+      <obj_property name="ObjectShortName">i_r_ready</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_r_valid" type="logic">
+      <obj_property name="ElementShortName">i_r_valid</obj_property>
+      <obj_property name="ObjectShortName">i_r_valid</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_r_last" type="logic">
+      <obj_property name="ElementShortName">i_r_last</obj_property>
+      <obj_property name="ObjectShortName">i_r_last</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_r_data" type="array">
+      <obj_property name="ElementShortName">i_r_data[15:0]</obj_property>
+      <obj_property name="ObjectShortName">i_r_data[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/t_bsy" type="logic">
+      <obj_property name="ElementShortName">t_bsy</obj_property>
+      <obj_property name="ObjectShortName">t_bsy</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/t_fin" type="logic">
+      <obj_property name="ElementShortName">t_fin</obj_property>
+      <obj_property name="ObjectShortName">t_fin</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/t_err" type="logic">
+      <obj_property name="ElementShortName">t_err</obj_property>
+      <obj_property name="ObjectShortName">t_err</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/state_a" type="other">
+      <obj_property name="ElementShortName">state_a</obj_property>
+      <obj_property name="ObjectShortName">state_a</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/a_count" type="array">
+      <obj_property name="ElementShortName">a_count[22:1]</obj_property>
+      <obj_property name="ObjectShortName">a_count[22:1]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/a_lm" type="array">
+      <obj_property name="ElementShortName">a_lm[15:0]</obj_property>
+      <obj_property name="ObjectShortName">a_lm[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/a_len" type="array">
+      <obj_property name="ElementShortName">a_len[15:0]</obj_property>
+      <obj_property name="ObjectShortName">a_len[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/a_addr" type="array">
+      <obj_property name="ElementShortName">a_addr[22:1]</obj_property>
+      <obj_property name="ObjectShortName">a_addr[22:1]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/a_row_rnd" type="array">
+      <obj_property name="ElementShortName">a_row_rnd[12:0]</obj_property>
+      <obj_property name="ObjectShortName">a_row_rnd[12:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/a_addr_rnd" type="array">
+      <obj_property name="ElementShortName">a_addr_rnd[22:1]</obj_property>
+      <obj_property name="ObjectShortName">a_addr_rnd[22:1]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/state_d" type="other">
+      <obj_property name="ElementShortName">state_d</obj_property>
+      <obj_property name="ObjectShortName">state_d</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/d_word" type="logic">
+      <obj_property name="ElementShortName">d_word</obj_property>
+      <obj_property name="ObjectShortName">d_word</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/d_data" type="array">
+      <obj_property name="ElementShortName">d_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">d_data[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/d_eadd" type="array">
+      <obj_property name="ElementShortName">d_eadd[22:1]</obj_property>
+      <obj_property name="ObjectShortName">d_eadd[22:1]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/d_edat" type="array">
+      <obj_property name="ElementShortName">d_edat[31:0]</obj_property>
+      <obj_property name="ObjectShortName">d_edat[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/incr_data" type="array">
+      <obj_property name="ElementShortName">incr_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">incr_data[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFF00</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/prng_a_init" type="logic">
+      <obj_property name="ElementShortName">prng_a_init</obj_property>
+      <obj_property name="ObjectShortName">prng_a_init</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/prng_a_seed" type="array">
+      <obj_property name="ElementShortName">prng_a_seed[127:0]</obj_property>
+      <obj_property name="ObjectShortName">prng_a_seed[127:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/prng_a_ready" type="logic">
+      <obj_property name="ElementShortName">prng_a_ready</obj_property>
+      <obj_property name="ObjectShortName">prng_a_ready</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/prng_a_valid" type="logic">
+      <obj_property name="ElementShortName">prng_a_valid</obj_property>
+      <obj_property name="ObjectShortName">prng_a_valid</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/prng_a_data" type="array">
+      <obj_property name="ElementShortName">prng_a_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">prng_a_data[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/prng_d_init" type="logic">
+      <obj_property name="ElementShortName">prng_d_init</obj_property>
+      <obj_property name="ObjectShortName">prng_d_init</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/prng_d_seed" type="array">
+      <obj_property name="ElementShortName">prng_d_seed[127:0]</obj_property>
+      <obj_property name="ObjectShortName">prng_d_seed[127:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/prng_d_ready" type="logic">
+      <obj_property name="ElementShortName">prng_d_ready</obj_property>
+      <obj_property name="ObjectShortName">prng_d_ready</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/prng_d_valid" type="logic">
+      <obj_property name="ElementShortName">prng_d_valid</obj_property>
+      <obj_property name="ObjectShortName">prng_d_valid</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/prng_d_data" type="array">
+      <obj_property name="ElementShortName">prng_d_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">prng_d_data[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider72">
+      <obj_property name="label">/hram_test/hram_ctrl</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/s_w_be_1" type="array">
+      <obj_property name="ElementShortName">s_w_be_1[1:0]</obj_property>
+      <obj_property name="ObjectShortName">s_w_be_1[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/s_w_data_1" type="array">
+      <obj_property name="ElementShortName">s_w_data_1[7:0]</obj_property>
+      <obj_property name="ObjectShortName">s_w_data_1[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/s_w_ready_1" type="logic">
+      <obj_property name="ElementShortName">s_w_ready_1</obj_property>
+      <obj_property name="ObjectShortName">s_w_ready_1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/burst" type="array">
+      <obj_property name="ElementShortName">burst</obj_property>
+      <obj_property name="ObjectShortName">burst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/state" type="other">
+      <obj_property name="ElementShortName">state</obj_property>
+      <obj_property name="ObjectShortName">state</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/phase" type="logic">
+      <obj_property name="ElementShortName">phase</obj_property>
+      <obj_property name="ObjectShortName">phase</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/count_rst" type="other">
+      <obj_property name="ElementShortName">count_rst</obj_property>
+      <obj_property name="ObjectShortName">count_rst</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/count" type="other">
+      <obj_property name="ElementShortName">count</obj_property>
+      <obj_property name="ObjectShortName">count</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/en_clk" type="logic">
+      <obj_property name="ElementShortName">en_clk</obj_property>
+      <obj_property name="ObjectShortName">en_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/en_cs" type="logic">
+      <obj_property name="ElementShortName">en_cs</obj_property>
+      <obj_property name="ObjectShortName">en_cs</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/en_cs_next" type="logic">
+      <obj_property name="ElementShortName">en_cs_next</obj_property>
+      <obj_property name="ObjectShortName">en_cs_next</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/ce_rd" type="logic">
+      <obj_property name="ElementShortName">ce_rd</obj_property>
+      <obj_property name="ObjectShortName">ce_rd</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/ce_rd_1" type="logic">
+      <obj_property name="ElementShortName">ce_rd_1</obj_property>
+      <obj_property name="ObjectShortName">ce_rd_1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/r_strobe" type="array">
+      <obj_property name="ElementShortName">r_strobe[1:2]</obj_property>
+      <obj_property name="ObjectShortName">r_strobe[1:2]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/r_level" type="other">
+      <obj_property name="ElementShortName">r_level</obj_property>
+      <obj_property name="ObjectShortName">r_level</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/r_count" type="array">
+      <obj_property name="ElementShortName">r_count[15:0]</obj_property>
+      <obj_property name="ObjectShortName">r_count[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/r_last" type="logic">
+      <obj_property name="ElementShortName">r_last</obj_property>
+      <obj_property name="ObjectShortName">r_last</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/r_fifo_we" type="logic">
+      <obj_property name="ElementShortName">r_fifo_we</obj_property>
+      <obj_property name="ObjectShortName">r_fifo_we</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/r_fifo_wa" type="array">
+      <obj_property name="ElementShortName">r_fifo_wa[4:0]</obj_property>
+      <obj_property name="ObjectShortName">r_fifo_wa[4:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/r_fifo_wd" type="array">
+      <obj_property name="ElementShortName">r_fifo_wd[0:2][5:0]</obj_property>
+      <obj_property name="ObjectShortName">r_fifo_wd[0:2][5:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/r_fifo_ra" type="array">
+      <obj_property name="ElementShortName">r_fifo_ra[4:0]</obj_property>
+      <obj_property name="ObjectShortName">r_fifo_ra[4:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/r_fifo_rd" type="array">
+      <obj_property name="ElementShortName">r_fifo_rd[0:2][5:0]</obj_property>
+      <obj_property name="ObjectShortName">r_fifo_rd[0:2][5:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rst_n_o" type="logic">
+      <obj_property name="ElementShortName">h_rst_n_o</obj_property>
+      <obj_property name="ObjectShortName">h_rst_n_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_cs_n_o" type="logic">
+      <obj_property name="ElementShortName">h_cs_n_o</obj_property>
+      <obj_property name="ObjectShortName">h_cs_n_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_clk_o" type="logic">
+      <obj_property name="ElementShortName">h_clk_o</obj_property>
+      <obj_property name="ObjectShortName">h_clk_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_i" type="logic">
+      <obj_property name="ElementShortName">h_rwds_i</obj_property>
+      <obj_property name="ObjectShortName">h_rwds_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_i_d" type="logic">
+      <obj_property name="ElementShortName">h_rwds_i_d</obj_property>
+      <obj_property name="ObjectShortName">h_rwds_i_d</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_i_b" type="logic">
+      <obj_property name="ElementShortName">h_rwds_i_b</obj_property>
+      <obj_property name="ObjectShortName">h_rwds_i_b</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_i_c" type="logic">
+      <obj_property name="ElementShortName">h_rwds_i_c</obj_property>
+      <obj_property name="ObjectShortName">h_rwds_i_c</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_o_1" type="logic">
+      <obj_property name="ElementShortName">h_rwds_o_1</obj_property>
+      <obj_property name="ObjectShortName">h_rwds_o_1</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_o_2" type="logic">
+      <obj_property name="ElementShortName">h_rwds_o_2</obj_property>
+      <obj_property name="ObjectShortName">h_rwds_o_2</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_o" type="logic">
+      <obj_property name="ElementShortName">h_rwds_o</obj_property>
+      <obj_property name="ObjectShortName">h_rwds_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_t" type="logic">
+      <obj_property name="ElementShortName">h_rwds_t</obj_property>
+      <obj_property name="ObjectShortName">h_rwds_t</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_dq_i" type="array">
+      <obj_property name="ElementShortName">h_dq_i[7:0]</obj_property>
+      <obj_property name="ObjectShortName">h_dq_i[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_dq_i_r" type="array">
+      <obj_property name="ElementShortName">h_dq_i_r[15:0]</obj_property>
+      <obj_property name="ObjectShortName">h_dq_i_r[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_dq_o_1" type="array">
+      <obj_property name="ElementShortName">h_dq_o_1[7:0]</obj_property>
+      <obj_property name="ObjectShortName">h_dq_o_1[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_dq_o_2" type="array">
+      <obj_property name="ElementShortName">h_dq_o_2[7:0]</obj_property>
+      <obj_property name="ObjectShortName">h_dq_o_2[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_dq_o" type="array">
+      <obj_property name="ElementShortName">h_dq_o[7:0]</obj_property>
+      <obj_property name="ObjectShortName">h_dq_o[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_dq_t" type="logic">
+      <obj_property name="ElementShortName">h_dq_t</obj_property>
+      <obj_property name="ObjectShortName">h_dq_t</obj_property>
+   </wvobject>
+   <wvobject type="divider" fp_name="divider112">
+      <obj_property name="label">/model_hram</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/rst_n_i" type="logic">
+      <obj_property name="ElementShortName">rst_n_i</obj_property>
+      <obj_property name="ObjectShortName">rst_n_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/clk_i" type="logic">
+      <obj_property name="ElementShortName">clk_i</obj_property>
+      <obj_property name="ObjectShortName">clk_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/cs_n_i" type="logic">
+      <obj_property name="ElementShortName">cs_n_i</obj_property>
+      <obj_property name="ObjectShortName">cs_n_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/rwds_i" type="logic">
+      <obj_property name="ElementShortName">rwds_i</obj_property>
+      <obj_property name="ObjectShortName">rwds_i</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/rwds_o" type="logic">
+      <obj_property name="ElementShortName">rwds_o</obj_property>
+      <obj_property name="ObjectShortName">rwds_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/rwds_oe" type="logic">
+      <obj_property name="ElementShortName">rwds_oe</obj_property>
+      <obj_property name="ObjectShortName">rwds_oe</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/dq_i" type="array">
+      <obj_property name="ElementShortName">dq_i[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dq_i[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/dq_o" type="array">
+      <obj_property name="ElementShortName">dq_o[7:0]</obj_property>
+      <obj_property name="ObjectShortName">dq_o[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/dq_oe" type="logic">
+      <obj_property name="ElementShortName">dq_oe</obj_property>
+      <obj_property name="ObjectShortName">dq_oe</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/state_por" type="other">
+      <obj_property name="ElementShortName">state_por</obj_property>
+      <obj_property name="ObjectShortName">state_por</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/count_hclk" type="other">
+      <obj_property name="ElementShortName">count_hclk</obj_property>
+      <obj_property name="ObjectShortName">count_hclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/state" type="other">
+      <obj_property name="ElementShortName">state</obj_property>
+      <obj_property name="ObjectShortName">state</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/count" type="other">
+      <obj_property name="ElementShortName">count</obj_property>
+      <obj_property name="ObjectShortName">count</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/ca" type="array">
+      <obj_property name="ElementShortName">ca[47:0]</obj_property>
+      <obj_property name="ObjectShortName">ca[47:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/refresh" type="logic">
+      <obj_property name="ElementShortName">refresh</obj_property>
+      <obj_property name="ObjectShortName">refresh</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/cfgreg0" type="array">
+      <obj_property name="ElementShortName">cfgreg0[15:0]</obj_property>
+      <obj_property name="ObjectShortName">cfgreg0[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/cfgreg1" type="array">
+      <obj_property name="ElementShortName">cfgreg1[15:0]</obj_property>
+      <obj_property name="ObjectShortName">cfgreg1[15:0]</obj_property>
+   </wvobject>
+</wave_config>
