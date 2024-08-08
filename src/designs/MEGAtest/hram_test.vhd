@@ -364,22 +364,14 @@ begin
     begin
       if s_csr_ctrl_dmode_rand then -- random
         d_data <= prng_d_data;
-      else -- regular (handle checkerboard inversion)
-        if s_csr_ctrl_dmode_cbi then
-          s := s_csr_ctrl_dmode_pol & d_word;
-          case s is
-            when "00"   => d_data <=     incr_data(15 downto  8) & not incr_data( 7 downto  0);
-            when "01"   => d_data <= not incr_data(31 downto 24) &     incr_data(23 downto 16);
-            when "10"   => d_data <= not incr_data(15 downto  8) &     incr_data( 7 downto  0);
-            when "11"   => d_data <=     incr_data(31 downto 24) & not incr_data(23 downto 16);
-            when others => d_data <= (others => 'X');
-          end case;
-        else
-          d_data <= incr_data;
-        end if;
+      else -- regular
+        d_data <= incr_data;
         incr_data <= std_ulogic_vector(unsigned(incr_data)+unsigned(s_csr_incr));
       end if;
     end procedure i_data_update;
+
+    variable x : std_ulogic_vector(31 downto 0);
+    variable d : std_ulogic_vector(31 downto 0);
 
   begin
     if i_rst = '1' then
@@ -533,41 +525,62 @@ begin
           end if;
 
         when D_WR =>
+          if s_csr_ctrl_dmode_cbi then
+            x := x"00FF_FF00" when s_csr_ctrl_dmode_pol = '1' else x"FF00_00FF";
+          else
+            x := x"0000_0000";
+          end if;
+          d := d_data xor x;
           if not i_w_valid then
             i_w_valid <= '1';
             i_w_be    <= "11"; -- TODO fix this to support masking
             if d_word then
-              i_w_data <= d_data(31 downto 16);
+              i_w_be <= not s_csr_ctrl_wmode_pol & s_csr_ctrl_wmode_pol
+                when s_csr_ctrl_wmode_cbm = '1' else "11";
+              i_w_data <= d(31 downto 16);
               i_data_update;
             else
-              i_w_data <= d_data(15 downto 0);
+              i_w_be <= s_csr_ctrl_wmode_pol & not s_csr_ctrl_wmode_pol
+                when s_csr_ctrl_wmode_cbm = '1' else "11";
+              i_w_data <= d(15 downto 0);
             end if;
             d_word <= not d_word;
           elsif i_w_valid and i_w_ready then
             if i_w_last then
               i_w_valid <= '0';
+              i_w_be    <= (others => 'X');
               i_w_data  <= (others => 'X');
               state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
             else
               if d_word then
-                i_w_data <= d_data(31 downto 16);
+                i_w_be <= not s_csr_ctrl_wmode_pol & s_csr_ctrl_wmode_pol
+                  when s_csr_ctrl_wmode_cbm = '1' else "11";
+                i_w_data <= d(31 downto 16);
                 i_data_update;
               else
-                i_w_data <= d_data(15 downto 0);
+                i_w_be <= s_csr_ctrl_wmode_pol & not s_csr_ctrl_wmode_pol
+                  when s_csr_ctrl_wmode_cbm = '1' else "11";
+                i_w_data <= d(15 downto 0);
               end if;
               d_word <= not d_word;
             end if;
           end if;
 
         when D_RD =>
+          if s_csr_ctrl_dmode_cbi then
+            x := x"00FF_FF00" when s_csr_ctrl_dmode_pol = '1' else x"FF00_00FF";
+          else
+            x := x"0000_0000";
+          end if;
+          d := d_data xor x;
           if i_r_valid and i_r_ready then
             if t_err = '0' then
-              if (d_word = '0' and i_r_data /= d_data(15 downto  0))
-              or (d_word = '1' and i_r_data /= d_data(31 downto 16))
+              if (d_word = '0' and i_r_data /= d(15 downto  0))
+              or (d_word = '1' and i_r_data /= d(31 downto 16))
               then
                 t_err  <= '1';
                 d_edat(15 downto  0) <= i_r_data;
-                d_edat(31 downto 16) <= d_data(31 downto 16) when d_word = '1' else d_data(15 downto 0);
+                d_edat(31 downto 16) <= d(31 downto 16) when d_word = '1' else d(15 downto 0);
               else
                 d_eadd <= incr(d_eadd);
               end if;
@@ -647,6 +660,7 @@ begin
       out_data  => prng_a_data
     );
 
+  -- TODO: consider using s_csr_incr for prng_d_seed
   prng_d_seed <= mirror(prng_a_seed);
 
   U_PRNG_D: component rng_xoshiro128plusplus

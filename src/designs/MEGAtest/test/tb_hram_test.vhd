@@ -156,6 +156,8 @@ begin
 
   begin
 
+    --------------------------------------------------------------------------------
+
     x_rst  <= '1';
     s_rst  <= '1';
     s_en   <= '0';
@@ -180,6 +182,8 @@ begin
     end loop;
     report "LOCKED";
 
+    --------------------------------------------------------------------------------
+
     -- set up latency (configuration register 0)
     run('0', '1', ADDR_CFGREG0, x"0000" & DATA_CFGREG0);
 
@@ -187,56 +191,74 @@ begin
     run('1', '1', ADDR_IDREG0, x"0000" & DATA_IDREG0);
     report "ID register 0 OK";
 
+    --------------------------------------------------------------------------------
+
     -- fill
-    report "fill";
     run(
       r_w   => '0',
       reg   => '0',
       addr  => x"0000_0000",
       data  => x"0000_0000",
-      incr  => x"0000_0001",
+      incr  => x"0000_0000",
       size  => x"0001_0000", -- 64kBytes
-      amode => '0',
-      wmode => "00",
+      amode => '0',          -- sequential addressing
+      wmode => "00",         -- no masking
       dmode => "001",        -- random data
       bmode => '1',          -- random burst:
       bmag  => x"5"          --  1-64 words
     );
 
---    -- create error deliberately
---    report "fill";
---    run(
---      r_w   => '0',
---      reg   => '0',
---      addr  => x"0000_0080",
---      data  => x"0000_ABCD",
---      incr  => x"0000_0000",
---      size  => x"0000_0002",
---      amode => '0',
---      wmode => "00",
---      dmode => "000",
---      bmode => '0',
---      bmag  => x"0"
---    );
+    -- masked checkerboard inverse fill
+    run(
+      r_w   => '0',
+      reg   => '0',
+      addr  => x"0000_0000",
+      data  => x"0000_0000",
+      incr  => x"0000_0000",
+      size  => x"0001_0000", -- 64kBytes
+      amode => '0',          -- sequential addressing
+      wmode => "01",         -- checkerboard masking
+      dmode => "011",        -- random data, checkerboard inversion
+      bmode => '1',          -- random burst:
+      bmag  => x"5"          --  1-64 words
+    );
+
+    -- create error deliberately
+    run(
+      r_w   => '0',
+      reg   => '0',
+      addr  => x"0000_FFFE",
+      data  => x"0000_ABCD",
+      incr  => x"0000_0000",
+      size  => x"0000_0002",
+      amode => '0',
+      wmode => "00",
+      dmode => "000",
+      bmode => '0',
+      bmag  => x"0"
+    );
 
     -- check
-    report "test";
     run(
       r_w   => '1',
       reg   => '0',
       addr  => x"0000_0000",
       data  => x"0000_0000",
-      incr  => x"0000_0001",
+      incr  => x"0000_0000",
       size  => x"0001_0000", -- 64kBytes
-      amode => '0',
-      wmode => "00",
-      dmode => "001",        -- random data
+      amode => '0',          -- sequential addressing
+      wmode => "00",         -- masking n/a for read
+      dmode => "011",        -- random data, checkerboard inversion
       bmode => '1',          -- random burst:
       bmag  => x"5"          --  1-64 words
     );
 
-    report "done";
+    --------------------------------------------------------------------------------
+
+    report "DONE";
     std.env.finish;
+
+    --------------------------------------------------------------------------------
 
   end process P_MAIN;
 
