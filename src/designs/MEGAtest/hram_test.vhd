@@ -66,7 +66,6 @@ use work.csr_pkg.all;
 use work.sync_reg_u_pkg.all;
 use work.overclock_pkg.all;
 use work.hram_ctrl_pkg.all;
-use work.hram_swizzle_pkg.all;
 use work.hram_test_pkg.all;
 
 library ieee;
@@ -107,40 +106,37 @@ architecture rtl of hram_test is
 
   --------------------------------------------------------------------------------
 
-  constant BM        : integer := 4; -- burst magitude - width of BMAG field
+  constant BMW       : integer := 4; -- burst magitude (BMAG) field width
   constant ADDR_MSB  : integer := ROWS_LOG2+COLS_LOG2;
-  constant LEN_MSB   : integer := (2**BM)-1;
-
-  constant ROW_SWIZZLE_TABLE : sulv_vector(0 to (2**ROWS_LOG2)-1)(ROWS_LOG2-1 downto 0) := swizzle_table(ROWS_LOG2);
-  constant COL_SWIZZLE_TABLE : sulv_vector(0 to (2**COLS_LOG2)-1)(COLS_LOG2-1 downto 0) := swizzle_table(COLS_LOG2);
+  constant LEN_MSB   : integer := (2**BMW)-1;
 
   --------------------------------------------------------------------------------
   -- registers
 
   alias reg_addr_t is hram_test_reg_addr_t;
   alias reg_data_t is hram_test_reg_data_t;
-  type regs_data_t is array(natural range <>) of reg_data_t;
+  subtype regs_data_t is sulv_vector(open)(31 downto 0);
 
   constant CSR_DEFS : csr_defs_t(open)(
     addr(reg_addr_t'range),
     init(reg_data_t'range),
     bits(reg_data_t'range)
   ) := (
-      ( RA_CTRL, x"FFFFFFFF", (BM+11 downto 0 => RW, others => RO)    ),
-      ( RA_STAT, x"FFFFFFFF", (others => RO)                          ),
-      ( RA_BASE, x"FFFFFFFF", (ADDR_MSB downto 1 => RW, others => RO) ),
+      ( RA_CTRL, x"00000000", (BMW+11 downto 0 => RW, others => RO)   ),
+      ( RA_STAT, x"00000000", (others => RO)                          ),
+      ( RA_BASE, x"00000000", (ADDR_MSB downto 1 => RW, others => RO) ),
       ( RA_SIZE, x"FFFFFFFF", (ADDR_MSB downto 1 => RW, others => RO) ),
-      ( RA_DATA, x"FFFFFFFF", (others => RW)                          ),
-      ( RA_INCR, x"FFFFFFFF", (others => RW)                          ),
-      ( RA_EADD, x"FFFFFFFF", (others => RO)                          ),
-      ( RA_EDAT, x"FFFFFFFF", (others => RO)                          )
+      ( RA_DATA, x"00000000", (others => RW)                          ),
+      ( RA_INCR, x"00000000", (others => RW)                          ),
+      ( RA_EADD, x"00000000", (others => RO)                          ),
+      ( RA_EDAT, x"00000000", (others => RO)                          )
   );
 
   signal s_csr_w : regs_data_t(CSR_DEFS'range);
   signal s_csr_p : regs_data_t(CSR_DEFS'range);
   signal s_csr_r : regs_data_t(CSR_DEFS'range) := (others => (others => '0'));
 
-  alias s_csr_ctrl : std_ulogic_vector(31 downto 0) is s_csr_w(csr_addr_to_idx(RA_CTRL,CSR_DEFS));
+  alias s_csr_ctrl : reg_data_t is s_csr_w(csr_addr_to_idx(RA_CTRL,CSR_DEFS));
   alias s_csr_stat : reg_data_t is s_csr_r(csr_addr_to_idx(RA_STAT,CSR_DEFS));
   alias s_csr_base : reg_data_t is s_csr_w(csr_addr_to_idx(RA_BASE,CSR_DEFS));
   alias s_csr_size : reg_data_t is s_csr_w(csr_addr_to_idx(RA_SIZE,CSR_DEFS));
@@ -149,15 +145,15 @@ architecture rtl of hram_test is
   alias s_csr_eadd : reg_data_t is s_csr_r(csr_addr_to_idx(RA_EADD,CSR_DEFS));
   alias s_csr_edat : reg_data_t is s_csr_r(csr_addr_to_idx(RA_EDAT,CSR_DEFS));
 
-  alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)    is s_csr_ctrl(1 downto 0);
-  alias s_csr_ctrl_run    : std_ulogic                       is s_csr_ctrl(2);
-  alias s_csr_ctrl_r_w    : std_ulogic                       is s_csr_ctrl(3);
-  alias s_csr_ctrl_reg    : std_ulogic                       is s_csr_ctrl(4);
-  alias s_csr_ctrl_amode  : std_ulogic                       is s_csr_ctrl(5);               -- 0 = sequential, 1 = scattered
-  alias s_csr_ctrl_wmode  : std_ulogic_vector(1 downto 0)    is s_csr_ctrl(7 downto 6);
-  alias s_csr_ctrl_dmode  : std_ulogic_vector(2 downto 0)    is s_csr_ctrl(10 downto 8);
-  alias s_csr_ctrl_bmode  : std_ulogic                       is s_csr_ctrl(11);              -- burst mode: 0 = fixed, 1 = PRNG
-  alias s_csr_ctrl_bmag   : std_ulogic_vector(BM-1 downto 0) is s_csr_ctrl(BM+11 downto 12); -- burst magnitude
+  alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(1 downto 0);
+  alias s_csr_ctrl_run    : std_ulogic                        is s_csr_ctrl(2);
+  alias s_csr_ctrl_r_w    : std_ulogic                        is s_csr_ctrl(3);
+  alias s_csr_ctrl_reg    : std_ulogic                        is s_csr_ctrl(4);
+  alias s_csr_ctrl_amode  : std_ulogic                        is s_csr_ctrl(5);               -- 0 = sequential, 1 = randomised
+  alias s_csr_ctrl_wmode  : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(7 downto 6);
+  alias s_csr_ctrl_dmode  : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(10 downto 8);
+  alias s_csr_ctrl_bmode  : std_ulogic                        is s_csr_ctrl(11);              -- burst mode: 0 = fixed, 1 = PRNG
+  alias s_csr_ctrl_bmag   : std_ulogic_vector(BMW-1 downto 0) is s_csr_ctrl(BMW+11 downto 12); -- burst magnitude
 
   alias s_csr_ctrl_wmode_cbm  : std_ulogic is s_csr_ctrl_wmode(0); -- checkerboard masking
   alias s_csr_ctrl_wmode_pol  : std_ulogic is s_csr_ctrl_wmode(1); -- checkerboard initial polarity
@@ -170,12 +166,19 @@ architecture rtl of hram_test is
   alias s_csr_stat_err : std_ulogic is s_csr_stat(16); -- error occurred
   alias s_csr_ctrl_lol : std_ulogic is s_csr_stat(24); -- loss of lock
 
+  -- register fields synchronised to internal clock domain
+
+  signal i_csr_ctrl_run      : std_ulogic;
+
   --------------------------------------------------------------------------------
   -- internal clock domain
 
+  -- reset and clocks
   signal i_rst      : std_ulogic;
   signal i_clk      : std_ulogic;
   signal i_clk_dly  : std_ulogic;
+
+  -- controller system interface
   signal i_a_ready  : std_ulogic;
   signal i_a_valid  : std_ulogic;
   signal i_a_r_w    : std_ulogic;
@@ -193,44 +196,46 @@ architecture rtl of hram_test is
   signal i_r_last   : std_ulogic;
   signal i_r_data   : std_ulogic_vector(15 downto 0);
 
-  signal i_run      : std_ulogic;
-  signal i_bsy      : std_ulogic;
-  signal i_fin      : std_ulogic;
-  signal i_err      : std_ulogic;
+  -- test controller status
+  signal t_bsy      : std_ulogic;
+  signal t_fin      : std_ulogic;
+  signal t_err      : std_ulogic;
 
-  signal i_r_w      : std_ulogic;
-  signal i_reg      : std_ulogic;
-  signal i_count    : std_ulogic_vector(i_a_addr'range);
-  signal i_lm       : std_ulogic_vector(i_a_len'range);  -- len mask
-  signal i_len      : std_ulogic_vector(i_a_len'range);
-  signal i_addr     : std_ulogic_vector(i_a_addr'range);
-  signal i_col_swz  : std_ulogic_vector(COLS_LOG2-1 downto 0);
-  signal i_row_swz  : std_ulogic_vector(ROWS_LOG2-1 downto 0);
-  signal i_addr_swz : std_ulogic_vector(i_a_addr'range); -- address, swizzled
-  signal i_word     : std_ulogic;
-  signal i_data     : std_ulogic_vector(31 downto 0);
-  signal i_eadd     : std_ulogic_vector(i_a_addr'range);
-  signal i_edat     : std_ulogic_vector(31 downto 0);
+  -- address state machine
+  type state_a_t is (A_IDLE,A_PRNG,A_PREP1,A_PREP2,A_PREP3,A_VALID,A_DONE);
+  signal state_a    : state_a_t;
+  signal a_count    : std_ulogic_vector(i_a_addr'range); -- count remaining words
+  signal a_lm       : std_ulogic_vector(i_a_len'range);  -- len mask
+  signal a_len      : std_ulogic_vector(i_a_len'range);
+  signal a_addr     : std_ulogic_vector(i_a_addr'range);
+  signal a_row_rnd  : std_ulogic_vector(ROWS_LOG2-1 downto 0);
+  signal a_addr_rnd : std_ulogic_vector(i_a_addr'range); -- address, swizzled
+  alias a_col : std_ulogic_vector(COLS_LOG2-1 downto 0) is a_addr(COLS_LOG2 downto 1);
+  alias a_row : std_ulogic_vector(ROWS_LOG2-1 downto 0) is a_addr(ROWS_LOG2+COLS_LOG2 downto COLS_LOG2+1);
 
+  -- data state machine
+  type state_d_t is (D_IDLE,D_PRNG,D_PREP,D_WAIT,D_WR,D_RD,D_DONE);
+  signal state_d : state_d_t;
+  signal d_word     : std_ulogic;
+  signal d_data     : std_ulogic_vector(31 downto 0);
+  signal d_eadd     : std_ulogic_vector(i_a_addr'range);
+  signal d_edat     : std_ulogic_vector(31 downto 0);
   signal incr_data  : std_ulogic_vector(31 downto 0);
 
-  alias i_col : std_ulogic_vector(COLS_LOG2-1 downto 0) is i_addr(COLS_LOG2 downto 1);
-  alias i_row : std_ulogic_vector(ROWS_LOG2-1 downto 0) is i_addr(ROWS_LOG2+COLS_LOG2 downto COLS_LOG2+1);
-
-  type state_a_t is (A_IDLE,A_PRNG,A_PREP1,A_PREP2,A_PREP3,A_ADDR,A_DONE);
-  signal state_a : state_a_t;
-
-  type state_d_t is (D_IDLE,D_PREP,W_DATA,W_DONE,R_DATA);
-  signal state_d : state_d_t;
-
   --------------------------------------------------------------------------------
-  -- PRNG related
+  -- synthesisable PRNG
 
-  signal prng_init  : std_ulogic;
-  signal prng_seed  : std_ulogic_vector(127 downto 0);
-  signal prng_ready : std_ulogic;
-  signal prng_valid : std_ulogic;
-  signal prng_data  : std_ulogic_vector(31 downto 0);
+  signal prng_a_init  : std_ulogic;
+  signal prng_a_seed  : std_ulogic_vector(127 downto 0);
+  signal prng_a_ready : std_ulogic;
+  signal prng_a_valid : std_ulogic;
+  signal prng_a_data  : std_ulogic_vector(31 downto 0);
+
+  signal prng_d_init  : std_ulogic;
+  signal prng_d_seed  : std_ulogic_vector(127 downto 0);
+  signal prng_d_ready : std_ulogic;
+  signal prng_d_valid : std_ulogic;
+  signal prng_d_data  : std_ulogic_vector(31 downto 0);
 
   component rng_xoshiro128plusplus is
     generic (
@@ -249,6 +254,23 @@ architecture rtl of hram_test is
   end component;
 
   --------------------------------------------------------------------------------
+  -- row address randomisation:
+  -- TODO fix this to guarantee 1:1 mapping
+
+  impure function random_table(n : integer) return sulv_vector is
+    variable r    : sulv_vector(0 to (2**n)-1)(n-1 downto 0);
+    variable prng : prng_t;
+  begin
+    prng.rand_seed(123,456);
+    for i in r'range loop
+      r(i) := prng.rand_slv(0,(2**n)-1,n);
+    end loop;
+    return r;
+  end function random_table;
+
+  constant ROW_RANDOM_TABLE : sulv_vector(0 to (2**ROWS_LOG2)-1)(ROWS_LOG2-1 downto 0) := random_table(ROWS_LOG2);
+
+  --------------------------------------------------------------------------------
 
 begin
 
@@ -256,9 +278,6 @@ begin
 
   U_CSR: component csr
     generic map (
-      reg_addr_t => reg_addr_t,
-      reg_data_t => reg_data_t,
-      csr_defs_t => csr_defs_t,
       CSR_DEFS   => CSR_DEFS,
       ADDR_MASK  => "00011100" -- 8 registers max
     )
@@ -267,7 +286,7 @@ begin
       clk  => s_clk,
       en   => s_en,
       we   => s_we,
-      addr => s_addr,
+      addr => s_addr & "00",
       din  => s_din,
       dout => s_dout,
       w    => s_csr_w,
@@ -275,21 +294,20 @@ begin
       r    => s_csr_r
     );
 
-  s_csr_eadd <= (ADDR_MSB downto 1 => i_eadd, others => '0');
-  s_csr_edat <= i_edat;
+  s_csr_eadd <= (ADDR_MSB downto 1 => d_eadd, others => '0');
+  s_csr_edat <= d_edat;
 
   --------------------------------------------------------------------------------
 
-  U_SYNC_S: component sync_reg_u
+  U_SYNC_S: component sync_reg_u -- v4p ignore w-301 (missing port associations)
     generic map (
       STAGES => 3
     )
     port map (
-      rst   => s_rst,
       clk   => s_clk,
-      i(0)  => i_bsy,
-      i(1)  => i_fin,
-      i(2)  => i_err,
+      i(0)  => t_bsy,
+      i(1)  => t_fin,
+      i(2)  => t_err,
       i(3)  => i_rst,
       o(0)  => s_csr_stat_bsy,
       o(1)  => s_csr_stat_fin,
@@ -305,7 +323,7 @@ begin
       rst   => i_rst,
       clk   => i_clk,
       i(0)  => s_csr_ctrl_run,
-      o(0)  => i_run
+      o(0)  => i_csr_ctrl_run
     );
 
   --------------------------------------------------------------------------------
@@ -322,23 +340,22 @@ begin
 
   --------------------------------------------------------------------------------
 
-  P_COMB: process(all)
+  i_a_wrap  <= '0'; -- TODO exercise wrapping?
+
+  P_LM: process(s_csr_ctrl_bmag)
   begin
+    a_lm <= (others => '0');
+    a_lm(to_integer(unsigned(s_csr_ctrl_bmag)) downto 0) <= (others => '1');
+  end process P_LM;
 
-    i_a_wrap  <= '0'; -- TODO excercise wrapping
+  a_addr_rnd <= a_row_rnd & a_col;
 
-    i_addr_swz <= i_row_swz & i_col_swz;
+  prng_a_ready <= bool2sl(state_a = A_PREP1) and s_csr_ctrl_bmode and not s_csr_ctrl_amode;
 
-    prng_ready <= '1' when (state_a = A_PREP1) or (
-      (s_csr_ctrl_dmode_rand = '1') and (
-        (state_d = D_PREP) or
-        (i_w_valid = '1' and i_w_ready = '1') or
-        (i_r_valid = '1' and i_r_ready = '1')
-      )
-    ) else '0';
-
-  end process P_COMB;
-
+  prng_d_ready <=
+    bool2sl(state_d = D_PREP) or
+    (bool2sl(state_d = D_WR) and d_word and ((i_w_valid and i_w_ready and not i_w_last) or not i_w_valid)) or
+    (bool2sl(state_d = D_RD) and d_word and i_r_valid and i_r_ready);
 
   P_MAIN: process(i_rst,i_clk)
 
@@ -346,139 +363,136 @@ begin
       variable s : std_ulogic_vector(1 downto 0);
     begin
       if s_csr_ctrl_dmode_rand then -- random
-        i_data <= prng_data(31 downto 16) when i_word else prng_data(15 downto 0);
+        d_data <= prng_d_data;
       else -- regular (handle checkerboard inversion)
         if s_csr_ctrl_dmode_cbi then
-          s := s_csr_ctrl_dmode_pol & i_word;
+          s := s_csr_ctrl_dmode_pol & d_word;
           case s is
-            when "00"   => i_data <=     incr_data(15 downto  8) & not incr_data( 7 downto  0);
-            when "01"   => i_data <= not incr_data(31 downto 24) &     incr_data(23 downto 16);
-            when "10"   => i_data <= not incr_data(15 downto  8) &     incr_data( 7 downto  0);
-            when "11"   => i_data <=     incr_data(31 downto 24) & not incr_data(23 downto 16);
-            when others => i_data <= (others => 'X');
+            when "00"   => d_data <=     incr_data(15 downto  8) & not incr_data( 7 downto  0);
+            when "01"   => d_data <= not incr_data(31 downto 24) &     incr_data(23 downto 16);
+            when "10"   => d_data <= not incr_data(15 downto  8) &     incr_data( 7 downto  0);
+            when "11"   => d_data <=     incr_data(31 downto 24) & not incr_data(23 downto 16);
+            when others => d_data <= (others => 'X');
           end case;
         else
-          i_data <= incr_data;
+          d_data <= incr_data;
         end if;
+        incr_data <= std_ulogic_vector(unsigned(incr_data)+unsigned(s_csr_incr));
       end if;
     end procedure i_data_update;
 
   begin
     if i_rst = '1' then
 
-      i_a_valid  <= '0';
-      i_a_r_w    <= 'X';
-      i_a_reg    <= 'X';
-      i_a_wrap   <= 'X';
-      i_a_len    <= (others => 'X');
-      i_a_addr   <= (others => 'X');
-      i_w_valid  <= '0';
-      i_w_be     <= (others => 'X');
-      i_w_data   <= (others => 'X');
-      i_r_valid  <= '0';
-      i_bsy      <= '0';
-      i_fin      <= '0';
-      i_err      <= '0';
-      i_lm       <= (others => 'X');
-      i_addr     <= (others => 'X');
-      state_a    <= A_IDLE;
-      state_d    <= D_IDLE;
+      i_a_valid    <= '0';
+      i_a_r_w      <= 'X';
+      i_a_reg      <= 'X';
+      i_a_len      <= (others => 'X');
+      i_a_addr     <= (others => 'X');
+      i_w_valid    <= '0';
+      i_w_be       <= (others => 'X');
+      i_w_data     <= (others => 'X');
+      i_r_ready    <= '0';
+      t_bsy        <= '0';
+      t_fin        <= '0';
+      t_err        <= '0';
+      a_addr       <= (others => 'X');
+      state_a      <= A_IDLE;
+      state_d      <= D_IDLE;
+      prng_a_init  <= '0';
+      prng_d_init  <= '0';
 
     elsif rising_edge(i_clk) then
 
-      --------------------------------------------------------------------------------
-      -- address swizzling (synchronous ROM)
-
-      i_row_swz <= ROW_SWIZZLE_TABLE(to_integer(unsigned(i_row)));
-      i_col_swz <= COL_SWIZZLE_TABLE(to_integer(unsigned(i_col)));
+      -- synchronous ROM
+      a_row_rnd <= ROW_RANDOM_TABLE(to_integer(unsigned(a_row)));
 
       --------------------------------------------------------------------------------
       -- address state machine
 
       -- default states
-      prng_init  <= '0';
-      prng_ready <= '0';
+      prng_a_init  <= '0';
+      prng_d_init  <= '0';
 
       -- address channel state machine
       case state_a is
 
         when A_IDLE =>
-          if i_run then
-            i_bsy    <= '1';
-            i_count   <= s_csr_size(ADDR_MSB downto 1);
-            i_lm      <= (to_integer(unsigned(s_csr_ctrl_bmag)) downto 0 => '1', others => '0');
-            i_addr    <= s_csr_base(ADDR_MSB downto 1);
-            prng_init <= '1';
-            state_a   <= A_PRNG;
+          if i_csr_ctrl_run then
+            t_bsy       <= '1';
+            a_count     <= s_csr_size(ADDR_MSB downto 1);
+            a_addr      <= s_csr_base(ADDR_MSB downto 1);
+            d_word      <= '0';
+            incr_data   <= s_csr_data;
+            prng_a_init <= '1';
+            state_a     <= A_PRNG;
           end if;
 
-        -- wait until PRNG ready
-        when A_PRNG =>
-          if prng_valid then
-            prng_ready <= '1';
-            state_a    <= A_PREP1;
+        when A_PRNG => -- wait until PRNG ready
+          if prng_a_valid and not prng_a_init then
+            state_a <= A_PREP1;
           end if;
 
         when A_PREP1 =>
-          i_r_w <= s_csr_ctrl_r_w;
-          i_reg <= s_csr_ctrl_reg;
           if s_csr_ctrl_amode = '0' then -- sequential addressing
             if s_csr_ctrl_bmode = '0' then -- fixed burst length
-              i_len <= (others => '0');
-              i_len(to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
+              a_len <= (others => '0');
+              a_len(to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
             else -- PRNG burst length
-              i_len <= i_lm and prng_data;
+              a_len <= incr(a_lm and prng_a_data(a_lm'range));
             end if;
-          else -- scattered addressing => burst length is always 1
-            i_len  <= (0 => '1', others => '0');
+          else -- randomised addressing => burst length is always 1
+            a_len  <= (0 => '1', others => '0');
           end if;
           state_a <= A_PREP2;
 
         when A_PREP2 =>
-          if unsigned(i_len) > unsigned(i_count) then
-            i_len <= i_count;
+          if unsigned(a_len) > unsigned(a_count) then
+            a_len <= a_count(a_count'right+a_len'length-1 downto a_count'right);
           end if;
           state_a <= A_PREP3;
 
         when A_PREP3 =>
           i_a_valid  <= '1';
-          i_a_r_w    <= i_r_w;
-          i_a_reg    <= i_reg;
-          i_a_len    <= i_len;
+          i_a_r_w    <= s_csr_ctrl_r_w;
+          i_a_reg    <= s_csr_ctrl_reg;
+          i_a_len    <= a_len;
           if s_csr_ctrl_amode = '0' then -- sequential addressing
-            i_a_addr <= i_addr;
-          else -- scattered addressing => burst length is always 1
-            i_a_addr <= i_addr_swz;
+            i_a_addr <= a_addr;
+          else -- randomised addressing => burst length is always 1
+            i_a_addr <= a_addr_rnd;
           end if;
-          i_count <= std_ulogic_vector(unsigned(i_count) - unsigned(i_len));
+          a_count <= std_ulogic_vector(unsigned(a_count) - unsigned(a_len));
           if s_csr_ctrl_amode = '0' then -- sequential addressing
-            i_addr <= std_ulogic_vector(unsigned(i_addr) + unsigned(i_len));
-          else -- scattered addressing - increment row before col
-            i_row <= incr(i_row);
-            i_col <= incr(i_col) when unsigned(not i_row) = 0 else i_col;
+            a_addr <= std_ulogic_vector(unsigned(a_addr) + unsigned(a_len));
+          else -- randomised addressing - increment row before col
+            a_row <= incr(a_row);
+            a_col <= incr(a_col) when unsigned(not a_row) = 0 else a_col;
           end if;
-          state_a <= A_ADDR;
+          state_a <= A_VALID;
 
-        when A_ADDR => -- present address until it is accepted
+        when A_VALID => -- present address until it is accepted
           if i_a_ready = '1' then
             i_a_valid  <= '0';
             i_a_r_w    <= 'X';
             i_a_reg    <= 'X';
-            i_a_wrap   <= 'X';
             i_a_len    <= (others => 'X');
             i_a_addr   <= (others => 'X');
-            if unsigned(i_count) = 0 then
-              i_fin   <= '1';
+            if unsigned(a_count) = 0 then
               state_a <= A_DONE;
             else
               state_a <= A_PREP1;
             end if;
           end if;
 
-        when A_DONE =>
-          if i_run = '0' and state_d = D_IDLE then
-            i_bsy   <= '0';
-            state_a <= A_IDLE;
+        when A_DONE => -- test sequence is complete
+          if state_d = D_DONE then
+            t_fin <= '1';
+            if i_csr_ctrl_run = '0' then
+              t_bsy   <= '0';
+              t_fin   <= '0';
+              state_a <= A_IDLE;
+            end if;
           end if;
 
         when others => null;
@@ -490,51 +504,89 @@ begin
       case state_d is
 
         when D_IDLE =>
-          if i_a_valid and i_a_ready then
-            i_err     <= '0';
-            i_eadd    <= i_a_addr;
-            i_edat    <= (others => 'X');
-            i_word    <= '0';
-            incr_data <= s_csr_data;
+          if i_csr_ctrl_run then
+            prng_d_init <= '1';
+            state_d     <= D_PRNG;
+          end if;
+
+        when D_PRNG => -- wait until PRNG ready
+          if prng_d_valid and not prng_d_init then
+            state_d <= D_PREP;
           end if;
 
         when D_PREP =>
           i_data_update;
-          if not s_csr_ctrl_dmode_rand then
-            incr_data <= std_ulogic_vector(unsigned(incr_data)+unsigned(s_csr_incr));
-          end if;
-          if i_r_w then
-            state_d <= R_DATA;
-          else
-            state_d <= W_DATA;
+          t_err     <= '0';
+          d_edat    <= (others => 'X');
+          state_d   <= D_WAIT;
+
+        when D_WAIT =>
+          if i_a_valid and i_a_ready then
+            if t_err = '0' then
+              d_eadd  <= i_a_addr;
+            end if;
+            if s_csr_ctrl_r_w then
+              state_d <= D_RD;
+            else
+              state_d <= D_WR;
+            end if;
           end if;
 
-        when W_DATA =>
-          if (not i_w_valid) or (i_w_valid and i_w_ready) then
+        when D_WR =>
+          if not i_w_valid then
             i_w_valid <= '1';
-            i_data_update;
-            if not s_csr_ctrl_dmode_rand then
-              incr_data <= std_ulogic_vector(unsigned(incr_data)+unsigned(s_csr_incr));
+            i_w_be    <= "11"; -- TODO fix this to support masking
+            if d_word then
+              i_w_data <= d_data(31 downto 16);
+              i_data_update;
+            else
+              i_w_data <= d_data(15 downto 0);
             end if;
-            i_word <= not i_word;
-            if i_w_valid and i_w_ready and i_w_last then
+            d_word <= not d_word;
+          elsif i_w_valid and i_w_ready then
+            if i_w_last then
               i_w_valid <= '0';
               i_w_data  <= (others => 'X');
-              state_d <= D_IDLE;
+              state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
+            else
+              if d_word then
+                i_w_data <= d_data(31 downto 16);
+                i_data_update;
+              else
+                i_w_data <= d_data(15 downto 0);
+              end if;
+              d_word <= not d_word;
             end if;
           end if;
 
-        when R_DATA =>
-          i_r_ready <= '1';
+        when D_RD =>
           if i_r_valid and i_r_ready then
-            if i_r_data /= i_data and i_err = '0' then
-              i_err  <= '1';
-              --i_eadd <=
-              i_edat(15 downto  0) <= i_r_data;
-              i_edat(31 downto 16) <= i_data;
+            if t_err = '0' then
+              if (d_word = '0' and i_r_data /= d_data(15 downto  0))
+              or (d_word = '1' and i_r_data /= d_data(31 downto 16))
+              then
+                t_err  <= '1';
+                d_edat(15 downto  0) <= i_r_data;
+                d_edat(31 downto 16) <= d_data(31 downto 16) when d_word = '1' else d_data(15 downto 0);
+              else
+                d_eadd <= incr(d_eadd);
+              end if;
             end if;
-            i_data_update;
-            i_eadd <= incr(i_eadd);
+            if d_word then
+              i_data_update;
+            end if;
+            d_word <= not d_word;
+          end if;
+          if i_r_valid and i_r_ready and i_r_last then
+            i_r_ready <= '0';
+            state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
+          elsif not i_r_ready then
+            i_r_ready <= '1';
+          end if;
+
+        when D_DONE =>
+          if i_csr_ctrl_run = '0' then
+            state_d <= D_IDLE;
           end if;
 
       end case;
@@ -577,20 +629,38 @@ begin
 
   --------------------------------------------------------------------------------
 
-  prng_seed <= s_csr_data & not s_csr_data & mirror(s_csr_data) & not mirror(s_csr_data);
+  prng_a_seed <=
+    x"DEADBEEFBAADF00D0D15EA5EA5A5A5A5" xor
+    s_csr_data & s_csr_data & s_csr_data & s_csr_data;
 
-  U_PRNG: component rng_xoshiro128plusplus
+  U_PRNG_A: component rng_xoshiro128plusplus
     generic map (
       INIT_SEED => (others => '0')
     )
     port map (
       clk       => i_clk,
       rst       => i_rst,
-      reseed    => prng_init,
-      newseed   => prng_seed,
-      out_ready => prng_ready,
-      out_valid => prng_valid,
-      out_data  => prng_data
+      reseed    => prng_a_init,
+      newseed   => prng_a_seed,
+      out_ready => prng_a_ready,
+      out_valid => prng_a_valid,
+      out_data  => prng_a_data
+    );
+
+  prng_d_seed <= mirror(prng_a_seed);
+
+  U_PRNG_D: component rng_xoshiro128plusplus
+    generic map (
+      INIT_SEED => (others => '0')
+    )
+    port map (
+      clk       => i_clk,
+      rst       => i_rst,
+      reseed    => prng_d_init,
+      newseed   => prng_d_seed,
+      out_ready => prng_d_ready,
+      out_valid => prng_d_valid,
+      out_data  => prng_d_data
     );
 
   --------------------------------------------------------------------------------

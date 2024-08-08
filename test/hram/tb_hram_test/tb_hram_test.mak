@@ -24,13 +24,12 @@ VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/basic/csr.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm_drp.vhd \
 	$(toplevel)/src/designs/MEGAtest/overclock.vhd \
-	$(toplevel)/src/designs/MEGAtest/hram_swizzle.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/ram_sdp_32x6.vhd \
 	$(toplevel)/src/common/hram/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hram_ctrl.vhd \
 	$(toplevel)/src/designs/MEGAtest/$(DUT).vhd \
 	$(toplevel)/submodules/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl \
 	$(toplevel)/src/designs/MEGAtest/test/$(TB).vhd
-VIVADO_SIM_RUN=$(TB)
+VIVADO_SIM_RUN=$(TB);OUTPUT_DELAY="MAX"
 VIVADO_LIB_SRC=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_VPKG.vhd=unisim \

@@ -28,8 +28,10 @@ package model_hram_pkg is
   -- HyperRAM parameter bundle type
   -- tXXX reals correspond to nanoseconds
   type hram_params_t is record
-    ra_bits  : integer;                       -- memory array row address bits
-    ca_bits  : integer;                       -- memory array column address bits
+    idreg0   : std_ulogic_vector(15 downto 0); -- ID register 0 value
+    idreg1   : std_ulogic_vector(15 downto 0); -- ID register 1 value
+    cfgreg0  : std_ulogic_vector(15 downto 0); -- configuration register 0 default value
+    cfgreg1  : std_ulogic_vector(15 downto 0); -- configuration register 1 default value
     tDRI     : real;                          -- distributed refresh interval
     tVCS     : real;                          -- power on and reset high to first access
     tRP      : real;                          -- reset pulse width, min
@@ -64,7 +66,6 @@ package model_hram_pkg is
     tOZmax   : real;                          -- chip select inactive to DQ hi Z, max
     tCSM     : real;                          -- chip select, max
     tRFH     : real;                          -- refresh duration
-    manuf    : std_ulogic_vector(3 downto 0); -- manufacturer field of idreg0
   end record hram_params_t;
 
   -- timing violation severity bundle type
@@ -86,50 +87,11 @@ package model_hram_pkg is
     tCSM     : severity_level;
   end record hram_sev_t;
 
-  constant HRAM_PARAMS_NULL : hram_params_t := (
-    ra_bits  => 0,
-    ca_bits  => 0,
-    tDRI     => 0.0,
-    tVCS     => 0.0,
-    tRP      => 0.0,
-    tRH      => 0.0,
-    tRPH     => 0.0,
-    tCK      => 0.0,
-    CKHPmin  => 0.0,
-    CKHPmax  => 0.0,
-    tCSHI    => 0.0,
-    tRWR     => 0.0,
-    tCSS     => 0.0,
-    tDSVmin  => 0.0,
-    tDSVmax  => 0.0,
-    tIS      => 0.0,
-    tIH      => 0.0,
-    tACC     => 0.0,
-    tDQLZmin => 0.0,
-    tCKDmin  => 0.0,
-    tCKDmax  => 0.0,
-    tCKDImin => 0.0,
-    tCKDImax => 0.0,
-    tCKDSmin => 0.0,
-    tCKDSmax => 0.0,
-    tDSSmin  => 0.0,
-    tDSSmax  => 0.0,
-    tDSHmin  => 0.0,
-    tDSHmax  => 0.0,
-    tCSH     => 0.0,
-    tDSZmin  => 0.0,
-    tDSZmax  => 0.0,
-    tOZmin   => 0.0,
-    tOZmax   => 0.0,
-    tCSM     => 0.0,
-    tRFH     => 0.0,
-    manuf    => "XXXX"
-  );
-
-  -- parameter bundle for ISSI 8Mx8 100MHz 3.0V e.g. IS66WVH8M8DBLL-100B1LI
-  constant HRAM_8Mx8_100_3V0 : hram_params_t := (
-    ra_bits  => 13,       -- log2(memory array rows) (c.w. 8192)
-    ca_bits  => 9,        -- log2(memory array columns) (c.w. 512)
+  constant IS66WVH8M8DBLL_100B1LI : hram_params_t := (
+    idreg0   => x"0C83",  -- ID register 0 value
+    idreg1   => x"0000",  -- ID register 1 value
+    cfgreg0  => x"8F1F",  -- configuration register 0 default value
+    cfgreg1  => x"0002",  -- configuration register 1 default value
     tDRI     => 4000.0,   -- distributed refresh interval (4 uS)
     tVCS     => 150000.0, -- power on and reset high to first access (150uS)
     tRP      => 200.0,    -- reset pulse width, min
@@ -163,49 +125,8 @@ package model_hram_pkg is
     tOZmin   => 0.0,      -- chip select inactive to DQ hi Z, min
     tOZmax   => 7.0,      -- chip select inactive to DQ hi Z, max
     tCSM     => 4000.0,   -- chip select, max
-    tRFH     => 40.0,     -- refresh
-    manuf    => "0011"    -- ISSI manufacturer ID
-  );
+    tRFH     => 40.0      -- refresh
 
-  -- parameter bundle for ISSI 8Mx8 133MHz 3.0V e.g. IS66WVH8M8DBLL-133B1LI
-  constant HRAM_8Mx8_133_3V0 : hram_params_t := (
-    ra_bits  => 13,       -- log2(memory array rows) (c.w. 8192)
-    ca_bits  => 9,        -- log2(memory array columns) (c.w. 512)
-    tDRI     => 4000.0,   -- distributed refresh interval (4 uS)
-    tVCS     => 150000.0, -- power on and reset high to first access (150uS)
-    tRP      => 200.0,    -- reset pulse width, min
-    tRH      => 200.0,    -- reset negation to chip select assertion, min
-    tRPH     => 400.0,    -- reset assertion to chip select assertion, min
-    tCK      => 7.5,      -- clock period, min
-    CKHPmin  => 0.45,     -- half clock period, min
-    CKHPmax  => 0.55,     -- half clock period, min
-    tCSHI    => 7.5,      -- chip select high, min
-    tRWR     => 37.5,     -- read-write recovery time, min
-    tCSS     => 3.0,      -- chip select setup
-    tDSVmin  => 0.0,      -- data strobe valid, min
-    tDSVmax  => 12.0,     -- data strobe valid, max
-    tIS      => 0.8,      -- input setup, min
-    tIH      => 0.8,      -- input hold, min
-    tACC     => 37.5,     -- access, max
-    tDQLZmin => 0.0,      -- clock to DQ low Z, min
-    tCKDmin  => 1.0,      -- clock to DQ valid, min
-    tCKDmax  => 7.0,      -- clock to DQ valid, max
-    tCKDImin => 0.5,      -- clock to DQ invalid, min
-    tCKDImax => 5.6,      -- clock to DQ invalid, max
-    tCKDSmin => 1.0,      -- clock to RDWS valid, min
-    tCKDSmax => 7.0,      -- clock to RDWS valid, max
-    tDSSmin  => -0.6,     -- RDWS to DQ valid, min
-    tDSSmax  => +0.6,     -- RDWS to DQ valid, max
-    tDSHmin  => -0.6,     -- RDWS to DQ hold, min
-    tDSHmax  => +0.6,     -- RDWS to DQ hold, max
-    tCSH     => 3.0,      -- chip select hold, min
-    tDSZmin  => 0.0,      -- chip select inactive to RWDS hi Z, min
-    tDSZmax  => 6.0,      -- chip select inactive to RWDS hi Z, max
-    tOZmin   => 0.0,      -- chip select inactive to DQ hi Z, min
-    tOZmax   => 6.0,      -- chip select inactive to DQ hi Z, max
-    tCSM     => 4000.0,   -- chip select, max
-    tRFH     => 37.5,     -- refresh
-    manuf    => "0011"    -- ISSI manufacturer ID
   );
 
   -- default severity bundle
@@ -232,7 +153,7 @@ package model_hram_pkg is
       SIM_MEM_SIZE : integer;
       OUTPUT_DELAY : string        := "MAX_MIN";
       CHECK_TIMING : boolean       := true;
-      PARAMS       : hram_params_t := HRAM_PARAMS_NULL;
+      PARAMS       : hram_params_t;
       SEV          : hram_sev_t    := HRAM_SEV_DEFAULT;
       PREFIX       : string        := "model_hram: "
     );
@@ -262,7 +183,7 @@ entity model_hram is
     SIM_MEM_SIZE : integer;
     OUTPUT_DELAY : string        := "MAX_MIN"; -- "MIN", "MAX", "MAX_MIN" or "UNIFORM"
     CHECK_TIMING : boolean       := true;
-    PARAMS       : hram_params_t := HRAM_PARAMS_NULL;
+    PARAMS       : hram_params_t;
     SEV          : hram_sev_t    := HRAM_SEV_DEFAULT;
     PREFIX       : string        := "model_hram: "
   );
@@ -295,8 +216,8 @@ architecture model of model_hram is
   --------------------------------------------------------------------------------
   -- build discrete constants from generics (better for linting)
 
-  constant RA_BITS      : integer := PARAMS.ra_bits;
-  constant CA_BITS      : integer := PARAMS.ca_bits;
+  constant RA_BITS      : integer := to_integer(unsigned(PARAMS.idreg0(12 downto 8))+1);
+  constant CA_BITS      : integer := to_integer(unsigned(PARAMS.idreg0( 7 downto 4))+1);
   constant tDRI         : time := real_to_ns( PARAMS.tDRI     );
   constant tVCS         : time := real_to_ns( PARAMS.tVCS     );
   constant tRP          : time := real_to_ns( PARAMS.tRP      );
@@ -349,18 +270,6 @@ architecture model of model_hram is
   constant SEV_tCSM     : severity_level := SEV.tCSM     ;
 
   --------------------------------------------------------------------------------
-  -- other constants
-
-  constant IDREG0       : word_t :=
-    "000" &
-    std_ulogic_vector(to_unsigned(ra_bits-1,5)) &
-    std_ulogic_vector(to_unsigned(ca_bits-1,4)) &
-    PARAMS.manuf;
-  constant IDREG1       : word_t := (others => '0');
-  constant C_CFGREG0    : word_t := "1000111100011111";
-  constant C_CFGREG1    : word_t := "0000000000000010";
-
-  --------------------------------------------------------------------------------
 
   type state_por_t is (POR_STD, POR_EXT, POR_DONE);
 
@@ -401,8 +310,8 @@ architecture model of model_hram is
   signal refresh    : std_ulogic;
 
   -- configuration registers
-  signal cfgreg0 : hram_cr_t := C_CFGREG0;
-  signal cfgreg1 : hram_cr_t := C_CFGREG1;
+  signal cfgreg0 : hram_cr_t := PARAMS.cfgreg0;
+  signal cfgreg1 : hram_cr_t := PARAMS.cfgreg1;
 
   --------------------------------------------------------------------------------
 
@@ -776,8 +685,8 @@ begin
         count      <= 0;
         ca         <= (others => 'X');
         state      <= RESET;
-        cfgreg0    <= C_CFGREG0;
-        cfgreg1    <= C_CFGREG1;
+        cfgreg0    <= PARAMS.cfgreg0;
+        cfgreg1    <= PARAMS.cfgreg1;
 
       elsif falling_edge(cs_n_i) then -- start of access
 
@@ -862,8 +771,8 @@ begin
             rdata := (others => 'X');
             if ca(46) = '1' and unsigned(ca(44 downto 32)) = 0 then
               case ca(31 downto 0) is
-                when x"00_00_00_00" => rdata := IDREG0;
-                when x"00_00_00_01" => rdata := IDREG1;
+                when x"00_00_00_00" => rdata := PARAMS.idreg0;
+                when x"00_00_00_01" => rdata := PARAMS.idreg1;
                 when x"01_00_00_00" => rdata := cfgreg0;
                 when x"01_00_00_01" => rdata := cfgreg1;
                 when others         => null;

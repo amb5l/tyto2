@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- csr.vhd                                                                    --
--- Generic register package.                                                  --
+-- Control and Status Register block.                                         --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -14,6 +14,8 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
+
+use work.tyto_types_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -33,12 +35,8 @@ package csr_pkg is
 
   component csr is
     generic (
-      type reg_addr_t;
-      type reg_data_t;
-      type regs_data_t;
-      type csr_defs_t;
       CSR_DEFS  : csr_defs_t;
-      ADDR_MASK : reg_addr_t
+      ADDR_MASK : std_ulogic_vector
     );
     port (
       rst  : in    std_ulogic;
@@ -48,9 +46,9 @@ package csr_pkg is
       addr : in    std_ulogic_vector;
       din  : in    std_ulogic_vector;
       dout : out   std_ulogic_vector;
-      w    : out   regs_data_t;
-      p    : out   regs_data_t;
-      r    : in    regs_data_t
+      w    : out   sulv_vector;
+      p    : out   sulv_vector;
+      r    : in    sulv_vector
     );
   end component csr;
 
@@ -116,20 +114,17 @@ begin
     elsif rising_edge(clk) then
       p <= (others => (others => '0'));
       if en ='1' then
-        for i in csr_defs'range loop
+        for i in CSR_DEFS'range loop
           if (addr and ADDR_MASK) = (CSR_DEFS(i).addr and ADDR_MASK) then
-            for j in we'range loop -- 4 bytes
+            for j in we'low to we'high loop -- traverse all byte lanes
               if we(j) = '1' then -- write this byte
                 for k in 0 to 7 loop -- 8 bits per byte
                   b := (j*8)+k;
-                  case CSR_DEFS(i).bits(j) is
+                  case CSR_DEFS(i).bits(b) is
                     when RW     => w(i)(b) <= din(b);
                     when W1     => p(i)(b) <= din(b);
                     when others => null;
                   end case;
-                  if CSR_DEFS(i).bits(j) = RW then
-                    w(i)(b) <= din(b);
-                  end if;
                 end loop;
               end if;
             end loop;
@@ -142,7 +137,7 @@ begin
   P_READ: process(en,addr,w,r)
   begin
     if en = '1' then
-      for i in csr_defs'range loop
+      for i in CSR_DEFS'range loop
         if (addr and ADDR_MASK) = (CSR_DEFS(i).addr and ADDR_MASK) then
           for j in dout'range loop
             case CSR_DEFS(i).bits(j) is

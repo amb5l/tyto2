@@ -416,11 +416,10 @@ begin
           if unsigned(burst.trk) = 1 then -- end of burst
             en_clk <= '0';
             state  <= CSHR;
-          elsif not s_r_ready then
-            en_clk <= '0';
-            state  <= CSHR;
           end if;
-          burst.trk <= decr(burst.trk);
+          if en_clk = '1' then
+            burst.trk <= decr(burst.trk);
+          end if;
 
         when CSHR =>
           en_cs_next <= '0';
