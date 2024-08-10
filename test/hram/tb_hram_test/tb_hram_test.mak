@@ -51,3 +51,40 @@ VIVADO_LIB_SRC=\
 include $(make_fpga)/vivado.mak
 
 ################################################################################
+# XSim
+
+XSIM_VHDL_LRM=$(VIVADO_VHDL_LRM)
+XSIM_SRC=$(VIVADO_SIM_SRC)
+XSIM_RUN=$(VIVADO_SIM_RUN)
+
+include $(toplevel)/submodules/make-fpga/xsim.mak
+
+################################################################################
+# GHDL
+
+GHDL_LRM=$(VIVADO_VHDL_LRM)
+GHDL_SRC=$(VIVADO_SIM_SRC)
+GHDL_RUN=$(VIVADO_SIM_RUN)
+GHDL_VENDOR_LIB=xilinx-vivado
+
+include $(toplevel)/submodules/make-fpga/ghdl.mak
+
+################################################################################
+# NVC
+
+NVC_VHDL_LRM=$(VIVADO_VHDL_LRM)
+NVC_SRC=$(VIVADO_SIM_SRC)
+NVC_RUN=$(VIVADO_SIM_RUN)
+
+include $(toplevel)/submodules/make-fpga/nvc.mak
+
+################################################################################
+# ModelSim/Questa/etc
+
+VSIM_VHDL_LRM=$(VIVADO_VHDL_LRM)
+VSIM_SRC=$(VIVADO_SIM_SRC)
+VSIM_RUN=$(VIVADO_SIM_RUN)
+
+include $(toplevel)/submodules/make-fpga/vsim.mak
+
+################################################################################
