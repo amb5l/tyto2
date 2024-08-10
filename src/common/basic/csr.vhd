@@ -35,8 +35,7 @@ package csr_pkg is
 
   component csr is
     generic (
-      CSR_DEFS  : csr_defs_t;
-      ADDR_MASK : std_ulogic_vector
+      CSR_DEFS : csr_defs_t
     );
     port (
       rst  : in    std_ulogic;
@@ -78,8 +77,7 @@ library ieee;
 
 entity csr is
   generic (
-    CSR_DEFS  : csr_defs_t;
-    ADDR_MASK : std_ulogic_vector
+    CSR_DEFS : csr_defs_t
   );
   port (
     rst  : in    std_ulogic;
@@ -112,10 +110,10 @@ begin
         end loop;
       end loop;
     elsif rising_edge(clk) then
-      p <= (others => (others => '0'));
+      p <= (p'range => (p'element'range => '0'));
       if en ='1' then
         for i in CSR_DEFS'range loop
-          if (addr and ADDR_MASK) = (CSR_DEFS(i).addr and ADDR_MASK) then
+          if addr = CSR_DEFS(i).addr then
             for j in we'low to we'high loop -- traverse all byte lanes
               if we(j) = '1' then -- write this byte
                 for k in 0 to 7 loop -- 8 bits per byte
@@ -138,7 +136,7 @@ begin
   begin
     if en = '1' then
       for i in CSR_DEFS'range loop
-        if (addr and ADDR_MASK) = (CSR_DEFS(i).addr and ADDR_MASK) then
+        if addr = CSR_DEFS(i).addr then
           for j in dout'range loop
             case CSR_DEFS(i).bits(j) is
               when RW      => dout(j) <= w(i)(j);
@@ -149,7 +147,7 @@ begin
         end if;
       end loop;
     else
-      dout <=  (others => 'X');
+      dout <=  (dout'range => 'X');
     end if;
   end process P_READ;
 

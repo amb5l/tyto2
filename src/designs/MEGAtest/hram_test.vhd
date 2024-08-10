@@ -113,46 +113,55 @@ architecture rtl of hram_test is
   --------------------------------------------------------------------------------
   -- registers
 
-  alias reg_addr_t is hram_test_reg_addr_t;
+  constant RA_HI : integer := 4;
+  constant RA_LO : integer := 2;
+
   alias reg_data_t is hram_test_reg_data_t;
   subtype regs_data_t is sulv_vector(open)(31 downto 0);
 
+  function csr_bits_addr return csr_bits_t is
+    variable r : csr_bits_t(reg_data_t'range) := (others => RO);
+  begin
+    r(ADDR_MSB downto 1) := (others => RW);
+    return r;
+  end function csr_bits_addr;
+
   constant CSR_DEFS : csr_defs_t(open)(
-    addr(reg_addr_t'range),
+    addr(RA_HI downto RA_LO),
     init(reg_data_t'range),
     bits(reg_data_t'range)
   ) := (
-      ( RA_CTRL, x"00000000", (BMW+11 downto 0 => RW, others => RO)   ),
-      ( RA_STAT, x"00000000", (others => RO)                          ),
-      ( RA_BASE, x"00000000", (ADDR_MSB downto 1 => RW, others => RO) ),
-      ( RA_SIZE, x"FFFFFFFF", (ADDR_MSB downto 1 => RW, others => RO) ),
-      ( RA_DATA, x"00000000", (others => RW)                          ),
-      ( RA_INCR, x"00000000", (others => RW)                          ),
-      ( RA_EADD, x"00000000", (others => RO)                          ),
-      ( RA_EDAT, x"00000000", (others => RO)                          )
+      ( RA_CTRL(RA_HI downto RA_LO), x"00000000", (BMW+11 downto 0 => RW, others => RO)   ),
+      ( RA_STAT(RA_HI downto RA_LO), x"00000000", (others => RO)                          ),
+      ( RA_BASE(RA_HI downto RA_LO), x"00000000", csr_bits_addr                           ),
+      ( RA_SIZE(RA_HI downto RA_LO), x"FFFFFFFF", csr_bits_addr                           ),
+      ( RA_DATA(RA_HI downto RA_LO), x"00000000", (others => RW)                          ),
+      ( RA_INCR(RA_HI downto RA_LO), x"00000000", (others => RW)                          ),
+      ( RA_EADD(RA_HI downto RA_LO), x"00000000", (others => RO)                          ),
+      ( RA_EDAT(RA_HI downto RA_LO), x"00000000", (others => RO)                          )
   );
 
   signal s_csr_w : regs_data_t(CSR_DEFS'range);
   signal s_csr_p : regs_data_t(CSR_DEFS'range);
   signal s_csr_r : regs_data_t(CSR_DEFS'range) := (others => (others => '0'));
 
-  alias s_csr_ctrl : reg_data_t is s_csr_w(csr_addr_to_idx(RA_CTRL,CSR_DEFS));
-  alias s_csr_stat : reg_data_t is s_csr_r(csr_addr_to_idx(RA_STAT,CSR_DEFS));
-  alias s_csr_base : reg_data_t is s_csr_w(csr_addr_to_idx(RA_BASE,CSR_DEFS));
-  alias s_csr_size : reg_data_t is s_csr_w(csr_addr_to_idx(RA_SIZE,CSR_DEFS));
-  alias s_csr_data : reg_data_t is s_csr_w(csr_addr_to_idx(RA_DATA,CSR_DEFS));
-  alias s_csr_incr : reg_data_t is s_csr_w(csr_addr_to_idx(RA_INCR,CSR_DEFS));
-  alias s_csr_eadd : reg_data_t is s_csr_r(csr_addr_to_idx(RA_EADD,CSR_DEFS));
-  alias s_csr_edat : reg_data_t is s_csr_r(csr_addr_to_idx(RA_EDAT,CSR_DEFS));
+  alias s_csr_ctrl : reg_data_t is s_csr_w(csr_addr_to_idx(RA_CTRL(RA_HI downto RA_LO),CSR_DEFS));
+  alias s_csr_stat : reg_data_t is s_csr_r(csr_addr_to_idx(RA_STAT(RA_HI downto RA_LO),CSR_DEFS));
+  alias s_csr_base : reg_data_t is s_csr_w(csr_addr_to_idx(RA_BASE(RA_HI downto RA_LO),CSR_DEFS));
+  alias s_csr_size : reg_data_t is s_csr_w(csr_addr_to_idx(RA_SIZE(RA_HI downto RA_LO),CSR_DEFS));
+  alias s_csr_data : reg_data_t is s_csr_w(csr_addr_to_idx(RA_DATA(RA_HI downto RA_LO),CSR_DEFS));
+  alias s_csr_incr : reg_data_t is s_csr_w(csr_addr_to_idx(RA_INCR(RA_HI downto RA_LO),CSR_DEFS));
+  alias s_csr_eadd : reg_data_t is s_csr_r(csr_addr_to_idx(RA_EADD(RA_HI downto RA_LO),CSR_DEFS));
+  alias s_csr_edat : reg_data_t is s_csr_r(csr_addr_to_idx(RA_EDAT(RA_HI downto RA_LO),CSR_DEFS));
 
   alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(1 downto 0);
   alias s_csr_ctrl_run    : std_ulogic                        is s_csr_ctrl(2);
   alias s_csr_ctrl_r_w    : std_ulogic                        is s_csr_ctrl(3);
   alias s_csr_ctrl_reg    : std_ulogic                        is s_csr_ctrl(4);
-  alias s_csr_ctrl_amode  : std_ulogic                        is s_csr_ctrl(5);               -- 0 = sequential, 1 = randomised
+  alias s_csr_ctrl_amode  : std_ulogic                        is s_csr_ctrl(5);                -- 0 = sequential, 1 = randomised
   alias s_csr_ctrl_wmode  : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(7 downto 6);
   alias s_csr_ctrl_dmode  : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(10 downto 8);
-  alias s_csr_ctrl_bmode  : std_ulogic                        is s_csr_ctrl(11);              -- burst mode: 0 = fixed, 1 = PRNG
+  alias s_csr_ctrl_bmode  : std_ulogic                        is s_csr_ctrl(11);               -- burst mode: 0 = fixed, 1 = PRNG
   alias s_csr_ctrl_bmag   : std_ulogic_vector(BMW-1 downto 0) is s_csr_ctrl(BMW+11 downto 12); -- burst magnitude
 
   alias s_csr_ctrl_wmode_cbm  : std_ulogic is s_csr_ctrl_wmode(0); -- checkerboard masking
@@ -257,18 +266,36 @@ architecture rtl of hram_test is
   -- row address randomisation:
   -- TODO fix this to guarantee 1:1 mapping
 
-  impure function random_table(n : integer) return sulv_vector is
+  impure function random_1to1(n : integer) return sulv_vector is
     variable r    : sulv_vector(0 to (2**n)-1)(n-1 downto 0);
+    variable v    : std_ulogic_vector(n-1 downto 0);
     variable prng : prng_t;
+    function find(v : std_ulogic_vector; t : sulv_vector) return boolean is
+    begin
+      for i in t'range loop
+        if t(i) = v then
+          return true;
+        end if;
+      end loop;
+      return false;
+    end function find;
   begin
     prng.rand_seed(123,456);
-    for i in r'range loop
-      r(i) := prng.rand_slv(0,(2**n)-1,n);
-    end loop;
+    r := (others => (others => 'X'));
+    outer: for i in r'range loop
+      inner: loop
+        v := prng.rand_slv(0,(2**n)-1,n);
+        if not find(v,r) then
+          r(i) := v;
+      --    report "random_table: i =" & integer'image(i) & "r(i) =" & to_hstring(r(i));
+          exit inner;
+        end if;
+      end loop inner;
+    end loop outer;
     return r;
-  end function random_table;
+  end function random_1to1;
 
-  constant ROW_RANDOM_TABLE : sulv_vector(0 to (2**ROWS_LOG2)-1)(ROWS_LOG2-1 downto 0) := random_table(ROWS_LOG2);
+  constant ROW_RANDOM_TABLE : sulv_vector(0 to (2**ROWS_LOG2)-1)(ROWS_LOG2-1 downto 0) := random_1to1(ROWS_LOG2);
 
   --------------------------------------------------------------------------------
 
@@ -278,15 +305,14 @@ begin
 
   U_CSR: component csr
     generic map (
-      CSR_DEFS   => CSR_DEFS,
-      ADDR_MASK  => "00011100" -- 8 registers max
+      CSR_DEFS  => CSR_DEFS
     )
     port map (
       rst  => s_rst,
       clk  => s_clk,
       en   => s_en,
       we   => s_we,
-      addr => s_addr & "00",
+      addr => s_addr(RA_HI downto RA_LO),
       din  => s_din,
       dout => s_dout,
       w    => s_csr_w,
@@ -294,8 +320,12 @@ begin
       r    => s_csr_r
     );
 
-  s_csr_eadd <= (ADDR_MSB downto 1 => d_eadd, others => '0');
-  s_csr_edat <= d_edat;
+  P_CSR: process(all)
+  begin
+    s_csr_eadd <= (others => '0');
+    s_csr_eadd(ADDR_MSB downto 1) <= d_eadd;
+    s_csr_edat <= d_edat;
+  end process P_CSR;
 
   --------------------------------------------------------------------------------
 
@@ -360,7 +390,6 @@ begin
   P_MAIN: process(i_rst,i_clk)
 
     procedure i_data_update is
-      variable s : std_ulogic_vector(1 downto 0);
     begin
       if s_csr_ctrl_dmode_rand then -- random
         d_data <= prng_d_data;
