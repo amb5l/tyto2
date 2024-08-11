@@ -180,8 +180,8 @@ library ieee;
 
 entity model_hram is
   generic (
-    SIM_MEM_SIZE : integer;
-    OUTPUT_DELAY : string        := "MAX_MIN"; -- "MIN", "MAX", "MAX_MIN" or "UNIFORM"
+    SIM_MEM_SIZE : integer;                           -- size of simulated memory in bytes
+    OUTPUT_DELAY : string        := "MAX_MIN";        -- "MIN", "MAX", "MAX_MIN" or "UNIFORM"
     CHECK_TIMING : boolean       := true;
     PARAMS       : hram_params_t;
     SEV          : hram_sev_t    := HRAM_SEV_DEFAULT;
@@ -286,7 +286,7 @@ architecture model of model_hram is
     UNKNOWN  -- unknown/crazy
   );
 
-  type mem_t is array(0 to SIM_MEM_SIZE-1) of word_t;
+  type mem_t is array(0 to (SIM_MEM_SIZE/2)-1) of word_t;
 
   --------------------------------------------------------------------------------
 
