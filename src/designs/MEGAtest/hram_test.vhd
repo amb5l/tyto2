@@ -183,7 +183,7 @@ architecture rtl of hram_test is
 
   -- register fields synchronised to internal clock domain
 
-  signal i_csr_ctrl_run      : std_ulogic;
+  signal i_csr_ctrl_run : std_ulogic;
 
   --------------------------------------------------------------------------------
   -- internal clock domain
@@ -230,7 +230,7 @@ architecture rtl of hram_test is
 
   -- data state machine
   type state_d_t is (D_IDLE,D_PRNG,D_PREP,D_WAIT,D_WR,D_RD,D_DONE);
-  signal state_d : state_d_t;
+  signal state_d    : state_d_t;
   signal d_word     : std_ulogic;
   signal d_data     : std_ulogic_vector(31 downto 0);
   signal d_eadd     : std_ulogic_vector(i_a_addr'range);
@@ -523,14 +523,14 @@ begin
 
         when D_PREP =>
           i_data_update;
-          t_err     <= '0';
-          d_edat    <= (others => 'X');
-          state_d   <= D_WAIT;
+          t_err   <= '0';
+          d_edat  <= (others => 'X');
+          state_d <= D_WAIT;
 
         when D_WAIT =>
           if i_a_valid and i_a_ready then
             if t_err = '0' then
-              d_eadd  <= i_a_addr;
+              d_eadd <= i_a_addr;
             end if;
             if s_csr_ctrl_r_w then
               state_d <= D_RD;
