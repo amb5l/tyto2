@@ -66,6 +66,7 @@ use work.csr_pkg.all;
 use work.sync_reg_u_pkg.all;
 use work.overclock_pkg.all;
 use work.hram_ctrl_pkg.all;
+use work.random_1to1_pkg.all;
 use work.hram_test_pkg.all;
 
 library ieee;
@@ -264,38 +265,18 @@ architecture rtl of hram_test is
 
   --------------------------------------------------------------------------------
   -- row address randomisation:
-  -- TODO fix this to guarantee 1:1 mapping
 
-  impure function random_1to1(n : integer) return sulv_vector is
+  impure function random_1to1_v(n : integer) return sulv_vector is
+    constant t    : integer_vector := random_1to1;
     variable r    : sulv_vector(0 to (2**n)-1)(n-1 downto 0);
-    variable v    : std_ulogic_vector(n-1 downto 0);
-    variable prng : prng_t;
-    function find(v : std_ulogic_vector; t : sulv_vector) return boolean is
-    begin
-      for i in t'range loop
-        if t(i) = v then
-          return true;
-        end if;
-      end loop;
-      return false;
-    end function find;
   begin
-    prng.rand_seed(123,456);
-    r := (others => (others => 'X'));
-    outer: for i in r'range loop
-      inner: loop
-        v := prng.rand_slv(0,(2**n)-1,n);
-        if not find(v,r) then
-          r(i) := v;
-      --    report "random_table: i =" & integer'image(i) & "r(i) =" & to_hstring(r(i));
-          exit inner;
-        end if;
-      end loop inner;
-    end loop outer;
+    for i in r'range loop
+      r(i) := std_ulogic_vector(to_unsigned(t(i),n));
+    end loop;
     return r;
-  end function random_1to1;
+  end function random_1to1_v;
 
-  constant ROW_RANDOM_TABLE : sulv_vector(0 to (2**ROWS_LOG2)-1)(ROWS_LOG2-1 downto 0) := random_1to1(ROWS_LOG2);
+  constant ROW_RND : sulv_vector(0 to (2**ROWS_LOG2)-1)(ROWS_LOG2-1 downto 0) := random_1to1_v(ROWS_LOG2);
 
   --------------------------------------------------------------------------------
 
@@ -426,7 +407,7 @@ begin
     elsif rising_edge(i_clk) then
 
       -- synchronous ROM
-      a_row_rnd <= ROW_RANDOM_TABLE(to_integer(unsigned(a_row)));
+      a_row_rnd <= ROW_RND(to_integer(unsigned(a_row)));
 
       --------------------------------------------------------------------------------
       -- address state machine

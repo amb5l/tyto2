@@ -23,7 +23,9 @@ library ieee;
 
 entity tb_hram_test is
   generic (
-    OUTPUT_DELAY : string
+    OUTPUT_DELAY : string;
+    ROWS_LOG2     : integer;
+    COLS_LOG2     : integer
   );
 end entity tb_hram_test;
 
@@ -64,6 +66,8 @@ architecture sim of tb_hram_test is
   end function hram_params;
 
 begin
+
+  --------------------------------------------------------------------------------
 
   clk_100m <= '0' when clk_100m = 'U' else not clk_100m after 5 ns; -- 100 MHz
   x_clk <= clk_100m;
@@ -155,6 +159,12 @@ begin
     end procedure run;
 
   begin
+
+    --------------------------------------------------------------------------------
+
+    assert ROWS_LOG2 = 13 and COLS_LOG2 = 9
+      report "ROWS_LOG2 and COLS_LOG2 must be 13 and 9 respectively"
+      severity failure;
 
     --------------------------------------------------------------------------------
 
@@ -266,8 +276,8 @@ begin
 
   DUT: component hram_test
     generic map (
-      ROWS_LOG2 => 13,
-      COLS_LOG2 => 9
+      ROWS_LOG2 => ROWS_LOG2,
+      COLS_LOG2 => COLS_LOG2
     )
     port map (
       x_rst   => x_rst,
