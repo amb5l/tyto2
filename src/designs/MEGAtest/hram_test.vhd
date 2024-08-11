@@ -117,6 +117,11 @@ architecture rtl of hram_test is
   constant RA_HI : integer := 4;
   constant RA_LO : integer := 2;
 
+  function ra(addr : std_ulogic_vector) return std_ulogic_vector is
+  begin
+    return addr(RA_HI downto RA_LO);
+  end function ra;
+
   alias reg_data_t is hram_test_reg_data_t;
   subtype regs_data_t is sulv_vector(open)(31 downto 0);
 
@@ -132,28 +137,28 @@ architecture rtl of hram_test is
     init(reg_data_t'range),
     bits(reg_data_t'range)
   ) := (
-      ( RA_CTRL(RA_HI downto RA_LO), x"00000000", (BMW+11 downto 0 => RW, others => RO)   ),
-      ( RA_STAT(RA_HI downto RA_LO), x"00000000", (others => RO)                          ),
-      ( RA_BASE(RA_HI downto RA_LO), x"00000000", csr_bits_addr                           ),
-      ( RA_SIZE(RA_HI downto RA_LO), x"FFFFFFFF", csr_bits_addr                           ),
-      ( RA_DATA(RA_HI downto RA_LO), x"00000000", (others => RW)                          ),
-      ( RA_INCR(RA_HI downto RA_LO), x"00000000", (others => RW)                          ),
-      ( RA_EADD(RA_HI downto RA_LO), x"00000000", (others => RO)                          ),
-      ( RA_EDAT(RA_HI downto RA_LO), x"00000000", (others => RO)                          )
+      ( ra(RA_CTRL), x"00000000", (BMW+11 downto 0 => RW, others => RO)   ),
+      ( ra(RA_STAT), x"00000000", (others => RO)                          ),
+      ( ra(RA_BASE), x"00000000", csr_bits_addr                           ),
+      ( ra(RA_SIZE), x"FFFFFFFF", csr_bits_addr                           ),
+      ( ra(RA_DATA), x"00000000", (others => RW)                          ),
+      ( ra(RA_INCR), x"00000000", (others => RW)                          ),
+      ( ra(RA_EADD), x"00000000", (others => RO)                          ),
+      ( ra(RA_EDAT), x"00000000", (others => RO)                          )
   );
 
   signal s_csr_w : regs_data_t(CSR_DEFS'range);
   signal s_csr_p : regs_data_t(CSR_DEFS'range);
   signal s_csr_r : regs_data_t(CSR_DEFS'range) := (others => (others => '0'));
 
-  alias s_csr_ctrl : reg_data_t is s_csr_w(csr_addr_to_idx(RA_CTRL(RA_HI downto RA_LO),CSR_DEFS));
-  alias s_csr_stat : reg_data_t is s_csr_r(csr_addr_to_idx(RA_STAT(RA_HI downto RA_LO),CSR_DEFS));
-  alias s_csr_base : reg_data_t is s_csr_w(csr_addr_to_idx(RA_BASE(RA_HI downto RA_LO),CSR_DEFS));
-  alias s_csr_size : reg_data_t is s_csr_w(csr_addr_to_idx(RA_SIZE(RA_HI downto RA_LO),CSR_DEFS));
-  alias s_csr_data : reg_data_t is s_csr_w(csr_addr_to_idx(RA_DATA(RA_HI downto RA_LO),CSR_DEFS));
-  alias s_csr_incr : reg_data_t is s_csr_w(csr_addr_to_idx(RA_INCR(RA_HI downto RA_LO),CSR_DEFS));
-  alias s_csr_eadd : reg_data_t is s_csr_r(csr_addr_to_idx(RA_EADD(RA_HI downto RA_LO),CSR_DEFS));
-  alias s_csr_edat : reg_data_t is s_csr_r(csr_addr_to_idx(RA_EDAT(RA_HI downto RA_LO),CSR_DEFS));
+  alias s_csr_ctrl : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_CTRL),CSR_DEFS));
+  alias s_csr_stat : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_STAT),CSR_DEFS));
+  alias s_csr_base : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_BASE),CSR_DEFS));
+  alias s_csr_size : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_SIZE),CSR_DEFS));
+  alias s_csr_data : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_DATA),CSR_DEFS));
+  alias s_csr_incr : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_INCR),CSR_DEFS));
+  alias s_csr_eadd : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EADD),CSR_DEFS));
+  alias s_csr_edat : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDAT),CSR_DEFS));
 
   alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(1 downto 0);
   alias s_csr_ctrl_run    : std_ulogic                        is s_csr_ctrl(2);
