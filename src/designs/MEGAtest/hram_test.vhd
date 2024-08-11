@@ -38,20 +38,20 @@ package hram_test_pkg is
       COLS_LOG2 : integer  -- e.g. 9 for 512 columns
     );
     port (
-      x_rst     : in    std_ulogic;
-      x_clk     : in    std_ulogic;
-      s_rst     : in    std_ulogic;
-      s_clk     : in    std_ulogic;
-      s_en      : in    std_ulogic;
-      s_we      : in    std_ulogic_vector(3 downto 0);
-      s_addr    : in    std_ulogic_vector(7 downto 2);
-      s_din     : in    std_ulogic_vector(31 downto 0);
-      s_dout    : out   std_ulogic_vector(31 downto 0);
-      h_rst_n   : out   std_logic;
-      h_cs_n    : out   std_logic;
-      h_clk     : out   std_logic;
-      h_rwds    : inout std_logic;
-      h_dq      : inout std_logic_vector(7 downto 0)
+      x_rst   : in    std_ulogic;
+      x_clk   : in    std_ulogic;
+      s_rst   : in    std_ulogic;
+      s_clk   : in    std_ulogic;
+      s_en    : in    std_ulogic;
+      s_we    : in    std_ulogic_vector(3 downto 0);
+      s_addr  : in    std_ulogic_vector(7 downto 2);
+      s_din   : in    std_ulogic_vector(31 downto 0);
+      s_dout  : out   std_ulogic_vector(31 downto 0);
+      h_rst_n : out   std_logic;
+      h_cs_n  : out   std_logic;
+      h_clk   : out   std_logic;
+      h_rwds  : inout std_logic;
+      h_dq    : inout std_logic_vector(7 downto 0)
     );
   end component hram_test;
 
@@ -81,24 +81,24 @@ entity hram_test is
   port (
 
     -- external (reference) clock for MMCM
-    x_rst     : in    std_ulogic;
-    x_clk     : in    std_ulogic;
+    x_rst   : in    std_ulogic;
+    x_clk   : in    std_ulogic;
 
     -- system bus (for register access)
-    s_rst     : in    std_ulogic;
-    s_clk     : in    std_ulogic;
-    s_en      : in    std_ulogic;
-    s_we      : in    std_ulogic_vector(3 downto 0);
-    s_addr    : in    std_ulogic_vector(7 downto 2);
-    s_din     : in    std_ulogic_vector(31 downto 0);
-    s_dout    : out   std_ulogic_vector(31 downto 0);
+    s_rst   : in    std_ulogic;
+    s_clk   : in    std_ulogic;
+    s_en    : in    std_ulogic;
+    s_we    : in    std_ulogic_vector(3 downto 0);
+    s_addr  : in    std_ulogic_vector(7 downto 2);
+    s_din   : in    std_ulogic_vector(31 downto 0);
+    s_dout  : out   std_ulogic_vector(31 downto 0);
 
     -- HyperRAM interface
-    h_rst_n   : out   std_logic;                      -- reset
-    h_cs_n    : out   std_logic;                      -- chip select
-    h_clk     : out   std_logic;                      -- clock
-    h_rwds    : inout std_logic;                      -- read/write data strobe
-    h_dq      : inout std_logic_vector(7 downto 0)    -- command/address/data bus
+    h_rst_n : out   std_logic;                      -- reset
+    h_cs_n  : out   std_logic;                      -- chip select
+    h_clk   : out   std_logic;                      -- clock
+    h_rwds  : inout std_logic;                      -- read/write data strobe
+    h_dq    : inout std_logic_vector(7 downto 0)    -- command/address/data bus
 
   );
 end entity hram_test;
