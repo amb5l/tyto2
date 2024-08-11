@@ -140,7 +140,7 @@ architecture rtl of hram_test is
       ( ra(RA_CTRL), x"00000000", (BMW+11 downto 0 => RW, others => RO)   ),
       ( ra(RA_STAT), x"00000000", (others => RO)                          ),
       ( ra(RA_BASE), x"00000000", csr_bits_addr                           ),
-      ( ra(RA_SIZE), x"FFFFFFFF", csr_bits_addr                           ),
+      ( ra(RA_SIZE), x"00000000", csr_bits_addr                           ),
       ( ra(RA_DATA), x"00000000", (others => RW)                          ),
       ( ra(RA_INCR), x"00000000", (others => RW)                          ),
       ( ra(RA_EADD), x"00000000", (others => RO)                          ),
