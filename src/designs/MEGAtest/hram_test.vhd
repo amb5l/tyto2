@@ -416,11 +416,14 @@ begin
       --------------------------------------------------------------------------------
       -- address state machine
 
-      -- default states
       prng_a_init <= '0';
       prng_d_init <= '0';
 
-      -- address channel state machine
+      x( 7 downto  0) := (others => not s_csr_ctrl_cb_pol);
+      x(15 downto  8) := (others =>     s_csr_ctrl_cb_pol);
+      x(23 downto 16) := (others =>     s_csr_ctrl_cb_pol);
+      x(31 downto 24) := (others => not s_csr_ctrl_cb_pol);
+
       case state_a is
 
         when A_IDLE =>
@@ -435,11 +438,10 @@ begin
           end if;
 
         when A_PRNG => -- wait until PRNG ready
-          if prng_a_valid and not prng_a_init then
-            state_a <= A_PREP1;
-          end if;
+          state_a <= A_PREP1 when prng_a_valid and not prng_a_init;
 
         when A_PREP1 =>
+          a_len <= (0 => '1', others => '0'); -- default burst length is 1
           if s_csr_ctrl_arnd = '0' then -- sequential addressing
             if s_csr_ctrl_brnd = '0' then -- fixed burst length
               a_len <= (others => '0');
@@ -447,8 +449,6 @@ begin
             else -- PRNG burst length
               a_len <= incr(a_lm and prng_a_data(a_lm'range));
             end if;
-          else -- randomised addressing => burst length is always 1
-            a_len <= (0 => '1', others => '0');
           end if;
           state_a <= A_PREP2;
 
@@ -484,11 +484,7 @@ begin
             i_a_reg   <= 'X';
             i_a_len   <= (others => 'X');
             i_a_addr  <= (others => 'X');
-            if unsigned(a_count) = 0 then
-              state_a <= A_DONE;
-            else
-              state_a <= A_PREP1;
-            end if;
+            state_a   <= A_DONE when unsigned(a_count) = 0 else A_PREP1;
           end if;
 
         when A_DONE => -- test sequence is complete
@@ -501,7 +497,6 @@ begin
             end if;
           end if;
 
-        when others => null;
       end case;
 
       --------------------------------------------------------------------------------
@@ -510,15 +505,11 @@ begin
       case state_d is
 
         when D_IDLE =>
-          if i_csr_ctrl_run then
-            prng_d_init <= '1';
-            state_d     <= D_PRNG;
-          end if;
+          prng_d_init <= i_csr_ctrl_run;
+          state_d     <= D_PRNG when i_csr_ctrl_run;
 
         when D_PRNG => -- wait until PRNG ready
-          if prng_d_valid and not prng_d_init then
-            state_d <= D_PREP;
-          end if;
+          state_d <= D_PREP when prng_d_valid and not prng_d_init;
 
         when D_PREP =>
           i_data_update;
@@ -531,35 +522,13 @@ begin
             if t_err = '0' then
               d_eadd <= i_a_addr;
             end if;
-            if s_csr_ctrl_r then -- TODO change to use i_a_r_w
-              state_d <= D_RD;
-            else
-              state_d <= D_WR;
-            end if;
+            -- TODO change to use i_a_r_w
+            state_d <= D_RD when s_csr_ctrl_r else D_WR;
           end if;
 
         when D_WR =>
-          if s_csr_ctrl_cb_i then
-            x := x"00FF_FF00" when s_csr_ctrl_cb_pol = '1' else x"FF00_00FF";
-          else
-            x := x"0000_0000";
-          end if;
-          d := d_data xor x;
-          if not i_w_valid then
-            i_w_valid <= '1';
-            i_w_be    <= "11"; -- TODO fix this to support masking
-            if d_word then
-              i_w_be <= not s_csr_ctrl_cb_pol & s_csr_ctrl_cb_pol
-                when s_csr_ctrl_cb_m = '1' else "11";
-              i_w_data <= d(31 downto 16);
-              i_data_update;
-            else
-              i_w_be <= s_csr_ctrl_cb_pol & not s_csr_ctrl_cb_pol
-                when s_csr_ctrl_cb_m = '1' else "11";
-              i_w_data <= d(15 downto 0);
-            end if;
-            d_word <= not d_word;
-          elsif i_w_valid and i_w_ready then
+          d := d_data xor x when s_csr_ctrl_cb_pol else d_data;
+          if (i_w_valid and i_w_ready) or (not i_w_valid) then
             if i_w_last then
               i_w_valid <= '0';
               i_w_be    <= (others => 'X');
@@ -568,25 +537,23 @@ begin
             else
               if d_word then
                 i_w_be <= not s_csr_ctrl_cb_pol & s_csr_ctrl_cb_pol
-                  when s_csr_ctrl_cb_m = '1' else "11";
+                  when s_csr_ctrl_cb_m else "11";
                 i_w_data <= d(31 downto 16);
                 i_data_update;
               else
                 i_w_be <= s_csr_ctrl_cb_pol & not s_csr_ctrl_cb_pol
-                  when s_csr_ctrl_cb_m = '1' else "11";
+                  when s_csr_ctrl_cb_m else "11";
                 i_w_data <= d(15 downto 0);
               end if;
               d_word <= not d_word;
             end if;
           end if;
+          if not i_w_valid then
+            i_w_valid <= '1';
+          end if;
 
         when D_RD =>
-          if s_csr_ctrl_cb_i then
-            x := x"00FF_FF00" when s_csr_ctrl_cb_pol = '1' else x"FF00_00FF";
-          else
-            x := x"0000_0000";
-          end if;
-          d := d_data xor x;
+          d := d_data xor x when s_csr_ctrl_cb_pol else d_data;
           if i_r_valid and i_r_ready then
             if t_err = '0' then
               if (d_word = '0' and i_r_data /= d(15 downto  0))
@@ -594,7 +561,7 @@ begin
               then
                 t_err                <= '1';
                 d_edat(15 downto  0) <= i_r_data;
-                d_edat(31 downto 16) <= d(31 downto 16) when d_word = '1' else d(15 downto 0);
+                d_edat(31 downto 16) <= d(31 downto 16) when d_word else d(15 downto 0);
               else
                 d_eadd <= incr(d_eadd);
               end if;
@@ -603,18 +570,17 @@ begin
               i_data_update;
             end if;
             d_word <= not d_word;
+            if i_r_last then
+              i_r_ready <= '0';
+              state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
+            end if;
           end if;
-          if i_r_valid and i_r_ready and i_r_last then
-            i_r_ready <= '0';
-            state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
-          elsif not i_r_ready then
+          if not i_r_ready then
             i_r_ready <= '1';
           end if;
 
         when D_DONE =>
-          if i_csr_ctrl_run = '0' then
-            state_d <= D_IDLE;
-          end if;
+          state_d <= D_IDLE when not i_csr_ctrl_run;
 
       end case;
 
