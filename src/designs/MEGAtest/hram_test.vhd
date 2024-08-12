@@ -137,14 +137,14 @@ architecture rtl of hram_test is
     init(reg_data_t'range),
     bits(reg_data_t'range)
   ) := (
-      ( ra(RA_CTRL), x"00000000", (BMW+11 downto 0 => RW, others => RO)   ),
-      ( ra(RA_STAT), x"00000000", (others => RO)                          ),
-      ( ra(RA_BASE), x"00000000", csr_bits_addr                           ),
-      ( ra(RA_SIZE), x"00000000", csr_bits_addr                           ),
-      ( ra(RA_DATA), x"00000000", (others => RW)                          ),
-      ( ra(RA_INCR), x"00000000", (others => RW)                          ),
-      ( ra(RA_EADD), x"00000000", (others => RO)                          ),
-      ( ra(RA_EDAT), x"00000000", (others => RO)                          )
+      ( ra(RA_CTRL), x"00000000", (BMW+11 downto 0 => RW, others => RO) ),
+      ( ra(RA_STAT), x"00000000", (others => RO)                        ),
+      ( ra(RA_BASE), x"00000000", csr_bits_addr                         ),
+      ( ra(RA_SIZE), x"00000000", csr_bits_addr                         ),
+      ( ra(RA_DATA), x"00000000", (others => RW)                        ),
+      ( ra(RA_INCR), x"00000000", (others => RW)                        ),
+      ( ra(RA_EADD), x"00000000", (others => RO)                        ),
+      ( ra(RA_EDAT), x"00000000", (others => RO)                        )
   );
 
   signal s_csr_w : regs_data_t(CSR_DEFS'range);
@@ -272,8 +272,8 @@ architecture rtl of hram_test is
   -- row address randomisation:
 
   impure function random_1to1_v(n : integer) return sulv_vector is
-    constant t    : integer_vector := random_1to1;
-    variable r    : sulv_vector(0 to (2**n)-1)(n-1 downto 0);
+    constant t : integer_vector := random_1to1;
+    variable r : sulv_vector(0 to (2**n)-1)(n-1 downto 0);
   begin
     for i in r'range loop
       r(i) := std_ulogic_vector(to_unsigned(t(i),n));
@@ -291,7 +291,7 @@ begin
 
   U_CSR: component csr
     generic map (
-      CSR_DEFS  => CSR_DEFS
+      CSR_DEFS => CSR_DEFS
     )
     port map (
       rst  => s_rst,
@@ -320,15 +320,15 @@ begin
       STAGES => 3
     )
     port map (
-      clk   => s_clk,
-      i(0)  => t_bsy,
-      i(1)  => t_fin,
-      i(2)  => t_err,
-      i(3)  => i_rst,
-      o(0)  => s_csr_stat_bsy,
-      o(1)  => s_csr_stat_fin,
-      o(2)  => s_csr_stat_err,
-      o(3)  => s_csr_ctrl_lol
+      clk  => s_clk,
+      i(0) => t_bsy,
+      i(1) => t_fin,
+      i(2) => t_err,
+      i(3) => i_rst,
+      o(0) => s_csr_stat_bsy,
+      o(1) => s_csr_stat_fin,
+      o(2) => s_csr_stat_err,
+      o(3) => s_csr_ctrl_lol
     );
 
   U_SYNC_I: component sync_reg_u
@@ -336,10 +336,10 @@ begin
       STAGES => 3
     )
     port map (
-      rst   => i_rst,
-      clk   => i_clk,
-      i(0)  => s_csr_ctrl_run,
-      o(0)  => i_csr_ctrl_run
+      rst  => i_rst,
+      clk  => i_clk,
+      i(0) => s_csr_ctrl_run,
+      o(0) => i_csr_ctrl_run
     );
 
   --------------------------------------------------------------------------------
@@ -356,7 +356,7 @@ begin
 
   --------------------------------------------------------------------------------
 
-  i_a_wrap  <= '0'; -- TODO exercise wrapping?
+  i_a_wrap <= '0'; -- TODO exercise wrapping?
 
   P_LM: process(s_csr_ctrl_bmag)
   begin
@@ -391,23 +391,23 @@ begin
   begin
     if i_rst = '1' then
 
-      i_a_valid    <= '0';
-      i_a_r_w      <= 'X';
-      i_a_reg      <= 'X';
-      i_a_len      <= (others => 'X');
-      i_a_addr     <= (others => 'X');
-      i_w_valid    <= '0';
-      i_w_be       <= (others => 'X');
-      i_w_data     <= (others => 'X');
-      i_r_ready    <= '0';
-      t_bsy        <= '0';
-      t_fin        <= '0';
-      t_err        <= '0';
-      a_addr       <= (others => 'X');
-      state_a      <= A_IDLE;
-      state_d      <= D_IDLE;
-      prng_a_init  <= '0';
-      prng_d_init  <= '0';
+      i_a_valid   <= '0';
+      i_a_r_w     <= 'X';
+      i_a_reg     <= 'X';
+      i_a_len     <= (others => 'X');
+      i_a_addr    <= (others => 'X');
+      i_w_valid   <= '0';
+      i_w_be      <= (others => 'X');
+      i_w_data    <= (others => 'X');
+      i_r_ready   <= '0';
+      t_bsy       <= '0';
+      t_fin       <= '0';
+      t_err       <= '0';
+      a_addr      <= (others => 'X');
+      state_a     <= A_IDLE;
+      state_d     <= D_IDLE;
+      prng_a_init <= '0';
+      prng_d_init <= '0';
 
     elsif rising_edge(i_clk) then
 
@@ -418,8 +418,8 @@ begin
       -- address state machine
 
       -- default states
-      prng_a_init  <= '0';
-      prng_d_init  <= '0';
+      prng_a_init <= '0';
+      prng_d_init <= '0';
 
       -- address channel state machine
       case state_a is
@@ -449,7 +449,7 @@ begin
               a_len <= incr(a_lm and prng_a_data(a_lm'range));
             end if;
           else -- randomised addressing => burst length is always 1
-            a_len  <= (0 => '1', others => '0');
+            a_len <= (0 => '1', others => '0');
           end if;
           state_a <= A_PREP2;
 
@@ -460,10 +460,10 @@ begin
           state_a <= A_PREP3;
 
         when A_PREP3 =>
-          i_a_valid  <= '1';
-          i_a_r_w    <= s_csr_ctrl_r_w;
-          i_a_reg    <= s_csr_ctrl_reg;
-          i_a_len    <= a_len;
+          i_a_valid <= '1';
+          i_a_r_w   <= s_csr_ctrl_r_w;
+          i_a_reg   <= s_csr_ctrl_reg;
+          i_a_len   <= a_len;
           if s_csr_ctrl_amode = '0' then -- sequential addressing
             i_a_addr <= a_addr;
           else -- randomised addressing => burst length is always 1
@@ -480,11 +480,11 @@ begin
 
         when A_VALID => -- present address until it is accepted
           if i_a_ready = '1' then
-            i_a_valid  <= '0';
-            i_a_r_w    <= 'X';
-            i_a_reg    <= 'X';
-            i_a_len    <= (others => 'X');
-            i_a_addr   <= (others => 'X');
+            i_a_valid <= '0';
+            i_a_r_w   <= 'X';
+            i_a_reg   <= 'X';
+            i_a_len   <= (others => 'X');
+            i_a_addr  <= (others => 'X');
             if unsigned(a_count) = 0 then
               state_a <= A_DONE;
             else
@@ -593,7 +593,7 @@ begin
               if (d_word = '0' and i_r_data /= d(15 downto  0))
               or (d_word = '1' and i_r_data /= d(31 downto 16))
               then
-                t_err  <= '1';
+                t_err                <= '1';
                 d_edat(15 downto  0) <= i_r_data;
                 d_edat(31 downto 16) <= d(31 downto 16) when d_word = '1' else d(15 downto 0);
               else
