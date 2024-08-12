@@ -374,16 +374,6 @@ begin
 
   P_MAIN: process(i_rst,i_clk)
 
-    procedure i_data_update is
-    begin
-      if s_csr_ctrl_drnd then -- random
-        d_data <= prng_d_data;
-      else -- regular
-        d_data    <= incr_data;
-        incr_data <= add(incr_data,s_csr_incr);
-      end if;
-    end procedure i_data_update;
-
     variable x : std_ulogic_vector(31 downto 0);
     variable d : std_ulogic_vector(31 downto 0);
 
@@ -521,10 +511,11 @@ begin
           state_d <= D_PREP when prng_d_valid and not prng_d_init;
 
         when D_PREP =>
-          i_data_update;
-          t_err   <= '0';
-          d_edat  <= (others => 'X');
-          state_d <= D_WAIT;
+          d_data    <= prng_d_data when s_csr_ctrl_drnd else incr_data;
+          incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
+          t_err     <= '0';
+          d_edat    <= (others => 'X');
+          state_d   <= D_WAIT;
 
         when D_WAIT =>
           if i_a_valid and i_a_ready then
@@ -547,8 +538,9 @@ begin
               if d_word then
                 i_w_be <= not s_csr_ctrl_cb_pol & s_csr_ctrl_cb_pol
                   when s_csr_ctrl_cb_m else "11";
-                i_w_data <= d(31 downto 16);
-                i_data_update;
+                i_w_data  <= d(31 downto 16);
+                d_data    <= prng_d_data when s_csr_ctrl_drnd else incr_data;
+                incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
               else
                 i_w_be <= s_csr_ctrl_cb_pol & not s_csr_ctrl_cb_pol
                   when s_csr_ctrl_cb_m else "11";
@@ -576,7 +568,8 @@ begin
               end if;
             end if;
             if d_word then
-              i_data_update;
+              d_data    <= prng_d_data when s_csr_ctrl_drnd else incr_data;
+              incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
             end if;
             d_word <= not d_word;
             if i_r_last then
