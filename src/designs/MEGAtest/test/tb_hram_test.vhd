@@ -30,7 +30,8 @@ entity tb_hram_test is
 end entity tb_hram_test;
 
 architecture sim of tb_hram_test is
-  constant SIM_MEM_SIZE : integer := 2**16;
+
+  constant SIM_MEM_SIZE : integer := 2**23; -- 8 MBytes
 
   alias reg_addr_t is hram_test_reg_addr_t;
   alias reg_data_t is hram_test_reg_data_t;
