@@ -536,7 +536,7 @@ begin
           end if;
 
         when D_WR =>
-          d := d_data xor x when s_csr_ctrl_cb_pol else d_data;
+          d := d_data xor x when s_csr_ctrl_cb_i else d_data;
           if (i_w_valid and i_w_ready) or (not i_w_valid) then
             if i_w_last then
               i_w_valid <= '0';
@@ -562,7 +562,7 @@ begin
           end if;
 
         when D_RD =>
-          d := d_data xor x when s_csr_ctrl_cb_pol else d_data;
+          d := d_data xor x when s_csr_ctrl_cb_i else d_data;
           if i_r_valid and i_r_ready then
             if not t_err then
               if (d_word = '0' and i_r_data /= d(15 downto  0))
