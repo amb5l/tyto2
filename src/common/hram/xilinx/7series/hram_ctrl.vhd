@@ -575,7 +575,7 @@ begin
       i => h_rwds_i_d,
       o => h_rwds_i_b
     );
-    h_rwds_i_c <= h_rwds_i_b'delayed(2 ns);
+  h_rwds_i_c <= h_rwds_i_b after 2 ns;
 
   U_IOBUF_RWDS: component iobuf
     port map (
