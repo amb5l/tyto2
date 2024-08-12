@@ -102,11 +102,10 @@ begin
     if rst = '1' then
       for i in CSR_DEFS'range loop
         for j in din'range loop
-          case CSR_DEFS(i).bits(j) is
-            when RW     => w(i)(j) <= CSR_DEFS(i).init(j);
-            when W1     => p(i)(j) <= '0';
-            when others => null;
-          end case;
+          p(i)(j) <= '0';
+          if CSR_DEFS(i).bits(j) = RW then
+            w(i)(j) <= CSR_DEFS(i).init(j);
+          end if;
         end loop;
       end loop;
     elsif rising_edge(clk) then

@@ -402,8 +402,15 @@ begin
       t_bsy       <= '0';
       t_fin       <= '0';
       t_err       <= '0';
+      a_count     <= (others => 'X');
+      a_len       <= (others => 'X');
       a_addr      <= (others => 'X');
       state_a     <= A_IDLE;
+      d_word      <= 'X';
+      d_data      <= (others => 'X');
+      incr_data   <= (others => 'X');
+      d_eadd      <= (others => 'X');
+      d_edat      <= (others => 'X');
       state_d     <= D_IDLE;
       prng_a_init <= '0';
       prng_d_init <= '0';
@@ -488,8 +495,13 @@ begin
           if state_d = D_DONE then
             t_fin <= '1';
             if not i_csr_ctrl_run then
-              t_bsy   <= '0';
-              t_fin   <= '0';
+              t_bsy     <= '0';
+              t_fin     <= '0';
+              a_count   <= (others => 'X');
+              a_len     <= (others => 'X');
+              a_addr    <= (others => 'X');
+              d_word    <= 'X';
+              incr_data <= (others => 'X');
               state_a <= A_IDLE;
             end if;
           end if;
