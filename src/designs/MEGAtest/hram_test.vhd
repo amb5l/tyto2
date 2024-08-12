@@ -195,6 +195,7 @@ architecture rtl of hram_test is
   -- controller system interface
   signal i_a_ready  : std_ulogic;
   signal i_a_valid  : std_ulogic;
+  signal i_a_rb     : std_ulogic; -- readback
   signal i_a_r_w    : std_ulogic;
   signal i_a_reg    : std_ulogic;
   signal i_a_wrap   : std_ulogic;
@@ -216,7 +217,7 @@ architecture rtl of hram_test is
   signal t_err      : std_ulogic;
 
   -- address state machine
-  type state_a_t is (A_IDLE,A_PRNG,A_PREP1,A_PREP2,A_PREP3,A_VALID,A_DONE);
+  type state_a_t is (A_IDLE,A_PRNG,A_PREP1,A_PREP2,A_PREP3,A_VALID,A_RB_WAIT,A_RB_PREP,A_RB_VALID,A_DONE);
   signal state_a    : state_a_t;
   signal a_count    : std_ulogic_vector(i_a_addr'range); -- count remaining words
   signal a_lm       : std_ulogic_vector(i_a_len'range);  -- len mask
@@ -228,13 +229,20 @@ architecture rtl of hram_test is
   alias a_row : std_ulogic_vector(ROWS_LOG2-1 downto 0) is a_addr(ROWS_LOG2+COLS_LOG2 downto COLS_LOG2+1);
 
   -- data state machine
-  type state_d_t is (D_IDLE,D_PRNG,D_PREP,D_WAIT,D_WR,D_RD,D_DONE);
+  type state_d_t is (D_IDLE,D_PRNG,D_PREP,D_WAIT,D_WR,D_RD,D_RB,D_DONE);
   signal state_d    : state_d_t;
   signal d_word     : std_ulogic;
   signal d_data     : std_ulogic_vector(31 downto 0);
   signal d_eadd     : std_ulogic_vector(i_a_addr'range);
   signal d_edat     : std_ulogic_vector(31 downto 0);
   signal incr_data  : std_ulogic_vector(31 downto 0);
+
+  -- interleaved read/write (readback)
+  type rb_addr_t is array(natural range <>) of std_ulogic_vector(i_a_addr'range);
+  type rb_data_t is array(natural range <>) of std_ulogic_vector(15 downto 0);
+  signal rb_valid : std_ulogic_vector(1 to 2);
+  signal rb_addr  : rb_addr_t(rb_valid'range);
+  signal rb_data  : rb_data_t(rb_valid'range);
 
   --------------------------------------------------------------------------------
   -- synthesisable PRNG
@@ -381,6 +389,7 @@ begin
     if i_rst then
 
       i_a_valid   <= '0';
+      i_a_rb      <= '0';
       i_a_r_w     <= 'X';
       i_a_reg     <= 'X';
       i_a_len     <= (others => 'X');
@@ -402,6 +411,9 @@ begin
       d_eadd      <= (others => 'X');
       d_edat      <= (others => 'X');
       state_d     <= D_IDLE;
+      rb_valid    <= (others => '0');
+      rb_addr     <= (others => (others => 'X'));
+      rb_data     <= (others => (others => 'X'));
       prng_a_init <= '0';
       prng_d_init <= '0';
 
@@ -463,10 +475,18 @@ begin
           if not s_csr_ctrl_arnd then -- sequential addressing
             i_a_addr <= a_addr;
             a_addr   <= add(a_addr,a_len);
+            if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
+              rb_valid(1) <= '1';
+              rb_addr(1)  <= a_addr;
+            end if;
           else -- randomised addressing => burst length is always 1
             i_a_addr <= a_addr_rnd;
             a_row    <= incr(a_row);
             a_col    <= incr(a_col) when unsigned(not a_row) = 0 else a_col;
+            if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
+              rb_valid(1) <= '1';
+              rb_addr(1)  <= a_addr_rnd;
+            end if;
           end if;
           a_count <= sub(a_count,a_len);
           state_a <= A_VALID;
@@ -478,7 +498,46 @@ begin
             i_a_reg   <= 'X';
             i_a_len   <= (others => 'X');
             i_a_addr  <= (others => 'X');
-            state_a   <= A_DONE when unsigned(a_count) = 0 else A_PREP1;
+            if i_a_r_w = '0' and s_csr_ctrl_r = '1' then -- test with readback
+              state_a <= A_RB_WAIT;
+            else
+              state_a <= A_DONE when unsigned(a_count) = 0 else A_PREP1;
+            end if;
+          end if;
+
+        when A_RB_WAIT =>
+          state_a <= A_RB_PREP when state_d = D_WR;
+
+        when A_RB_PREP =>
+          if rb_valid(rb_valid'high) then
+            i_a_valid <= '1';
+            i_a_rb    <= '1';
+            i_a_r_w   <= '1';
+            i_a_reg   <= s_csr_ctrl_reg; -- unlikely to be 1
+            i_a_len   <= a_len; -- should always be 1!
+            i_a_addr  <= rb_addr(rb_addr'high);
+            state_a   <= A_RB_VALID;
+          else
+            rb_data(2 to rb_addr'high) <= rb_data(1 to rb_data'high-1);
+            rb_data(1) <= (others => 'X');
+            state_a <= A_PREP1 when unsigned(a_count) /= 0;
+          end if;
+          rb_valid <= '0' & rb_valid(1 to rb_valid'high-1);
+          rb_addr(2 to rb_addr'high) <= rb_addr(1 to rb_addr'high-1);
+          rb_addr(1) <= (others => 'X');
+
+        when A_RB_VALID =>
+          if i_a_ready then
+            i_a_valid <= '0';
+            i_a_rb    <= '0';
+            i_a_r_w   <= 'X';
+            i_a_reg   <= 'X';
+            i_a_len   <= (others => 'X');
+            i_a_addr  <= (others => 'X');
+            state_a <=
+              A_PREP1   when unsigned(a_count)  /= 0 else
+              A_RB_PREP when unsigned(rb_valid) /= 0 else
+              A_DONE;
           end if;
 
         when A_DONE => -- test sequence is complete
@@ -522,7 +581,7 @@ begin
             if not t_err then
               d_eadd <= i_a_addr;
             end if;
-            state_d <= D_RD when i_a_r_w else D_WR;
+            state_d <= D_RB when i_a_rb else D_RD when i_a_r_w else D_WR;
           end if;
 
         when D_WR =>
@@ -537,13 +596,19 @@ begin
               if d_word then
                 i_w_be <= not s_csr_ctrl_cb_pol & s_csr_ctrl_cb_pol
                   when s_csr_ctrl_cb_m else "11";
-                i_w_data  <= d(31 downto 16);
-                d_data    <= prng_d_data when s_csr_ctrl_drnd else incr_data;
-                incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
+                i_w_data   <= d(31 downto 16);
+                d_data     <= prng_d_data when s_csr_ctrl_drnd else incr_data;
+                incr_data  <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
+                if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
+                  rb_data(1) <= d(31 downto 16);
+                end if;
               else
                 i_w_be <= s_csr_ctrl_cb_pol & not s_csr_ctrl_cb_pol
                   when s_csr_ctrl_cb_m else "11";
-                i_w_data <= d(15 downto 0);
+                i_w_data   <= d(15 downto 0);
+                if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
+                  rb_data(1) <= d(15 downto 0);
+                end if;
               end if;
               d_word <= not d_word;
             end if;
@@ -563,7 +628,7 @@ begin
                 d_edat(15 downto  0) <= i_r_data;
                 d_edat(31 downto 16) <= d(31 downto 16) when d_word else d(15 downto 0);
               else
-                d_eadd <= incr(d_eadd);
+                d_eadd <= incr(d_eadd); -- not relevant to scattered addressing
               end if;
             end if;
             if d_word then
@@ -572,6 +637,26 @@ begin
             end if;
             d_word <= not d_word;
             if i_r_last then
+              i_r_ready <= '0';
+              state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
+            end if;
+          end if;
+          if not i_r_ready then
+            i_r_ready <= '1';
+          end if;
+
+        when D_RB =>
+          if i_r_valid and i_r_ready then
+            if not t_err then
+              if i_r_data /= rb_data(rb_data'high) then
+                t_err                <= '1';
+                d_edat(15 downto  0) <= i_r_data;
+                d_edat(31 downto 16) <= rb_data(rb_data'high);
+              end if;
+            end if;
+            rb_data(2 to rb_addr'high) <= rb_data(1 to rb_data'high-1);
+            rb_data(1) <= (others => 'X');
+            if i_r_last then -- should always be true
               i_r_ready <= '0';
               state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
             end if;

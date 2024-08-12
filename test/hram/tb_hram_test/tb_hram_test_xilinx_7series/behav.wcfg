@@ -12,6 +12,7 @@
             <top_module name="model_hram_pkg" />
             <top_module name="overclock_pkg" />
             <top_module name="ram_sdp_32x6_pkg" />
+            <top_module name="random_1to1_pkg" />
             <top_module name="sync_reg_u_pkg" />
             <top_module name="tb_hram_test" />
             <top_module name="tyto_types_pkg" />
@@ -21,14 +22,14 @@
    </db_ref_list>
    <zoom_setting>
       <ZoomStartTime time="0.000000 us"></ZoomStartTime>
-      <ZoomEndTime time="845.615001 us"></ZoomEndTime>
-      <Cursor1Time time="845.615000 us"></Cursor1Time>
+      <ZoomEndTime time="32.255000 us"></ZoomEndTime>
+      <Cursor1Time time="32.255000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="161"></NameColumnWidth>
-      <ValueColumnWidth column_width="97"></ValueColumnWidth>
+      <ValueColumnWidth column_width="93"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="123" />
+   <WVObjectSize size="127" />
    <wvobject fp_name="/tb_hram_test/clk_100m" type="logic">
       <obj_property name="ElementShortName">clk_100m</obj_property>
       <obj_property name="ObjectShortName">clk_100m</obj_property>
@@ -142,6 +143,10 @@
       <obj_property name="ObjectShortName">i_a_valid</obj_property>
       <obj_property name="CustomSignalColor">#00FFFF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/i_a_rb" type="logic">
+      <obj_property name="ElementShortName">i_a_rb</obj_property>
+      <obj_property name="ObjectShortName">i_a_rb</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/i_a_r_w" type="logic">
       <obj_property name="ElementShortName">i_a_r_w</obj_property>
@@ -316,6 +321,19 @@
       <obj_property name="ObjectShortName">d_edat[31:0]</obj_property>
       <obj_property name="CustomSignalColor">#FFFF00</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/rb_valid" type="array">
+      <obj_property name="ElementShortName">rb_valid[1:2]</obj_property>
+      <obj_property name="ObjectShortName">rb_valid[1:2]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/rb_addr" type="array">
+      <obj_property name="ElementShortName">rb_addr[1:2][22:1]</obj_property>
+      <obj_property name="ObjectShortName">rb_addr[1:2][22:1]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/rb_data" type="array">
+      <obj_property name="ElementShortName">rb_data[1:2][15:0]</obj_property>
+      <obj_property name="ObjectShortName">rb_data[1:2][15:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/incr_data" type="array">
       <obj_property name="ElementShortName">incr_data[31:0]</obj_property>

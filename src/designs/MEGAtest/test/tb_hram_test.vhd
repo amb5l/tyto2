@@ -206,44 +206,63 @@ begin
     report "ID register 0 OK";
 
     --------------------------------------------------------------------------------
+    -- readback
 
---  -- fill
---  run(
---    w      => '1',
---    r      => '0',
---    reg    => '0',
---    addr   => x"0000_0000", -- start address = 0
---    data   => x"0000_0000", -- n/a
---    incr   => x"0000_0000", -- n/a
---    size   => x"0000_0100", -- 256 bytes
---    arnd   => '1',          -- scattered addressing
---    drnd   => '1',          -- random data
---    cb_m   => '0',          -- no masking
---    cb_i   => '0',          -- no inversion
---    cb_pol => '0',          -- n/a
---    brnd   => '0',          -- n/a (scattered addressing)
---    bmag   => x"0"          -- n/a (scattered addressing)
---  );
---
---  -- check
---  run(
---    w      => '0',
---    r      => '1',
---    reg    => '0',
---    addr   => x"0000_0000", -- start address = 0
---    data   => x"0000_0000", -- n/a
---    incr   => x"0000_0000", -- n/a
---    size   => x"0000_0100", -- 256 bytes
---    arnd   => '1',          -- scattered addressing
---    drnd   => '1',          -- random data
---    cb_m   => '0',          -- no masking
---    cb_i   => '0',          -- no inversion
---    cb_pol => '0',          -- n/a
---    brnd   => '0',          -- n/a (scattered addressing)
---    bmag   => x"0"          -- n/a (scattered addressing)
---  );
---
---  std.env.finish;
+    -- fill and check (interleaved read/write)
+    run(
+      w      => '1',
+      r      => '1',
+      reg    => '0',
+      addr   => x"0000_0000", -- start address = 0
+      data   => x"0000_0000", -- n/a
+      incr   => x"0000_0000", -- n/a
+      size   => x"0000_0100", -- 128 words / 256 bytes
+      arnd   => '1',          -- sequential addressing
+      drnd   => '1',          -- random data
+      cb_m   => '0',          -- no masking
+      cb_i   => '0',          -- no inversion
+      cb_pol => '0',          -- n/a
+      brnd   => '0',          -- must be 0 (readback)
+      bmag   => x"0"          -- must be 0 (readback)
+    );
+
+    --------------------------------------------------------------------------------
+
+    -- fill
+    run(
+      w      => '1',
+      r      => '0',
+      reg    => '0',
+      addr   => x"0000_0000", -- start address = 0
+      data   => x"0000_0000", -- n/a
+      incr   => x"0000_0000", -- n/a
+      size   => x"0000_0100", -- 128 words / 256 bytes
+      arnd   => '1',          -- scattered addressing
+      drnd   => '1',          -- random data
+      cb_m   => '0',          -- no masking
+      cb_i   => '0',          -- no inversion
+      cb_pol => '0',          -- n/a
+      brnd   => '0',          -- n/a (scattered addressing)
+      bmag   => x"0"          -- n/a (scattered addressing)
+    );
+
+    -- check
+    run(
+      w      => '0',
+      r      => '1',
+      reg    => '0',
+      addr   => x"0000_0000", -- start address = 0
+      data   => x"0000_0000", -- n/a
+      incr   => x"0000_0000", -- n/a
+      size   => x"0000_0100", -- 256 bytes
+      arnd   => '1',          -- scattered addressing
+      drnd   => '1',          -- random data
+      cb_m   => '0',          -- no masking
+      cb_i   => '0',          -- no inversion
+      cb_pol => '0',          -- n/a
+      brnd   => '0',          -- n/a (scattered addressing)
+      bmag   => x"0"          -- n/a (scattered addressing)
+    );
 
     --------------------------------------------------------------------------------
 
