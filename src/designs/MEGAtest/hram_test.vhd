@@ -388,7 +388,7 @@ begin
     variable d : std_ulogic_vector(31 downto 0);
 
   begin
-    if i_rst = '1' then
+    if i_rst then
 
       i_a_valid   <= '0';
       i_a_r_w     <= 'X';
@@ -442,8 +442,8 @@ begin
 
         when A_PREP1 =>
           a_len <= (0 => '1', others => '0'); -- default burst length is 1
-          if s_csr_ctrl_arnd = '0' then -- sequential addressing
-            if s_csr_ctrl_brnd = '0' then -- fixed burst length
+          if not s_csr_ctrl_arnd then -- sequential addressing
+            if not s_csr_ctrl_brnd then -- fixed burst length
               a_len <= (others => '0');
               a_len(to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
             else -- PRNG burst length
@@ -463,22 +463,19 @@ begin
           i_a_r_w   <= not s_csr_ctrl_w;
           i_a_reg   <= s_csr_ctrl_reg;
           i_a_len   <= a_len;
-          if s_csr_ctrl_arnd = '0' then -- sequential addressing
+          if not s_csr_ctrl_arnd then -- sequential addressing
             i_a_addr <= a_addr;
+            a_addr   <= std_ulogic_vector(unsigned(a_addr) + unsigned(a_len));
           else -- randomised addressing => burst length is always 1
             i_a_addr <= a_addr_rnd;
+            a_row    <= incr(a_row);
+            a_col    <= incr(a_col) when unsigned(not a_row) = 0 else a_col;
           end if;
           a_count <= std_ulogic_vector(unsigned(a_count) - unsigned(a_len));
-          if s_csr_ctrl_arnd = '0' then -- sequential addressing
-            a_addr <= std_ulogic_vector(unsigned(a_addr) + unsigned(a_len));
-          else -- randomised addressing - increment row before col
-            a_row <= incr(a_row);
-            a_col <= incr(a_col) when unsigned(not a_row) = 0 else a_col;
-          end if;
           state_a <= A_VALID;
 
         when A_VALID => -- present address until it is accepted
-          if i_a_ready = '1' then
+          if i_a_ready then
             i_a_valid <= '0';
             i_a_r_w   <= 'X';
             i_a_reg   <= 'X';
@@ -490,7 +487,7 @@ begin
         when A_DONE => -- test sequence is complete
           if state_d = D_DONE then
             t_fin <= '1';
-            if i_csr_ctrl_run = '0' then
+            if not i_csr_ctrl_run then
               t_bsy   <= '0';
               t_fin   <= '0';
               state_a <= A_IDLE;
@@ -519,7 +516,7 @@ begin
 
         when D_WAIT =>
           if i_a_valid and i_a_ready then
-            if t_err = '0' then
+            if not t_err then
               d_eadd <= i_a_addr;
             end if;
             -- TODO change to use i_a_r_w
@@ -555,7 +552,7 @@ begin
         when D_RD =>
           d := d_data xor x when s_csr_ctrl_cb_pol else d_data;
           if i_r_valid and i_r_ready then
-            if t_err = '0' then
+            if not t_err then
               if (d_word = '0' and i_r_data /= d(15 downto  0))
               or (d_word = '1' and i_r_data /= d(31 downto 16))
               then
