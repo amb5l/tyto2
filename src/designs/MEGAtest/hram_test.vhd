@@ -162,19 +162,18 @@ architecture rtl of hram_test is
 
   alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(1 downto 0);
   alias s_csr_ctrl_run    : std_ulogic                        is s_csr_ctrl(2);
-  alias s_csr_ctrl_r_w    : std_ulogic                        is s_csr_ctrl(3);
-  alias s_csr_ctrl_reg    : std_ulogic                        is s_csr_ctrl(4);
-  alias s_csr_ctrl_amode  : std_ulogic                        is s_csr_ctrl(5);                -- 0 = sequential, 1 = randomised
-  alias s_csr_ctrl_wmode  : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(7 downto 6);
-  alias s_csr_ctrl_dmode  : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(10 downto 8);
-  alias s_csr_ctrl_bmode  : std_ulogic                        is s_csr_ctrl(11);               -- burst mode: 0 = fixed, 1 = PRNG
+  alias s_csr_ctrl_w      : std_ulogic                        is s_csr_ctrl(3);
+  alias s_csr_ctrl_r      : std_ulogic                        is s_csr_ctrl(4);
+  alias s_csr_ctrl_reg    : std_ulogic                        is s_csr_ctrl(5);
+  alias s_csr_ctrl_arnd   : std_ulogic                        is s_csr_ctrl(6);                -- 0 = sequential, 1 = randomised
+  alias s_csr_ctrl_drnd   : std_ulogic                        is s_csr_ctrl(7);
+  alias s_csr_ctrl_cb     : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(10 downto 8);
+  alias s_csr_ctrl_brnd   : std_ulogic                        is s_csr_ctrl(11);               -- burst mode: 0 = fixed, 1 = PRNG
   alias s_csr_ctrl_bmag   : std_ulogic_vector(BMW-1 downto 0) is s_csr_ctrl(BMW+11 downto 12); -- burst magnitude
 
-  alias s_csr_ctrl_wmode_cbm  : std_ulogic is s_csr_ctrl_wmode(0); -- checkerboard masking
-  alias s_csr_ctrl_wmode_pol  : std_ulogic is s_csr_ctrl_wmode(1); -- checkerboard initial polarity
-  alias s_csr_ctrl_dmode_rand : std_ulogic is s_csr_ctrl_dmode(0); -- regular or PRNG data
-  alias s_csr_ctrl_dmode_cbi  : std_ulogic is s_csr_ctrl_dmode(1); -- checkerboard inversion
-  alias s_csr_ctrl_dmode_pol  : std_ulogic is s_csr_ctrl_dmode(2); -- checkerboard initial polarity
+  alias s_csr_ctrl_cb_m   : std_ulogic is s_csr_ctrl_cb(0); -- checkerboard masking
+  alias s_csr_ctrl_cb_i   : std_ulogic is s_csr_ctrl_cb(1); -- checkerboard inversion
+  alias s_csr_ctrl_cb_pol : std_ulogic is s_csr_ctrl_cb(2); -- checkerboard polarity
 
   alias s_csr_stat_bsy : std_ulogic is s_csr_stat( 0); -- running
   alias s_csr_stat_fin : std_ulogic is s_csr_stat( 8); -- finished
@@ -366,7 +365,7 @@ begin
 
   a_addr_rnd <= a_row_rnd & a_col;
 
-  prng_a_ready <= bool2sl(state_a = A_PREP1) and s_csr_ctrl_bmode and not s_csr_ctrl_amode;
+  prng_a_ready <= bool2sl(state_a = A_PREP1) and s_csr_ctrl_brnd and not s_csr_ctrl_arnd;
 
   prng_d_ready <=
     bool2sl(state_d = D_PREP) or
@@ -377,7 +376,7 @@ begin
 
     procedure i_data_update is
     begin
-      if s_csr_ctrl_dmode_rand then -- random
+      if s_csr_ctrl_drnd then -- random
         d_data <= prng_d_data;
       else -- regular
         d_data <= incr_data;
@@ -441,8 +440,8 @@ begin
           end if;
 
         when A_PREP1 =>
-          if s_csr_ctrl_amode = '0' then -- sequential addressing
-            if s_csr_ctrl_bmode = '0' then -- fixed burst length
+          if s_csr_ctrl_arnd = '0' then -- sequential addressing
+            if s_csr_ctrl_brnd = '0' then -- fixed burst length
               a_len <= (others => '0');
               a_len(to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
             else -- PRNG burst length
@@ -461,16 +460,16 @@ begin
 
         when A_PREP3 =>
           i_a_valid <= '1';
-          i_a_r_w   <= s_csr_ctrl_r_w;
+          i_a_r_w   <= not s_csr_ctrl_w;
           i_a_reg   <= s_csr_ctrl_reg;
           i_a_len   <= a_len;
-          if s_csr_ctrl_amode = '0' then -- sequential addressing
+          if s_csr_ctrl_arnd = '0' then -- sequential addressing
             i_a_addr <= a_addr;
           else -- randomised addressing => burst length is always 1
             i_a_addr <= a_addr_rnd;
           end if;
           a_count <= std_ulogic_vector(unsigned(a_count) - unsigned(a_len));
-          if s_csr_ctrl_amode = '0' then -- sequential addressing
+          if s_csr_ctrl_arnd = '0' then -- sequential addressing
             a_addr <= std_ulogic_vector(unsigned(a_addr) + unsigned(a_len));
           else -- randomised addressing - increment row before col
             a_row <= incr(a_row);
@@ -532,7 +531,7 @@ begin
             if t_err = '0' then
               d_eadd <= i_a_addr;
             end if;
-            if s_csr_ctrl_r_w then
+            if s_csr_ctrl_r then -- TODO change to use i_a_r_w
               state_d <= D_RD;
             else
               state_d <= D_WR;
@@ -540,8 +539,8 @@ begin
           end if;
 
         when D_WR =>
-          if s_csr_ctrl_dmode_cbi then
-            x := x"00FF_FF00" when s_csr_ctrl_dmode_pol = '1' else x"FF00_00FF";
+          if s_csr_ctrl_cb_i then
+            x := x"00FF_FF00" when s_csr_ctrl_cb_pol = '1' else x"FF00_00FF";
           else
             x := x"0000_0000";
           end if;
@@ -550,13 +549,13 @@ begin
             i_w_valid <= '1';
             i_w_be    <= "11"; -- TODO fix this to support masking
             if d_word then
-              i_w_be <= not s_csr_ctrl_wmode_pol & s_csr_ctrl_wmode_pol
-                when s_csr_ctrl_wmode_cbm = '1' else "11";
+              i_w_be <= not s_csr_ctrl_cb_pol & s_csr_ctrl_cb_pol
+                when s_csr_ctrl_cb_m = '1' else "11";
               i_w_data <= d(31 downto 16);
               i_data_update;
             else
-              i_w_be <= s_csr_ctrl_wmode_pol & not s_csr_ctrl_wmode_pol
-                when s_csr_ctrl_wmode_cbm = '1' else "11";
+              i_w_be <= s_csr_ctrl_cb_pol & not s_csr_ctrl_cb_pol
+                when s_csr_ctrl_cb_m = '1' else "11";
               i_w_data <= d(15 downto 0);
             end if;
             d_word <= not d_word;
@@ -568,13 +567,13 @@ begin
               state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
             else
               if d_word then
-                i_w_be <= not s_csr_ctrl_wmode_pol & s_csr_ctrl_wmode_pol
-                  when s_csr_ctrl_wmode_cbm = '1' else "11";
+                i_w_be <= not s_csr_ctrl_cb_pol & s_csr_ctrl_cb_pol
+                  when s_csr_ctrl_cb_m = '1' else "11";
                 i_w_data <= d(31 downto 16);
                 i_data_update;
               else
-                i_w_be <= s_csr_ctrl_wmode_pol & not s_csr_ctrl_wmode_pol
-                  when s_csr_ctrl_wmode_cbm = '1' else "11";
+                i_w_be <= s_csr_ctrl_cb_pol & not s_csr_ctrl_cb_pol
+                  when s_csr_ctrl_cb_m = '1' else "11";
                 i_w_data <= d(15 downto 0);
               end if;
               d_word <= not d_word;
@@ -582,8 +581,8 @@ begin
           end if;
 
         when D_RD =>
-          if s_csr_ctrl_dmode_cbi then
-            x := x"00FF_FF00" when s_csr_ctrl_dmode_pol = '1' else x"FF00_00FF";
+          if s_csr_ctrl_cb_i then
+            x := x"00FF_FF00" when s_csr_ctrl_cb_pol = '1' else x"FF00_00FF";
           else
             x := x"0000_0000";
           end if;

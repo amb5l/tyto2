@@ -114,17 +114,20 @@ begin
     variable rd   : std_ulogic_vector(31 downto 0);
 
     procedure run(
-      r_w   : in    std_ulogic;
-      reg   : in    std_ulogic;
-      addr  : in    reg_data_t;
-      data  : in    reg_data_t;
-      size  : in    reg_data_t := x"0000_0002";
-      incr  : in    reg_data_t := x"0000_0000";
-      amode : in    std_ulogic := '0';
-      wmode : in    std_ulogic_vector(1 downto 0) := "00";
-      dmode : in    std_ulogic_vector(2 downto 0) := "000";
-      bmode : in    std_ulogic := '0';
-      bmag  : in    std_ulogic_vector(3 downto 0) := "0000"
+      w      : in    std_ulogic;
+      r      : in    std_ulogic;
+      reg    : in    std_ulogic;
+      addr   : in    reg_data_t;
+      data   : in    reg_data_t;
+      size   : in    reg_data_t := x"0000_0002";
+      incr   : in    reg_data_t := x"0000_0000";
+      arnd   : in    std_ulogic := '0';
+      drnd   : in    std_ulogic := '0';
+      cb_m   : in    std_ulogic := '0';
+      cb_i   : in    std_ulogic := '0';
+      cb_pol : in    std_ulogic := '0';
+      brnd   : in    std_ulogic := '0';
+      bmag   : in    std_ulogic_vector(3 downto 0) := "0000"
     ) is
       variable eadd : std_ulogic_vector(31 downto 0);
       variable edat : std_ulogic_vector(31 downto 0);
@@ -134,7 +137,7 @@ begin
       reg_poke(RA_INCR,incr);
       reg_poke(RA_SIZE,size);
       -- run
-      reg_poke(RA_CTRL,x"0000" & bmag & bmode & dmode & wmode & amode & reg & r_w & '1' & clksel);
+      reg_poke(RA_CTRL,x"0000" & bmag & brnd & cb_pol & cb_i & cb_m & drnd & arnd & reg & r & w & '1' & clksel);
       loop -- wait for busy
         reg_peek(RA_STAT,rd);
         if rd(0) = '1' then exit; end if;
@@ -196,72 +199,124 @@ begin
     --------------------------------------------------------------------------------
 
     -- set up latency (configuration register 0)
-    run('0', '1', ADDR_CFGREG0, x"0000" & DATA_CFGREG0);
+    run('1','0','1', ADDR_CFGREG0, x"0000" & DATA_CFGREG0);
 
     -- check ID register 0
-    run('1', '1', ADDR_IDREG0, x"0000" & DATA_IDREG0);
+    run('0','1','1', ADDR_IDREG0, x"0000" & DATA_IDREG0);
     report "ID register 0 OK";
+
+    --------------------------------------------------------------------------------
+
+--  -- fill
+--  run(
+--    w      => '1',
+--    r      => '0',
+--    reg    => '0',
+--    addr   => x"0000_0000", -- start address = 0
+--    data   => x"0000_0000", -- n/a
+--    incr   => x"0000_0000", -- n/a
+--    size   => x"0000_0100", -- 256 bytes
+--    arnd   => '1',          -- scattered addressing
+--    drnd   => '1',          -- random data
+--    cb_m   => '0',          -- no masking
+--    cb_i   => '0',          -- no inversion
+--    cb_pol => '0',          -- n/a
+--    brnd   => '0',          -- n/a (scattered addressing)
+--    bmag   => x"0"          -- n/a (scattered addressing)
+--  );
+--
+--  -- check
+--  run(
+--    w      => '0',
+--    r      => '1',
+--    reg    => '0',
+--    addr   => x"0000_0000", -- start address = 0
+--    data   => x"0000_0000", -- n/a
+--    incr   => x"0000_0000", -- n/a
+--    size   => x"0000_0100", -- 256 bytes
+--    arnd   => '1',          -- scattered addressing
+--    drnd   => '1',          -- random data
+--    cb_m   => '0',          -- no masking
+--    cb_i   => '0',          -- no inversion
+--    cb_pol => '0',          -- n/a
+--    brnd   => '0',          -- n/a (scattered addressing)
+--    bmag   => x"0"          -- n/a (scattered addressing)
+--  );
+--
+--  std.env.finish;
 
     --------------------------------------------------------------------------------
 
     -- fill
     run(
-      r_w   => '0',
-      reg   => '0',
-      addr  => x"0000_0000",
-      data  => x"0000_0000",
-      incr  => x"0000_0000",
-      size  => x"0001_0000", -- 64kBytes
-      amode => '0',          -- sequential addressing
-      wmode => "00",         -- no masking
-      dmode => "001",        -- random data
-      bmode => '1',          -- random burst:
-      bmag  => x"5"          --  1-64 words
+      w      => '1',
+      r      => '0',
+      reg    => '0',
+      addr   => x"0000_0000", -- start address = 0
+      data   => x"0000_0000", -- n/a
+      incr   => x"0000_0000", -- n/a
+      size   => x"0001_0000", -- 64kBytes
+      arnd   => '0',          -- sequential addressing
+      drnd   => '1',          -- random data
+      cb_m   => '0',          -- no masking
+      cb_i   => '0',          -- no inversion
+      cb_pol => '0',          -- n/a
+      brnd   => '1',          -- random burst length
+      bmag   => x"5"          -- burst length 1..64
     );
 
     -- masked checkerboard inverse fill
     run(
-      r_w   => '0',
-      reg   => '0',
-      addr  => x"0000_0000",
-      data  => x"0000_0000",
-      incr  => x"0000_0000",
-      size  => x"0001_0000", -- 64kBytes
-      amode => '0',          -- sequential addressing
-      wmode => "01",         -- checkerboard masking
-      dmode => "011",        -- random data, checkerboard inversion
-      bmode => '1',          -- random burst:
-      bmag  => x"5"          --  1-64 words
+      w      => '1',
+      r      => '0',
+      reg    => '0',
+      addr   => x"0000_0000", -- start address = 0
+      data   => x"0000_0000", -- n/a
+      incr   => x"0000_0000", -- n/a
+      size   => x"0001_0000", -- 64kBytes
+      arnd   => '0',          -- sequential addressing
+      drnd   => '1',          -- random data
+      cb_m   => '1',          -- checkerboard masking
+      cb_i   => '1',          -- checkerboard inversion
+      cb_pol => '0',          -- normal checkerboard polarity
+      brnd   => '1',          -- random burst length
+      bmag   => x"0"          -- burst length 1..64
     );
 
     -- create error deliberately
     run(
-      r_w   => '0',
-      reg   => '0',
-      addr  => x"0000_FFFE",
-      data  => x"0000_ABCD",
-      incr  => x"0000_0000",
-      size  => x"0000_0002",
-      amode => '0',
-      wmode => "00",
-      dmode => "000",
-      bmode => '0',
-      bmag  => x"0"
+      w      => '1',
+      r      => '0',
+      reg    => '0',
+      addr   => x"0000_FFFE", -- address = FFFE
+      data   => x"0000_ABCD", -- data = ABCD
+      incr   => x"0000_0000", -- n/a
+      size   => x"0000_0002", -- single word (2 bytes)
+      arnd   => '0',          -- n/a
+      drnd   => '0',          -- regular data
+      cb_m   => '0',          -- no masking
+      cb_i   => '0',          -- no inversion
+      cb_pol => '0',          -- n/a
+      brnd   => '0',          -- n/a
+      bmag   => x"0"          -- n/a
     );
 
     -- check
     run(
-      r_w   => '1',
-      reg   => '0',
-      addr  => x"0000_0000",
-      data  => x"0000_0000",
-      incr  => x"0000_0000",
-      size  => x"0001_0000", -- 64kBytes
-      amode => '0',          -- sequential addressing
-      wmode => "00",         -- masking n/a for read
-      dmode => "011",        -- random data, checkerboard inversion
-      bmode => '1',          -- random burst:
-      bmag  => x"5"          --  1-64 words
+      w      => '0',
+      r      => '1',
+      reg    => '0',
+      addr   => x"0000_0000", -- start address = 0
+      data   => x"0000_0000", -- n/a
+      incr   => x"0000_0000", -- n/a
+      size   => x"0001_0000", -- 64kBytes
+      arnd   => '0',          -- sequential addressing
+      drnd   => '1',          -- random data
+      cb_m   => '0',          -- n/a
+      cb_i   => '1',          -- checkerboard inversion
+      cb_pol => '0',          -- normal checkerboard polarity
+      brnd   => '1',          -- random burst length
+      bmag   => x"0"          -- burst length 1..64
     );
 
     --------------------------------------------------------------------------------
