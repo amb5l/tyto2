@@ -33,7 +33,7 @@ package tyto_utils_pkg is
   function bool2sl( b : boolean ) return std_ulogic;
   function log2 (x : integer) return integer;
   function mirror(x : std_ulogic_vector) return std_ulogic_vector;
-  function sum(a,b : std_ulogic_vector) return std_ulogic_vector;
+  function add(a,b : std_ulogic_vector) return std_ulogic_vector;
   function incr(x : std_ulogic_vector) return std_ulogic_vector;
   function decr(x : std_ulogic_vector) return std_ulogic_vector;
 
@@ -118,10 +118,10 @@ package body tyto_utils_pkg is
     return y;
   end function mirror;
 
-  function sum(a,b : std_ulogic_vector) return std_ulogic_vector is
+  function add(a,b : std_ulogic_vector) return std_ulogic_vector is
   begin
     return std_ulogic_vector(unsigned(a)+unsigned(b));
-  end function sum;
+  end function add;
 
   function incr(x : std_ulogic_vector) return std_ulogic_vector is
   begin
