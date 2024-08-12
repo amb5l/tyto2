@@ -522,8 +522,7 @@ begin
             if not t_err then
               d_eadd <= i_a_addr;
             end if;
-            -- TODO change to use i_a_r_w
-            state_d <= D_RD when s_csr_ctrl_r else D_WR;
+            state_d <= D_RD when i_a_r_w else D_WR;
           end if;
 
         when D_WR =>
