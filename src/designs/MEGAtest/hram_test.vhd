@@ -379,8 +379,8 @@ begin
       if s_csr_ctrl_drnd then -- random
         d_data <= prng_d_data;
       else -- regular
-        d_data <= incr_data;
-        incr_data <= std_ulogic_vector(unsigned(incr_data)+unsigned(s_csr_incr));
+        d_data    <= incr_data;
+        incr_data <= add(incr_data,s_csr_incr);
       end if;
     end procedure i_data_update;
 
@@ -472,13 +472,13 @@ begin
           i_a_len   <= a_len;
           if not s_csr_ctrl_arnd then -- sequential addressing
             i_a_addr <= a_addr;
-            a_addr   <= std_ulogic_vector(unsigned(a_addr) + unsigned(a_len));
+            a_addr   <= add(a_addr,a_len);
           else -- randomised addressing => burst length is always 1
             i_a_addr <= a_addr_rnd;
             a_row    <= incr(a_row);
             a_col    <= incr(a_col) when unsigned(not a_row) = 0 else a_col;
           end if;
-          a_count <= std_ulogic_vector(unsigned(a_count) - unsigned(a_len));
+          a_count <= sub(a_count,a_len);
           state_a <= A_VALID;
 
         when A_VALID => -- present address until it is accepted
