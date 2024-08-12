@@ -280,7 +280,7 @@ begin
       cb_i   => '1',          -- checkerboard inversion
       cb_pol => '0',          -- normal checkerboard polarity
       brnd   => '1',          -- random burst length
-      bmag   => x"0"          -- burst length 1..64
+      bmag   => x"5"          -- burst length 1..64
     );
 
     -- create error deliberately
@@ -316,7 +316,7 @@ begin
       cb_i   => '1',          -- checkerboard inversion
       cb_pol => '0',          -- normal checkerboard polarity
       brnd   => '1',          -- random burst length
-      bmag   => x"0"          -- burst length 1..64
+      bmag   => x"5"          -- burst length 1..64
     );
 
     --------------------------------------------------------------------------------
