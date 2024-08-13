@@ -690,7 +690,7 @@ begin
 
       elsif falling_edge(cs_n_i) then -- start of access
 
-        alat_req := refresh;
+        alat_req := refresh or cfgreg0(3); -- allow for fixed latency
         if (OUTPUT_DELAY = "MAX_MIN" and max_min)
         or OUTPUT_DELAY = "MAX"
         then
@@ -726,10 +726,10 @@ begin
         end if;
         max_min  := not max_min;
         if tDSV > tDSVmin then
-          rwds_o   <= 'X' after tDSVmin, refresh after tDSV;
+          rwds_o   <= 'X' after tDSVmin, alat_req after tDSV;
           rwds_oe  <= 'X' after tDSVmin, '1' after tDSV;
         else
-          rwds_o   <= refresh after tDSV;
+          rwds_o   <= alat_req after tDSV;
           rwds_oe  <= '1' after tDSV;
         end if;
         state    <= CA1;
@@ -821,7 +821,7 @@ begin
             if ca(47 downto 46) = "01" then -- register write
               count <= 0;
               state <= WR;
-            elsif alat_req and not ca(46) then -- memory access during refresh
+            elsif alat_req then -- additional latency required
               count <= 1;
               state <= ALAT;
             else
