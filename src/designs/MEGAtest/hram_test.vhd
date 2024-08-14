@@ -63,7 +63,7 @@ end package hram_test_pkg;
 use work.tyto_types_pkg.all;
 use work.tyto_utils_pkg.all;
 use work.csr_pkg.all;
-use work.sync_reg_u_pkg.all;
+use work.sync_pkg.all;
 use work.overclock_pkg.all;
 use work.hram_ctrl_pkg.all;
 use work.random_1to1_pkg.all;
@@ -148,7 +148,7 @@ architecture rtl of hram_test is
   );
 
   signal s_csr_w : regs_data_t(CSR_DEFS'range);
-  signal s_csr_p : regs_data_t(CSR_DEFS'range);
+  signal s_csr_p : regs_data_t(CSR_DEFS'range); -- v4p ignore w-303 (unused signal)
   signal s_csr_r : regs_data_t(CSR_DEFS'range) := (others => (others => '0'));
 
   alias s_csr_ctrl : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_CTRL),CSR_DEFS));
@@ -322,9 +322,9 @@ begin
 
   --------------------------------------------------------------------------------
 
-  U_SYNC_S: component sync_reg_u -- v4p ignore w-301 (missing port associations)
+  U_SYNC_S: component sync -- v4p ignore w-301 (missing port associations)
     generic map (
-      STAGES => 3
+      WIDTH => 4
     )
     port map (
       clk  => s_clk,
@@ -338,10 +338,7 @@ begin
       o(3) => s_csr_ctrl_lol
     );
 
-  U_SYNC_I: component sync_reg_u
-    generic map (
-      STAGES => 3
-    )
+  U_SYNC_I: component sync
     port map (
       rst  => i_rst,
       clk  => i_clk,
@@ -462,7 +459,7 @@ begin
           state_a <= A_PREP2;
 
         when A_PREP2 =>
-          if unsigned(a_len) > unsigned(a_count) then
+          if (unsigned(a_count) /= 0) and (unsigned(a_len) > unsigned(a_count)) then
             a_len <= a_count(a_count'right+a_len'length-1 downto a_count'right);
           end if;
           state_a <= A_PREP3;

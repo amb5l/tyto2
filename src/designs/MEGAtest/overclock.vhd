@@ -37,7 +37,7 @@ end package overclock_pkg;
 
 use work.tyto_types_pkg.all;
 use work.mmcm_drp_pkg.all;
-use work.sync_reg_u_pkg.all;
+use work.sync_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -185,10 +185,9 @@ begin
     clko1 => s_clk_dly
   );
 
-  SYNC: component sync_reg_u
+  CDC: component sync
     generic map (
-      STAGES    => 3,
-      RST_STATE => '1'
+      SR => "1"
     )
     port map (
       rst  => rsta,

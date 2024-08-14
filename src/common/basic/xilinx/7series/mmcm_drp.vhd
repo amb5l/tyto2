@@ -73,7 +73,7 @@ end package mmcm_drp_pkg;
 
 use work.tyto_types_pkg.all;
 use work.tyto_utils_pkg.all;
-use work.sync_reg_u_pkg.all;
+use work.sync_pkg.all;
 use work.mmcm_drp_pkg.all;
 
 library ieee;
@@ -149,11 +149,22 @@ architecture rtl of mmcm_drp is
 
 begin
 
-  MAIN: process (clki) is
+  MAIN: process (rsti,clki) is
   begin
-    if rising_edge(clki) then
 
-      cfg_tbl_data <= TABLE(to_integer(unsigned(cfg_tbl_addr)));                                                                   -- synchronous ROM
+    if rsti = '1' then                                                                                                           -- full reset
+
+      sel_prev  <= (others => '1');                                                                                              -- force reconfig
+      cfg_rst   <= '1';
+      cfg_daddr <= (others => '0');
+      cfg_den   <= '0';
+      cfg_dwe   <= '0';
+      cfg_di    <= (others => '0');
+      cfg_state <= RESET;
+
+      rsto_req <= '1';
+
+    elsif rising_edge(clki) then
 
       -- defaults
       cfg_den <= '0';
@@ -206,28 +217,19 @@ begin
           end if;
       end case;
 
-      if rsti = '1' then                                                                                                           -- full reset
-
-        sel_prev  <= (others => '1');                                                                                              -- force reconfig
-        cfg_rst   <= '1';
-        cfg_daddr <= (others => '0');
-        cfg_den   <= '0';
-        cfg_dwe   <= '0';
-        cfg_di    <= (others => '0');
-        cfg_state <= RESET;
-
-        rsto_req <= '1';
-
-      end if;
-
     end if;
+
+    if rising_edge(clki) then
+      cfg_tbl_data <= TABLE(to_integer(unsigned(cfg_tbl_addr)));                                                                   -- synchronous ROM
+    end if;
+
   end process MAIN;
 
   -- clock domain crossing
 
-  SYNC : component sync_reg_u
+  CDC : component sync
     generic map (
-      STAGES => 3
+      WIDTH => 3
     )
     port map (
       rst   => rsti,
@@ -243,16 +245,9 @@ begin
   mmcm_rst <= cfg_rst or rsti;
   rsto <= rsto_req or not locked or mmcm_rst;
 
-  -- The 7 series LVDS serdes is rated at as follows for DDR outputs:
-  --  1200Mbps max for -2 speed grade
-  --  950Mbps max for -1 speed grade
-  -- 1485Mbps (for full HD) mmcm_drps these, so we use a fictional
-  --  recipe for the MMCM to achieve timing closure:
-  --   m = 9.25, d = 1, outdiv0 = 2.0, outdiv1 = 6
-  --    => fVCO = 925 MHz, fclko_x5 = 462.5 MHz, fclko = 154.166 MHz
   MMCM: component mmcme2_adv
     generic map (
-      bandwidth            => "OPTIMIZED",
+      bandwidth            => BW,
       clkfbout_mult_f      => INIT.mul,
       clkfbout_phase       => 0.0,
       clkfbout_use_fine_ps => false,

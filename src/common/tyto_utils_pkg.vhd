@@ -44,6 +44,12 @@ package tyto_utils_pkg is
     signal q : out std_ulogic
   );
 
+  procedure fd(
+    signal c : in std_ulogic;
+    signal d : in std_ulogic_vector;
+    signal q : out std_ulogic_vector
+  );
+
 end package tyto_utils_pkg;
 
 library ieee;
@@ -143,6 +149,16 @@ package body tyto_utils_pkg is
     signal c : in std_ulogic;
     signal d : in std_ulogic;
     signal q : out std_ulogic
+  ) is
+  begin
+    wait until rising_edge(c);
+    q <= d;
+  end procedure fd;
+
+  procedure fd(
+    signal c : in std_ulogic;
+    signal d : in std_ulogic_vector;
+    signal q : out std_ulogic_vector
   ) is
   begin
     wait until rising_edge(c);

@@ -15,15 +15,15 @@
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
 
+use work.model_hram_pkg.all;
+use work.model_dvi_decoder_pkg.all;
+use work.model_vga_sink_pkg.all;
+
 library ieee;
   use ieee.std_logic_1164.all;
 
 library std;
   use std.env.all;
-
-library work;
-  use work.model_dvi_decoder_pkg.all;
-  use work.model_vga_sink_pkg.all;
 
 entity tb_MEGAtest_r5 is
 end entity tb_MEGAtest_r5;
@@ -32,6 +32,12 @@ architecture sim of tb_MEGAtest_r5 is
 
   signal clk_in      : std_logic;
   signal rst         : std_logic;
+
+  signal hr_rst_n    : std_logic;
+  signal hr_clk_p    : std_logic;
+  signal hr_cs_n     : std_logic;
+  signal hr_rwds     : std_logic;
+  signal hr_d        : std_logic_vector(7 downto 0);
 
   signal hdmi_clk_p  : std_logic;
   signal hdmi_clk_n  : std_logic;
@@ -50,192 +56,205 @@ architecture sim of tb_MEGAtest_r5 is
 
   component MEGAtest_r5 is
     port (
-      clk_in          : in    std_ulogic;
-      rst             : in    std_ulogic;
-      uled            : out   std_ulogic;
-      led_g_n         : out   std_ulogic;
-      led_r_n         : out   std_ulogic;
-      uart_tx         : out   std_ulogic;
-      uart_rx         : in    std_ulogic;
-      qspi_cs_n       : out   std_ulogic;
-      qspi_d          : inout std_ulogic_vector(3 downto 0);
-      sdi_cd_n        : inout std_ulogic;
-      sdi_wp_n        : in    std_ulogic;
-      sdi_ss_n        : out   std_ulogic;
-      sdi_clk         : out   std_ulogic;
-      sdi_mosi        : out   std_ulogic;
-      sdi_miso        : inout std_ulogic;
-      sdi_d1          : inout std_ulogic;
-      sdi_d2          : inout std_ulogic;
-      sdx_cd_n        : inout std_ulogic;
-      sdx_ss_n        : out   std_ulogic;
-      sdx_clk         : out   std_ulogic;
-      sdx_mosi        : out   std_ulogic;
-      sdx_miso        : inout std_ulogic;
-      sdx_d1          : inout std_ulogic;
-      sdx_d2          : inout std_ulogic;
-      i2c1_scl        : inout std_ulogic;
-      i2c1_sda        : inout std_ulogic;
-      i2c2_scl        : inout std_ulogic;
-      i2c2_sda        : inout std_ulogic;
-      grove_scl       : inout std_ulogic;
-      grove_sda       : inout std_ulogic;
-      kb_io0          : out   std_ulogic;
-      kb_io1          : out   std_ulogic;
-      kb_io2          : in    std_ulogic;
-      kb_jtagen       : out   std_ulogic;
-      kb_tck          : out   std_ulogic;
-      kb_tms          : out   std_ulogic;
-      kb_tdi          : out   std_ulogic;
-      kb_tdo          : in    std_ulogic;
-      js_pd           : out   std_ulogic;
-      js_pg           : in    std_ulogic;
-      jsai_up_n       : in    std_ulogic;
-      jsai_down_n     : in    std_ulogic;
-      jsai_left_n     : in    std_ulogic;
-      jsai_right_n    : in    std_ulogic;
-      jsai_fire_n     : in    std_ulogic;
-      jsbi_up_n       : in    std_ulogic;
-      jsbi_down_n     : in    std_ulogic;
-      jsbi_left_n     : in    std_ulogic;
-      jsbi_right_n    : in    std_ulogic;
-      jsbi_fire_n     : in    std_ulogic;
-      jsao_up_n       : out   std_ulogic;
-      jsao_down_n     : out   std_ulogic;
-      jsao_left_n     : out   std_ulogic;
-      jsao_right_n    : out   std_ulogic;
-      jsao_fire_n     : out   std_ulogic;
-      jsbo_up_n       : out   std_ulogic;
-      jsbo_down_n     : out   std_ulogic;
-      jsbo_left_n     : out   std_ulogic;
-      jsbo_right_n    : out   std_ulogic;
-      jsbo_fire_n     : out   std_ulogic;
-      paddle          : in    std_ulogic_vector(3 downto 0);
-      paddle_drain    : out   std_ulogic;
-      audio_pd_n      : out   std_ulogic;
-      audio_mclk      : out   std_ulogic;
-      audio_bclk      : out   std_ulogic;
-      audio_lrclk     : out   std_ulogic;
-      audio_sdata     : out   std_ulogic;
-      audio_smute     : out   std_ulogic;
-      audio_i2c_scl   : inout std_ulogic;
-      audio_i2c_sda   : inout std_ulogic;
-      hdmi_clk_p      : out   std_ulogic;
-      hdmi_clk_n      : out   std_ulogic;
-      hdmi_data_p     : out   std_ulogic_vector(0 to 2);
-      hdmi_data_n     : out   std_ulogic_vector(0 to 2);
-      hdmi_hiz_en     : out   std_ulogic;
-      hdmi_hpd        : inout std_ulogic;
-      hdmi_ls_oe_n    : out   std_ulogic;
-      hdmi_scl        : inout std_ulogic;
-      hdmi_sda        : inout std_ulogic;
-      vga_psave_n     : out   std_ulogic;
-      vga_clk         : out   std_ulogic;
-      vga_vsync       : out   std_ulogic;
-      vga_hsync       : out   std_ulogic;
-      vga_sync_n      : out   std_ulogic;
-      vga_blank_n     : out   std_ulogic;
-      vga_r           : out   std_ulogic_vector (7 downto 0);
-      vga_g           : out   std_ulogic_vector (7 downto 0);
-      vga_b           : out   std_ulogic_vector (7 downto 0);
-      vga_scl         : inout std_ulogic;
-      vga_sda         : inout std_ulogic;
-      fdd_chg_n       : in    std_ulogic;
-      fdd_wp_n        : in    std_ulogic;
-      fdd_den         : out   std_ulogic;
-      fdd_sela        : out   std_ulogic;
-      fdd_selb        : out   std_ulogic;
-      fdd_mota_n      : out   std_ulogic;
-      fdd_motb_n      : out   std_ulogic;
-      fdd_side_n      : out   std_ulogic;
-      fdd_dir_n       : out   std_ulogic;
-      fdd_step_n      : out   std_ulogic;
-      fdd_trk0_n      : in    std_ulogic;
-      fdd_idx_n       : in    std_ulogic;
-      fdd_wgate_n     : out   std_ulogic;
-      fdd_wdata       : out   std_ulogic;
-      fdd_rdata       : in    std_ulogic;
-      iec_rst_n       : out   std_ulogic;
-      iec_atn_n       : out   std_ulogic;
-      iec_srq_n_en_n  : out   std_ulogic;
-      iec_srq_n_o     : out   std_ulogic;
-      iec_srq_n_i     : in    std_ulogic;
-      iec_clk_en_n    : out   std_ulogic;
-      iec_clk_o       : out   std_ulogic;
-      iec_clk_i       : in    std_ulogic;
-      iec_data_en_n   : out   std_ulogic;
-      iec_data_o      : out   std_ulogic;
-      iec_data_i      : in    std_ulogic;
-      eth_rst_n       : out   std_ulogic;
-      eth_clk         : out   std_ulogic;
-      eth_txen        : out   std_ulogic;
-      eth_txd         : out   std_ulogic_vector(1 downto 0);
-      eth_rxdv        : in    std_ulogic;
-      eth_rxer        : in    std_ulogic;
-      eth_rxd         : in    std_ulogic_vector(1 downto 0);
-      eth_mdc         : out   std_ulogic;
-      eth_mdio        : inout std_ulogic;
-      eth_led_n       : inout std_ulogic;
-      cart_dotclk     : out   std_ulogic;
-      cart_phi2       : out   std_ulogic;
-      cart_rst_oe_n   : out   std_ulogic;
-      cart_rst_n      : inout std_ulogic;
-      cart_dma_n      : in    std_ulogic;
-      cart_nmi_en_n   : out   std_ulogic;
-      cart_nmi_n      : in    std_ulogic;
-      cart_irq_en_n   : out   std_ulogic;
-      cart_irq_n      : in    std_ulogic;
-      cart_ba         : inout std_ulogic;
-      cart_r_w        : inout std_ulogic;
-      cart_exrom_oe_n : out   std_ulogic;
-      cart_exrom_n    : inout std_ulogic;
-      cart_game_oe_n  : out   std_ulogic;
-      cart_game_n     : inout std_ulogic;
-      cart_io1_n      : inout std_ulogic;
-      cart_io2_n      : inout std_ulogic;
-      cart_roml_oe_n  : out   std_ulogic;
-      cart_roml_n     : inout std_ulogic;
-      cart_romh_oe_n  : out   std_ulogic;
-      cart_romh_n     : inout std_ulogic;
-      cart_a          : inout std_ulogic_vector(15 downto 0);
-      cart_d          : inout std_ulogic_vector(7 downto 0);
-      cart_en         : out   std_ulogic;
-      cart_ctrl_oe_n  : out   std_ulogic;
-      cart_ctrl_dir   : out   std_ulogic;
-      cart_addr_oe_n  : out   std_ulogic;
-      cart_laddr_dir  : out   std_ulogic;
-      cart_haddr_dir  : out   std_ulogic;
-      cart_data_oe_n  : out   std_ulogic;
-      cart_data_dir   : out   std_ulogic;
-      hr_rst_n        : out   std_ulogic;
-      hr_clk_p        : out   std_ulogic;
-      hr_cs_n         : out   std_ulogic;
-      hr_rwds         : inout std_ulogic;
-      hr_d            : inout std_ulogic_vector(7 downto 0);
-      sdram_clk       : out   std_ulogic;
-      sdram_cke       : out   std_ulogic;
-      sdram_cs_n      : out   std_ulogic;
-      sdram_ras_n     : out   std_ulogic;
-      sdram_cas_n     : out   std_ulogic;
-      sdram_we_n      : out   std_ulogic;
-      sdram_dqml      : out   std_ulogic;
-      sdram_dqmh      : out   std_ulogic;
-      sdram_ba        : out   std_ulogic_vector(1 downto 0);
-      sdram_a         : out   std_ulogic_vector(12 downto 0);
-      sdram_dq        : inout std_ulogic_vector(15 downto 0);
-      pmod1en         : out   std_ulogic;
-      pmod1flg        : in    std_ulogic;
-      pmod1lo         : inout std_ulogic_vector(3 downto 0);
-      pmod1hi         : inout std_ulogic_vector(3 downto 0);
-      pmod2en         : out   std_ulogic;
-      pmod2flg        : in    std_ulogic;
-      pmod2lo         : inout std_ulogic_vector(3 downto 0);
-      pmod2hi         : inout std_ulogic_vector(3 downto 0);
-      dbg             : inout std_ulogic_vector(11 to 11)
+      clk_in          : in    std_logic;
+      rst             : in    std_logic;
+      uled            : out   std_logic;
+      led_g_n         : out   std_logic;
+      led_r_n         : out   std_logic;
+      uart_tx         : out   std_logic;
+      uart_rx         : in    std_logic;
+      qspi_cs_n       : out   std_logic;
+      qspi_d          : inout std_logic_vector(3 downto 0);
+      sdi_cd_n        : inout std_logic;
+      sdi_wp_n        : in    std_logic;
+      sdi_ss_n        : out   std_logic;
+      sdi_clk         : out   std_logic;
+      sdi_mosi        : out   std_logic;
+      sdi_miso        : inout std_logic;
+      sdi_d1          : inout std_logic;
+      sdi_d2          : inout std_logic;
+      sdx_cd_n        : inout std_logic;
+      sdx_ss_n        : out   std_logic;
+      sdx_clk         : out   std_logic;
+      sdx_mosi        : out   std_logic;
+      sdx_miso        : inout std_logic;
+      sdx_d1          : inout std_logic;
+      sdx_d2          : inout std_logic;
+      i2c1_scl        : inout std_logic;
+      i2c1_sda        : inout std_logic;
+      i2c2_scl        : inout std_logic;
+      i2c2_sda        : inout std_logic;
+      grove_scl       : inout std_logic;
+      grove_sda       : inout std_logic;
+      kb_io0          : out   std_logic;
+      kb_io1          : out   std_logic;
+      kb_io2          : in    std_logic;
+      kb_jtagen       : out   std_logic;
+      kb_tck          : out   std_logic;
+      kb_tms          : out   std_logic;
+      kb_tdi          : out   std_logic;
+      kb_tdo          : in    std_logic;
+      js_pd           : out   std_logic;
+      js_pg           : in    std_logic;
+      jsai_up_n       : in    std_logic;
+      jsai_down_n     : in    std_logic;
+      jsai_left_n     : in    std_logic;
+      jsai_right_n    : in    std_logic;
+      jsai_fire_n     : in    std_logic;
+      jsbi_up_n       : in    std_logic;
+      jsbi_down_n     : in    std_logic;
+      jsbi_left_n     : in    std_logic;
+      jsbi_right_n    : in    std_logic;
+      jsbi_fire_n     : in    std_logic;
+      jsao_up_n       : out   std_logic;
+      jsao_down_n     : out   std_logic;
+      jsao_left_n     : out   std_logic;
+      jsao_right_n    : out   std_logic;
+      jsao_fire_n     : out   std_logic;
+      jsbo_up_n       : out   std_logic;
+      jsbo_down_n     : out   std_logic;
+      jsbo_left_n     : out   std_logic;
+      jsbo_right_n    : out   std_logic;
+      jsbo_fire_n     : out   std_logic;
+      paddle          : in    std_logic_vector(3 downto 0);
+      paddle_drain    : out   std_logic;
+      audio_pd_n      : out   std_logic;
+      audio_mclk      : out   std_logic;
+      audio_bclk      : out   std_logic;
+      audio_lrclk     : out   std_logic;
+      audio_sdata     : out   std_logic;
+      audio_smute     : out   std_logic;
+      audio_i2c_scl   : inout std_logic;
+      audio_i2c_sda   : inout std_logic;
+      hdmi_clk_p      : out   std_logic;
+      hdmi_clk_n      : out   std_logic;
+      hdmi_data_p     : out   std_logic_vector(0 to 2);
+      hdmi_data_n     : out   std_logic_vector(0 to 2);
+      hdmi_hiz_en     : out   std_logic;
+      hdmi_hpd        : inout std_logic;
+      hdmi_ls_oe_n    : out   std_logic;
+      hdmi_scl        : inout std_logic;
+      hdmi_sda        : inout std_logic;
+      vga_psave_n     : out   std_logic;
+      vga_clk         : out   std_logic;
+      vga_vsync       : out   std_logic;
+      vga_hsync       : out   std_logic;
+      vga_sync_n      : out   std_logic;
+      vga_blank_n     : out   std_logic;
+      vga_r           : out   std_logic_vector (7 downto 0);
+      vga_g           : out   std_logic_vector (7 downto 0);
+      vga_b           : out   std_logic_vector (7 downto 0);
+      vga_scl         : inout std_logic;
+      vga_sda         : inout std_logic;
+      fdd_chg_n       : in    std_logic;
+      fdd_wp_n        : in    std_logic;
+      fdd_den         : out   std_logic;
+      fdd_sela        : out   std_logic;
+      fdd_selb        : out   std_logic;
+      fdd_mota_n      : out   std_logic;
+      fdd_motb_n      : out   std_logic;
+      fdd_side_n      : out   std_logic;
+      fdd_dir_n       : out   std_logic;
+      fdd_step_n      : out   std_logic;
+      fdd_trk0_n      : in    std_logic;
+      fdd_idx_n       : in    std_logic;
+      fdd_wgate_n     : out   std_logic;
+      fdd_wdata       : out   std_logic;
+      fdd_rdata       : in    std_logic;
+      iec_rst_n       : out   std_logic;
+      iec_atn_n       : out   std_logic;
+      iec_srq_n_en_n  : out   std_logic;
+      iec_srq_n_o     : out   std_logic;
+      iec_srq_n_i     : in    std_logic;
+      iec_clk_en_n    : out   std_logic;
+      iec_clk_o       : out   std_logic;
+      iec_clk_i       : in    std_logic;
+      iec_data_en_n   : out   std_logic;
+      iec_data_o      : out   std_logic;
+      iec_data_i      : in    std_logic;
+      eth_rst_n       : out   std_logic;
+      eth_clk         : out   std_logic;
+      eth_txen        : out   std_logic;
+      eth_txd         : out   std_logic_vector(1 downto 0);
+      eth_rxdv        : in    std_logic;
+      eth_rxer        : in    std_logic;
+      eth_rxd         : in    std_logic_vector(1 downto 0);
+      eth_mdc         : out   std_logic;
+      eth_mdio        : inout std_logic;
+      eth_led_n       : inout std_logic;
+      cart_dotclk     : out   std_logic;
+      cart_phi2       : out   std_logic;
+      cart_rst_oe_n   : out   std_logic;
+      cart_rst_n      : inout std_logic;
+      cart_dma_n      : in    std_logic;
+      cart_nmi_en_n   : out   std_logic;
+      cart_nmi_n      : in    std_logic;
+      cart_irq_en_n   : out   std_logic;
+      cart_irq_n      : in    std_logic;
+      cart_ba         : inout std_logic;
+      cart_r_w        : inout std_logic;
+      cart_exrom_oe_n : out   std_logic;
+      cart_exrom_n    : inout std_logic;
+      cart_game_oe_n  : out   std_logic;
+      cart_game_n     : inout std_logic;
+      cart_io1_n      : inout std_logic;
+      cart_io2_n      : inout std_logic;
+      cart_roml_oe_n  : out   std_logic;
+      cart_roml_n     : inout std_logic;
+      cart_romh_oe_n  : out   std_logic;
+      cart_romh_n     : inout std_logic;
+      cart_a          : inout std_logic_vector(15 downto 0);
+      cart_d          : inout std_logic_vector(7 downto 0);
+      cart_en         : out   std_logic;
+      cart_ctrl_oe_n  : out   std_logic;
+      cart_ctrl_dir   : out   std_logic;
+      cart_addr_oe_n  : out   std_logic;
+      cart_laddr_dir  : out   std_logic;
+      cart_haddr_dir  : out   std_logic;
+      cart_data_oe_n  : out   std_logic;
+      cart_data_dir   : out   std_logic;
+      hr_rst_n        : out   std_logic;
+      hr_clk_p        : out   std_logic;
+      hr_cs_n         : out   std_logic;
+      hr_rwds         : inout std_logic;
+      hr_d            : inout std_logic_vector(7 downto 0);
+      sdram_clk       : out   std_logic;
+      sdram_cke       : out   std_logic;
+      sdram_cs_n      : out   std_logic;
+      sdram_ras_n     : out   std_logic;
+      sdram_cas_n     : out   std_logic;
+      sdram_we_n      : out   std_logic;
+      sdram_dqml      : out   std_logic;
+      sdram_dqmh      : out   std_logic;
+      sdram_ba        : out   std_logic_vector(1 downto 0);
+      sdram_a         : out   std_logic_vector(12 downto 0);
+      sdram_dq        : inout std_logic_vector(15 downto 0);
+      pmod1en         : out   std_logic;
+      pmod1flg        : in    std_logic;
+      pmod1lo         : inout std_logic_vector(3 downto 0);
+      pmod1hi         : inout std_logic_vector(3 downto 0);
+      pmod2en         : out   std_logic;
+      pmod2flg        : in    std_logic;
+      pmod2lo         : inout std_logic_vector(3 downto 0);
+      pmod2hi         : inout std_logic_vector(3 downto 0);
+      dbg             : inout std_logic_vector(11 to 11)
     );
   end component MEGAtest_r5;
 
+  function hram_params(i : hram_params_t) return hram_params_t is
+    variable r : hram_params_t;
+  begin
+    r := i;
+    r.tVCS := 10.0; -- override tVCS to shorten simulation time
+    return r;
+  end function hram_params;
+
 begin
+
+  U_GLBL: entity work.glbl -- v4p ignore e-202 (Verilog unit)
+    generic map (
+      ROC_WIDTH => 100000
+    );
 
   clk_in <=
             '1' after 5 ns when clk_in = '0' else
@@ -245,7 +264,7 @@ begin
   TEST: process is
   begin
     rst <= '1';
-    wait for 20 ns;
+    wait for 200 ns;
     rst <= '0';
     wait;
     wait until rising_edge(cap_stb);
@@ -411,11 +430,11 @@ begin
       cart_haddr_dir  => open,
       cart_data_oe_n  => open,
       cart_data_dir   => open,
-      hr_rst_n        => open,
-      hr_clk_p        => open,
-      hr_cs_n         => open,
-      hr_rwds         => open,
-      hr_d            => open,
+      hr_rst_n        => hr_rst_n,
+      hr_clk_p        => hr_clk_p,
+      hr_cs_n         => hr_cs_n,
+      hr_rwds         => hr_rwds,
+      hr_d            => hr_d,
       sdram_clk       => open,
       sdram_cke       => open,
       sdram_cs_n      => open,
@@ -436,6 +455,20 @@ begin
       pmod2lo         => open,
       pmod2hi         => open,
       dbg             => open
+    );
+
+  HYPERRAM: component model_hram
+    generic map (
+      SIM_MEM_SIZE => 8*1024*1024,
+      OUTPUT_DELAY => "MAX",
+      PARAMS       => hram_params(IS66WVH8M8DBLL_100B1LI)
+    )
+    port map (
+      rst_n => hr_rst_n,
+      cs_n  => hr_cs_n,
+      clk   => hr_clk_p,
+      rwds  => hr_rwds,
+      dq    => hr_d
     );
 
   DECODE: component model_dvi_decoder

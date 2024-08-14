@@ -24,13 +24,23 @@ void bsp_cb_border(uint8_t c) {
 int bsp_init() {
     XIOModule_Initialize(&io, XPAR_IOMODULE_0_DEVICE_ID);
 	XIOModule_Timer_SetOptions(&io, 0, 0);
-    gpormw(1, 0xF, 3);                  // set video mode (1280x720p60)
-    gpormw(1, 0x3 << 8, 0 << 8);        // text params: no pixel repetition
-    gpormw(1, 0xFF << 16, 132 << 16);   // text params: width
-    gpormw(1, 0xFF << 24, 40 << 24);    // text params: height
-    gpormw(2, 0xFFFF <<  0, 112 <<  0); // text params: offset X
-    gpormw(2, 0xFFFF << 16,  40 << 16); // text params: offset Y
-    cb_init(132,40);
+#if 0
+    gpormw(1, 0xF, 1);                 // set video mode (720x480p60)
+    gpormw(1, 0x3 << 8, 0 << 8);       // text params: no pixel repetition
+    gpormw(1, 0xFF << 16, 80 << 16);   // text params: width  = 80
+    gpormw(1, 0xFF << 24, 25 << 24);   // text params: height = 25
+    gpormw(2, 0xFFFF <<  0, 40 <<  0); // text params: offset X = 40
+    gpormw(2, 0xFFFF << 16, 40 << 16); // text params: offset Y = 40
+    cb_init(80,25);
+#else
+    gpormw(1, 0xF, 3);                 // set video mode (1280x720p60)
+    gpormw(1, 0x3 << 8, 0 << 8);       // text params: no pixel repetition
+    gpormw(1, 0xFF << 16, 154 << 16);   // text params: width  = 154
+    gpormw(1, 0xFF << 24, 42 << 24);   // text params: height = 42
+    gpormw(2, 0xFFFF <<  0, 24 <<  0); // text params: offset X = 24
+    gpormw(2, 0xFFFF << 16, 24 << 16); // text params: offset Y = 24
+    cb_init(154,42);
+#endif
     init_printf(NULL,cb_putc);
     return 0;
 }

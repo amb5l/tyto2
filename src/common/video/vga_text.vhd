@@ -22,12 +22,9 @@ library ieee;
 
 package vga_text_pkg is
 
-  constant cols_log2 : integer := 8;
-  constant rows_log2 : integer := 7;
-
   type vga_text_params_t is record
-    cols : std_ulogic_vector(cols_log2-1 downto 0);
-    rows : std_ulogic_vector(rows_log2-1 downto 0);
+    cols : std_ulogic_vector(7 downto 0);
+    rows : std_ulogic_vector(6 downto 0);
     repx : std_ulogic;
     repy : std_ulogic;
     ox   : std_ulogic_vector(11 downto 0);
@@ -87,8 +84,8 @@ end entity vga_text;
 
 architecture rtl of vga_text is
 
-  constant COLS_MAX : integer := (2**cols_log2)-1;
-  constant ROWS_MAX : integer := (2**rows_log2)-1;
+  constant COLS_MAX : integer := (2**vga_text_params_t.cols'length)-1;
+  constant ROWS_MAX : integer := (2**vga_text_params_t.rows'length)-1;
 
   signal s1_cvx           : std_ulogic;                        -- character visible area X
   signal s1_cvy           : std_ulogic;                        -- character visible area Y
@@ -157,7 +154,7 @@ begin
   end process P_COMB;
 
 
-  P_MAIN: process (clk) is
+  P_MAIN: process (rst,clk) is
 
     -- CGA palette
     function cga (c : std_ulogic_vector(3 downto 0)) return std_ulogic_vector is
