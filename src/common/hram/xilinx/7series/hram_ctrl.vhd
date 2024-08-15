@@ -176,51 +176,54 @@ architecture rtl of hram_ctrl is
   -- signals
 
   -- delayed system interface signals
-  signal s_w_be_1    : std_ulogic_vector(1 downto 0);   -- write byte enable delayed by 1 clock
-  signal s_w_data_1  : std_ulogic_vector(7 downto 0);   -- write data  delayed by 1 clock
-  signal s_w_ready_1 : std_ulogic;                      -- write ready delayed by 1 clock
+  signal s_w_be_1      : std_ulogic_vector(1 downto 0);   -- write byte enable delayed by 1 clock
+  signal s_w_data_1    : std_ulogic_vector(15 downto 0);  -- write data  delayed by 1 clock
+  signal s_w_ready_1   : std_ulogic;                      -- write ready delayed by 1 clock
 
   -- main control
-  signal burst       : burst_t;                         -- details of current burst
-  signal state       : state_t;                         -- state machine state
-  signal phase       : std_ulogic;                      -- access phase: 0 = CA and latency, 1 = data
-  signal count_rst   : integer range 0 to tRP+tRPH;     -- reset counter
-  signal count       : integer range 0 to 7;            -- general purpose counter
-  signal en_clk      : std_ulogic;                      -- enable h_clk pulse
-  signal en_cs       : std_ulogic;                      -- enable h_cs_n assertion
-  signal en_cs_next  : std_ulogic;                      -- enable h_cs_n assertion for next cycle
-  signal ce_rd       : std_ulogic;                      -- clock enable read IDDR
-  signal ce_rd_1     : std_ulogic;                      -- ce_rd delayed by 1 clock
+  signal burst         : burst_t;                         -- details of current burst
+  signal state         : state_t;                         -- state machine state
+  signal phase         : std_ulogic;                      -- access phase: 0 = CA and latency, 1 = data
+  signal count_rst     : integer range 0 to tRP+tRPH;     -- reset counter
+  signal count         : integer range 0 to 7;            -- general purpose counter
+  signal en_clk        : std_ulogic;                      -- enable h_clk pulse
+  signal en_cs         : std_ulogic;                      -- enable h_cs_n assertion
+  signal en_cs_next    : std_ulogic;                      -- enable h_cs_n assertion for next cycle
 
   -- read related
-  signal r_strobe   : std_ulogic_vector(1 to 2);        -- drives read data counter
-  signal r_level    : integer range 0 to LEN_MAX-1;     -- read FIFO level
-  signal r_count    : std_ulogic_vector(s_a_len'range);
-  signal r_last     : std_ulogic;
-  signal r_fifo_we  : std_ulogic;
-  signal r_fifo_wa  : std_ulogic_vector(4 downto 0);    -- write address
-  signal r_fifo_wd  : r_fifo_d_t;
-  signal r_fifo_ra  : std_ulogic_vector(4 downto 0);    -- read address
-  signal r_fifo_rd  : r_fifo_d_t;
+  signal r_strobe      : std_ulogic_vector(1 to 2);        -- drives read data counter
+  signal r_level       : integer range 0 to LEN_MAX-1;     -- read FIFO level
+  signal r_count       : std_ulogic_vector(s_a_len'range);
+  signal r_last        : std_ulogic;
+  signal r_fifo_we     : std_ulogic;
+  signal r_fifo_wa     : std_ulogic_vector(4 downto 0);    -- write address
+  signal r_fifo_wd     : r_fifo_d_t;
+  signal r_fifo_ra     : std_ulogic_vector(4 downto 0);    -- read address
+  signal r_fifo_rd     : r_fifo_d_t;
 
   -- HyperRAM I/O related
-  signal h_rst_n_o  : std_logic;
-  signal h_cs_n_o   : std_logic;
-  signal h_clk_o    : std_logic;                        -- clock ODDR Q output to OBUF
-  signal h_rwds_i   : std_ulogic;                       -- RWDS input from IOBUF to IDELAY
-  signal h_rwds_i_d : std_ulogic;                       -- RWDS IDELAY output
-  signal h_rwds_i_b : std_ulogic;                       -- RWDS BUFR output
-  signal h_rwds_i_c : std_ulogic;                       -- RWDS BUFR output with delay for functional simulation
-  signal h_rwds_o_1 : std_ulogic;                       -- RWDS ODDR D1
-  signal h_rwds_o_2 : std_ulogic;                       -- RWDS ODDR D2
-  signal h_rwds_o   : std_ulogic;                       -- RWDS ODDR Q output to IOBUF
-  signal h_rwds_t   : std_ulogic;                       -- RWDS IOBUF tristate control
-  signal h_dq_i     : std_ulogic_vector(7 downto 0);    -- DQ input from IOBUF to IDDR
-  signal h_dq_i_r   : std_ulogic_vector(15 downto 0);   -- DQ IDDR Q
-  signal h_dq_o_1   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D1
-  signal h_dq_o_2   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D2
-  signal h_dq_o     : std_ulogic_vector(7 downto 0);    -- DQ ODDR Q output to IOBUF
-  signal h_dq_t     : std_ulogic;                       -- DQ IOBUF tristate control
+  signal h_rst_n_o     : std_logic;
+  signal h_cs_n_o      : std_logic;
+  signal h_clk_o       : std_logic;                        -- clock ODDR Q output to OBUF
+  signal h_rwds_i      : std_ulogic;                       -- RWDS input from IOBUF to IDELAY
+  signal h_rwds_i_d    : std_ulogic;                       -- RWDS IDELAY output
+  signal h_rwds_i_b    : std_ulogic;                       -- RWDS BUFR output
+  signal h_rwds_i_c    : std_ulogic;                       -- RWDS BUFR output with delay for functional simulation
+  signal h_rwds_o_d1_f : std_ulogic;                       -- RWDS ODDR D1 for sampling on falling clock edge (half clock early)
+  signal h_rwds_o_d1_r : std_ulogic;                       -- RWDS ODDR D1 for sampling on rising clock edge
+  signal h_rwds_o_d2_f : std_ulogic;                       -- RWDS ODDR D2 for sampling on falling clock edge
+  signal h_rwds_o      : std_ulogic;                       -- RWDS ODDR Q output to IOBUF
+  signal h_rwds_t      : std_ulogic;                       -- RWDS IOBUF tristate control
+  signal h_dq_i        : std_ulogic_vector(7 downto 0);    -- DQ input from IOBUF to IDDR
+  signal h_dq_i_ce     : std_ulogic;                       -- DQ IDDR clock enable
+  signal h_dq_i_ce_1   : std_ulogic;                       -- DQ IDDR clock enable delayed by 1 clock
+  signal h_dq_i_r      : std_ulogic_vector(15 downto 0);   -- DQ IDDR Q
+  signal h_dq_o_d1_f   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D1 for sampling on falling clock edge (half clock early)
+  signal h_dq_o_d1_r   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D1 for sampling on rising clock edge
+  signal h_dq_o_d2_f   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D2 for sampling on falling clock edge
+  signal h_dq_o        : std_ulogic_vector(7 downto 0);    -- DQ ODDR Q output to IOBUF
+  signal h_dq_o_ce     : std_ulogic;                       -- DQ ODDR clock enable
+  signal h_dq_t        : std_ulogic;                       -- DQ IOBUF tristate control
 
   --------------------------------------------------------------------------------
 
@@ -243,29 +246,38 @@ begin
     ca(4) := x"00";
     ca(5) := "00000" & a32(3 downto 1);
 
-    h_rwds_o_1 <= not s_w_be_1(0);
+    h_rwds_o_d1_f <= not s_w_be_1(0);
 
-    h_rwds_o_2 <= not s_w_be(1);
+    h_rwds_o_d2_f <= not s_w_be_1(1);
 
-    h_dq_o_1 <=
-      ca(0) when phase = '0' and (count mod 4) = 0 else
+    h_dq_o_d1_r <=
       ca(1) when phase = '0' and (count mod 4) = 1 else
       ca(3) when phase = '0' and (count mod 4) = 2 else
       ca(5) when phase = '0' and (count mod 4) = 3 else
       s_w_data_1(7 downto 0) when ((burst.reg = '1' and burst.r_w = '0') or (s_w_ready_1 = '1')) else
       (others => 'X');
 
-    h_dq_o_2 <=
-      ca(0) when phase = '0' and (count mod 4) = 0 else
-      ca(2) when phase = '0' and (count mod 4) = 1 else
-      ca(4) when phase = '0' and (count mod 4) = 2 else
-      s_w_data(15 downto 8) when ((burst.reg = '1' and burst.r_w = '0') or (s_w_ready = '1')) else
+    h_dq_o_d2_f <=
+      burst.r_w & burst.reg & not burst.wrap & "00000"
+            when phase = '0' and (count mod 4) = 1 else
+      ca(2) when phase = '0' and (count mod 4) = 2 else
+      ca(4) when phase = '0' and (count mod 4) = 3 else
+      s_w_data_1(15 downto 8) when ((burst.reg = '1' and burst.r_w = '0') or (s_w_ready_1 = '1')) else
       (others => 'X');
 
   end process;
 
   P_MAIN: process(s_rst,s_clk)
   begin
+
+    if s_rst = '1' then
+      h_rwds_o_d1_r <= '0';
+      h_dq_o_d1_f   <= (others => 'X');
+    elsif falling_edge(s_clk) then
+      h_rwds_o_d1_r <= h_rwds_o_d1_f;
+      h_dq_o_d1_f   <= h_dq_o_d1_r;
+    end if;
+
     if s_rst = '1' then
 
       s_a_ready   <= '0';
@@ -275,7 +287,10 @@ begin
       s_r_valid   <= '0';
       h_rst_n_o   <= '0';
       h_rwds_t    <= '1';
-      h_dq_t      <= '0';
+      h_dq_o_ce   <= '0';
+      h_dq_i_ce   <= '0';
+      h_dq_i_ce_1 <= '0';
+      h_dq_t      <= '1';
       burst.r_w   <= 'X';
       burst.reg   <= 'X';
       burst.wrap  <= 'X';
@@ -286,12 +301,10 @@ begin
       phase       <= '0';
       count_rst   <= 0;
       count       <= 0;
-      r_level    <= 0;
+      r_level     <= 0;
       en_clk      <= '0';
       en_cs_next  <= '0';
-      r_strobe   <= (others => '0');
-      ce_rd       <= '0';
-      ce_rd_1     <= '0';
+      r_strobe    <= (others => '0');
       s_w_data_1  <= (others => '0');
       s_w_ready_1 <= '0';
       r_fifo_ra   <= (others => '0');
@@ -300,8 +313,8 @@ begin
 
       s_w_ready_1 <= s_w_ready;
       s_w_be_1    <= s_w_be;
-      s_w_data_1  <= s_w_data(7 downto 0);
-      ce_rd_1     <= ce_rd;
+      s_w_data_1  <= s_w_data;
+      h_dq_i_ce_1 <= h_dq_i_ce;
 
       case state is
 
@@ -315,6 +328,7 @@ begin
           count_rst <= count_rst + 1;
 
         when IDLE =>
+          h_dq_t <= '0';
           if s_a_valid and s_a_ready then
             burst.r_w  <= s_a_r_w;
             burst.reg  <= s_a_reg;
@@ -325,6 +339,7 @@ begin
             s_a_ready  <= '0';
             en_cs_next <= '1';
             en_clk     <= '1';
+            h_dq_o_ce  <= '1';
             count      <= 1;
             state      <= CA;
           end if;
@@ -349,7 +364,8 @@ begin
               end if;
               state <= WR;
             else
-              count <= 1;
+              count  <= 1;
+              h_dq_o_ce <= '0';
               state <= ALAT when h_rwds_i_d = '1' else LAT;
             end if;
           end if;
@@ -375,7 +391,7 @@ begin
             count <= 0;
             if burst.r_w then
               en_clk <= s_r_ready;
-              ce_rd  <= '1';
+              h_dq_i_ce  <= '1';
               state  <= RD;
             else
               if s_w_valid then
@@ -388,7 +404,8 @@ begin
                 burst.trk <= decr(burst.trk);
                 en_clk <= '1';
               end if;
-              state <= WR;
+              h_dq_o_ce <= '1';
+              state  <= WR;
             end if;
           end if;
 
@@ -408,6 +425,7 @@ begin
             if unsigned(burst.trk) = 0 then -- end of burst
               en_clk     <= '0';
               en_cs_next <= '0';
+              h_dq_o_ce     <= '0';
               state      <= CSH;
             end if;
           end if;
@@ -430,21 +448,20 @@ begin
           count     <= 0;
           if tRWR >= 4 then
             h_rwds_t   <= '1';
-            h_dq_t     <= '0';
             en_cs_next <= '0';
-            ce_rd      <= '0';
+            h_dq_i_ce  <= '0';
             state      <= RWR;
           else
             s_a_ready  <= '1';
             h_rwds_t   <= '1';
-            h_dq_t     <= '0';
             phase      <= '0';
             en_cs_next <= '0';
-            ce_rd      <= '0';
+            h_dq_i_ce  <= '0';
             state      <= IDLE;
           end if;
 
         when RWR =>
+          h_dq_t     <= '0';
           count <= count + 1;
           if count = tLAT-4 then
             s_a_ready <= '1';
@@ -529,16 +546,16 @@ begin
 
   U_ODDR_RWDS: component oddr
       generic map(
-        DDR_CLK_EDGE => "SAME_EDGE",
+        DDR_CLK_EDGE => "OPPOSITE_EDGE",
         SRTYPE       => "ASYNC"
       )
       port map (
         r  => s_rst,
         s  => '0',
         c  => s_clk,
-        ce => '1',
-        d1 => h_rwds_o_1,
-        d2 => h_rwds_o_2,
+        ce => h_dq_o_ce,
+        d1 => h_rwds_o_d1_r,
+        d2 => h_rwds_o_d2_f,
         q  => h_rwds_o
       );
 
@@ -589,16 +606,16 @@ begin
 
     U_ODDR: component oddr
       generic map(
-        DDR_CLK_EDGE => "SAME_EDGE",
+        DDR_CLK_EDGE => "OPPOSITE_EDGE",
         SRTYPE       => "ASYNC"
       )
       port map (
         r  => s_rst,
         s  => '0',
         c  => s_clk,
-        ce => '1',
-        d1 => h_dq_o_1(i),
-        d2 => h_dq_o_2(i),
+        ce => h_dq_o_ce,
+        d1 => h_dq_o_d1_f(i),
+        d2 => h_dq_o_d2_f(i),
         q  => h_dq_o(i)
       );
 
@@ -620,7 +637,7 @@ begin
         r  => s_rst,
         s  => '0',
         c  => h_rwds_i_c,
-        ce => ce_rd,
+        ce => h_dq_i_ce,
         d  => h_dq_i(i),
         q1 => h_dq_i_r(0+i),
         q2 => h_dq_i_r(8+i)
@@ -635,12 +652,12 @@ begin
   --  so we could make the address signals maybe 2 bits wide
 
   -- start writing to FIFO on 2nd RWDS pulse to allow for IDDR latency
-  P_R_FIFO_WE: process(ce_rd,h_rwds_i_c)
+  P_R_FIFO_WE: process(h_dq_i_ce,h_rwds_i_c)
   begin
-    if ce_rd = '0' then
+    if h_dq_i_ce = '0' then
       r_fifo_we <= '0';
     elsif rising_edge(h_rwds_i_c) then
-      r_fifo_we <= ce_rd;
+      r_fifo_we <= h_dq_i_ce;
     end if;
   end process P_R_FIFO_WE;
 
@@ -653,12 +670,12 @@ begin
     end if;
   end process P_R_FIFO_WA;
 
-  P_R_LAST: process(ce_rd,ce_rd_1,h_rwds_i_c)
+  P_R_LAST: process(h_dq_i_ce,h_dq_i_ce_1,h_rwds_i_c)
   begin
-    if ce_rd nor ce_rd_1 then
+    if h_dq_i_ce nor h_dq_i_ce_1 then
       r_count <= (0 => '1', others => '0');
       r_last  <= '0';
-    elsif falling_edge(h_rwds_i_c) and ce_rd = '1' then
+    elsif falling_edge(h_rwds_i_c) and h_dq_i_ce = '1' then
       r_last  <= '1' when r_count = burst.len else '0';
       r_count <= incr(r_count);
     end if;

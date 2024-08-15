@@ -208,6 +208,8 @@ begin
     --------------------------------------------------------------------------------
     -- readback
 
+    report "short fill and check";
+
     -- fill and check (interleaved read/write)
     run(
       w      => '1',
@@ -227,6 +229,8 @@ begin
     );
 
     --------------------------------------------------------------------------------
+
+    report "short fill then check";
 
     -- fill
     run(
@@ -265,6 +269,8 @@ begin
     );
 
     --------------------------------------------------------------------------------
+
+    report "64kB checkerboard fill then check (deliberate error in last word)";
 
     -- fill
     run(

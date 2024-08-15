@@ -34,7 +34,7 @@ architecture sim of tb_hram_ctrl is
 
   type data_vector is array(natural range <>) of std_ulogic_vector(15 downto 0);
 
-  constant TEST_SIZE : integer := 2**16;
+  constant TEST_SIZE : integer := 8*1024*1024;
 
   signal s_rst     : std_ulogic;
   signal s_clk     : std_ulogic;
@@ -67,8 +67,8 @@ architecture sim of tb_hram_ctrl is
   constant ADDR_CFGREG0 : integer := 16#1000#;
   constant ADDR_CFGREG1 : integer := 16#1002#;
 
-  constant DATA_IDREG0  : std_ulogic_vector(15 downto 0) := "0000110010000011";
-  constant DATA_IDREG1  : std_ulogic_vector(15 downto 0) := x"0000";
+  constant DATA_IDREG0  : std_ulogic_vector(15 downto 0) := IS66WVH8M8DBLL_100B1LI.idreg0;
+  constant DATA_IDREG1  : std_ulogic_vector(15 downto 0) := IS66WVH8M8DBLL_100B1LI.idreg1;
   constant DATA_CFGREG0 : std_ulogic_vector(15 downto 0) := "1000111111110111";
   constant DATA_CFGREG1 : std_ulogic_vector(15 downto 0) := x"0002";
 
@@ -196,6 +196,9 @@ begin
     addr := 0;
     loop
       len := prng.rand_int(1,64);
+      if addr + (2*len) > TEST_SIZE then
+        len := (TEST_SIZE - addr)/2;
+      end if;
       for i in 0 to len-1 loop
         w_data(i) := prng.rand_slv(0,65535,16);
       end loop;
@@ -209,6 +212,9 @@ begin
     addr := 0;
     loop
       len := prng.rand_int(1,64);
+      if addr + (2*len) > TEST_SIZE then
+        len := (TEST_SIZE - addr)/2;
+      end if;
       for i in 0 to len-1 loop
         w_data(i) := prng.rand_slv(0,65535,16);
       end loop;
@@ -228,7 +234,7 @@ begin
     generic map (
       SIM_MEM_SIZE => TEST_SIZE,
       OUTPUT_DELAY => OUTPUT_DELAY,
-      PARAMS       => hram_params(HRAM_8Mx8_100_3V0)
+      PARAMS       => hram_params(IS66WVH8M8DBLL_100B1LI)
     )
     port map (
       rst_n => h_rst_n,

@@ -30,7 +30,7 @@ VIVADO_VHDL_LRM=2008
 VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/tyto_types_pkg.vhd \
 	$(toplevel)/src/common/tyto_utils_pkg.vhd \
-	$(toplevel)/src/common/basic/sync_reg_u.vhd \
+	$(toplevel)/src/common/basic/xilinx/sync.vhd \
 	$(toplevel)/src/common/hram/test/model_hram.vhd \
 	$(toplevel)/src/common/basic/csr.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm_drp.vhd \
