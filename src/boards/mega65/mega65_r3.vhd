@@ -26,9 +26,9 @@ entity mega65_r3 is
 
     clk_in           : in    std_logic;                      -- clock in (100MHz)
 
-    max10_clk        : inout std_logic;                      -- MAX10 CPLD
-    max10_tx         : in    std_logic;
-    max10_rx         : out   std_logic;
+    max10_clk        : inout std_ulogic;                      -- MAX10 CPLD
+    max10_tx         : in    std_ulogic;
+    max10_rx         : out   std_ulogic;
 
     uled             : out   std_logic;                      -- LED D9 "ULED"
 
@@ -80,7 +80,6 @@ entity mega65_r3 is
     jsb_left_n       : in    std_logic;
     jsb_right_n      : in    std_logic;
     jsb_fire_n       : in    std_logic;
-
     paddle           : in    std_logic_vector(3 downto 0);
     paddle_drain     : out   std_logic;
 
@@ -89,19 +88,19 @@ entity mega65_r3 is
     audio_bclk       : out   std_logic;
     audio_lrclk      : out   std_logic;
     audio_sdata      : out   std_logic;
-    audio_pwm_r      : out   std_logic;
     audio_pwm_l      : out   std_logic;
+    audio_pwm_r      : out   std_logic;
 
     hdmi_clk_p       : out   std_logic;                      -- HDMI out
     hdmi_clk_n       : out   std_logic;
     hdmi_data_p      : out   std_logic_vector(0 to 2);
     hdmi_data_n      : out   std_logic_vector(0 to 2);
-    hdmi_ct_hpd      : out   std_logic;
-    hdmi_hpd         : inout std_logic;
-    hdmi_ls_oe       : out   std_logic;
-    hdmi_scl         : inout std_logic;
-    hdmi_sda         : inout std_logic;
-    hdmi_cec         : inout std_logic;
+    hdmi_ct_hpd      : out   std_ulogic;
+    hdmi_hpd         : inout std_ulogic;
+    hdmi_ls_oe       : out   std_ulogic;
+    hdmi_scl         : inout std_ulogic;
+    hdmi_sda         : inout std_ulogic;
+    hdmi_cec         : inout std_ulogic;
 
     vga_clk          : out   std_logic;                      -- VGA out
     vga_vsync        : out   std_logic;
@@ -170,13 +169,13 @@ entity mega65_r3 is
     cart_a           : inout std_logic_vector(15 downto 0);
     cart_d           : inout std_logic_vector(7 downto 0);
 
-    cart_ctrl_oe_n   : out   std_logic;                      -- C64 cartridge ctrl
-    cart_ctrl_dir    : out   std_logic;
-    cart_addr_oe_n   : out   std_logic;
-    cart_laddr_dir   : out   std_logic;
-    cart_haddr_dir   : out   std_logic;
-    cart_data_oe_n   : out   std_logic;
-    cart_data_dir    : out   std_logic;
+    cart_ctrl_oe_n   : out   std_ulogic;                      -- C64 cartridge ctrl
+    cart_ctrl_dir    : out   std_ulogic;
+    cart_addr_oe_n   : out   std_ulogic;
+    cart_laddr_dir   : out   std_ulogic;
+    cart_haddr_dir   : out   std_ulogic;
+    cart_data_oe_n   : out   std_ulogic;
+    cart_data_dir    : out   std_ulogic;
 
     hr_rst_n         : out   std_logic;                      -- HyperRAM
     hr_clk_p         : out   std_logic;
@@ -189,7 +188,7 @@ entity mega65_r3 is
     pmod2lo          : inout std_logic_vector(3 downto 0);
     pmod2hi          : inout std_logic_vector(3 downto 0);
 
-    tp               : inout std_logic_vector(1 to 8)        -- testpoints
+    tp               : inout std_ulogic_vector(1 to 8)       -- testpoints
 
   );
 end entity mega65_r3;
@@ -203,9 +202,9 @@ begin
 
   -- safe states for unused I/Os
 
-  uled           <= '0';
   max10_clk      <= '0';
   max10_rx       <= '0';
+  uled           <= '0';
   uart_tx        <= '1';
   qspi_cs_n      <= '1';
   qspi_d         <= (others => '1');
