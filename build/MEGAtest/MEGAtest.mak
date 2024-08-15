@@ -88,18 +88,15 @@ VIVADO_PROC_REF=mb_mcs
 VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
 VIVADO_SIM_SRC=\
-	$(abspath $(value XILINX_VIVADO))/data/verilog/src/glbl.v \
+	$(abspath $(XILINX_VIVADO))/data/verilog/src/glbl.v \
 	$(toplevel)/src/common/tyto_sim_pkg.vhd \
 	$(toplevel)/src/common/video/test/model_tmds_cdr_des.vhd \
 	$(toplevel)/src/common/video/test/model_dvi_decoder.vhd \
 	$(toplevel)/src/common/video/test/model_vga_sink.vhd \
 	$(toplevel)/src/common/hram/test/model_hram.vhd \
-	$(toplevel)/src/designs/$(DESIGN)/test/tb_$(VIVADO_DSN_TOP).vhd \
-	$(toplevel)/src/designs/$(DESIGN)/test/cfg_tb_$(VIVADO_DSN_TOP).vhd
+	$(toplevel)/src/designs/$(DESIGN)/test/tb_$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_ELF=$(VITIS_DIR)/$(VITIS_ELF_DBG)
-VIVADO_SIM_RUN=\
-	std=tb_$(VIVADO_DSN_TOP) \
-	fast=cfg_tb_$(VIVADO_DSN_TOP)_fast
+VIVADO_SIM_RUN=tb_$(VIVADO_DSN_TOP)
 VIVADO_XDC=\
 	$(toplevel)/src/boards/$(BOARD)/$(BOARD)$(addprefix _,$(BOARD_VARIANT)).tcl=IMPL \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN).tcl=IMPL
@@ -121,5 +118,33 @@ VIVADO_LIB_SRC=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/OBUFDS.vhd=unisim
 
 include $(make_fpga)/vivado.mak
+
+################################################################################
+# Questa/ModelSim timing simulation
+
+vsim_tim_dir=sim_vsim_tim
+$(vsim_tim_dir):
+	@$(MKDIR) -p $@
+
+vsim_tim_netlist=$(VIVADO_DIR)/$(VIVADO_DSN_TOP)_timesim.v
+vsim_tim_sdf=$(VIVADO_DIR)/$(VIVADO_DSN_TOP)_slow.sdf
+vsim_tim_vlog=\
+	$(XILINX_VIVADO)/data/verilog/src/glbl.v
+vsim_tim_vhdl=\
+	$(toplevel)/src/common/tyto_types_pkg.vhd \
+	$(toplevel)/src/common/tyto_utils_pkg.vhd \
+	$(toplevel)/src/common/tyto_sim_pkg.vhd \
+	$(toplevel)/src/common/video/test/model_tmds_cdr_des.vhd \
+	$(toplevel)/src/common/video/test/model_dvi_decoder.vhd \
+	$(toplevel)/src/common/video/test/model_vga_sink.vhd \
+	$(toplevel)/src/common/hram/test/model_hram.vhd \
+	$(toplevel)/src/designs/$(DESIGN)/test/tb_$(VIVADO_DSN_TOP).vhd
+
+vsim_tim: $(vsim_tim_netlist) $(vsim_tim_sdf) | $(vsim_tim_dir)
+	cd $(vsim_tim_dir) && vlog -incr -mfcu -work work $(abspath $(vsim_tim_netlist))
+	cd $(vsim_tim_dir) && vlog -incr -mfcu -work work $(vsim_tim_vlog)
+	cd $(vsim_tim_dir) && vcom -2008 -work work $(abspath $(vsim_tim_vhdl))
+	cd $(vsim_tim_dir) && vopt +acc=npr -suppress 10016 -L work -L simprims_ver -L secureip -work work tb_MEGAtest_r5 glbl -o tb_MEGAtest_r5_opt
+	cd $(vsim_tim_dir) && vsim +transport_int_delays +pulse_e/0 +pulse_int_e/0 +pulse_r/0 +pulse_int_r/0 -lib work tb_MEGAtest_r5_opt
 
 ################################################################################

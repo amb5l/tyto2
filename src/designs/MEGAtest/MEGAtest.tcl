@@ -59,9 +59,9 @@ set_input_delay -min [expr $tCKHP+$tDSSmin] -clock hr_rwds [get_ports hr_d[*]] -
 set_multicycle_path 2 -setup -end -from [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_rwds_t_reg* MAIN/U_HRAM_TEST/U_CTRL/h_dq_t_reg*}]
 set_multicycle_path 1  -hold -end -from [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_rwds_t_reg* MAIN/U_HRAM_TEST/U_CTRL/h_dq_t_reg*}]
 
-# multicycle to relax ce_rd timing
-set_multicycle_path 2 -setup -end -from [get_cells MAIN/U_HRAM_TEST/U_CTRL/ce_rd_reg] -to [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR]
-set_multicycle_path 1  -hold -end -from [get_cells MAIN/U_HRAM_TEST/U_CTRL/ce_rd_reg] -to [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR]
+# multicycle to relax h_dq_i_ce timing
+set_multicycle_path 2 -setup -end -from [get_cells MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg] -to [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR]
+set_multicycle_path 1  -hold -end -from [get_cells MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg] -to [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR]
 
 # false path on hr_rwds to itself
 set_false_path -from hr_rwds -to [get_ports hr_rwds]

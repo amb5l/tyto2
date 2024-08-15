@@ -251,9 +251,9 @@ begin
       hdmi_data_n => hdmi_data_n
     );
 
-  hdmi_hiz_en     <= '0';
-  hdmi_hpd        <= 'Z';
-  hdmi_ls_oe_n    <= '0';
+  hdmi_hiz_en  <= '0';
+  hdmi_hpd     <= 'Z';
+  hdmi_ls_oe_n <= '0';
 
   --------------------------------------------------------------------------------
 

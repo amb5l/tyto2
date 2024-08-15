@@ -20,7 +20,7 @@ int main() {
 	cb_set_border(CB_LIGHT_BLUE);
 
 	cb_set_col(CB_YELLOW, CB_BLACK);
-	printf("MEGAtest application 9\n\n");
+	printf("MEGAtest application 10\n\n");
 
 	cb_set_col(CB_GREEN, CB_BLACK);
 
@@ -31,7 +31,7 @@ int main() {
 			;
 	}
 
-#if 0
+#if 1
 	printf("simple 128kbyte fill then test...");
 	r = ht_run(1,0,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,4);
 	// inject deliberate error
@@ -40,10 +40,10 @@ int main() {
 	if (r) ht_err(); else printf("OK\n");
 #endif
 
-	//while (1) {
-	for (u8 x = 0; x < 4; x++) {
+	while (1) {
+	//for (u8 x = 0; x < 5; x++) {
 
-#if 0
+#if 1
 		printf("fill and test, seq address, all 1s... ");
 		r = ht_run(1,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0);
 		if (r) ht_err(); else printf("OK\n");
@@ -79,7 +79,7 @@ int main() {
 		if (r) {printf("reread: "); ht_err();} else printf("OK\n");
 		errors += r;
 
-#if 0
+#if 1
 		printf("full fill then test:\n");
 
 		printf(" sequential address, incrementing data, random burst (2)...");
@@ -101,7 +101,7 @@ int main() {
 		errors += r;
 #endif
 
-#if 0
+#if 1
 		printf(" sequential address, random data, fixed burst (256)...");
 		r = ht_run(1,0,0,0,0x800000,0,0,0,1,0,0,0,0,8);
 		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,0,8);
@@ -135,7 +135,7 @@ int main() {
 
 #endif
 
-#if 0
+#if 1
 
 		printf("full fill and test (interleaved write/read):\n");
 

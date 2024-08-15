@@ -56,7 +56,7 @@ void ht_err(void) {
 }
 
 u8 ht_init(void) {
-	ht_run(1,0,1,0x1000,2,0x8FFF,0,0,0,0,0,0,0,0); // write CFGREG0 - set latency to 4, fixed
+	ht_run(1,0,1,0x1000,2,0x8FF7,0,0,0,0,0,0,0,0); // write CFGREG0 - set latency to 4, variable
 	u8 r = ht_run(0,1,1,0x0000,2,0x0C83,0,0,0,0,0,0,0,0); // read IDREG0
 	return r;
 }
