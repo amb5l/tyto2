@@ -812,9 +812,9 @@ begin
 
           when CA3 =>
             ca( 7 downto  0) <= dq_i;
-            if ca(47) = '1' then
+            if ca(47) = '1' then -- read
               rwds_o <= transport '0' after tCKDS;
-            else
+            elsif ca(46) = '0' then -- memory write
               rwds_o  <= transport 'X' after tCKDS;
               rwds_oe <= transport 'X' after tDSZmin, '0' after tDSZmax;
             end if;

@@ -188,61 +188,66 @@ architecture rtl of hram_test is
   -- internal clock domain
 
   -- reset and clocks
-  signal i_rst      : std_ulogic;
-  signal i_clk      : std_ulogic;
-  signal i_clk_dly  : std_ulogic;
+  signal i_rst       : std_ulogic;
+  signal i_clk       : std_ulogic;
+  signal i_clk_dly   : std_ulogic;
 
   -- controller system interface
-  signal i_a_ready  : std_ulogic;
-  signal i_a_valid  : std_ulogic;
-  signal i_a_rb     : std_ulogic; -- readback
-  signal i_a_r_w    : std_ulogic;
-  signal i_a_reg    : std_ulogic;
-  signal i_a_wrap   : std_ulogic;
-  signal i_a_len    : std_ulogic_vector(LEN_MSB downto 0);
-  signal i_a_addr   : std_ulogic_vector(ADDR_MSB downto 1);
-  signal i_w_ready  : std_ulogic;
-  signal i_w_valid  : std_ulogic;
-  signal i_w_last   : std_ulogic;
-  signal i_w_be     : std_ulogic_vector(1 downto 0);
-  signal i_w_data   : std_ulogic_vector(15 downto 0);
-  signal i_r_ready  : std_ulogic;
-  signal i_r_valid  : std_ulogic;
-  signal i_r_last   : std_ulogic;
-  signal i_r_data   : std_ulogic_vector(15 downto 0);
+  signal i_a_ready   : std_ulogic;
+  signal i_a_valid   : std_ulogic;
+  signal i_a_rb      : std_ulogic; -- readback
+  signal i_a_r_w     : std_ulogic;
+  signal i_a_reg     : std_ulogic;
+  signal i_a_wrap    : std_ulogic;
+  signal i_a_len     : std_ulogic_vector(LEN_MSB downto 0);
+  signal i_a_addr    : std_ulogic_vector(ADDR_MSB downto 1);
+  signal i_w_ready   : std_ulogic;
+  signal i_w_valid   : std_ulogic;
+  signal i_w_last    : std_ulogic;
+  signal i_w_be      : std_ulogic_vector(1 downto 0);
+  signal i_w_data    : std_ulogic_vector(15 downto 0);
+  signal i_r_ready   : std_ulogic;
+  signal i_r_valid   : std_ulogic;
+  signal i_r_last    : std_ulogic;
+  signal i_r_data    : std_ulogic_vector(15 downto 0);
 
   -- test controller status
-  signal t_bsy      : std_ulogic;
-  signal t_fin      : std_ulogic;
-  signal t_err      : std_ulogic;
+  signal t_bsy       : std_ulogic;
+  signal t_fin       : std_ulogic;
+  signal t_err       : std_ulogic;
 
   -- address state machine
   type state_a_t is (A_IDLE,A_PRNG,A_PREP1,A_PREP2,A_PREP3,A_VALID,A_RB_WAIT,A_RB_PREP,A_RB_VALID,A_DONE);
-  signal state_a    : state_a_t;
-  signal a_count    : std_ulogic_vector(i_a_addr'range); -- count remaining words
-  signal a_lm       : std_ulogic_vector(i_a_len'range);  -- len mask
-  signal a_len      : std_ulogic_vector(i_a_len'range);
-  signal a_addr     : std_ulogic_vector(i_a_addr'range);
-  signal a_row_rnd  : std_ulogic_vector(ROWS_LOG2-1 downto 0);
-  signal a_addr_rnd : std_ulogic_vector(i_a_addr'range); -- address, swizzled
+  signal state_a     : state_a_t;
+  signal a_count     : std_ulogic_vector(i_a_addr'range); -- count remaining words
+  signal a_lm        : std_ulogic_vector(i_a_len'range);  -- len mask
+  signal a_len       : std_ulogic_vector(i_a_len'range);
+  signal a_addr      : std_ulogic_vector(i_a_addr'range);
+  signal a_row_rnd   : std_ulogic_vector(ROWS_LOG2-1 downto 0);
+  signal a_addr_rnd  : std_ulogic_vector(i_a_addr'range); -- address, swizzled
   alias a_col : std_ulogic_vector(COLS_LOG2-1 downto 0) is a_addr(COLS_LOG2 downto 1);
   alias a_row : std_ulogic_vector(ROWS_LOG2-1 downto 0) is a_addr(ROWS_LOG2+COLS_LOG2 downto COLS_LOG2+1);
 
   -- data state machine
   type state_d_t is (D_IDLE,D_PRNG,D_PREP,D_WAIT,D_WR,D_RD,D_RB,D_DONE);
-  signal state_d    : state_d_t;
-  signal d_word     : std_ulogic;
-  signal d_data     : std_ulogic_vector(31 downto 0);
-  signal d_eadd     : std_ulogic_vector(i_a_addr'range);
-  signal d_edat     : std_ulogic_vector(31 downto 0);
-  signal incr_data  : std_ulogic_vector(31 downto 0);
+  signal state_d     : state_d_t;
+  signal d_word      : std_ulogic;
+  signal d_data      : std_ulogic_vector(31 downto 0);
+  signal d_eadd      : std_ulogic_vector(i_a_addr'range);
+  signal d_edat      : std_ulogic_vector(31 downto 0);
+  signal incr_data   : std_ulogic_vector(31 downto 0);
 
   -- interleaved read/write (readback)
   type rb_addr_t is array(natural range <>) of std_ulogic_vector(i_a_addr'range);
   type rb_data_t is array(natural range <>) of std_ulogic_vector(15 downto 0);
-  signal rb_valid : std_ulogic_vector(1 to 2);
-  signal rb_addr  : rb_addr_t(rb_valid'range);
-  signal rb_data  : rb_data_t(rb_valid'range);
+  signal rb_valid    : std_ulogic_vector(1 to 2);
+  signal rb_addr     : rb_addr_t(rb_valid'range);
+  signal rb_data     : rb_data_t(rb_valid'range);
+
+  -- read check
+  signal rc_en       : std_ulogic;
+  signal rc_rdat     : std_ulogic_vector(15 downto 0);
+  signal rc_xdat     : std_ulogic_vector(15 downto 0);
 
   --------------------------------------------------------------------------------
   -- synthesisable PRNG
@@ -411,6 +416,9 @@ begin
       rb_valid    <= (others => '0');
       rb_addr     <= (others => (others => 'X'));
       rb_data     <= (others => (others => 'X'));
+      rc_en       <= '0';
+      rc_rdat     <= (others => 'X');
+      rc_xdat     <= (others => 'X');
       prng_a_init <= '0';
       prng_d_init <= '0';
 
@@ -557,6 +565,8 @@ begin
       --------------------------------------------------------------------------------
       -- data state machine
 
+      rc_en <= '0';
+
       case state_d is
 
         when D_IDLE =>
@@ -617,17 +627,9 @@ begin
         when D_RD =>
           d := d_data xor x when s_csr_ctrl_cb_i else d_data;
           if i_r_valid and i_r_ready then
-            if not t_err then
-              if (d_word = '0' and i_r_data /= d(15 downto  0))
-              or (d_word = '1' and i_r_data /= d(31 downto 16))
-              then
-                t_err                <= '1';
-                d_edat(15 downto  0) <= i_r_data;
-                d_edat(31 downto 16) <= d(31 downto 16) when d_word else d(15 downto 0);
-              else
-                d_eadd <= incr(d_eadd); -- not relevant to scattered addressing
-              end if;
-            end if;
+            rc_en   <= '1';
+            rc_rdat <= i_r_data;
+            rc_xdat <= d(31 downto 16) when d_word = '1' else d(15 downto 0);
             if d_word then
               d_data    <= prng_d_data when s_csr_ctrl_drnd else incr_data;
               incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
@@ -644,13 +646,9 @@ begin
 
         when D_RB =>
           if i_r_valid and i_r_ready then
-            if not t_err then
-              if i_r_data /= rb_data(rb_data'high) then
-                t_err                <= '1';
-                d_edat(15 downto  0) <= i_r_data;
-                d_edat(31 downto 16) <= rb_data(rb_data'high);
-              end if;
-            end if;
+            rc_en    <= '1';
+            rc_rdat  <= i_r_data;
+            rc_xdat  <= rb_data(rb_data'high);
             rb_data(2 to rb_addr'high) <= rb_data(1 to rb_data'high-1);
             rb_data(1) <= (others => 'X');
             if i_r_last then -- should always be true
@@ -666,6 +664,18 @@ begin
           state_d <= D_IDLE when not i_csr_ctrl_run;
 
       end case;
+
+      --------------------------------------------------------------------------------
+      -- read data error checking - 1 cycle delay to improve timing
+
+      if rc_en and not t_err then
+        if rc_rdat /= rc_xdat then
+          t_err  <= '1';
+          d_edat <= rc_xdat & rc_rdat;
+        else
+          d_eadd <= incr(d_eadd); -- not relevant to scattered addressing
+        end if;
+      end if;
 
       --------------------------------------------------------------------------------
 

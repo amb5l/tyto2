@@ -14,7 +14,6 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
--- TODO sort out RWDS output (write masking)
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -77,6 +76,7 @@ end package hram_ctrl_pkg;
 use work.tyto_utils_pkg.all;
 use work.hram_ctrl_pkg.all;
 use work.ram_sdp_32x6_pkg.all;
+use work.mux2_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -200,6 +200,8 @@ architecture rtl of hram_ctrl is
   signal r_fifo_wd     : r_fifo_d_t;
   signal r_fifo_ra     : std_ulogic_vector(4 downto 0);    -- read address
   signal r_fifo_rd     : r_fifo_d_t;
+  signal mux_i0        : std_ulogic_vector(15 downto 0);
+  signal mux_i1        : std_ulogic_vector(15 downto 0);
 
   -- HyperRAM I/O related
   signal h_rst_n_o     : std_logic;
@@ -224,6 +226,11 @@ architecture rtl of hram_ctrl is
   signal h_dq_o        : std_ulogic_vector(7 downto 0);    -- DQ ODDR Q output to IOBUF
   signal h_dq_o_ce     : std_ulogic;                       -- DQ ODDR clock enable
   signal h_dq_t        : std_ulogic;                       -- DQ IOBUF tristate control
+
+  --------------------------------------------------------------------------------
+
+  attribute dont_touch : string;
+  attribute dont_touch of U_MUX2 : label is "TRUE";
 
   --------------------------------------------------------------------------------
 
@@ -697,10 +704,16 @@ begin
       );
   end generate GEN_RAM;
 
-  s_r_data( 5 downto  0) <= r_fifo_rd(0)(5 downto 0) when r_strobe(2) = '1' else r_fifo_wd(0)(5 downto 0);
-  s_r_data(11 downto  6) <= r_fifo_rd(1)(5 downto 0) when r_strobe(2) = '1' else r_fifo_wd(1)(5 downto 0);
-  s_r_data(15 downto 12) <= r_fifo_rd(2)(3 downto 0) when r_strobe(2) = '1' else r_fifo_wd(2)(3 downto 0);
-  s_r_last               <= r_fifo_rd(2)(4)          when r_strobe(2) = '1' else r_fifo_wd(2)(4);
+  mux_i0 <= r_fifo_wd(2)(3 downto 0) & r_fifo_wd(1)(5 downto 0) & r_fifo_wd(0)(5 downto 0);
+  mux_i1 <= r_fifo_rd(2)(3 downto 0) & r_fifo_rd(1)(5 downto 0) & r_fifo_rd(0)(5 downto 0);
+  U_MUX2: component mux2
+    port map (
+      s  => r_strobe(2),
+      i0 => mux_i0,
+      i1 => mux_i1,
+      o  => s_r_data
+    );
+  s_r_last <= r_fifo_rd(2)(4) when r_strobe(2) = '1' else r_fifo_wd(2)(4);
 
   --------------------------------------------------------------------------------
 

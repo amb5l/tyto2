@@ -19,7 +19,7 @@ random_1to1_py=$(toplevel)/src/designs/MEGAtest/random_1to1.py
 random_1to1_vhd=$(abspath ./random_1to1.vhd)
 
 $(random_1to1_vhd): $(random_1to1_py)
-	@$(random_1to1_py) $(ROWS_LOG2) > $@
+	@python $(random_1to1_py) $(ROWS_LOG2) > $@
 
 ################################################################################
 # Vivado
@@ -36,6 +36,7 @@ VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/mmcm_drp.vhd \
 	$(toplevel)/src/designs/MEGAtest/overclock.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/ram_sdp_32x6.vhd \
+	$(toplevel)/src/common/basic/xilinx/mux2.vhd \
 	$(toplevel)/src/common/hram/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hram_ctrl.vhd \
 	$(random_1to1_vhd) \
 	$(toplevel)/src/designs/MEGAtest/$(DUT).vhd \

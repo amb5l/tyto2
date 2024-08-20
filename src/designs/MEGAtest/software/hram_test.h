@@ -30,7 +30,7 @@ u8 ht_run(
     u8  brnd   ,
     u8  bmag
 );
-void ht_err(void);
+void ht_err(u8 r);
 u8 ht_init(void);
 
 #endif

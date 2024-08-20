@@ -46,7 +46,7 @@ random_1to1_py=$(toplevel)/src/designs/MEGAtest/random_1to1.py
 random_1to1_vhd=$(abspath ./random_1to1.vhd)
 
 $(random_1to1_vhd): $(random_1to1_py)
-	@$(random_1to1_py) $(ROWS_LOG2) > $@
+	python $(random_1to1_py) $(ROWS_LOG2) > $@
 
 ################################################################################
 # Vivado
@@ -74,6 +74,7 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/basic/csr.vhd \
 	$(toplevel)/src/designs/MEGAtest/overclock.vhd \
 	$(toplevel)/src/common/basic/$(FPGA_VENDOR)/$(FPGA_FAMILY)/ram_sdp_32x6.vhd \
+	$(toplevel)/src/common/basic/xilinx/mux2.vhd \
 	$(toplevel)/src/common/hram/$(FPGA_VENDOR)/$(FPGA_FAMILY)/hram_ctrl.vhd \
 	$(random_1to1_vhd) \
 	$(toplevel)/submodules/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl \
@@ -99,12 +100,14 @@ VIVADO_SIM_ELF=$(VITIS_DIR)/$(VITIS_ELF_DBG)
 VIVADO_SIM_RUN=tb_$(VIVADO_DSN_TOP)
 VIVADO_XDC=\
 	$(toplevel)/src/boards/$(BOARD)/$(BOARD)$(addprefix _,$(BOARD_VARIANT)).tcl=IMPL \
+	$(toplevel)/src/designs/$(DESIGN)/$(VIVADO_DSN_TOP).tcl=IMPL \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN).tcl=IMPL
 VIVADO_XDC_REF=\
 	$(toplevel)/src/common/basic/xilinx/sync.tcl=sync
 VIVADO_LIB_SRC=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_VPKG.vhd=unisim \
+	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/LUT3.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/IDELAYCTRL.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/ODDR.vhd=unisim \
@@ -128,8 +131,6 @@ $(vsim_tim_dir):
 
 vsim_tim_netlist=$(VIVADO_DIR)/$(VIVADO_DSN_TOP)_timesim.v
 vsim_tim_sdf=$(VIVADO_DIR)/$(VIVADO_DSN_TOP)_slow.sdf
-vsim_tim_vlog=\
-	$(XILINX_VIVADO)/data/verilog/src/glbl.v
 vsim_tim_vhdl=\
 	$(toplevel)/src/common/tyto_types_pkg.vhd \
 	$(toplevel)/src/common/tyto_utils_pkg.vhd \
@@ -142,7 +143,6 @@ vsim_tim_vhdl=\
 
 vsim_tim: $(vsim_tim_netlist) $(vsim_tim_sdf) | $(vsim_tim_dir)
 	cd $(vsim_tim_dir) && vlog -incr -mfcu -work work $(abspath $(vsim_tim_netlist))
-	cd $(vsim_tim_dir) && vlog -incr -mfcu -work work $(vsim_tim_vlog)
 	cd $(vsim_tim_dir) && vcom -2008 -work work $(abspath $(vsim_tim_vhdl))
 	cd $(vsim_tim_dir) && vopt +acc=npr -suppress 10016 -L work -L simprims_ver -L secureip -work work tb_MEGAtest_r5 glbl -o tb_MEGAtest_r5_opt
 	cd $(vsim_tim_dir) && vsim +transport_int_delays +pulse_e/0 +pulse_int_e/0 +pulse_r/0 +pulse_int_r/0 -lib work tb_MEGAtest_r5_opt

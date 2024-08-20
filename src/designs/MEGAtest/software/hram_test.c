@@ -47,12 +47,15 @@ u8 ht_run(
     return peek8(RA_STAT+2); // return error status
 }
 
-void ht_err(void) {
-    printf("\nread %04X expected %04X address %08X\n",
-		peek16(RA_EDAT),
-		peek16(RA_EDAT+2),
-		peek32(RA_EADD)
-	);
+void ht_err(u8 r) {
+    if (r)
+        printf("read %04X expected %04X address %08X\n",
+            peek16(RA_EDAT),
+            peek16(RA_EDAT+2),
+            peek32(RA_EADD)
+        );
+    else
+        printf("OK\n");
 }
 
 u8 ht_init(void) {
