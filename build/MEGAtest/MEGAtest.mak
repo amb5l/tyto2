@@ -79,6 +79,7 @@ VIVADO_DSN_SRC=\
 	$(random_1to1_vhd) \
 	$(toplevel)/submodules/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl \
 	$(toplevel)/src/designs/MEGAtest/hram_test.vhd \
+	$(toplevel)/src/designs/MEGAtest/temp_sense.vhd \
 	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/cpu.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN).vhd \

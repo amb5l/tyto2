@@ -27,6 +27,7 @@ end package MEGAtest_pkg;
 
 use work.clk_rst_pkg.all;
 use work.cpu_pkg.all;
+use work.temp_sense_pkg.all;
 use work.hram_test_pkg.all;
 use work.display_pkg.all;
 
@@ -61,12 +62,6 @@ architecture rtl of MEGAtest is
   signal s_rst      : std_ulogic;
   signal s_clk      : std_ulogic;
 
-  signal ht_en      : std_ulogic;
-  signal ht_we      : std_ulogic_vector(3 downto 0);
-  signal ht_addr    : std_ulogic_vector(7 downto 2);
-  signal ht_din     : std_ulogic_vector(31 downto 0);
-  signal ht_dout    : std_ulogic_vector(31 downto 0);
-
   signal vid_params : display_params_t;
   signal vid_en     : std_ulogic;
   signal vid_we     : std_ulogic_vector(3 downto 0);
@@ -74,6 +69,19 @@ architecture rtl of MEGAtest is
   signal vid_dout   : std_ulogic_vector(31 downto 0);
   signal vid_din    : std_ulogic_vector(31 downto 0);
 
+  signal ts_en      : std_ulogic;
+  signal ts_we      : std_ulogic;
+  signal ts_addr    : std_ulogic_vector(6 downto 0);
+  signal ts_dout    : std_ulogic_vector(15 downto 0);
+  signal ts_din     : std_ulogic_vector(15 downto 0);
+  signal ts_rdy     : std_ulogic;
+  signal ts_bsy     : std_ulogic;
+
+  signal ht_en      : std_ulogic;
+  signal ht_we      : std_ulogic_vector(3 downto 0);
+  signal ht_addr    : std_ulogic_vector(7 downto 2);
+  signal ht_din     : std_ulogic_vector(31 downto 0);
+  signal ht_dout    : std_ulogic_vector(31 downto 0);
 
 begin
 
@@ -97,6 +105,13 @@ begin
       buf_addr   => vid_addr,
       buf_dout   => vid_dout,
       buf_din    => vid_din,
+      ts_en      => ts_en,
+      ts_we      => ts_we,
+      ts_addr    => ts_addr,
+      ts_dout    => ts_dout,
+      ts_din     => ts_din,
+      ts_rdy     => ts_rdy,
+      ts_bsy     => ts_bsy,
       ht_en      => ht_en,
       ht_we      => ht_we,
       ht_addr    => ht_addr,
@@ -121,6 +136,19 @@ begin
       hdmi_data_n => hdmi_data_n
     );
 
+  U_TEMP: component temp_sense
+    port map (
+      rst  => s_rst,
+      clk  => s_clk,
+      en   => ts_en,
+      we   => ts_we,
+      addr => ts_addr,
+      din  => ts_dout,
+      dout => ts_din,
+      rdy  => ts_rdy,
+      bsy  => ts_bsy
+    );
+
   U_HRAM_TEST: component hram_test
     generic map (
       ROWS_LOG2 => 13,
@@ -142,6 +170,8 @@ begin
       h_rwds  => hram_rwds,
       h_dq    => hram_dq
     );
+
+
 
 end architecture rtl;
 
