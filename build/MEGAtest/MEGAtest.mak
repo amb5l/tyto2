@@ -26,6 +26,8 @@ VITIS_SRC=\
 	$(toplevel)/src/common/basic/microblaze/peekpoke.h \
 	$(toplevel)/src/designs/$(DESIGN)/software/hram_test.c \
 	$(toplevel)/src/designs/$(DESIGN)/software/hram_test.h \
+	$(toplevel)/src/designs/$(DESIGN)/software/xadc.c \
+	$(toplevel)/src/designs/$(DESIGN)/software/xadc.h \
 	$(toplevel)/src/designs/$(DESIGN)/software/bsp.c \
 	$(toplevel)/src/designs/$(DESIGN)/software/bsp.h \
 	$(toplevel)/src/designs/$(DESIGN)/software/main.c

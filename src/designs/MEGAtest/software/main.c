@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "bsp.h"
+#include "xadc.h"
 #include "cb.h"
 #include "hram_test.h"
 
@@ -20,7 +21,7 @@ int main() {
 	cb_set_border(CB_LIGHT_BLUE);
 
 	cb_set_col(CB_YELLOW, CB_BLACK);
-	printf("MEGAtest application 12\n\n");
+	printf("MEGAtest application 14\n\n");
 
 	cb_set_col(CB_GREEN, CB_BLACK);
 
@@ -28,7 +29,7 @@ int main() {
 	printf("ht_init: ");
 	ht_err(1);
 
-#if 1
+#if 0
 	printf("simple 128kbyte fill then test...");
 	r = ht_run(1,0,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,4);
 	// inject deliberate error
@@ -41,6 +42,8 @@ int main() {
 
 	while (errors == 0) {
 	//for (u8 x = 0; x < 5; x++) {
+
+	printf("temperature x 10 = %d", xadc_temp10());
 
 #if 1
 		printf("fill and test, seq address, all 1s... ");

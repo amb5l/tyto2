@@ -18,8 +18,9 @@
 #define gpormw(n,m,d) XIOModule_DiscreteWrite(&io,n,((io.GpoValue[n-1] & ~(m)) | (d)))
 
 #include "xparameters.h"
-#define CB_BUF	XPAR_CPU_IOMODULE_0_IO_BASEADDR
-#define HT_BASE (XPAR_CPU_IOMODULE_0_IO_BASEADDR | (1 << 29))
+#define CB_BUF    XPAR_CPU_IOMODULE_0_IO_BASEADDR
+#define XADC_BASE (XPAR_CPU_IOMODULE_0_IO_BASEADDR | (1 << 28))
+#define HT_BASE   (XPAR_CPU_IOMODULE_0_IO_BASEADDR | (1 << 29))
 
 extern XIOModule io;
 

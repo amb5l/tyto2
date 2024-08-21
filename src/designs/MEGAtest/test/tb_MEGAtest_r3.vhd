@@ -225,9 +225,9 @@ begin
 
   TEST: process is
   begin
-    max10_tx <= '0';
-    wait for 200 ns;
     max10_tx <= '1';
+    wait for 200 ns;
+    max10_tx <= '0';
     wait;
     wait until rising_edge(cap_stb);
     stop;

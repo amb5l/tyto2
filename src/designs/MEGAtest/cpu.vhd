@@ -86,17 +86,6 @@ architecture rtl of cpu is
 
 begin
 
-  vtg_mode        <= gpo(1)(3 downto 0);
-  txt_params.bcol <= gpo(1)(7 downto 4);
-  txt_params.repx <= gpo(1)(8);
-  txt_params.repy <= gpo(1)(9);
-  txt_params.cols <= gpo(1)(23 downto 16);
-  txt_params.rows <= gpo(1)(30 downto 24);
-  txt_params.ox   <= gpo(2)(11 downto 0);
-  txt_params.oy   <= gpo(2)(27 downto 16);
-
-  gpi <= (others => (others => '0'));
-
   U_MCU: component mb_mcs_wrapper
     port map (
       rst      => rst,
@@ -108,6 +97,27 @@ begin
       io_mosi  => io_mosi,
       io_miso  => io_miso
     );
+
+  -- GPIO mappings
+
+  P_GPIO: process(all)
+  begin
+
+    vtg_mode        <= gpo(1)(3 downto 0);
+    txt_params.bcol <= gpo(1)(7 downto 4);
+    txt_params.repx <= gpo(1)(8);
+    txt_params.repy <= gpo(1)(9);
+    txt_params.cols <= gpo(1)(23 downto 16);
+    txt_params.rows <= gpo(1)(30 downto 24);
+    txt_params.ox   <= gpo(2)(11 downto 0);
+    txt_params.oy   <= gpo(2)(27 downto 16);
+
+    gpi <= (others => (others => '0'));
+    gpi(1)(0) <= ts_bsy;
+
+  end process P_GPIO;
+
+  -- memory mapped I/O
 
   decode_buf <= bool2sl(io_mosi.addr(29 downto 28) = "00"); -- 0xC0000000
   decode_ts  <= bool2sl(io_mosi.addr(29 downto 28) = "01"); -- 0xD0000000
@@ -123,7 +133,7 @@ begin
   ts_en    <= (io_mosi.astb or io_mosi.wstb or io_mosi.rstb) and decode_ts;
   ts_we    <= io_mosi.wstb;
   ts_addr  <= io_mosi.addr(ts_addr'range);
-  ts_dout  <= io_mosi.wdata;
+  ts_dout  <= io_mosi.wdata(ts_dout'range);
 
   ht_en    <= (io_mosi.astb or io_mosi.wstb or io_mosi.rstb) and decode_ht;
   ht_we    <= io_mosi.be when io_mosi.wstb else (others => '0');
@@ -131,12 +141,15 @@ begin
   ht_dout  <= io_mosi.wdata;
 
   io_miso.rdata <=
-    buf_din when decode_buf else
-    ts_din  when decode_ts  else
-    ht_din  when decode_ht  else
+    buf_din          when decode_buf else
+    x"0000" & ts_din when decode_ts  else
+    ht_din           when decode_ht  else
     (others => '0');
 
-  io_miso.rdy <= io_mosi.wstb or (decode_buf and buf_rrdy) or (decode_ts and ts_rdy);
+  io_miso.rdy <=
+    io_mosi.wstb or
+    (decode_buf and buf_rrdy) or
+    (decode_ts and ts_rdy) or
+    (decode_ht and io_mosi.rstb);
 
 end architecture rtl;
-

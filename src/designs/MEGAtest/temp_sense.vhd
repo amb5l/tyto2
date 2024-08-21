@@ -21,6 +21,9 @@ library ieee;
 package temp_sense_pkg is
 
   component temp_sense is
+    generic (
+      STIM_FILE : string := "xadcstim.txt"
+    );
     port (
       rst   : in    std_ulogic;
       clk   : in    std_ulogic;
@@ -45,6 +48,9 @@ library unisim;
    use unisim.vcomponents.all;
 
 entity temp_sense is
+  generic (
+    STIM_FILE : string := "xadcstim.txt"
+  );
   port (
     rst   : in    std_ulogic;
     clk   : in    std_ulogic;
@@ -63,48 +69,40 @@ architecture rtl of temp_sense is
   signal adc_busy  : std_ulogic;
   signal jtag_lock : std_ulogic;
 
+  --------------------------------------------------------------------------------
+  -- configuration register constants
+
+  -- channel 0 = on chip temperature (n/a in default sequencer mode)
+  -- no increased settling time
+  -- continuous sampling
+  -- bipolar operating mode
+  -- internal mux
+  -- average 256 samples
+  -- enable coefficient averaging
+  constant CFGREG0 : bit_vector := x"3400";
+
+  -- disable OT
+  -- disable alarms
+  -- enable calibration coefficients
+  -- default sequencer mode
+  constant CFGREG1 : bit_vector := x"0FFF";
+
+  -- enable both ADCs
+  -- ADC freq = 100MHz / 100 = 1MHz
+  constant CFGREG2 : bit_vector := x"6400";
+
+  --------------------------------------------------------------------------------
+
 begin
 
   bsy <= adc_busy or jtag_lock;
 
   U_XADC: component XADC
     generic map (
-      INIT_40               => X"0000",
-      INIT_41               => X"0000",
-      INIT_42               => X"0800",
-      INIT_43               => X"0000",
-      INIT_44               => X"0000",
-      INIT_45               => X"0000",
-      INIT_46               => X"0000",
-      INIT_47               => X"0000",
-      INIT_48               => X"0000",
-      INIT_49               => X"0000",
-      INIT_4A               => X"0000",
-      INIT_4B               => X"0000",
-      INIT_4C               => X"0000",
-      INIT_4D               => X"0000",
-      INIT_4E               => X"0000",
-      INIT_4F               => X"0000",
-      INIT_50               => X"0000",
-      INIT_51               => X"0000",
-      INIT_52               => X"0000",
-      INIT_53               => X"0000",
-      INIT_54               => X"0000",
-      INIT_55               => X"0000",
-      INIT_56               => X"0000",
-      INIT_57               => X"0000",
-      INIT_58               => X"0000",
-      INIT_59               => X"0000",
-      INIT_5A               => X"0000",
-      INIT_5B               => X"0000",
-      INIT_5C               => X"0000",
-      INIT_5D               => X"0000",
-      INIT_5E               => X"0000",
-      INIT_5F               => X"0000",
-      IS_CONVSTCLK_INVERTED => '0',
-      IS_DCLK_INVERTED      => '0',
-      SIM_DEVICE            => "7SERIES",
-      SIM_MONITOR_FILE      => "design.txt"
+      INIT_40          => CFGREG0,
+      INIT_41          => CFGREG1,
+      INIT_42          => CFGREG2,
+      SIM_MONITOR_FILE => STIM_FILE
     )
     port map (
 
@@ -133,8 +131,8 @@ begin
       ot           => open,            -- over-temperature
       vauxn        => (others => '0'),
       vauxp        => (others => '0'),
-      vn           => open,
-      vp           => open
+      vn           => '0',
+      vp           => '0'
 
     );
 
