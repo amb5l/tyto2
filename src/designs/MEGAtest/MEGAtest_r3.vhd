@@ -198,7 +198,8 @@ architecture rtl of MEGAtest_r3 is
 
 begin
 
-  rst <= max10_tx;
+  --rst <= max10_tx;
+  rst <= '0';
 
   MAIN: component MEGAtest
     port map (
