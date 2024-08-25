@@ -14,6 +14,9 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
+-- TODO
+--  allow variable tLAT and tRWR
+--  support single write bug workaround
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -23,18 +26,18 @@ package hram_ctrl_pkg is
   -- controller parameter bundle type
   -- integers correspond to clock cycles
   type hram_ctrl_params_t is record
-    tRP      : positive;  -- reset pulse width
-    tRPH     : positive;  -- reset assertion to chip select assertion
-    tRWR     : positive;  -- read-write recovery
-    tLAT     : positive;  -- latency
+    tRP  : positive;  -- reset pulse width
+    tRPH : positive;  -- reset assertion to chip select assertion
+    tRWR : positive;  -- read-write recovery
+    tLAT : positive;  -- latency
   end record hram_ctrl_params_t;
 
   -- parameters for: 100MHz HyperRAM, 100MHz clock
   constant HRAM_CTRL_PARAMS_100_100 : hram_ctrl_params_t := (
-    tRP      => 20,    -- 200 ns
-    tRPH     => 40,    -- 400 ns
-    tRWR     => 4,     -- 40 ns (marginal)
-    tLAT     => 4      -- 40 ns (marginal)
+    tRP      => 20, -- 200 ns
+    tRPH     => 40, -- 400 ns
+    tRWR     => 4,  -- 40 ns (marginal)
+    tLAT     => 4   -- 40 ns (marginal)
   );
 
   component hram_ctrl is
@@ -143,22 +146,22 @@ architecture rtl of hram_ctrl is
   constant LEN_MAX : integer := 2**s_a_len'length;
 
   -- break parameter bundle out to discrete signals (better for linting)
-  constant tRP      : positive := PARAMS.tRP  ;
-  constant tRPH     : positive := PARAMS.tRPH ;
-  constant tRWR     : positive := PARAMS.tRWR ;
-  constant tLAT     : positive := PARAMS.tLAT ;
+  constant tRP  : positive := PARAMS.tRP  ;
+  constant tRPH : positive := PARAMS.tRPH ;
+  constant tRWR : positive := PARAMS.tRWR ;
+  constant tLAT : positive := PARAMS.tLAT ;
 
   type state_t is (
-    RESET,  -- reset
-    IDLE,   -- idle/ready
-    CA,     -- command/address
-    ALAT,   -- additional latency
-    LAT,    -- latency
-    WR,     -- write
-    RD,     -- read
-    CSHR,   -- hold for final RWDS pulse
-    CSH,    -- hold before negating chip select to meet tCSH
-    RWR     -- read-write recovery
+    RESET, -- reset
+    IDLE,  -- idle/ready
+    CA,    -- command/address
+    ALAT,  -- additional latency
+    LAT,   -- latency
+    WR,    -- write
+    RD,    -- read
+    CSHR,  -- hold for final RWDS pulse
+    CSH,   -- hold before negating chip select to meet tCSH
+    RWR    -- read-write recovery
   );
 
   type burst_t is record
@@ -397,9 +400,9 @@ begin
           elsif count = tLAT-1 then -- data transfer (or stall)
             count <= 0;
             if burst.r_w then
-              en_clk <= s_r_ready;
-              h_dq_i_ce  <= '1';
-              state  <= RD;
+              en_clk    <= s_r_ready;
+              h_dq_i_ce <= '1';
+              state     <= RD;
             else
               if s_w_valid then
                 if s_w_last then
@@ -653,8 +656,8 @@ begin
   end generate GEN_DQ;
 
   --------------------------------------------------------------------------------
-  -- read FIFO: accepts data in h_rwds_i_c domain, forwards to system read port
-  -- clocked by falling edge so that a single additional RWDS pulse is enough
+  -- read FIFO: accepts data in h_rwds_i_c domain, forwards to system read port;
+  -- used to hold all words in burst except last one which bypasses via U_MUX2
   -- TODO: we will probably use only a few words of the 32 word depth
   --  so we could make the address signals maybe 2 bits wide
 
