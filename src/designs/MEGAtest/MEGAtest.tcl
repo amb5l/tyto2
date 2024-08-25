@@ -139,6 +139,16 @@ set_multicycle_path 1  -hold -end -from [get_clocks i_clk] -to [get_pins MAIN/U_
 set_false_path -from [get_ports hr_rwds] -to [get_ports hr_rwds]
 
 ################################################################################
+# pullups/pulldowns
+
+# pull RWDS down
+set_property PULLTYPE PULLDOWN get_ports [hr_rwds]
+
+# pull DQ bus to 0x55 (telltale for bad read timing)
+set_property PULLTYPE PULLUP   get_ports [hr_d[0] hr_d[2] hr_d[4] hr_d[6]]
+set_property PULLTYPE PULLDOWN get_ports [hr_d[1] hr_d[3] hr_d[5] hr_d[7]]
+
+################################################################################
 # Miscellaneous
 
 # unconstrained I/Os
