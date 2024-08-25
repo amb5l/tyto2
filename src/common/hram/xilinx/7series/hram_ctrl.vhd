@@ -175,6 +175,8 @@ architecture rtl of hram_ctrl is
 
   type r_fifo_d_t is array(0 to 2) of std_ulogic_vector(5 downto 0);
 
+  constant IDDR_RS : std_ulogic_vector(7 downto 0) := x"AA"; -- telltale pattern
+
   --------------------------------------------------------------------------------
   -- signals
 
@@ -194,6 +196,7 @@ architecture rtl of hram_ctrl is
   signal en_cs_next    : std_ulogic;                      -- enable h_cs_n assertion for next cycle
 
   -- read related
+  signal r_rs          : std_ulogic;                       -- reset/set IDDRs
   signal r_strobe      : std_ulogic_vector(1 to 2);        -- drives read data counter
   signal r_level       : integer range 0 to LEN_MAX-1;     -- read FIFO level
   signal r_count       : std_ulogic_vector(s_a_len'range);
@@ -311,6 +314,7 @@ begin
       phase       <= '0';
       count_rst   <= 0;
       count       <= 0;
+      r_rs        <= '0';
       r_level     <= 0;
       en_clk      <= '0';
       en_cs_next  <= '0';
@@ -325,6 +329,7 @@ begin
       s_w_be_1    <= s_w_be;
       s_w_data_1  <= s_w_data;
       h_dq_i_ce_1 <= h_dq_i_ce;
+      r_rs        <= '0';
 
       case state is
 
@@ -391,8 +396,9 @@ begin
           count <= count + 1;
           if count = 1 then -- tristate DQ for read
             h_dq_t <= burst.r_w;
-          elsif count = 2 then -- drive RWDS for write
+          elsif count = 2 then -- drive RWDS for write, reset IDDRs
             h_rwds_t <= burst.r_w;
+            r_rs     <= burst.r_w;
           end if;
           if count = tLAT-2 then -- ready for write data
             s_w_ready <= not burst.r_w;
@@ -644,8 +650,8 @@ begin
         SRTYPE        => "ASYNC"
       )
       port map (
-        r  => s_rst,
-        s  => '0',
+        r  => (s_rst or r_rs) and not IDDR_RS(i),
+        s  => (s_rst or r_rs) and     IDDR_RS(i),
         c  => h_rwds_i_c,
         ce => h_dq_i_ce,
         d  => h_dq_i(i),
@@ -680,6 +686,7 @@ begin
     end if;
   end process P_R_FIFO_WA;
 
+  -- TODO move last tracking into s_clk domain
   P_R_LAST: process(h_dq_i_ce,h_dq_i_ce_1,h_rwds_i_c)
   begin
     if h_dq_i_ce nor h_dq_i_ce_1 then
