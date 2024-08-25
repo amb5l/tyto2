@@ -15,7 +15,9 @@
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
 -- assumption: simulator time resolution is 1 ps
--- TODO add wrap and hybrid wrap burst support
+-- TODO
+--  add wrap and hybrid wrap burst support
+--  latch refresh during cycles
 --------------------------------------------------------------------------------
 
 library ieee;
