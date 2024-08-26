@@ -105,12 +105,6 @@ set_multicycle_path 2 -hold  -end -fall_from [get_clocks hr_rwds_fast] -through 
 set_multicycle_path 2 -setup -end -fall_from [get_clocks hr_rwds_slow] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/U_MUX2/GEN[*].U_LUT3] -rise_to [get_clocks i_clk] ; # slow
 set_multicycle_path 1 -hold  -end -fall_from [get_clocks hr_rwds_slow] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/U_MUX2/GEN[*].U_LUT3] -rise_to [get_clocks i_clk] ; # slow
 
-# HyperRAM read data path: r_last (RWDS clocked register) to system clock domain
-set_multicycle_path 3 -setup -end -from [get_clocks hr_rwds_fast] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/r_last_reg] -to [get_clocks i_clk] ; # fast
-set_multicycle_path 2 -hold  -end -from [get_clocks hr_rwds_fast] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/r_last_reg] -to [get_clocks i_clk] ; # fast
-set_multicycle_path 2 -setup -end -from [get_clocks hr_rwds_slow] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/r_last_reg] -to [get_clocks i_clk] ; # slow
-set_multicycle_path 1 -hold  -end -from [get_clocks hr_rwds_slow] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/r_last_reg] -to [get_clocks i_clk] ; # slow
-
 # HyperRAM read data path: RWDS clocked FIFO write port to system clock domain
 set_multicycle_path 2 -setup -end -from [get_clocks hr_rwds_fast] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_DFIFO[*].RAM/RAM] -to [get_clocks i_clk] ; # fast
 set_multicycle_path 1 -hold  -end -from [get_clocks hr_rwds_fast] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_DFIFO[*].RAM/RAM] -to [get_clocks i_clk] ; # fast
@@ -129,22 +123,22 @@ set_multicycle_path 1  -hold -end -from [get_clocks i_clk] -through [get_cells {
 set_multicycle_path 2 -setup -end -from [get_clocks i_clk] -through [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_1_reg}] -to [get_clocks hr_rwds_slow] ; # slow
 set_multicycle_path 1  -hold -end -from [get_clocks i_clk] -through [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_1_reg}] -to [get_clocks hr_rwds_slow] ; # slow
 
-# multicycle to relax burst.len to r_last
-set_multicycle_path 2 -setup -end -from [get_clocks i_clk] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/r_last_reg/D]
-set_multicycle_path 1  -hold -end -from [get_clocks i_clk] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/r_last_reg/D]
-
 # exclude RWDS to itself
 set_false_path -from [get_ports hr_rwds] -to [get_ports hr_rwds]
+
+# exclude IDDR set/reset
+set_false_path -from [get_pins MAIN/U_HRAM_TEST/U_CTRL/r_rs_reg/C] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR/R]
+set_false_path -from [get_pins MAIN/U_HRAM_TEST/U_CTRL/r_rs_reg/C] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR/S]
 
 ################################################################################
 # pullups/pulldowns
 
 # pull RWDS down
-set_property PULLTYPE PULLDOWN get_ports [hr_rwds]
+set_property PULLTYPE PULLDOWN [get_ports hr_rwds]
 
 # pull DQ bus to 0x55 (telltale for bad read timing)
-set_property PULLTYPE PULLUP   get_ports [hr_d[0] hr_d[2] hr_d[4] hr_d[6]]
-set_property PULLTYPE PULLDOWN get_ports [hr_d[1] hr_d[3] hr_d[5] hr_d[7]]
+set_property PULLTYPE PULLUP   [get_ports {hr_d[0] hr_d[2] hr_d[4] hr_d[6]}]
+set_property PULLTYPE PULLDOWN [get_ports {hr_d[1] hr_d[3] hr_d[5] hr_d[7]}]
 
 ################################################################################
 # Miscellaneous
