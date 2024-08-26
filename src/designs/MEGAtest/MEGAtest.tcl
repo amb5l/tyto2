@@ -112,10 +112,8 @@ set_multicycle_path 2 -setup -end -from [get_clocks hr_rwds_slow] -through [get_
 set_multicycle_path 1 -hold  -end -from [get_clocks hr_rwds_slow] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/r_last_reg] -to [get_clocks i_clk] ; # slow
 
 # HyperRAM read data path: RWDS clocked FIFO write port to system clock domain
-set_multicycle_path 3 -setup -end -from [get_clocks hr_rwds_fast] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_RAM[*].RAM/RAM] -to [get_clocks i_clk] ; # fast
-set_multicycle_path 2 -hold  -end -from [get_clocks hr_rwds_fast] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_RAM[*].RAM/RAM] -to [get_clocks i_clk] ; # fast
-set_multicycle_path 2 -setup -end -from [get_clocks hr_rwds_slow] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_RAM[*].RAM/RAM] -to [get_clocks i_clk] ; # slow
-set_multicycle_path 1 -hold  -end -from [get_clocks hr_rwds_slow] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_RAM[*].RAM/RAM] -to [get_clocks i_clk] ; # slow
+set_multicycle_path 2 -setup -end -from [get_clocks hr_rwds_fast] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_DFIFO[*].RAM/RAM] -to [get_clocks i_clk] ; # fast
+set_multicycle_path 1 -hold  -end -from [get_clocks hr_rwds_fast] -through [get_cells MAIN/U_HRAM_TEST/U_CTRL/GEN_DFIFO[*].RAM/RAM] -to [get_clocks i_clk] ; # fast
 
 # HyperRAM read data path: exclude async reset
 set_false_path -from [get_clocks i_clk] -through [get_cells MAIN/U_HRAM_TEST/U_MMCM/CDC/reg_reg[2][0]] -to [get_clocks hr_rwds_fast] ; # fast

@@ -143,8 +143,6 @@ architecture rtl of hram_ctrl is
   --------------------------------------------------------------------------------
   -- constants and types
 
-  constant LEN_MAX : integer := 2**s_a_len'length;
-
   -- break parameter bundle out to discrete signals (better for linting)
   constant tRP  : positive := PARAMS.tRP  ;
   constant tRPH : positive := PARAMS.tRPH ;
@@ -173,9 +171,10 @@ architecture rtl of hram_ctrl is
     addr : std_ulogic_vector(s_a_addr'range);
   end record;
 
-  type r_fifo_d_t is array(0 to 2) of std_ulogic_vector(5 downto 0);
+  -- read data fifo, data type, matches 3x ram_sdp_32x6
+  type r_dfifo_d_t is array(0 to 2) of std_ulogic_vector(5 downto 0);
 
-  constant IDDR_RS : std_ulogic_vector(7 downto 0) := x"AA"; -- telltale pattern
+  constant IDDR_RS : std_ulogic_vector(7 downto 0) := x"AA"; -- telltale pattern for read failure detection
 
   --------------------------------------------------------------------------------
   -- signals
@@ -195,19 +194,20 @@ architecture rtl of hram_ctrl is
   signal en_cs         : std_ulogic;                      -- enable h_cs_n assertion
   signal en_cs_next    : std_ulogic;                      -- enable h_cs_n assertion for next cycle
 
-  -- read related
+  -- read data path
   signal r_rs          : std_ulogic;                       -- reset/set IDDRs
-  signal r_strobe      : std_ulogic_vector(1 to 2);        -- drives read data counter
-  signal r_level       : integer range 0 to LEN_MAX-1;     -- read FIFO level
-  signal r_count       : std_ulogic_vector(s_a_len'range);
-  signal r_last        : std_ulogic;
-  signal r_fifo_we     : std_ulogic;
-  signal r_fifo_wa     : std_ulogic_vector(4 downto 0);    -- write address
-  signal r_fifo_wd     : r_fifo_d_t;
-  signal r_fifo_ra     : std_ulogic_vector(4 downto 0);    -- read address
-  signal r_fifo_rd     : r_fifo_d_t;
-  signal mux_i0        : std_ulogic_vector(15 downto 0);
-  signal mux_i1        : std_ulogic_vector(15 downto 0);
+  signal r_cfifo_we    : std_ulogic;                       -- read control FIFO, write enable
+  signal r_cfifo_wa    : std_ulogic_vector(2 downto 0);    -- read control FIFO, write address
+  signal r_cfifo_wd    : std_ulogic;                       -- read control FIFO, write data (0 = not last, 1 = last)
+  signal r_cfifo_ra    : std_ulogic_vector(2 downto 0);    -- read control FIFO, read address
+  signal r_cfifo_rd    : std_ulogic;                       -- read control FIFO, read data (0 = not last, 1 = last)
+  signal r_dfifo_we     : std_ulogic;                       -- read data FIFO, write enable
+  signal r_dfifo_wa     : std_ulogic_vector(2 downto 0);    -- read data FIFO, write address
+  signal r_dfifo_wd     : r_dfifo_d_t;                      -- read data FIFO, write data
+  signal r_dfifo_ra     : std_ulogic_vector(2 downto 0);    -- read data FIFO, read address
+  signal r_dfifo_rd     : r_dfifo_d_t;                      -- read data FIFO, read data
+  signal r_mux_i0       : std_ulogic_vector(15 downto 0);   -- read mux input 0
+  signal r_mux_i1       : std_ulogic_vector(15 downto 0);   -- read mux input 1
 
   -- HyperRAM I/O related
   signal h_rst_n_o     : std_logic;
@@ -224,7 +224,6 @@ architecture rtl of hram_ctrl is
   signal h_rwds_t      : std_ulogic;                       -- RWDS IOBUF tristate control
   signal h_dq_i        : std_ulogic_vector(7 downto 0);    -- DQ input from IOBUF to IDDR
   signal h_dq_i_ce     : std_ulogic;                       -- DQ IDDR clock enable
-  signal h_dq_i_ce_1   : std_ulogic;                       -- DQ IDDR clock enable delayed by 1 clock
   signal h_dq_i_r      : std_ulogic_vector(15 downto 0);   -- DQ IDDR Q
   signal h_dq_o_d1_f   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D1 for sampling on falling clock edge (half clock early)
   signal h_dq_o_d1_r   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D1 for sampling on rising clock edge
@@ -293,43 +292,47 @@ begin
 
     if s_rst = '1' then
 
-      s_a_ready   <= '0';
-      s_w_ready   <= '0';
-      s_w_last    <= '0';
-      s_w_be_1    <= (others => '0');
-      s_r_valid   <= '0';
-      h_rst_n_o   <= '0';
-      h_rwds_t    <= '1';
-      h_dq_o_ce   <= '0';
-      h_dq_i_ce   <= '0';
-      h_dq_i_ce_1 <= '0';
-      h_dq_t      <= '1';
-      burst.r_w   <= 'X';
-      burst.reg   <= 'X';
-      burst.wrap  <= 'X';
-      burst.len   <= (others => 'X');
-      burst.trk   <= (others => 'X');
-      burst.addr  <= (others => 'X');
-      state       <= RESET;
-      phase       <= '0';
-      count_rst   <= 0;
-      count       <= 0;
-      r_rs        <= '0';
-      r_level     <= 0;
-      en_clk      <= '0';
-      en_cs_next  <= '0';
-      r_strobe    <= (others => '0');
-      s_w_data_1  <= (others => '0');
-      s_w_ready_1 <= '0';
-      r_fifo_ra   <= (others => '0');
+      s_a_ready    <= '0';
+      s_w_ready    <= '0';
+      s_w_last     <= '0';
+      s_w_be_1     <= (others => '0');
+      s_r_valid    <= '0';
+      s_r_last     <= '0';
+      h_rst_n_o    <= '0';
+      h_rwds_t     <= '1';
+      h_dq_o_ce    <= '0';
+      h_dq_i_ce    <= '0';
+      h_dq_t       <= '1';
+      s_w_data_1   <= (others => '0');
+      s_w_ready_1  <= '0';
+      burst.r_w    <= 'X';
+      burst.reg    <= 'X';
+      burst.wrap   <= 'X';
+      burst.len    <= (others => 'X');
+      burst.trk    <= (others => 'X');
+      burst.addr   <= (others => 'X');
+      state        <= RESET;
+      phase        <= '0';
+      count_rst    <= 0;
+      count        <= 0;
+      en_clk       <= '0';
+      en_cs_next   <= '0';
+      r_rs         <= '0';
+      r_cfifo_we   <= '0';
+      r_cfifo_wd   <= '0';
+      r_cfifo_wa   <= (others => '0');
+      r_cfifo_wd   <= '0';
+      r_cfifo_ra   <= (others => '0');
+      r_dfifo_ra   <= (others => '0');
 
     elsif rising_edge(s_clk) then
 
-      s_w_ready_1 <= s_w_ready;
-      s_w_be_1    <= s_w_be;
-      s_w_data_1  <= s_w_data;
-      h_dq_i_ce_1 <= h_dq_i_ce;
-      r_rs        <= '0';
+      s_w_ready_1  <= s_w_ready;
+      s_w_be_1     <= s_w_be;
+      s_w_data_1   <= s_w_data;
+      r_rs         <= '0';
+      r_cfifo_we   <= '0';
+      r_cfifo_wd   <= '0';
 
       case state is
 
@@ -447,10 +450,13 @@ begin
           end if;
 
         when RD =>
+          r_cfifo_we <= '1';
+          r_cfifo_wd <= '0';
           en_clk <= s_r_ready;
           if unsigned(burst.trk) = 1 then -- end of burst
-            en_clk <= '0';
-            state  <= CSHR;
+            r_cfifo_wd <= '1';
+            en_clk     <= '0';
+            state      <= CSHR;
           end if;
           if en_clk = '1' then
             burst.trk <= decr(burst.trk);
@@ -488,25 +494,24 @@ begin
 
       end case;
 
-      -- read level tracking
-      r_strobe(1) <= '1' when state = RD else '0';
-      r_strobe(2 to r_strobe'high) <= r_strobe(1 to r_strobe'high-1);
-      if (s_r_valid and s_r_ready) then
-        r_fifo_ra <= incr(r_fifo_ra);
+      -- read data path
+      if r_cfifo_we then
+        r_cfifo_wa <= incr(r_cfifo_wa);
       end if;
-      if r_strobe(r_strobe'high) and not (s_r_valid and s_r_ready) then
-        s_r_valid <= '1';
-        r_level  <= r_level + 1;
-      elsif (s_r_valid and s_r_ready) and not r_strobe(r_strobe'high) then
-        if r_level = 1 then
-          s_r_valid <= '0';
-          r_fifo_ra <= r_fifo_ra;
-        end if;
-        r_level <= r_level - 1;
+      if s_r_valid and s_r_ready then
+        r_dfifo_ra <= incr(r_dfifo_ra) when s_r_last = '0' else r_dfifo_ra;
+        s_r_valid  <= '0';
+        s_r_last   <= '0';
+      end if;
+      if r_cfifo_wa /= r_cfifo_ra
+      then
+        s_r_valid  <= '1';
+        s_r_last   <= r_cfifo_rd;
+        r_cfifo_ra <= incr(r_cfifo_ra);
       end if;
 
     end if;
-  end process;
+  end process P_MAIN;
 
   --------------------------------------------------------------------------------
   -- I/O primitives
@@ -662,68 +667,74 @@ begin
   end generate GEN_DQ;
 
   --------------------------------------------------------------------------------
-  -- read FIFO: accepts data in h_rwds_i_c domain, forwards to system read port;
-  -- used to hold all words in burst except last one which bypasses via U_MUX2
-  -- TODO: we will probably use only a few words of the 32 word depth
-  --  so we could make the address signals maybe 2 bits wide
+  -- read data path
 
   -- start writing to FIFO on 2nd RWDS pulse to allow for IDDR latency
   P_R_FIFO_WE: process(h_dq_i_ce,h_rwds_i_c)
   begin
     if h_dq_i_ce = '0' then
-      r_fifo_we <= '0';
+      r_dfifo_we <= '0';
     elsif rising_edge(h_rwds_i_c) then
-      r_fifo_we <= h_dq_i_ce;
+      r_dfifo_we <= h_dq_i_ce;
     end if;
   end process P_R_FIFO_WE;
 
   P_R_FIFO_WA: process(s_rst,h_rwds_i_c)
   begin
     if s_rst = '1' then
-      r_fifo_wa <= (others => '0');
-    elsif rising_edge(h_rwds_i_c) and r_fifo_we = '1' then
-      r_fifo_wa <= incr(r_fifo_wa);
+      r_dfifo_wa <= (others => '0');
+    elsif rising_edge(h_rwds_i_c) and r_dfifo_we = '1' then
+      r_dfifo_wa <= incr(r_dfifo_wa);
     end if;
   end process P_R_FIFO_WA;
 
-  -- TODO move last tracking into s_clk domain
-  P_R_LAST: process(h_dq_i_ce,h_dq_i_ce_1,h_rwds_i_c)
-  begin
-    if h_dq_i_ce nor h_dq_i_ce_1 then
-      r_count <= (0 => '1', others => '0');
-      r_last  <= '0';
-    elsif falling_edge(h_rwds_i_c) and h_dq_i_ce = '1' then
-      r_last  <= '1' when r_count = burst.len else '0';
-      r_count <= incr(r_count);
-    end if;
-  end process P_R_LAST;
+  r_dfifo_wd(0) <=        h_dq_i_r( 5 downto  0);
+  r_dfifo_wd(1) <=        h_dq_i_r(11 downto  6);
+  r_dfifo_wd(2) <= "00" & h_dq_i_r(15 downto 12);
 
-  r_fifo_wd(0) <=                h_dq_i_r( 5 downto  0);
-  r_fifo_wd(1) <=                h_dq_i_r(11 downto  6);
-  r_fifo_wd(2) <= '0' & r_last & h_dq_i_r(15 downto 12);
+  -- read control FIFO (8 deep x 1 bit)
+  CFIFO_RAM: ram32x1d
+    port map (
+      wclk  => s_clk,
+      we    => r_cfifo_we,
+      a0    => r_cfifo_wa(0),
+      a1    => r_cfifo_wa(1),
+      a2    => r_cfifo_wa(2),
+      a3    => '0',
+      a4    => '0',
+      d     => r_cfifo_wd,
+      spo   => open,
+      dpra0 => r_cfifo_ra(0),
+      dpra1 => r_cfifo_ra(1),
+      dpra2 => r_cfifo_ra(2),
+      dpra3 => '0',
+      dpra4 => '0',
+      dpo  => r_cfifo_rd
+    );
 
-  GEN_RAM: for i in 0 to 2 generate
+  -- read data fifo (8 deep x 18 bits)
+  GEN_DFIFO: for i in 0 to 2 generate
     RAM: component ram_sdp_32x6
       port map (
         clk => h_rwds_i_c,
-        we  => r_fifo_we,
-        wa  => r_fifo_wa,
-        wd  => r_fifo_wd(i),
-        ra  => r_fifo_ra,
-        rd  => r_fifo_rd(i)
+        we  => r_dfifo_we,
+        wa  => "00" & r_dfifo_wa,
+        wd  => r_dfifo_wd(i),
+        ra  => "00" & r_dfifo_ra,
+        rd  => r_dfifo_rd(i)
       );
-  end generate GEN_RAM;
+  end generate GEN_DFIFO;
 
-  mux_i0 <= r_fifo_wd(2)(3 downto 0) & r_fifo_wd(1)(5 downto 0) & r_fifo_wd(0)(5 downto 0);
-  mux_i1 <= r_fifo_rd(2)(3 downto 0) & r_fifo_rd(1)(5 downto 0) & r_fifo_rd(0)(5 downto 0);
+  -- read mux (to bypass data FIFO for last word)
+  r_mux_i0 <= r_dfifo_rd(2)(3 downto 0) & r_dfifo_rd(1)(5 downto 0) & r_dfifo_rd(0)(5 downto 0);
+  r_mux_i1 <= r_dfifo_wd(2)(3 downto 0) & r_dfifo_wd(1)(5 downto 0) & r_dfifo_wd(0)(5 downto 0);
   U_MUX2: component mux2
     port map (
-      s  => r_strobe(2),
-      i0 => mux_i0,
-      i1 => mux_i1,
+      s  => s_r_last,
+      i0 => r_mux_i0,
+      i1 => r_mux_i1,
       o  => s_r_data
     );
-  s_r_last <= r_fifo_rd(2)(4) when r_strobe(2) = '1' else r_fifo_wd(2)(4);
 
   --------------------------------------------------------------------------------
 
