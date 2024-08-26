@@ -384,7 +384,7 @@ begin
   HYPERRAM: component model_hram
     generic map (
       SIM_MEM_SIZE => 8*1024*1024,
-      OUTPUT_DELAY => "MAX",
+      OUTPUT_DELAY => "UNIFORM",
       PARAMS       => hram_params(IS66WVH8M8DBLL_100B1LI)
     )
     port map (

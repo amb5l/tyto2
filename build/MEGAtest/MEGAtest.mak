@@ -127,15 +127,12 @@ VIVADO_LIB_SRC=\
 include $(make_fpga)/vivado.mak
 
 ################################################################################
-# Questa/ModelSim timing simulation
+# timing simulation (Questa/ModelSim)
 
-vsim_tim_dir=sim_vsim_tim
-$(vsim_tim_dir):
-	@$(MKDIR) -p $@
+netlist=$(VIVADO_DIR)/$(VIVADO_DSN_TOP)_timesim.v
+$(foreach p,slow fast,$(eval sdf_$p=$(VIVADO_DIR)/$(VIVADO_DSN_TOP)_$p.sdf))
 
-vsim_tim_netlist=$(VIVADO_DIR)/$(VIVADO_DSN_TOP)_timesim.v
-vsim_tim_sdf=$(VIVADO_DIR)/$(VIVADO_DSN_TOP)_slow.sdf
-vsim_tim_vhdl=\
+tsim_vhdl=\
 	$(toplevel)/src/common/tyto_types_pkg.vhd \
 	$(toplevel)/src/common/tyto_utils_pkg.vhd \
 	$(toplevel)/src/common/tyto_sim_pkg.vhd \
@@ -145,10 +142,18 @@ vsim_tim_vhdl=\
 	$(toplevel)/src/common/hram/test/model_hram.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/test/tb_$(VIVADO_DSN_TOP).vhd
 
-vsim_tim: $(vsim_tim_netlist) $(vsim_tim_sdf) | $(vsim_tim_dir)
-	cd $(vsim_tim_dir) && vlog -incr -mfcu -work work $(abspath $(vsim_tim_netlist))
-	cd $(vsim_tim_dir) && vcom -2008 -work work $(abspath $(vsim_tim_vhdl))
-	cd $(vsim_tim_dir) && vopt +acc=npr -suppress 10016 -L work -L simprims_ver -L secureip -work work tb_MEGAtest_r5 glbl -o tb_MEGAtest_r5_opt
-	cd $(vsim_tim_dir) && vsim +transport_int_delays +pulse_e/0 +pulse_int_e/0 +pulse_r/0 +pulse_int_r/0 -lib work tb_MEGAtest_r5_opt
+# $1 = SDF process corner (slow or fast), $2 = delay (max or min)
+define rr_tsim
+.PHONY: $1_$2
+sim_$1_$2:
+	@$$(MKDIR) -p $$@
+$1_$2: $$(netlist) $$(sdf_$1) | sim_$1_$2
+	cd sim_$1_$2 && vlog -incr -mfcu -work work $$(abspath $$(netlist))
+	cd sim_$1_$2 && vcom -2008 -work work $$(abspath $$(tsim_vhdl))
+	cd sim_$1_$2 && vopt -sdf$2 DUT=$$(abspath $$(sdf_$1)) +acc=npr -suppress 10016 -L work -L simprims_ver -L secureip -work work tb_$$(VIVADO_DSN_TOP) glbl -o tb_$$(VIVADO_DSN_TOP)_opt
+	cd sim_$1_$2 && vsim -t ps -sdf$2 DUT=$$(abspath $$(sdf_$1)) +transport_int_delays +pulse_e/0 +pulse_int_e/0 +pulse_r/0 +pulse_int_r/0 -lib work tb_$$(VIVADO_DSN_TOP)_opt
+endef
+
+$(foreach p,slow fast,$(foreach d,max min,$(eval $(call rr_tsim,$p,$d))))
 
 ################################################################################
