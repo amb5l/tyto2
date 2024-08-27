@@ -156,6 +156,8 @@ architecture rtl of hram_ctrl is
     ALAT,  -- additional latency
     LAT,   -- latency
     WR,    -- write
+    RBSY1, -- (previous) read busy 1
+    RBSY2, -- (previous) read busy 2
     RD,    -- read
     CSHR,  -- hold for final RWDS pulse
     CSH,   -- hold before negating chip select to meet tCSH
@@ -195,19 +197,20 @@ architecture rtl of hram_ctrl is
   signal en_cs_next    : std_ulogic;                      -- enable h_cs_n assertion for next cycle
 
   -- read data path
-  signal r_rs          : std_ulogic;                       -- reset/set IDDRs
+  signal r_rst         : std_ulogic;                       -- reset FIFO pointers, reset/set IDDRs
+  signal r_bsy         : std_ulogic;                       -- read data path busy (to hold off next cycle)
   signal r_cfifo_we    : std_ulogic;                       -- read control FIFO, write enable
   signal r_cfifo_wa    : std_ulogic_vector(2 downto 0);    -- read control FIFO, write address
   signal r_cfifo_wd    : std_ulogic;                       -- read control FIFO, write data (0 = not last, 1 = last)
   signal r_cfifo_ra    : std_ulogic_vector(2 downto 0);    -- read control FIFO, read address
   signal r_cfifo_rd    : std_ulogic;                       -- read control FIFO, read data (0 = not last, 1 = last)
-  signal r_dfifo_we     : std_ulogic;                       -- read data FIFO, write enable
-  signal r_dfifo_wa     : std_ulogic_vector(2 downto 0);    -- read data FIFO, write address
-  signal r_dfifo_wd     : r_dfifo_d_t;                      -- read data FIFO, write data
-  signal r_dfifo_ra     : std_ulogic_vector(2 downto 0);    -- read data FIFO, read address
-  signal r_dfifo_rd     : r_dfifo_d_t;                      -- read data FIFO, read data
-  signal r_mux_i0       : std_ulogic_vector(15 downto 0);   -- read mux input 0
-  signal r_mux_i1       : std_ulogic_vector(15 downto 0);   -- read mux input 1
+  signal r_dfifo_we    : std_ulogic;                       -- read data FIFO, write enable
+  signal r_dfifo_wa    : std_ulogic_vector(2 downto 0);    -- read data FIFO, write address
+  signal r_dfifo_wd    : r_dfifo_d_t;                      -- read data FIFO, write data
+  signal r_dfifo_ra    : std_ulogic_vector(2 downto 0);    -- read data FIFO, read address
+  signal r_dfifo_rd    : r_dfifo_d_t;                      -- read data FIFO, read data
+  signal r_mux_i0      : std_ulogic_vector(15 downto 0);   -- read mux input 0
+  signal r_mux_i1      : std_ulogic_vector(15 downto 0);   -- read mux input 1
 
   -- HyperRAM I/O related
   signal h_rst_n_o     : std_logic;
@@ -292,47 +295,48 @@ begin
 
     if s_rst = '1' then
 
-      s_a_ready    <= '0';
-      s_w_ready    <= '0';
-      s_w_last     <= '0';
-      s_w_be_1     <= (others => '0');
-      s_r_valid    <= '0';
-      s_r_last     <= '0';
-      h_rst_n_o    <= '0';
-      h_rwds_t     <= '1';
-      h_dq_o_ce    <= '0';
-      h_dq_i_ce    <= '0';
-      h_dq_t       <= '1';
-      s_w_data_1   <= (others => '0');
-      s_w_ready_1  <= '0';
-      burst.r_w    <= 'X';
-      burst.reg    <= 'X';
-      burst.wrap   <= 'X';
-      burst.len    <= (others => 'X');
-      burst.trk    <= (others => 'X');
-      burst.addr   <= (others => 'X');
-      state        <= RESET;
-      phase        <= '0';
-      count_rst    <= 0;
-      count        <= 0;
-      en_clk       <= '0';
-      en_cs_next   <= '0';
-      r_rs         <= '0';
-      r_cfifo_we   <= '0';
-      r_cfifo_wd   <= '0';
-      r_cfifo_wa   <= (others => '0');
-      r_cfifo_wd   <= '0';
-      r_cfifo_ra   <= (others => '0');
-      r_dfifo_ra   <= (others => '0');
+      s_a_ready   <= '0';
+      s_w_ready   <= '0';
+      s_w_last    <= '0';
+      s_w_be_1    <= (others => '0');
+      s_r_valid   <= '0';
+      s_r_last    <= '0';
+      h_rst_n_o   <= '0';
+      h_rwds_t    <= '1';
+      h_dq_o_ce   <= '0';
+      h_dq_i_ce   <= '0';
+      h_dq_t      <= '1';
+      s_w_data_1  <= (others => '0');
+      s_w_ready_1 <= '0';
+      burst.r_w   <= 'X';
+      burst.reg   <= 'X';
+      burst.wrap  <= 'X';
+      burst.len   <= (others => 'X');
+      burst.trk   <= (others => 'X');
+      burst.addr  <= (others => 'X');
+      state       <= RESET;
+      phase       <= '0';
+      count_rst   <= 0;
+      count       <= 0;
+      en_clk      <= '0';
+      en_cs_next  <= '0';
+      r_rst       <= '0';
+      r_bsy       <= '0';
+      r_cfifo_we  <= '0';
+      r_cfifo_wd  <= '0';
+      r_cfifo_wa  <= (others => '0');
+      r_cfifo_wd  <= '0';
+      r_cfifo_ra  <= (others => '0');
+      r_dfifo_ra  <= (others => '0');
 
     elsif rising_edge(s_clk) then
 
-      s_w_ready_1  <= s_w_ready;
-      s_w_be_1     <= s_w_be;
-      s_w_data_1   <= s_w_data;
-      r_rs         <= '0';
-      r_cfifo_we   <= '0';
-      r_cfifo_wd   <= '0';
+      s_w_ready_1 <= s_w_ready;
+      s_w_be_1    <= s_w_be;
+      s_w_data_1  <= s_w_data;
+      r_rst       <= '0';
+      r_cfifo_we  <= '0';
+      r_cfifo_wd  <= '0';
 
       case state is
 
@@ -378,13 +382,13 @@ begin
                   s_w_last <= '1' when unsigned(burst.trk) = 2 else '0';
                 end if;
                 burst.trk <= decr(burst.trk);
-                en_clk <= '1';
+                en_clk    <= '1';
               end if;
               state <= WR;
             else
-              count  <= 1;
               h_dq_o_ce <= '0';
-              state <= ALAT when h_rwds_i_d = '1' else LAT;
+              count     <= 1;
+              state     <= ALAT when h_rwds_i_d = '1' else LAT;
             end if;
           end if;
 
@@ -399,19 +403,27 @@ begin
           count <= count + 1;
           if count = 1 then -- tristate DQ for read
             h_dq_t <= burst.r_w;
-          elsif count = 2 then -- drive RWDS for write, reset IDDRs
+          elsif count = 2 then -- drive RWDS for write
             h_rwds_t <= burst.r_w;
-            r_rs     <= burst.r_w;
           end if;
-          if count = tLAT-2 then -- ready for write data
+          if count = tLAT-2 then -- ready for write data / read reset
             s_w_ready <= not burst.r_w;
             s_w_last  <= not burst.r_w when unsigned(burst.trk) = 1 else '0';
+            r_rst     <= burst.r_w and not r_bsy;
           elsif count = tLAT-1 then -- data transfer (or stall)
             count <= 0;
             if burst.r_w then
-              en_clk    <= s_r_ready;
-              h_dq_i_ce <= '1';
-              state     <= RD;
+              if r_bsy then
+                state <= RBSY1;
+              elsif not r_rst then
+                r_rst <= '1';
+                state <= RBSY2;
+              else
+                en_clk    <= s_r_ready;
+                h_dq_i_ce <= '1';
+                r_bsy     <= '1';
+                state     <= RD;
+              end if;
             else
               if s_w_valid then
                 if s_w_last then
@@ -444,10 +456,22 @@ begin
             if unsigned(burst.trk) = 0 then -- end of burst
               en_clk     <= '0';
               en_cs_next <= '0';
-              h_dq_o_ce     <= '0';
+              h_dq_o_ce  <= '0';
               state      <= CSH;
             end if;
           end if;
+
+        when RBSY1 =>
+          if not r_bsy then
+            r_rst <= '1';
+            state <= RBSY2;
+          end if;
+
+        when RBSY2 =>
+          en_clk    <= s_r_ready;
+          h_dq_i_ce <= '1';
+          r_bsy     <= '1';
+          state     <= RD;
 
         when RD =>
           r_cfifo_we <= '1';
@@ -467,24 +491,21 @@ begin
           state   <= CSH;
 
         when CSH =>
-          count     <= 0;
+          h_rwds_t   <= '1';
+          h_dq_i_ce  <= '0';
+          en_cs_next <= '0';
+          count      <= 0;
           if tRWR >= 4 then
-            h_rwds_t   <= '1';
-            en_cs_next <= '0';
-            h_dq_i_ce  <= '0';
-            state      <= RWR;
+            state <= RWR;
           else
-            s_a_ready  <= '1';
-            h_rwds_t   <= '1';
-            phase      <= '0';
-            en_cs_next <= '0';
-            h_dq_i_ce  <= '0';
-            state      <= IDLE;
+            s_a_ready <= '1';
+            phase     <= '0';
+            state     <= IDLE;
           end if;
 
         when RWR =>
-          h_dq_t     <= '0';
-          count <= count + 1;
+          h_dq_t <= '0';
+          count  <= count + 1;
           if count = tLAT-4 then
             s_a_ready <= '1';
             phase     <= '0';
@@ -502,12 +523,19 @@ begin
         r_dfifo_ra <= incr(r_dfifo_ra) when s_r_last = '0' else r_dfifo_ra;
         s_r_valid  <= '0';
         s_r_last   <= '0';
+        if s_r_last then
+          r_bsy <= '0';
+        end if;
       end if;
-      if r_cfifo_wa /= r_cfifo_ra
-      then
+      if r_cfifo_wa /= r_cfifo_ra then
         s_r_valid  <= '1';
         s_r_last   <= r_cfifo_rd;
         r_cfifo_ra <= incr(r_cfifo_ra);
+      end if;
+      if r_rst then
+        r_cfifo_wa <= (others => '0');
+        r_cfifo_ra <= (others => '0');
+        r_dfifo_ra <= (others => '0');
       end if;
 
     end if;
@@ -655,8 +683,8 @@ begin
         SRTYPE        => "ASYNC"
       )
       port map (
-        r  => (s_rst or r_rs) and not IDDR_RS(i),
-        s  => (s_rst or r_rs) and     IDDR_RS(i),
+        r  => (s_rst or r_rst) and not IDDR_RS(i),
+        s  => (s_rst or r_rst) and     IDDR_RS(i),
         c  => h_rwds_i_c,
         ce => h_dq_i_ce,
         d  => h_dq_i(i),
@@ -675,13 +703,13 @@ begin
     if h_dq_i_ce = '0' then
       r_dfifo_we <= '0';
     elsif rising_edge(h_rwds_i_c) then
-      r_dfifo_we <= h_dq_i_ce;
+      r_dfifo_we <= '1';
     end if;
   end process P_R_FIFO_WE;
 
-  P_R_FIFO_WA: process(s_rst,h_rwds_i_c)
+  P_R_FIFO_WA: process(h_dq_i_ce,h_rwds_i_c)
   begin
-    if s_rst = '1' then
+    if h_dq_i_ce = '0' then
       r_dfifo_wa <= (others => '0');
     elsif rising_edge(h_rwds_i_c) and r_dfifo_we = '1' then
       r_dfifo_wa <= incr(r_dfifo_wa);
