@@ -35,7 +35,7 @@ int bsp_init() {
 #else
     gpormw(1, 0xF, 3);                 // set video mode (1280x720p60)
     gpormw(1, 0x3 << 8, 0 << 8);       // text params: no pixel repetition
-    gpormw(1, 0xFF << 16, 154 << 16);   // text params: width  = 154
+    gpormw(1, 0xFF << 16, 154 << 16);  // text params: width  = 154
     gpormw(1, 0xFF << 24, 42 << 24);   // text params: height = 42
     gpormw(2, 0xFFFF <<  0, 24 <<  0); // text params: offset X = 24
     gpormw(2, 0xFFFF << 16, 24 << 16); // text params: offset Y = 24
