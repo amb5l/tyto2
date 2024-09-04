@@ -728,13 +728,13 @@ begin
         end if;
         max_min  := not max_min;
         if tDSV > tDSVmin then
-          rwds_o   <= 'X' after tDSVmin, alat_req after tDSV;
-          rwds_oe  <= 'X' after tDSVmin, '1' after tDSV;
+          rwds_o  <= 'X' after tDSVmin, alat_req after tDSV;
+          rwds_oe <= 'X' after tDSVmin, '1' after tDSV;
         else
-          rwds_o   <= alat_req after tDSV;
-          rwds_oe  <= '1' after tDSV;
+          rwds_o  <= alat_req after tDSV;
+          rwds_oe <= '1' after tDSV;
         end if;
-        state    <= CA1;
+        state <= CA1;
 
       elsif rising_edge(clk_i) and cs_n_i = '0' then
 
