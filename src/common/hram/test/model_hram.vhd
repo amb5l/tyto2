@@ -315,6 +315,9 @@ architecture model of model_hram is
   signal cfgreg0 : hram_cr_t := PARAMS.cfgreg0;
   signal cfgreg1 : hram_cr_t := PARAMS.cfgreg1;
 
+  -- simulation visibility
+  signal sim_ref : std_ulogic; -- refresh on this cycle
+
   --------------------------------------------------------------------------------
 
   function res01x(x : std_ulogic) return std_ulogic is
@@ -676,6 +679,7 @@ begin
         state      <= UNKNOWN;
         cfgreg0    <= (others => 'X');
         cfgreg1    <= (others => 'X');
+        sim_ref    <= 'X';
 
       elsif rst_n_i = '0' then
 
@@ -689,10 +693,12 @@ begin
         state      <= RESET;
         cfgreg0    <= PARAMS.cfgreg0;
         cfgreg1    <= PARAMS.cfgreg1;
+        sim_ref    <= '0';
 
       elsif falling_edge(cs_n_i) then -- start of access
 
         alat_req := refresh or cfgreg0(3); -- allow for fixed latency
+        sim_ref <= alat_req;
         if (OUTPUT_DELAY = "MAX_MIN" and max_min)
         or OUTPUT_DELAY = "MAX"
         then
@@ -887,6 +893,7 @@ begin
 
       elsif rising_edge(cs_n_i) then -- end of access (or initial conditions)
 
+        sim_ref <= '0';
         if rwds_oe = '1' then
           rwds_o  <= transport 'X' after tDSZmin;
           rwds_oe <= transport 'X' after tDSZmin, '0' after tDSZmax;
