@@ -381,9 +381,9 @@ begin
   rst_n_i <= res01x(rst_n);
   clk_i   <= res01x(clk);
   cs_n_i  <= res01x(cs_n);
-  rwds    <= 'X' when res01x(rwds_oe) = 'X' else rwds_o when res01x(rwds_oe) = '1' else 'Z';
+  rwds    <= 'U' when res01x(rwds_oe) = 'X' else rwds_o when res01x(rwds_oe) = '1' else 'Z';
   rwds_i  <= res01x(rwds);
-  dq      <= (others => 'X') when res01x(dq_oe) = 'X' else dq_o when res01x(dq_oe) = '1' else (others => 'Z');
+  dq      <= (others => 'U') when res01x(dq_oe) = 'X' else dq_o when res01x(dq_oe) = '1' else (others => 'Z');
   dq_i    <= res01x(dq);
 
   --------------------------------------------------------------------------------
@@ -669,27 +669,27 @@ begin
 
       if rst_n_i = 'X' or clk_i = 'X' or cs_n_i = 'X' then
 
-        rwds_o     <= 'X';
-        rwds_oe    <= 'X';
-        dq_o       <= (others => 'X');
-        dq_oe      <= 'X';
+        rwds_o     <= 'U';
+        rwds_oe    <= 'U';
+        dq_o       <= (others => 'U');
+        dq_oe      <= 'U';
         count_hclk <= 0;
         count      <= 0;
-        ca         <= (others => 'X');
+        ca         <= (others => 'U');
         state      <= UNKNOWN;
-        cfgreg0    <= (others => 'X');
-        cfgreg1    <= (others => 'X');
-        sim_ref    <= 'X';
+        cfgreg0    <= (others => 'U');
+        cfgreg1    <= (others => 'U');
+        sim_ref    <= 'U';
 
       elsif rst_n_i = '0' then
 
-        rwds_o     <= 'X';
+        rwds_o     <= 'U';
         rwds_oe    <= '0';
-        dq_o       <= (others => 'X');
+        dq_o       <= (others => 'U');
         dq_oe      <= '0';
         count_hclk <= 0;
         count      <= 0;
-        ca         <= (others => 'X');
+        ca         <= (others => 'U');
         state      <= RESET;
         cfgreg0    <= PARAMS.cfgreg0;
         cfgreg1    <= PARAMS.cfgreg1;
@@ -734,11 +734,11 @@ begin
         end if;
         max_min  := not max_min;
         if tDSV > tDSVmin then
-          rwds_o  <= 'X' after tDSVmin, alat_req after tDSV;
-          rwds_oe <= 'X' after tDSVmin, '1' after tDSV;
+          rwds_o  <= transport 'U' after tDSVmin, alat_req after tDSV;
+          rwds_oe <= transport 'U' after tDSVmin, '1' after tDSV;
         else
-          rwds_o  <= alat_req after tDSV;
-          rwds_oe <= '1' after tDSV;
+          rwds_o  <= transport alat_req after tDSV;
+          rwds_oe <= transport '1' after tDSV;
         end if;
         state <= CA1;
 
@@ -767,16 +767,16 @@ begin
 
           when LAT =>
             if count = get_lat-1 then
-              dq_oe <= ca(47) after tDQLZmin; -- drive DQ for reads
-              dq_o  <= (others => 'X');
+              dq_oe <= transport ca(47) after tDQLZmin; -- drive DQ for reads
+              dq_o  <= (others => 'U');
             end if;
 
           when WR =>
             wm(1) := rwds_i;
-            wdata := (15 downto 8 => dq_i, others => 'X');
+            wdata := (15 downto 8 => dq_i, others => 'U');
 
           when RD =>
-            rdata := (others => 'X');
+            rdata := (others => 'U');
             if ca(46) = '1' and unsigned(ca(44 downto 32)) = 0 then
               case ca(31 downto 0) is
                 when x"00_00_00_00" => rdata := PARAMS.idreg0;
@@ -792,10 +792,10 @@ begin
             dq_o   <= transport rdata(15 downto 8) after tCKD;
 
           when UNKNOWN =>
-            rwds_o  <= 'X';
-            rwds_oe <= 'X';
-            dq_o    <= (others => 'X');
-            dq_oe   <= 'X';
+            rwds_o  <= 'U';
+            rwds_oe <= 'U';
+            dq_o    <= (others => 'U');
+            dq_oe   <= 'U';
 
         end case;
 
@@ -823,8 +823,8 @@ begin
             if ca(47) = '1' then -- read
               rwds_o <= transport '0' after tCKDS;
             elsif ca(46) = '0' then -- memory write
-              rwds_o  <= transport 'X' after tCKDS;
-              rwds_oe <= transport 'X' after tDSZmin, '0' after tDSZmax;
+              rwds_o  <= transport 'U' after tCKDS;
+              rwds_oe <= transport 'U' after tDSZmin, '0' after tDSZmax;
             end if;
             if ca(47 downto 46) = "01" then -- register write
               count <= 0;
@@ -884,10 +884,10 @@ begin
             count <= count + 1;
 
           when UNKNOWN =>
-            rwds_o  <= 'X';
-            rwds_oe <= 'X';
-            dq_o    <= (others => 'X');
-            dq_oe   <= 'X';
+            rwds_o  <= 'U';
+            rwds_oe <= 'U';
+            dq_o    <= (others => 'U');
+            dq_oe   <= 'U';
 
         end case;
 
@@ -895,16 +895,16 @@ begin
 
         sim_ref <= '0';
         if rwds_oe = '1' then
-          rwds_o  <= transport 'X' after tDSZmin;
-          rwds_oe <= transport 'X' after tDSZmin, '0' after tDSZmax;
+          rwds_o  <= transport 'U' after tDSZmin;
+          rwds_oe <= transport 'U' after tDSZmin, '0' after tDSZmax;
         end if;
         if dq_oe = '1' then
-          dq_o  <= transport (others => 'X') after tOZmin;
-          dq_oe <= transport 'X' after tOZmin, '0' after tOZmax;
+          dq_o  <= transport (others => 'U') after tOZmin;
+          dq_oe <= transport 'U' after tOZmin, '0' after tOZmax;
         end if;
         count_hclk <= 0;
         count      <= 0;
-        ca         <= (others => 'X');
+        ca         <= (others => 'U');
         state      <= IDLE;
 
       end if;
