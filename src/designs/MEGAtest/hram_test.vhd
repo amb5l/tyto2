@@ -178,6 +178,7 @@ architecture rtl of hram_test is
   alias s_csr_stat_bsy : std_ulogic is s_csr_stat( 0); -- running
   alias s_csr_stat_fin : std_ulogic is s_csr_stat( 8); -- finished
   alias s_csr_stat_err : std_ulogic is s_csr_stat(16); -- error occurred
+  alias s_csr_stat_ref : std_ulogic is s_csr_stat(17); -- error occurred on refresh collision
   alias s_csr_ctrl_lol : std_ulogic is s_csr_stat(24); -- loss of lock
 
   -- register fields synchronised to internal clock domain
@@ -208,6 +209,7 @@ architecture rtl of hram_test is
   signal i_w_data    : std_ulogic_vector(15 downto 0);
   signal i_r_ready   : std_ulogic;
   signal i_r_valid   : std_ulogic;
+  signal i_r_ref     : std_ulogic;
   signal i_r_last    : std_ulogic;
   signal i_r_data    : std_ulogic_vector(15 downto 0);
 
@@ -215,6 +217,7 @@ architecture rtl of hram_test is
   signal t_bsy       : std_ulogic;
   signal t_fin       : std_ulogic;
   signal t_err       : std_ulogic;
+  signal t_ref       : std_ulogic; -- test status: error on refresh collision
 
   -- address state machine
   type state_a_t is (A_IDLE,A_PRNG,A_PREP1,A_PREP2,A_PREP3,A_VALID,A_RB_WAIT,A_RB_PREP,A_RB_VALID,A_DONE);
@@ -248,6 +251,7 @@ architecture rtl of hram_test is
   signal rc_en       : std_ulogic;
   signal rc_rdat     : std_ulogic_vector(15 downto 0);
   signal rc_xdat     : std_ulogic_vector(15 downto 0);
+  signal rc_ref      : std_ulogic;
 
   --------------------------------------------------------------------------------
   -- synthesisable PRNG
@@ -329,18 +333,20 @@ begin
 
   U_SYNC_S: component sync -- v4p ignore w-301 (missing port associations)
     generic map (
-      WIDTH => 4
+      WIDTH => 5
     )
     port map (
       clk  => s_clk,
       i(0) => t_bsy,
       i(1) => t_fin,
       i(2) => t_err,
-      i(3) => i_rst,
+      i(3) => t_ref,
+      i(4) => i_rst,
       o(0) => s_csr_stat_bsy,
       o(1) => s_csr_stat_fin,
       o(2) => s_csr_stat_err,
-      o(3) => s_csr_ctrl_lol
+      o(3) => s_csr_stat_ref,
+      o(4) => s_csr_ctrl_lol
     );
 
   U_SYNC_I: component sync
@@ -403,6 +409,7 @@ begin
       t_bsy       <= '0';
       t_fin       <= '0';
       t_err       <= '0';
+      t_ref       <= '0';
       a_count     <= (others => 'X');
       a_len       <= (others => 'X');
       a_addr      <= (others => 'X');
@@ -419,6 +426,7 @@ begin
       rc_en       <= '0';
       rc_rdat     <= (others => 'X');
       rc_xdat     <= (others => 'X');
+      rc_ref      <= '0';
       prng_a_init <= '0';
       prng_d_init <= '0';
 
@@ -565,7 +573,8 @@ begin
       --------------------------------------------------------------------------------
       -- data state machine
 
-      rc_en <= '0';
+      rc_en  <= '0';
+      rc_ref <= '0';
 
       case state_d is
 
@@ -580,6 +589,7 @@ begin
           d_data    <= prng_d_data when s_csr_ctrl_drnd else incr_data;
           incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
           t_err     <= '0';
+          t_ref     <= '0';
           d_edat    <= (others => 'X');
           state_d   <= D_WAIT;
 
@@ -630,6 +640,7 @@ begin
             rc_en   <= '1';
             rc_rdat <= i_r_data;
             rc_xdat <= d(31 downto 16) when d_word = '1' else d(15 downto 0);
+            rc_ref  <= i_r_ref;
             if d_word then
               d_data    <= prng_d_data when s_csr_ctrl_drnd else incr_data;
               incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
@@ -646,9 +657,10 @@ begin
 
         when D_RB =>
           if i_r_valid and i_r_ready then
-            rc_en    <= '1';
-            rc_rdat  <= i_r_data;
-            rc_xdat  <= rb_data(rb_data'high);
+            rc_en   <= '1';
+            rc_rdat <= i_r_data;
+            rc_xdat <= rb_data(rb_data'high);
+            rc_ref  <= i_r_ref;
             rb_data(2 to rb_addr'high) <= rb_data(1 to rb_data'high-1);
             rb_data(1) <= (others => 'X');
             if i_r_last then -- should always be true
@@ -671,6 +683,7 @@ begin
       if rc_en and not t_err then
         if rc_rdat /= rc_xdat then
           t_err  <= '1';
+          t_ref  <= rc_ref;
           d_edat <= rc_xdat & rc_rdat;
         else
           d_eadd <= incr(d_eadd); -- not relevant to scattered addressing
@@ -704,6 +717,7 @@ begin
       s_w_data  => i_w_data,
       s_r_ready => i_r_ready,
       s_r_valid => i_r_valid,
+      s_r_ref   => i_r_ref,
       s_r_last  => i_r_last,
       s_r_data  => i_r_data,
       h_rst_n   => h_rst_n,

@@ -157,7 +157,8 @@ begin
         report "read error:" &
           " address " & to_hstring(eadd) &
           " read " & to_hstring(edat(15 downto 0)) &
-          " expected " & to_hstring(edat(31 downto 16))
+          " expected " & to_hstring(edat(31 downto 16)) &
+          " (ref = " & to_string(rd(17)) & ")"
           severity failure;
       end if;
     end procedure run;

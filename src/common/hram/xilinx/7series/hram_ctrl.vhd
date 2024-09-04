@@ -62,6 +62,7 @@ package hram_ctrl_pkg is
       s_w_data  : in    std_ulogic_vector(15 downto 0);
       s_r_ready : in    std_ulogic;
       s_r_valid : out   std_ulogic;
+      s_r_ref   : out   std_ulogic;
       s_r_last  : out   std_ulogic;
       s_r_data  : out   std_ulogic_vector(15 downto 0);
       h_rst_n   : out   std_logic;
@@ -121,6 +122,7 @@ entity hram_ctrl is
     -- R (read data) channel
     s_r_ready : in    std_ulogic;                     -- ready
     s_r_valid : out   std_ulogic;                     -- valid
+    s_r_ref   : out   std_ulogic;                     -- refresh collision occurred on this cycle (additional latency)
     s_r_last  : out   std_ulogic;                     -- last word of burst
     s_r_data  : out   std_ulogic_vector(15 downto 0); -- data
 
@@ -171,6 +173,7 @@ architecture rtl of hram_ctrl is
     len  : std_ulogic_vector(s_a_len'range);
     trk  : std_ulogic_vector(s_a_len'range);  -- tracking down-counter
     addr : std_ulogic_vector(s_a_addr'range);
+    ref  : std_ulogic;                        -- refresh collision occurred
   end record;
 
   -- read data fifo, data type, matches 3x ram_sdp_32x6
@@ -300,6 +303,7 @@ begin
       s_w_last    <= '0';
       s_w_be_1    <= (others => '0');
       s_r_valid   <= '0';
+      s_r_ref     <= '0';
       s_r_last    <= '0';
       h_rst_n_o   <= '0';
       h_rwds_t    <= '1';
@@ -314,6 +318,7 @@ begin
       burst.len   <= (others => 'X');
       burst.trk   <= (others => 'X');
       burst.addr  <= (others => 'X');
+      burst.ref   <= '0';
       state       <= RESET;
       phase       <= '0';
       count_rst   <= 0;
@@ -358,6 +363,7 @@ begin
             burst.len  <= s_a_len;
             burst.trk  <= s_a_len;
             burst.addr <= s_a_addr;
+            burst.ref  <= '0';
             s_a_ready  <= '0';
             en_cs_next <= '1';
             en_clk     <= '1';
@@ -393,6 +399,7 @@ begin
           end if;
 
         when ALAT =>
+          burst.ref <= '1';
           count <= count + 1;
           if count = tLAT-1 then
             count <= 0;
@@ -521,14 +528,16 @@ begin
       end if;
       if s_r_valid and s_r_ready then
         r_dfifo_ra <= incr(r_dfifo_ra) when s_r_last = '0' else r_dfifo_ra;
-        s_r_valid  <= '0';
-        s_r_last   <= '0';
         if s_r_last then
-          r_bsy <= '0';
+          r_bsy   <= '0';
+          s_r_ref <= '0';
         end if;
+        s_r_valid <= '0';
+        s_r_last  <= '0';
       end if;
       if r_cfifo_wa /= r_cfifo_ra then
         s_r_valid  <= '1';
+        s_r_ref    <= burst.ref;
         s_r_last   <= r_cfifo_rd;
         r_cfifo_ra <= incr(r_cfifo_ra);
       end if;

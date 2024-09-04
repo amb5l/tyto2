@@ -49,10 +49,11 @@ u8 ht_run(
 
 void ht_err(u8 r) {
     if (r)
-        printf("\nread %04X expected %04X address %08X\n",
+        printf("\nread %04X expected %04X address %08X (ref = %d)\n",
             peek16(RA_EDAT),
             peek16(RA_EDAT+2),
-            peek32(RA_EADD)
+            peek32(RA_EADD),
+			(peek8(RA_STAT+2) >> 1) & 1
         );
     else
         printf("OK  ");
