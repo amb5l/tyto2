@@ -658,12 +658,6 @@ begin
     variable rdata    : word_t;
 
     procedure handle_event is
-
-      function incr(x : std_ulogic_vector) return std_ulogic_vector is
-      begin
-        return std_ulogic_vector(unsigned(x)+1);
-      end function incr;
-
     begin
       --------------------------------------------------------------------------------
 
