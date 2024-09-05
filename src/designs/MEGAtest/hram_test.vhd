@@ -31,6 +31,7 @@ package hram_test_pkg is
   constant RA_INCR : std_ulogic_vector(7 downto 0) := x"14";
   constant RA_EADD : std_ulogic_vector(7 downto 0) := x"18";
   constant RA_EDAT : std_ulogic_vector(7 downto 0) := x"1C";
+  constant RA_EDA2 : std_ulogic_vector(7 downto 0) := x"20";
 
   component hram_test is
     generic (
@@ -114,8 +115,8 @@ architecture rtl of hram_test is
   --------------------------------------------------------------------------------
   -- registers
 
-  constant RA_HI : integer := 4;
-  constant RA_LO : integer := 2;
+  constant RA_HI : integer := 5; -- register address MSB (enough for 16 registers)
+  constant RA_LO : integer := 2; -- register address LSB
 
   function ra(addr : std_ulogic_vector) return std_ulogic_vector is
   begin
@@ -137,14 +138,15 @@ architecture rtl of hram_test is
     init(reg_data_t'range),
     bits(reg_data_t'range)
   ) := (
-      ( ra(RA_CTRL), x"00000000", (BMW+11 downto 0 => RW, others => RO) ),
-      ( ra(RA_STAT), x"00000000", (others => RO)                        ),
-      ( ra(RA_BASE), x"00000000", csr_bits_addr                         ),
-      ( ra(RA_SIZE), x"00000000", csr_bits_addr                         ),
-      ( ra(RA_DATA), x"00000000", (others => RW)                        ),
-      ( ra(RA_INCR), x"00000000", (others => RW)                        ),
-      ( ra(RA_EADD), x"00000000", (others => RO)                        ),
-      ( ra(RA_EDAT), x"00000000", (others => RO)                        )
+      ( ra(RA_CTRL), x"00000000", (31 downto 30 => RW, BMW+11 downto 0 => RW, others => RO) ),
+      ( ra(RA_STAT), x"00000000", (others => RO)                                            ),
+      ( ra(RA_BASE), x"00000000", csr_bits_addr                                             ),
+      ( ra(RA_SIZE), x"00000000", csr_bits_addr                                             ),
+      ( ra(RA_DATA), x"00000000", (others => RW)                                            ),
+      ( ra(RA_INCR), x"00000000", (others => RW)                                            ),
+      ( ra(RA_EADD), x"00000000", (others => RO)                                            ),
+      ( ra(RA_EDAT), x"00000000", (others => RO)                                            ),
+      ( ra(RA_EDA2), x"00000000", (others => RO)                                            )
   );
 
   signal s_csr_w : regs_data_t(CSR_DEFS'range);
@@ -159,17 +161,20 @@ architecture rtl of hram_test is
   alias s_csr_incr : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_INCR),CSR_DEFS));
   alias s_csr_eadd : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EADD),CSR_DEFS));
   alias s_csr_edat : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDAT),CSR_DEFS));
+  alias s_csr_eda2 : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDA2),CSR_DEFS));
 
-  alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(1 downto 0);
-  alias s_csr_ctrl_run    : std_ulogic                        is s_csr_ctrl(2);
-  alias s_csr_ctrl_w      : std_ulogic                        is s_csr_ctrl(3);
-  alias s_csr_ctrl_r      : std_ulogic                        is s_csr_ctrl(4);
-  alias s_csr_ctrl_reg    : std_ulogic                        is s_csr_ctrl(5);
-  alias s_csr_ctrl_arnd   : std_ulogic                        is s_csr_ctrl(6);                -- 0 = sequential, 1 = randomised
-  alias s_csr_ctrl_drnd   : std_ulogic                        is s_csr_ctrl(7);
+  alias s_csr_ctrl_run    : std_ulogic                        is s_csr_ctrl(0);
+  alias s_csr_ctrl_w      : std_ulogic                        is s_csr_ctrl(1);
+  alias s_csr_ctrl_r      : std_ulogic                        is s_csr_ctrl(2);
+  alias s_csr_ctrl_reg    : std_ulogic                        is s_csr_ctrl(3);
+  alias s_csr_ctrl_arnd   : std_ulogic                        is s_csr_ctrl(4);                -- 0 = sequential, 1 = randomised
+  alias s_csr_ctrl_drnd   : std_ulogic                        is s_csr_ctrl(5);
+  alias s_csr_ctrl_dinv   : std_ulogic                        is s_csr_ctrl(6);
+  alias s_csr_ctrl_rb2    : std_ulogic                        is s_csr_ctrl(7);                -- double readback
   alias s_csr_ctrl_cb     : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(10 downto 8);
   alias s_csr_ctrl_brnd   : std_ulogic                        is s_csr_ctrl(11);               -- burst mode: 0 = fixed, 1 = PRNG
   alias s_csr_ctrl_bmag   : std_ulogic_vector(BMW-1 downto 0) is s_csr_ctrl(BMW+11 downto 12); -- burst magnitude
+  alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(31 downto 30);
 
   alias s_csr_ctrl_cb_m   : std_ulogic is s_csr_ctrl_cb(0); -- checkerboard masking
   alias s_csr_ctrl_cb_i   : std_ulogic is s_csr_ctrl_cb(1); -- checkerboard inversion
@@ -238,6 +243,7 @@ architecture rtl of hram_test is
   signal d_data      : std_ulogic_vector(31 downto 0);
   signal d_eadd      : std_ulogic_vector(i_a_addr'range);
   signal d_edat      : std_ulogic_vector(31 downto 0);
+  signal d_eda2      : std_ulogic_vector(15 downto 0);
   signal incr_data   : std_ulogic_vector(31 downto 0);
 
   -- interleaved read/write (readback)
@@ -327,6 +333,7 @@ begin
     s_csr_eadd <= (others => '0');
     s_csr_eadd(ADDR_MSB downto 1) <= d_eadd;
     s_csr_edat <= d_edat;
+    s_csr_eda2 <= x"0000" & d_eda2;
   end process P_CSR;
 
   --------------------------------------------------------------------------------
@@ -419,6 +426,7 @@ begin
       incr_data   <= (others => 'X');
       d_eadd      <= (others => 'X');
       d_edat      <= (others => 'X');
+      d_eda2      <= (others => 'X');
       state_d     <= D_IDLE;
       rb_valid    <= (others => '0');
       rb_addr     <= (others => (others => 'X'));
@@ -527,7 +535,12 @@ begin
             i_a_rb    <= '1';
             i_a_r_w   <= '1';
             i_a_reg   <= s_csr_ctrl_reg; -- unlikely to be 1
-            i_a_len   <= a_len; -- should always be 1!
+            i_a_len   <= (others => '0');
+            if s_csr_ctrl_rb2 then
+              i_a_len(1) <= '1'; -- length 2
+            else
+              i_a_len(0) <= '1'; -- length 1
+            end if;
             i_a_addr  <= rb_addr(rb_addr'high);
             state_a   <= A_RB_VALID;
           else
@@ -586,11 +599,14 @@ begin
           state_d <= D_PREP when prng_d_valid and not prng_d_init;
 
         when D_PREP =>
-          d_data    <= prng_d_data when s_csr_ctrl_drnd else incr_data;
+          d_data    <= prng_d_data   when s_csr_ctrl_drnd else
+                      not incr_data  when s_csr_ctrl_dinv else
+                      incr_data;
           incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
           t_err     <= '0';
           t_ref     <= '0';
           d_edat    <= (others => 'X');
+          d_eda2    <= (others => 'X');
           state_d   <= D_WAIT;
 
         when D_WAIT =>
@@ -613,9 +629,11 @@ begin
               if d_word then
                 i_w_be <= not s_csr_ctrl_cb_pol & s_csr_ctrl_cb_pol
                   when s_csr_ctrl_cb_m else "11";
-                i_w_data   <= d(31 downto 16);
-                d_data     <= prng_d_data when s_csr_ctrl_drnd else incr_data;
-                incr_data  <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
+                i_w_data  <= d(31 downto 16);
+                d_data    <= prng_d_data    when s_csr_ctrl_drnd else
+                             not incr_data  when s_csr_ctrl_dinv else
+                             incr_data;
+                incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
                 if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
                   rb_data(1) <= d(31 downto 16);
                 end if;
@@ -642,7 +660,9 @@ begin
             rc_xdat <= d(31 downto 16) when d_word = '1' else d(15 downto 0);
             rc_ref  <= i_r_ref;
             if d_word then
-              d_data    <= prng_d_data when s_csr_ctrl_drnd else incr_data;
+              d_data    <= prng_d_data    when s_csr_ctrl_drnd else
+                           not incr_data  when s_csr_ctrl_dinv else
+                           incr_data;
               incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
             end if;
             d_word <= not d_word;
@@ -657,13 +677,15 @@ begin
 
         when D_RB =>
           if i_r_valid and i_r_ready then
-            rc_en   <= '1';
-            rc_rdat <= i_r_data;
-            rc_xdat <= rb_data(rb_data'high);
-            rc_ref  <= i_r_ref;
-            rb_data(2 to rb_addr'high) <= rb_data(1 to rb_data'high-1);
-            rb_data(1) <= (others => 'X');
-            if i_r_last then -- should always be true
+            if i_r_last xor s_csr_ctrl_rb2 then
+              rc_en   <= '1';
+              rc_rdat <= i_r_data;
+              rc_xdat <= rb_data(rb_data'high);
+              rc_ref  <= i_r_ref;
+              rb_data(2 to rb_addr'high) <= rb_data(1 to rb_data'high-1);
+              rb_data(1) <= (others => 'X');
+            end if;
+            if i_r_last then
               i_r_ready <= '0';
               state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
             end if;
@@ -685,6 +707,7 @@ begin
           t_err  <= '1';
           t_ref  <= rc_ref;
           d_edat <= rc_xdat & rc_rdat;
+          d_eda2 <= i_r_data;
         else
           d_eadd <= incr(d_eadd); -- not relevant to scattered addressing
         end if;

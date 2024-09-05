@@ -123,6 +123,8 @@ begin
       incr   : in    reg_data_t := x"0000_0000";
       arnd   : in    std_ulogic := '0';
       drnd   : in    std_ulogic := '0';
+      dinv   : in    std_ulogic := '0';
+      rb2    : in    std_ulogic := '0';
       cb_m   : in    std_ulogic := '0';
       cb_i   : in    std_ulogic := '0';
       cb_pol : in    std_ulogic := '0';
@@ -131,13 +133,13 @@ begin
     ) is
       variable eadd : std_ulogic_vector(31 downto 0);
       variable edat : std_ulogic_vector(31 downto 0);
+      variable eda2 : std_ulogic_vector(31 downto 0);
     begin
       reg_poke(RA_BASE,addr);
       reg_poke(RA_DATA,data);
       reg_poke(RA_INCR,incr);
       reg_poke(RA_SIZE,size);
-      -- run
-      reg_poke(RA_CTRL,x"0000" & bmag & brnd & cb_pol & cb_i & cb_m & drnd & arnd & reg & r & w & '1' & clksel);
+      reg_poke(RA_CTRL,clksel & "00" & x"000" & bmag & brnd & cb_pol & cb_i & cb_m & rb2 & dinv & drnd & arnd & reg & r & w & '1'); -- run
       loop -- wait for busy
         reg_peek(RA_STAT,rd);
         if rd(0) = '1' then exit; end if;
@@ -154,11 +156,13 @@ begin
       if rd(16) = '1' then
         reg_peek(RA_EADD,eadd);
         reg_peek(RA_EDAT,edat);
+        reg_peek(RA_EDA2,eda2);
         report "read error:" &
           " address " & to_hstring(eadd) &
           " read " & to_hstring(edat(15 downto 0)) &
           " expected " & to_hstring(edat(31 downto 16)) &
-          " (ref = " & to_string(rd(17)) & ")"
+          " read 2 " & to_hstring(eda2(15 downto 0)) &
+          " (ref = " & to_string(rd(17)) &")"
           severity failure;
       end if;
     end procedure run;
@@ -186,7 +190,7 @@ begin
     wait until rising_edge(s_clk);
 
     clksel := "00";
-    reg_poke(RA_CTRL,x"0000_000" & "00" & clksel); -- select 100 MHz clock
+    reg_poke(RA_CTRL,clksel & "00" & x"000_0000"); -- select 100 MHz clock
 
     -- wait for MMCM lock
     loop
@@ -211,17 +215,39 @@ begin
 
     report "short fill and check";
 
-    -- fill and check (interleaved read/write)
+    -- fill and check (interleaved read/write), incrementing data
     run(
       w      => '1',
       r      => '1',
       reg    => '0',
       addr   => x"0000_0000", -- start address = 0
-      data   => x"0000_0000", -- n/a
-      incr   => x"0000_0000", -- n/a
+      data   => x"0000_0000", -- data start value
+      incr   => x"0000_0004", -- data increment
       size   => x"0000_0100", -- 128 words / 256 bytes
-      arnd   => '1',          -- sequential addressing
-      drnd   => '1',          -- random data
+      arnd   => '0',          -- sequential addressing
+      drnd   => '0',          -- incrementing data
+      dinv   => '0',          -- data not inverted
+      rb2    => '1',          -- double readback
+      cb_m   => '0',          -- no masking
+      cb_i   => '0',          -- no inversion
+      cb_pol => '0',          -- n/a
+      brnd   => '0',          -- must be 0 (readback)
+      bmag   => x"0"          -- must be 0 (readback)
+    );
+
+    -- fill and check (interleaved read/write), incrementing data, inverted
+    run(
+      w      => '1',
+      r      => '1',
+      reg    => '0',
+      addr   => x"0000_0000", -- start address = 0
+      data   => x"0000_0000", -- data start value
+      incr   => x"0000_0004", -- data increment
+      size   => x"0000_0100", -- 128 words / 256 bytes
+      arnd   => '0',          -- sequential addressing
+      drnd   => '0',          -- incrementing data
+      dinv   => '1',          -- data inverted
+      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
@@ -244,6 +270,8 @@ begin
       size   => x"0000_0100", -- 128 words / 256 bytes
       arnd   => '1',          -- scattered addressing
       drnd   => '1',          -- random data
+      dinv   => '0',          -- data not inverted
+      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
@@ -262,6 +290,8 @@ begin
       size   => x"0000_0100", -- 256 bytes
       arnd   => '1',          -- scattered addressing
       drnd   => '1',          -- random data
+      dinv   => '0',          -- data not inverted
+      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
@@ -284,6 +314,8 @@ begin
       size   => x"0001_0000", -- 64kBytes
       arnd   => '0',          -- sequential addressing
       drnd   => '1',          -- random data
+      dinv   => '0',          -- data not inverted
+      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
@@ -302,6 +334,8 @@ begin
       size   => x"0001_0000", -- 64kBytes
       arnd   => '0',          -- sequential addressing
       drnd   => '1',          -- random data
+      dinv   => '0',          -- data not inverted
+      rb2    => '0',          -- normal readback
       cb_m   => '1',          -- checkerboard masking
       cb_i   => '1',          -- checkerboard inversion
       cb_pol => '0',          -- normal checkerboard polarity
@@ -320,6 +354,8 @@ begin
       size   => x"0000_0002", -- single word (2 bytes)
       arnd   => '0',          -- n/a
       drnd   => '0',          -- regular data
+      dinv   => '0',          -- data not inverted
+      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
@@ -338,6 +374,8 @@ begin
       size   => x"0001_0000", -- 64kBytes
       arnd   => '0',          -- sequential addressing
       drnd   => '1',          -- random data
+      dinv   => '0',          -- data not inverted
+      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- n/a
       cb_i   => '1',          -- checkerboard inversion
       cb_pol => '0',          -- normal checkerboard polarity
