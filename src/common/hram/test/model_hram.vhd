@@ -309,6 +309,7 @@ architecture model of model_hram is
   signal state      : state_t;
   signal count      : integer := 0;
   signal ca         : std_ulogic_vector(47 downto 0);
+  signal addr       : unsigned(31 downto 0);
   signal refresh    : std_ulogic;
 
   -- configuration registers
@@ -316,7 +317,7 @@ architecture model of model_hram is
   signal cfgreg1 : hram_cr_t := PARAMS.cfgreg1;
 
   -- simulation visibility
-  signal sim_ref : std_ulogic; -- refresh on this cycle
+  signal sim_ref  : std_ulogic; -- v4p ignore w-303 | refresh on this cycle
 
   --------------------------------------------------------------------------------
 
@@ -862,10 +863,10 @@ begin
               end case;
             else
               if wm(0) = '0' then
-                mem(to_integer(unsigned(ca(44 downto 16)) & unsigned(ca(2 downto 0))))(7 downto 0) := wdata(7 downto 0);
+                mem(to_integer(addr))(7 downto 0) := wdata(7 downto 0);
               end if;
               if wm(1) = '0' then
-                mem(to_integer(unsigned(ca(44 downto 16)) & unsigned(ca(2 downto 0))))(15 downto 8) := wdata(15 downto 8);
+                mem(to_integer(addr))(15 downto 8) := wdata(15 downto 8);
               end if;
             end if;
             (ca(44 downto 16),ca(2 downto 0)) <= incr((ca(44 downto 16),ca(2 downto 0)));
@@ -911,6 +912,8 @@ begin
     handle_event;
 
   end process P_MAIN;
+
+  addr <= unsigned(ca(44 downto 16)) & unsigned(ca(2 downto 0));
 
   --------------------------------------------------------------------------------
 
