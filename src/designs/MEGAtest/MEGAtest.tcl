@@ -118,17 +118,17 @@ set_multicycle_path 2 -setup -end -from [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_rw
 set_multicycle_path 1  -hold -end -from [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_rwds_t_reg* MAIN/U_HRAM_TEST/U_CTRL/h_dq_t_reg*}]
 
 # multicycle to relax h_dq_i_ce and h_dq_i_ce_1 timing
-set_multicycle_path 2 -setup -end -from [get_clocks i_clk] -through [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_1_reg}] -to [get_clocks hr_rwds_fast] ; # fast
-set_multicycle_path 1  -hold -end -from [get_clocks i_clk] -through [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_1_reg}] -to [get_clocks hr_rwds_fast] ; # fast
-set_multicycle_path 2 -setup -end -from [get_clocks i_clk] -through [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_1_reg}] -to [get_clocks hr_rwds_slow] ; # slow
-set_multicycle_path 1  -hold -end -from [get_clocks i_clk] -through [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_1_reg}] -to [get_clocks hr_rwds_slow] ; # slow
+set_multicycle_path 2 -setup -end -from [get_clocks i_clk] -through [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg}] -to [get_clocks hr_rwds_fast] ; # fast
+set_multicycle_path 1  -hold -end -from [get_clocks i_clk] -through [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg}] -to [get_clocks hr_rwds_fast] ; # fast
+set_multicycle_path 2 -setup -end -from [get_clocks i_clk] -through [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg}] -to [get_clocks hr_rwds_slow] ; # slow
+set_multicycle_path 1  -hold -end -from [get_clocks i_clk] -through [get_cells {MAIN/U_HRAM_TEST/U_CTRL/h_dq_i_ce_reg}] -to [get_clocks hr_rwds_slow] ; # slow
 
 # exclude RWDS to itself
 set_false_path -from [get_ports hr_rwds] -to [get_ports hr_rwds]
 
 # exclude IDDR set/reset
-set_false_path -from [get_pins MAIN/U_HRAM_TEST/U_CTRL/r_rs_reg/C] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR/R]
-set_false_path -from [get_pins MAIN/U_HRAM_TEST/U_CTRL/r_rs_reg/C] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR/S]
+set_false_path -from [get_pins MAIN/U_HRAM_TEST/U_CTRL/r_rst_reg/C] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR/R]
+set_false_path -from [get_pins MAIN/U_HRAM_TEST/U_CTRL/r_rst_reg/C] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR/S]
 
 ################################################################################
 # pullups/pulldowns
