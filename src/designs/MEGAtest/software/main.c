@@ -21,7 +21,7 @@ int main() {
 	cb_set_border(CB_LIGHT_BLUE);
 
 	cb_set_col(CB_YELLOW, CB_BLACK);
-	printf("MEGAtest application 15\n\n");
+	printf("MEGAtest application 18\n\n");
 
 	cb_set_col(CB_GREEN, CB_BLACK);
 
@@ -45,7 +45,7 @@ int main() {
 
 	printf("temperature x 10 = %d\n", xadc_temp10());
 
-#if 1
+#if 0
 		printf("fill and test, seq address, all 1s... ");
 		r = ht_run(1,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0);
 		printf("concurrent read: "); ht_err(r);
@@ -63,7 +63,6 @@ int main() {
 		printf("follow on read: "); ht_err(r);
 		errors += r;
 		printf("\n");
-#endif
 
 		printf("fill and test, seq address, seq data, normal... ");
 		r = ht_run(1,1,0,0x550000,0x2200,0x00010000,0x00020002,0,0,0,0,0,0,0);
@@ -83,7 +82,6 @@ int main() {
 		errors += r;
 		printf("\n");
 
-#if 1
 		printf("fill then test, sequential address, incrementing data, random burst (2)...");
 		r = ht_run(1,0,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,1,0);
 		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,1,0);
@@ -103,9 +101,7 @@ int main() {
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
-#endif
 
-#if 1
 		printf("fill then test, sequential address, random data, fixed burst (256)...");
 		r = ht_run(1,0,0,0,0x800000,0,0,0,1,0,0,0,0,8);
 		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,0,8);
@@ -159,17 +155,25 @@ int main() {
 
 #endif
 
-#if 1
-
-		printf("fill and test, sequential address, incrementing data...");
-		r = ht_run(1,1,0,0,0x800000,0,4,0,0,0,0,0,0,0);
-		printf("concurrent read: "); ht_err(r);
+		printf("fill and test, sequential address, incrementing data, double...");
+		r = ht_run(1,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,3);
+		printf("concurrent read (2): "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0);
-		printf("follow on read: "); ht_err(r);
+		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,0);
+		printf("follow on read (2): "); ht_err(r);
 		errors += r;
 		printf("\n");
 
+		printf("fill and test, sequential address, incrementing data, inverted...");
+		r = ht_run(1,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,3);
+		printf("concurrent read (2): "); ht_err(r);
+		errors += r;
+		r = ht_run(0,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,0);
+		printf("follow on read (2): "); ht_err(r);
+		errors += r;
+		printf("\n");
+
+#if 0
 		printf("fill and test, random address, random data... ");
 		r = ht_run(1,1,0,0,0x800000,0,0,1,1,0,0,0,0,0);
 		printf("concurrent read: "); ht_err(r);
@@ -178,9 +182,7 @@ int main() {
 		printf("follow on read: "); ht_err(r);
 		errors += r;
 		printf("\n");
-
 #endif
-
 		printf("\n");
 		cb_set_col(CB_WHITE, CB_RED);
 		tests++;

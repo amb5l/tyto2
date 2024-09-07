@@ -14,7 +14,6 @@ u8 ht_run(
     u8  arnd   ,
     u8  drnd   ,
     u8  dinv   ,
-    u8  rb2    ,
     u8  cb_m   ,
     u8  cb_i   ,
     u8  cb_pol ,
@@ -34,7 +33,6 @@ u8 ht_run(
         ((cb_pol &  1)   << 10) |
         ((cb_i   &  1)   <<  9) |
         ((cb_m   &  1)   <<  8) |
-        ((rb2    &  1)   <<  7) |
         ((dinv   &  1)   <<  6) |
         ((drnd   &  1)   <<  5) |
         ((arnd   &  1)   <<  4) |
@@ -53,11 +51,14 @@ u8 ht_run(
 
 void ht_err(u8 r) {
     if (r)
-        printf("\nread %04X expected %04X address %08X read 2 %04X (ref = %d)\n",
+        printf("\nread %04X expected %04X address %08X EDR %08X %08X %08X %08X (ref = %d)\n",
             peek16(RA_EDAT),
             peek16(RA_EDAT+2),
             peek32(RA_EADD),
-			peek16(RA_EDA2),
+			peek32(RA_EDR0),
+			peek32(RA_EDR1),
+			peek32(RA_EDR2),
+			peek32(RA_EDR3),
 			(peek8(RA_STAT+2) >> 1) & 1
         );
     else
@@ -65,7 +66,7 @@ void ht_err(u8 r) {
 }
 
 u8 ht_init(void) {
-	ht_run(1,0,1,0x1000,2,0xBFF7,0,0,0,0,0,0,0,0,0,0); // write CFGREG0 - 46 ohms, variable latency = 4
-	u8 r = ht_run(0,1,1,0x0000,2,0x0C83,0,0,0,0,0,0,0,0,0,0); // read IDREG0
+	ht_run(1,0,1,0x1000,2,0xBFF7,0,0,0,0,0,0,0,0,0); // write CFGREG0 - 46 ohms, variable latency = 4
+	u8 r = ht_run(0,1,1,0x0000,2,0x0C83,0,0,0,0,0,0,0,0,0); // read IDREG0
 	return r;
 }

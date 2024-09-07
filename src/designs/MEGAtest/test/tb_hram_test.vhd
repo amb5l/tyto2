@@ -15,6 +15,7 @@
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
 
+use work.tyto_types_pkg.all;
 use work.hram_test_pkg.all;
 use work.model_hram_pkg.all;
 
@@ -70,7 +71,7 @@ begin
 
   --------------------------------------------------------------------------------
 
-  clk_100m <= '0' when clk_100m = 'U' else not clk_100m after 5 ns; -- 100 MHz
+  clk_100m <= '1' when clk_100m = 'U' else not clk_100m after 5 ns; -- 100 MHz
   x_clk <= clk_100m;
   s_clk <= clk_100m;
 
@@ -124,7 +125,6 @@ begin
       arnd   : in    std_ulogic := '0';
       drnd   : in    std_ulogic := '0';
       dinv   : in    std_ulogic := '0';
-      rb2    : in    std_ulogic := '0';
       cb_m   : in    std_ulogic := '0';
       cb_i   : in    std_ulogic := '0';
       cb_pol : in    std_ulogic := '0';
@@ -133,13 +133,13 @@ begin
     ) is
       variable eadd : std_ulogic_vector(31 downto 0);
       variable edat : std_ulogic_vector(31 downto 0);
-      variable eda2 : std_ulogic_vector(31 downto 0);
+      variable edr  : sulv_vector(0 to 3)(31 downto 0);
     begin
       reg_poke(RA_BASE,addr);
       reg_poke(RA_DATA,data);
       reg_poke(RA_INCR,incr);
       reg_poke(RA_SIZE,size);
-      reg_poke(RA_CTRL,clksel & "00" & x"000" & bmag & brnd & cb_pol & cb_i & cb_m & rb2 & dinv & drnd & arnd & reg & r & w & '1'); -- run
+      reg_poke(RA_CTRL,clksel & "00" & x"000" & bmag & brnd & cb_pol & cb_i & cb_m & '0' & dinv & drnd & arnd & reg & r & w & '1'); -- run
       loop -- wait for busy
         reg_peek(RA_STAT,rd);
         if rd(0) = '1' then exit; end if;
@@ -156,12 +156,18 @@ begin
       if rd(16) = '1' then
         reg_peek(RA_EADD,eadd);
         reg_peek(RA_EDAT,edat);
-        reg_peek(RA_EDA2,eda2);
+        reg_peek(RA_EDR0,edr(0));
+        reg_peek(RA_EDR1,edr(1));
+        reg_peek(RA_EDR2,edr(2));
+        reg_peek(RA_EDR3,edr(3));
         report "read error:" &
           " address " & to_hstring(eadd) &
           " read " & to_hstring(edat(15 downto 0)) &
           " expected " & to_hstring(edat(31 downto 16)) &
-          " read 2 " & to_hstring(eda2(15 downto 0)) &
+          " EDR0 " & to_hstring(edr(0)) &
+          " EDR1 " & to_hstring(edr(1)) &
+          " EDR2 " & to_hstring(edr(2)) &
+          " EDR3 " & to_hstring(edr(3)) &
           " (ref = " & to_string(rd(17)) &")"
           severity failure;
       end if;
@@ -211,11 +217,9 @@ begin
     report "ID register 0 OK";
 
     --------------------------------------------------------------------------------
-    -- readback
+    -- short tests
 
-    report "short fill and check";
-
-    -- fill and check (interleaved read/write), incrementing data
+    report "fill and check (interleaved read/write), incrementing data, readback burst length 8";
     run(
       w      => '1',
       r      => '1',
@@ -227,15 +231,33 @@ begin
       arnd   => '0',          -- sequential addressing
       drnd   => '0',          -- incrementing data
       dinv   => '0',          -- data not inverted
-      rb2    => '1',          -- double readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
       brnd   => '0',          -- must be 0 (readback)
-      bmag   => x"0"          -- must be 0 (readback)
+      bmag   => x"3"          -- BURST LENGTH 8
     );
 
-    -- fill and check (interleaved read/write), incrementing data, inverted
+    report "follow on read";
+    run(
+      w      => '0',
+      r      => '1',
+      reg    => '0',
+      addr   => x"0000_0000", -- start address = 0
+      data   => x"0000_0000", -- data start value
+      incr   => x"0000_0004", -- data increment
+      size   => x"0000_0100", -- 128 words / 256 bytes
+      arnd   => '0',          -- sequential addressing
+      drnd   => '0',          -- incrementing data
+      dinv   => '0',          -- data not inverted
+      cb_m   => '0',          -- no masking
+      cb_i   => '0',          -- no inversion
+      cb_pol => '0',          -- n/a
+      brnd   => '0',          -- must be 0 (readback)
+      bmag   => x"0"          -- burst length 1
+    );
+
+    report "fill and check (interleaved read/write), inverted incrementing data, readback burst length 8";
     run(
       w      => '1',
       r      => '1',
@@ -247,13 +269,32 @@ begin
       arnd   => '0',          -- sequential addressing
       drnd   => '0',          -- incrementing data
       dinv   => '1',          -- data inverted
-      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
       brnd   => '0',          -- must be 0 (readback)
-      bmag   => x"0"          -- must be 0 (readback)
+      bmag   => x"3"          -- BURST LENGTH 8
     );
+
+    report "follow on read";
+    run(
+      w      => '1',
+      r      => '1',
+      reg    => '0',
+      addr   => x"0000_0000", -- start address = 0
+      data   => x"0000_0000", -- data start value
+      incr   => x"0000_0004", -- data increment
+      size   => x"0000_0100", -- 128 words / 256 bytes
+      arnd   => '0',          -- sequential addressing
+      drnd   => '0',          -- incrementing data
+      dinv   => '1',          -- data inverted
+      cb_m   => '0',          -- no masking
+      cb_i   => '0',          -- no inversion
+      cb_pol => '0',          -- n/a
+      brnd   => '0',          -- must be 0 (readback)
+      bmag   => x"0"          -- burst length 1
+    );
+
 
     --------------------------------------------------------------------------------
 
@@ -271,7 +312,6 @@ begin
       arnd   => '1',          -- scattered addressing
       drnd   => '1',          -- random data
       dinv   => '0',          -- data not inverted
-      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
@@ -291,7 +331,6 @@ begin
       arnd   => '1',          -- scattered addressing
       drnd   => '1',          -- random data
       dinv   => '0',          -- data not inverted
-      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
@@ -315,7 +354,6 @@ begin
       arnd   => '0',          -- sequential addressing
       drnd   => '1',          -- random data
       dinv   => '0',          -- data not inverted
-      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
@@ -335,7 +373,6 @@ begin
       arnd   => '0',          -- sequential addressing
       drnd   => '1',          -- random data
       dinv   => '0',          -- data not inverted
-      rb2    => '0',          -- normal readback
       cb_m   => '1',          -- checkerboard masking
       cb_i   => '1',          -- checkerboard inversion
       cb_pol => '0',          -- normal checkerboard polarity
@@ -355,7 +392,6 @@ begin
       arnd   => '0',          -- n/a
       drnd   => '0',          -- regular data
       dinv   => '0',          -- data not inverted
-      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- no masking
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
@@ -375,7 +411,6 @@ begin
       arnd   => '0',          -- sequential addressing
       drnd   => '1',          -- random data
       dinv   => '0',          -- data not inverted
-      rb2    => '0',          -- normal readback
       cb_m   => '0',          -- n/a
       cb_i   => '1',          -- checkerboard inversion
       cb_pol => '0',          -- normal checkerboard polarity

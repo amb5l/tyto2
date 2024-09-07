@@ -18,20 +18,19 @@
             <top_module name="tb_hram_test" />
             <top_module name="tyto_types_pkg" />
             <top_module name="tyto_utils_pkg" />
-            <top_module name="vpkg" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="11,995.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="12,442.401 ns"></ZoomEndTime>
-      <Cursor1Time time="12,135.000 ns"></Cursor1Time>
+      <ZoomStartTime time="91,113.250 ns"></ZoomStartTime>
+      <ZoomEndTime time="91,337.351 ns"></ZoomEndTime>
+      <Cursor1Time time="91,300.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="205"></NameColumnWidth>
-      <ValueColumnWidth column_width="109"></ValueColumnWidth>
+      <NameColumnWidth column_width="152"></NameColumnWidth>
+      <ValueColumnWidth column_width="158"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="164" />
+   <WVObjectSize size="170" />
    <wvobject fp_name="/tb_hram_test/clk_100m" type="logic">
       <obj_property name="ElementShortName">clk_100m</obj_property>
       <obj_property name="ObjectShortName">clk_100m</obj_property>
@@ -107,16 +106,16 @@
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/s_csr_w" type="array">
-      <obj_property name="ElementShortName">s_csr_w[0:7][31:0]</obj_property>
-      <obj_property name="ObjectShortName">s_csr_w[0:7][31:0]</obj_property>
+      <obj_property name="ElementShortName">s_csr_w[0:11][31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_csr_w[0:11][31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/s_csr_p" type="array">
-      <obj_property name="ElementShortName">s_csr_p[0:7][31:0]</obj_property>
-      <obj_property name="ObjectShortName">s_csr_p[0:7][31:0]</obj_property>
+      <obj_property name="ElementShortName">s_csr_p[0:11][31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_csr_p[0:11][31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/s_csr_r" type="array">
-      <obj_property name="ElementShortName">s_csr_r[0:7][31:0]</obj_property>
-      <obj_property name="ObjectShortName">s_csr_r[0:7][31:0]</obj_property>
+      <obj_property name="ElementShortName">s_csr_r[0:11][31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_csr_r[0:11][31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/i_csr_ctrl_run" type="logic">
       <obj_property name="ElementShortName">i_csr_ctrl_run</obj_property>
@@ -336,6 +335,11 @@
       <obj_property name="CustomSignalColor">#FFFF00</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/d_edr" type="array">
+      <obj_property name="ElementShortName">d_edr[0:3][31:0]</obj_property>
+      <obj_property name="ObjectShortName">d_edr[0:3][31:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+   </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/rb_valid" type="array">
       <obj_property name="ElementShortName">rb_valid[1:2]</obj_property>
       <obj_property name="ObjectShortName">rb_valid[1:2]</obj_property>
@@ -351,6 +355,22 @@
    <wvobject fp_name="/tb_hram_test/DUT/rc_en" type="logic">
       <obj_property name="ElementShortName">rc_en</obj_property>
       <obj_property name="ObjectShortName">rc_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/rc_last" type="logic">
+      <obj_property name="ElementShortName">rc_last</obj_property>
+      <obj_property name="ObjectShortName">rc_last</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/rc_rbx" type="logic">
+      <obj_property name="ElementShortName">rc_rbx</obj_property>
+      <obj_property name="ObjectShortName">rc_rbx</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/rc_err" type="logic">
+      <obj_property name="ElementShortName">rc_err</obj_property>
+      <obj_property name="ObjectShortName">rc_err</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/rc_cnt" type="other">
+      <obj_property name="ElementShortName">rc_cnt</obj_property>
+      <obj_property name="ObjectShortName">rc_cnt</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/rc_rdat" type="array">
       <obj_property name="ElementShortName">rc_rdat[15:0]</obj_property>
@@ -779,6 +799,10 @@
    <wvobject fp_name="/tb_hram_test/MEM/ca" type="array">
       <obj_property name="ElementShortName">ca[47:0]</obj_property>
       <obj_property name="ObjectShortName">ca[47:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/MEM/addr" type="array">
+      <obj_property name="ElementShortName">addr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">addr[31:0]</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/MEM/refresh" type="logic">
       <obj_property name="ElementShortName">refresh</obj_property>

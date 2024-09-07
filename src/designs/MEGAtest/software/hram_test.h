@@ -11,7 +11,10 @@
 #define RA_INCR (HT_BASE+0x14)
 #define RA_EADD (HT_BASE+0x18)
 #define RA_EDAT (HT_BASE+0x1C)
-#define RA_EDA2 (HT_BASE+0x20)
+#define RA_EDR0 (HT_BASE+0x20)
+#define RA_EDR1 (HT_BASE+0x24)
+#define RA_EDR2 (HT_BASE+0x28)
+#define RA_EDR3 (HT_BASE+0x2C)
 
 extern u8 ht_clksel;
 
@@ -26,7 +29,6 @@ u8 ht_run(
     u8  arnd   ,
     u8  drnd   ,
     u8  dinv   ,
-    u8  rb2    ,
     u8  cb_m   ,
     u8  cb_i   ,
     u8  cb_pol ,

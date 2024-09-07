@@ -31,7 +31,10 @@ package hram_test_pkg is
   constant RA_INCR : std_ulogic_vector(7 downto 0) := x"14";
   constant RA_EADD : std_ulogic_vector(7 downto 0) := x"18";
   constant RA_EDAT : std_ulogic_vector(7 downto 0) := x"1C";
-  constant RA_EDA2 : std_ulogic_vector(7 downto 0) := x"20";
+  constant RA_EDR0 : std_ulogic_vector(7 downto 0) := x"20";
+  constant RA_EDR1 : std_ulogic_vector(7 downto 0) := x"24";
+  constant RA_EDR2 : std_ulogic_vector(7 downto 0) := x"28";
+  constant RA_EDR3 : std_ulogic_vector(7 downto 0) := x"2C";
 
   component hram_test is
     generic (
@@ -146,7 +149,10 @@ architecture rtl of hram_test is
       ( ra(RA_INCR), x"00000000", (others => RW)                                            ),
       ( ra(RA_EADD), x"00000000", (others => RO)                                            ),
       ( ra(RA_EDAT), x"00000000", (others => RO)                                            ),
-      ( ra(RA_EDA2), x"00000000", (others => RO)                                            )
+      ( ra(RA_EDR0), x"00000000", (others => RO)                                            ),
+      ( ra(RA_EDR1), x"00000000", (others => RO)                                            ),
+      ( ra(RA_EDR2), x"00000000", (others => RO)                                            ),
+      ( ra(RA_EDR3), x"00000000", (others => RO)                                            )
   );
 
   signal s_csr_w : regs_data_t(CSR_DEFS'range);
@@ -161,7 +167,10 @@ architecture rtl of hram_test is
   alias s_csr_incr : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_INCR),CSR_DEFS));
   alias s_csr_eadd : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EADD),CSR_DEFS));
   alias s_csr_edat : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDAT),CSR_DEFS));
-  alias s_csr_eda2 : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDA2),CSR_DEFS));
+  alias s_csr_edr0 : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDR0),CSR_DEFS));
+  alias s_csr_edr1 : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDR1),CSR_DEFS));
+  alias s_csr_edr2 : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDR2),CSR_DEFS));
+  alias s_csr_edr3 : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDR3),CSR_DEFS));
 
   alias s_csr_ctrl_run    : std_ulogic                        is s_csr_ctrl(0);
   alias s_csr_ctrl_w      : std_ulogic                        is s_csr_ctrl(1);
@@ -170,7 +179,7 @@ architecture rtl of hram_test is
   alias s_csr_ctrl_arnd   : std_ulogic                        is s_csr_ctrl(4);                -- 0 = sequential, 1 = randomised
   alias s_csr_ctrl_drnd   : std_ulogic                        is s_csr_ctrl(5);
   alias s_csr_ctrl_dinv   : std_ulogic                        is s_csr_ctrl(6);
-  alias s_csr_ctrl_rb2    : std_ulogic                        is s_csr_ctrl(7);                -- double readback
+--alias s_csr_ctrl_spare  : std_ulogic                        is s_csr_ctrl(7);
   alias s_csr_ctrl_cb     : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(10 downto 8);
   alias s_csr_ctrl_brnd   : std_ulogic                        is s_csr_ctrl(11);               -- burst mode: 0 = fixed, 1 = PRNG
   alias s_csr_ctrl_bmag   : std_ulogic_vector(BMW-1 downto 0) is s_csr_ctrl(BMW+11 downto 12); -- burst magnitude
@@ -243,7 +252,7 @@ architecture rtl of hram_test is
   signal d_data      : std_ulogic_vector(31 downto 0);
   signal d_eadd      : std_ulogic_vector(i_a_addr'range);
   signal d_edat      : std_ulogic_vector(31 downto 0);
-  signal d_eda2      : std_ulogic_vector(15 downto 0);
+  signal d_edr       : sulv_vector(0 to 3)(31 downto 0);
   signal incr_data   : std_ulogic_vector(31 downto 0);
 
   -- interleaved read/write (readback)
@@ -255,6 +264,10 @@ architecture rtl of hram_test is
 
   -- read check
   signal rc_en       : std_ulogic;
+  signal rc_last     : std_ulogic;
+  signal rc_rbx      : std_ulogic;
+  signal rc_err      : std_ulogic;
+  signal rc_cnt      : integer range 0 to 7;
   signal rc_rdat     : std_ulogic_vector(15 downto 0);
   signal rc_xdat     : std_ulogic_vector(15 downto 0);
   signal rc_ref      : std_ulogic;
@@ -333,7 +346,10 @@ begin
     s_csr_eadd <= (others => '0');
     s_csr_eadd(ADDR_MSB downto 1) <= d_eadd;
     s_csr_edat <= d_edat;
-    s_csr_eda2 <= x"0000" & d_eda2;
+    s_csr_edr0 <= d_edr(0);
+    s_csr_edr1 <= d_edr(1);
+    s_csr_edr2 <= d_edr(2);
+    s_csr_edr3 <= d_edr(3);
   end process P_CSR;
 
   --------------------------------------------------------------------------------
@@ -426,12 +442,16 @@ begin
       incr_data   <= (others => 'X');
       d_eadd      <= (others => 'X');
       d_edat      <= (others => 'X');
-      d_eda2      <= (others => 'X');
+      d_edr       <= (others => (others => 'X'));
       state_d     <= D_IDLE;
       rb_valid    <= (others => '0');
       rb_addr     <= (others => (others => 'X'));
       rb_data     <= (others => (others => 'X'));
       rc_en       <= '0';
+      rc_last     <= '0';
+      rc_rbx      <= '0';
+      rc_err      <= '0';
+      rc_cnt      <= 0;
       rc_rdat     <= (others => 'X');
       rc_xdat     <= (others => 'X');
       rc_ref      <= '0';
@@ -483,8 +503,10 @@ begin
           state_a <= A_PREP2;
 
         when A_PREP2 =>
-          if (unsigned(a_count) /= 0) and (unsigned(a_len) > unsigned(a_count)) then
-            a_len <= a_count(a_count'right+a_len'length-1 downto a_count'right);
+          if s_csr_ctrl_w nand s_csr_ctrl_r then -- not test with readback
+            if (unsigned(a_count) /= 0) and (unsigned(a_len) > unsigned(a_count)) then
+              a_len <= a_count(a_count'right+a_len'length-1 downto a_count'right);
+            end if;
           end if;
           state_a <= A_PREP3;
 
@@ -492,24 +514,31 @@ begin
           i_a_valid <= '1';
           i_a_r_w   <= not s_csr_ctrl_w;
           i_a_reg   <= s_csr_ctrl_reg;
-          i_a_len   <= a_len;
           if not s_csr_ctrl_arnd then -- sequential addressing
             i_a_addr <= a_addr;
-            a_addr   <= add(a_addr,a_len);
             if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
+              i_a_len     <= (0 => '1', others => '0'); -- write burst length must be 1
+              a_addr      <= incr(a_addr);
+              a_count     <= decr(a_count);
               rb_valid(1) <= '1';
               rb_addr(1)  <= a_addr;
+            else
+              i_a_len <= a_len; -- variable burst length
+              a_addr  <= add(a_addr,a_len);
+              a_count <= sub(a_count,a_len);
             end if;
           else -- randomised addressing => burst length is always 1
+            i_a_len  <= (0 => '1', others => '0');
             i_a_addr <= a_addr_rnd;
+            a_addr   <= incr(a_addr);
             a_row    <= incr(a_row);
             a_col    <= incr(a_col) when unsigned(not a_row) = 0 else a_col;
+            a_count  <= decr(a_count);
             if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
               rb_valid(1) <= '1';
               rb_addr(1)  <= a_addr_rnd;
             end if;
           end if;
-          a_count <= sub(a_count,a_len);
           state_a <= A_VALID;
 
         when A_VALID => -- present address until it is accepted
@@ -535,12 +564,7 @@ begin
             i_a_rb    <= '1';
             i_a_r_w   <= '1';
             i_a_reg   <= s_csr_ctrl_reg; -- unlikely to be 1
-            i_a_len   <= (others => '0');
-            if s_csr_ctrl_rb2 then
-              i_a_len(1) <= '1'; -- length 2
-            else
-              i_a_len(0) <= '1'; -- length 1
-            end if;
+            i_a_len   <= a_len; -- variable burst length for diagnostic purposes
             i_a_addr  <= rb_addr(rb_addr'high);
             state_a   <= A_RB_VALID;
           else
@@ -586,8 +610,9 @@ begin
       --------------------------------------------------------------------------------
       -- data state machine
 
-      rc_en  <= '0';
-      rc_ref <= '0';
+      rc_en   <= '0';
+      rc_last <= '0';
+      rc_ref  <= '0';
 
       case state_d is
 
@@ -606,14 +631,17 @@ begin
           t_err     <= '0';
           t_ref     <= '0';
           d_edat    <= (others => 'X');
-          d_eda2    <= (others => 'X');
+          d_edr     <= (others => (others => 'X'));
           state_d   <= D_WAIT;
 
         when D_WAIT =>
           if i_a_valid and i_a_ready then
-            if not t_err then
+            if t_err nor rc_err then
               d_eadd <= i_a_addr;
             end if;
+            rc_rbx <= '0';
+            rc_err <= '0';
+            rc_cnt <= 0;
             state_d <= D_RB when i_a_rb else D_RD when i_a_r_w else D_WR;
           end if;
 
@@ -656,6 +684,7 @@ begin
           d := d_data xor x when s_csr_ctrl_cb_i else d_data;
           if i_r_valid and i_r_ready then
             rc_en   <= '1';
+            rc_last <= i_r_last;
             rc_rdat <= i_r_data;
             rc_xdat <= d(31 downto 16) when d_word = '1' else d(15 downto 0);
             rc_ref  <= i_r_ref;
@@ -676,12 +705,16 @@ begin
           end if;
 
         when D_RB =>
+          if rc_en then
+            rc_rbx <= '1';
+          end if;
           if i_r_valid and i_r_ready then
-            if i_r_last xor s_csr_ctrl_rb2 then
-              rc_en   <= '1';
-              rc_rdat <= i_r_data;
-              rc_xdat <= rb_data(rb_data'high);
-              rc_ref  <= i_r_ref;
+            rc_en   <= '1';
+            rc_last <= i_r_last;
+            rc_rdat <= i_r_data;
+            rc_xdat <= rb_data(rb_data'high);
+            rc_ref  <= i_r_ref;
+            if rc_en nor rc_rbx then -- first word of readback
               rb_data(2 to rb_addr'high) <= rb_data(1 to rb_data'high-1);
               rb_data(1) <= (others => 'X');
             end if;
@@ -702,16 +735,35 @@ begin
       --------------------------------------------------------------------------------
       -- read data error checking - 1 cycle delay to improve timing
 
-      if rc_en and not t_err then
+      if rc_en and not (rc_rbx or rc_err or t_err) then
         if rc_rdat /= rc_xdat then
-          t_err  <= '1';
+          rc_err <= '1';
+          if rc_last then
+            t_err <= '1';
+          end if;
           t_ref  <= rc_ref;
           d_edat <= rc_xdat & rc_rdat;
-          d_eda2 <= i_r_data;
         else
           d_eadd <= incr(d_eadd); -- not relevant to scattered addressing
         end if;
       end if;
+      if rc_en and rc_last and rc_err then
+        t_err <= '1';
+      end if;
+      if rc_en and not t_err then
+        case rc_cnt is
+          when 0 => d_edr(0)(15 downto  0) <= rc_rdat;
+          when 1 => d_edr(0)(31 downto 16) <= rc_rdat;
+          when 2 => d_edr(1)(15 downto  0) <= rc_rdat;
+          when 3 => d_edr(1)(31 downto 16) <= rc_rdat;
+          when 4 => d_edr(2)(15 downto  0) <= rc_rdat;
+          when 5 => d_edr(2)(31 downto 16) <= rc_rdat;
+          when 6 => d_edr(3)(15 downto  0) <= rc_rdat;
+          when 7 => d_edr(3)(31 downto 16) <= rc_rdat;
+          when others => null;
+        end case;
+      end if;
+      rc_cnt <= rc_cnt + 1 when rc_en;
 
       --------------------------------------------------------------------------------
 
