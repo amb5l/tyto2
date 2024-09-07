@@ -781,7 +781,7 @@ begin
                 when others         => null;
               end case;
             else
-              rdata := mem(to_integer(unsigned(ca(44 downto 16)) & unsigned(ca(2 downto 0))));
+              rdata := mem(to_integer(addr));
             end if;
             rwds_o <= transport '1' after tCKDS;
             dq_o   <= transport rdata(15 downto 8) after tCKD;
