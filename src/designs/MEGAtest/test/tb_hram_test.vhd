@@ -25,8 +25,8 @@ library ieee;
 entity tb_hram_test is
   generic (
     OUTPUT_DELAY : string;
-    ROWS_LOG2     : integer;
-    COLS_LOG2     : integer
+    ROWS_LOG2    : integer;
+    COLS_LOG2    : integer
   );
 end entity tb_hram_test;
 
@@ -38,20 +38,20 @@ architecture sim of tb_hram_test is
   alias reg_data_t is hram_test_reg_data_t;
 
   signal clk_100m : std_ulogic;
-  signal x_rst   : std_ulogic;
-  signal x_clk   : std_ulogic;
-  signal s_rst   : std_ulogic;
-  signal s_clk   : std_ulogic;
-  signal s_en    : std_ulogic;
-  signal s_we    : std_ulogic_vector(3 downto 0);
-  signal s_addr  : std_ulogic_vector(7 downto 2);
-  signal s_din   : std_ulogic_vector(31 downto 0);
-  signal s_dout  : std_ulogic_vector(31 downto 0);
-  signal h_rst_n : std_logic;
-  signal h_cs_n  : std_logic;
-  signal h_clk   : std_logic;
-  signal h_rwds  : std_logic;
-  signal h_dq    : std_logic_vector(7 downto 0);
+  signal x_rst    : std_ulogic;
+  signal x_clk    : std_ulogic;
+  signal s_rst    : std_ulogic;
+  signal s_clk    : std_ulogic;
+  signal s_en     : std_ulogic;
+  signal s_we     : std_ulogic_vector(3 downto 0);
+  signal s_addr   : std_ulogic_vector(7 downto 2);
+  signal s_din    : std_ulogic_vector(31 downto 0);
+  signal s_dout   : std_ulogic_vector(31 downto 0);
+  signal h_rst_n  : std_logic;
+  signal h_cs_n   : std_logic;
+  signal h_clk    : std_logic;
+  signal h_rwds   : std_logic;
+  signal h_dq     : std_logic_vector(7 downto 0);
 
   constant ADDR_IDREG0  : std_ulogic_vector(31 downto 0) := (others => '0');
   constant ADDR_CFGREG0 : std_ulogic_vector(31 downto 0) := (12 => '1', others => '0');

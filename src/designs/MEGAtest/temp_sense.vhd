@@ -97,7 +97,7 @@ begin
 
   bsy <= adc_busy or jtag_lock;
 
-  U_XADC: component XADC
+  U_XADC: component xadc
     generic map (
       INIT_40          => CFGREG0,
       INIT_41          => CFGREG1,

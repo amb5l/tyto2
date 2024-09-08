@@ -34,40 +34,40 @@ package model_hram_pkg is
     idreg1   : std_ulogic_vector(15 downto 0); -- ID register 1 value
     cfgreg0  : std_ulogic_vector(15 downto 0); -- configuration register 0 default value
     cfgreg1  : std_ulogic_vector(15 downto 0); -- configuration register 1 default value
-    tDRI     : real;                          -- distributed refresh interval
-    tVCS     : real;                          -- power on and reset high to first access
-    tRP      : real;                          -- reset pulse width, min
-    tRH      : real;                          -- reset negation to chip select assertion, min
-    tRPH     : real;                          -- reset assertion to chip select assertion, min
-    tCK      : real;                          -- clock period, min
-    CKHPmin  : real;                          -- half clock period, min
-    CKHPmax  : real;                          -- half clock period, min
-    tCSHI    : real;                          -- chip select high, min
-    tRWR     : real;                          -- read-write recovery time, min
-    tCSS     : real;                          -- chip select setup
-    tDSVmin  : real;                          -- data strobe valid, min
-    tDSVmax  : real;                          -- data strobe valid, max
-    tIS      : real;                          -- input setup, min
-    tIH      : real;                          -- input hold, min
-    tACC     : real;                          -- access, max
-    tDQLZmin : real;                          -- clock to DQ low Z, min
-    tCKDmin  : real;                          -- clock to DQ valid, min
-    tCKDmax  : real;                          -- clock to DQ valid, max
-    tCKDImin : real;                          -- clock to DQ invalid, min
-    tCKDImax : real;                          -- clock to DQ invalid, max
-    tCKDSmin : real;                          -- clock to RDWS valid, min
-    tCKDSmax : real;                          -- clock to RDWS valid, max
-    tDSSmin  : real;                          -- RDWS to DQ valid, min
-    tDSSmax  : real;                          -- RDWS to DQ valid, max
-    tDSHmin  : real;                          -- RDWS to DQ hold, min
-    tDSHmax  : real;                          -- RDWS to DQ hold, max
-    tCSH     : real;                          -- chip select hold, min
-    tDSZmin  : real;                          -- chip select inactive to RWDS hi Z, min
-    tDSZmax  : real;                          -- chip select inactive to RWDS hi Z, max
-    tOZmin   : real;                          -- chip select inactive to DQ hi Z, min
-    tOZmax   : real;                          -- chip select inactive to DQ hi Z, max
-    tCSM     : real;                          -- chip select, max
-    tRFH     : real;                          -- refresh duration
+    tDRI     : real;                           -- distributed refresh interval
+    tVCS     : real;                           -- power on and reset high to first access
+    tRP      : real;                           -- reset pulse width, min
+    tRH      : real;                           -- reset negation to chip select assertion, min
+    tRPH     : real;                           -- reset assertion to chip select assertion, min
+    tCK      : real;                           -- clock period, min
+    CKHPmin  : real;                           -- half clock period, min
+    CKHPmax  : real;                           -- half clock period, min
+    tCSHI    : real;                           -- chip select high, min
+    tRWR     : real;                           -- read-write recovery time, min
+    tCSS     : real;                           -- chip select setup
+    tDSVmin  : real;                           -- data strobe valid, min
+    tDSVmax  : real;                           -- data strobe valid, max
+    tIS      : real;                           -- input setup, min
+    tIH      : real;                           -- input hold, min
+    tACC     : real;                           -- access, max
+    tDQLZmin : real;                           -- clock to DQ low Z, min
+    tCKDmin  : real;                           -- clock to DQ valid, min
+    tCKDmax  : real;                           -- clock to DQ valid, max
+    tCKDImin : real;                           -- clock to DQ invalid, min
+    tCKDImax : real;                           -- clock to DQ invalid, max
+    tCKDSmin : real;                           -- clock to RDWS valid, min
+    tCKDSmax : real;                           -- clock to RDWS valid, max
+    tDSSmin  : real;                           -- RDWS to DQ valid, min
+    tDSSmax  : real;                           -- RDWS to DQ valid, max
+    tDSHmin  : real;                           -- RDWS to DQ hold, min
+    tDSHmax  : real;                           -- RDWS to DQ hold, max
+    tCSH     : real;                           -- chip select hold, min
+    tDSZmin  : real;                           -- chip select inactive to RWDS hi Z, min
+    tDSZmax  : real;                           -- chip select inactive to RWDS hi Z, max
+    tOZmin   : real;                           -- chip select inactive to DQ hi Z, min
+    tOZmax   : real;                           -- chip select inactive to DQ hi Z, max
+    tCSM     : real;                           -- chip select, max
+    tRFH     : real;                           -- refresh duration
   end record hram_params_t;
 
   -- timing violation severity bundle type
@@ -128,7 +128,6 @@ package model_hram_pkg is
     tOZmax   => 7.0,      -- chip select inactive to DQ hi Z, max
     tCSM     => 4000.0,   -- chip select, max
     tRFH     => 40.0      -- refresh
-
   );
 
   -- default severity bundle

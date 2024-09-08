@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- MEGAtest_r3.vhd                                                            --
--- Top level entity for MEGAtest (MEGA65 rev 5).                              --
+-- Top level entity for MEGAtest (MEGA65 rev 3).                              --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
