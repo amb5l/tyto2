@@ -29,160 +29,151 @@ int main() {
 	printf("ht_init: ");
 	ht_err(1);
 
-#if 0
 	printf("simple 128kbyte fill then test...");
-	r = ht_run(1,0,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,4);
-	// inject deliberate error
-	// r = ht_run(1,0,0,0x10000,2,0x0000ABCD,0,0,0,0,0,0,0,0);
-	r = ht_run(0,1,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,4);
+	r = ht_run(1,0,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,0,4);
+	r = ht_run(0,1,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,0,4);
 	printf("read 1: "); ht_err(r);
-	r = ht_run(0,1,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,4);
+	r = ht_run(0,1,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,0,4);
 	printf("read 2: "); ht_err(r);
-#endif
 
 	while (errors == 0) {
-	//for (u8 x = 0; x < 5; x++) {
 
-	printf("temperature x 10 = %d\n", xadc_temp10());
+		printf("temperature x 10 = %d\n", xadc_temp10());
 
-#if 0
-		printf("fill and test, seq address, all 1s... ");
-		r = ht_run(1,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0);
+		printf("fill and test, sequential address, all 1s... ");
+		r = ht_run(1,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0,0);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0);
+		r = ht_run(0,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0,0);
 		printf("follow on read: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
-		printf("fill and test, seq address, all 0s... ");
-		r = ht_run(1,1,0,0,0x800000,0,0,0,0,0,0,0,0,0);
+		printf("fill and test, sequential address, all 0s... ");
+		r = ht_run(1,1,0,0,0x800000,0,0,0,0,0,0,0,0,0,0);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0,0,0,0,0,0,0,0,0);
+		r = ht_run(0,1,0,0,0x800000,0,0,0,0,0,0,0,0,0,0);
 		printf("follow on read: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
-		printf("fill and test, seq address, seq data, normal... ");
-		r = ht_run(1,1,0,0x550000,0x2200,0x00010000,0x00020002,0,0,0,0,0,0,0);
+		printf("fill and test, sequential address, incrementing data... ");
+		r = ht_run(1,1,0,0x550000,0x2200,0x00010000,0x00020002,0,0,0,0,0,0,0,0);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0x550000,0x2200,0x00010000,0x00020002,0,0,0,0,0,0,0);
+		r = ht_run(0,1,0,0x550000,0x2200,0x00010000,0x00020002,0,0,0,0,0,0,0,0);
 		printf("follow on read: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
-		printf("fill and test, seq address, seq data, inverse... ");
-		r = ht_run(1,1,0,0,0x800000,0xFFFEFFFF,0xFFFEFFFE,0,0,0,0,0,0,0);
+		printf("fill and test, sequential address, incrementing data (inverted)... ");
+		r = ht_run(1,1,0,0,0x800000,0x00010000,0x00020002,0,0,1,0,0,0,0,0);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0xFFFEFFFF,0xFFFEFFFE,0,0,0,0,0,0,0);
+		r = ht_run(0,1,0,0,0x800000,0x00010000,0x00020002,0,0,1,0,0,0,0,0);
 		printf("follow on read: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
-		printf("fill then test, sequential address, incrementing data, random burst (2)...");
-		r = ht_run(1,0,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,1,0);
-		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,1,0);
+		printf("fill then test, sequential address, incrementing data, random burst (1..256)...");
+		r = ht_run(1,0,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,0,1,8);
+		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,0,1,8);
 		printf("read 1: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,0,1);
+		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,0,0,8);
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
-		printf("fill then test, sequential address, inverse incrementing data, random burst (2)...");
-		r = ht_run(1,0,0,0,0x10000,0xFFFEFFFF,0xFFFEFFFE,0,0,0,0,0,1,0);
-		r = ht_run(0,1,0,0,0x10000,0xFFFEFFFF,0xFFFEFFFE,0,0,0,0,0,1,0);
+		printf("fill then test, sequential address, incrementing data (inverted), random burst (1..256)...");
+		r = ht_run(1,0,0,0,0x10000,0x00010000,0x00020002,0,0,1,0,0,0,1,8);
+		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,1,0,0,0,1,8);
 		printf("read 1: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x10000,0xFFFEFFFF,0xFFFEFFFE,0,0,0,0,0,0,1);
+		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,1,0,0,0,0,8);
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
 		printf("fill then test, sequential address, random data, fixed burst (256)...");
-		r = ht_run(1,0,0,0,0x800000,0,0,0,1,0,0,0,0,8);
-		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,0,8);
+		r = ht_run(1,0,0,0,0x800000,0,0,0,1,0,0,0,0,0,8);
+		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,0,0,8);
 		printf("read 1: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,0,8);
+		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,0,0,8);
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
 		printf("fill then test, sequential address, incrementing data, random burst (1..256)...");
-		r = ht_run(1,0,0,0,0x800000,0,4,0,0,0,0,0,1,8);
-		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,1,8);
+		r = ht_run(1,0,0,0,0x800000,0,4,0,0,0,0,0,0,1,8);
+		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,1,8);
 		printf("read 1: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,1,8);
+		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,1,8);
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
 		printf("fill then test, sequential address, random data, random burst (1..256)...");
-		r = ht_run(1,0,0,0,0x800000,0,0,0,1,0,0,0,1,8);
-		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,1,8);
+		r = ht_run(1,0,0,0,0x800000,0,0,0,1,0,0,0,0,1,8);
+		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,0,1,8);
 		printf("read 1: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,1,8);
+		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,0,1,8);
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
 		printf("fill then test, sequential address, random data, random burst (1..256), checkerboard...");
-		r = ht_run(1,0,0,0,0x800000,0,0,0,1,0,0,0,1,8);
-		r = ht_run(1,0,0,0,0x800000,0,0,0,1,1,1,0,1,8);
-		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,1,0,1,8);
+		r = ht_run(1,0,0,0,0x800000,0,0,0,1,0,0,0,0,1,8);
+		r = ht_run(1,0,0,0,0x800000,0,0,0,1,0,1,1,0,1,8);
+		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,1,0,1,8);
 		printf("read 1: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,1,0,1,8);
+		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,1,0,1,8);
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
 		printf("fill then test, random address, random data...");
-		r = ht_run(1,0,0,0,0x800000,0,0,1,1,0,0,0,0,0);
-		r = ht_run(0,1,0,0,0x800000,0,0,1,1,0,0,0,0,0);
+		r = ht_run(1,0,0,0,0x800000,0,0,1,1,0,0,0,0,0,0);
+		r = ht_run(0,1,0,0,0x800000,0,0,1,1,0,0,0,0,0,0);
 		printf("read 1: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0,0,1,1,0,0,0,0,0);
+		r = ht_run(0,1,0,0,0x800000,0,0,1,1,0,0,0,0,0,0);
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
-#endif
-
-		printf("fill and test, sequential address, incrementing data, double...");
-		r = ht_run(1,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,3);
-		printf("concurrent read (2): "); ht_err(r);
-		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,0);
-		printf("follow on read (2): "); ht_err(r);
-		errors += r;
-		printf("\n");
-
-		printf("fill and test, sequential address, incrementing data, inverted...");
-		r = ht_run(1,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,3);
-		printf("concurrent read (2): "); ht_err(r);
-		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,0);
-		printf("follow on read (2): "); ht_err(r);
-		errors += r;
-		printf("\n");
-
-#if 0
-		printf("fill and test, random address, random data... ");
-		r = ht_run(1,1,0,0,0x800000,0,0,1,1,0,0,0,0,0);
+		printf("fill and test, sequential address, incrementing data...");
+		r = ht_run(1,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,0);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x800000,0,0,1,1,0,0,0,0,0);
+		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,0);
 		printf("follow on read: "); ht_err(r);
 		errors += r;
 		printf("\n");
-#endif
+
+		printf("fill and test, sequential address, incrementing data (inverted)...");
+		r = ht_run(1,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,0);
+		printf("concurrent read: "); ht_err(r);
+		errors += r;
+		r = ht_run(0,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,0);
+		printf("follow on read: "); ht_err(r);
+		errors += r;
+		printf("\n");
+
+		printf("fill and test, random address, random data... ");
+		r = ht_run(1,1,0,0,0x800000,0,0,1,1,0,0,0,0,0,0);
+		printf("concurrent read: "); ht_err(r);
+		errors += r;
+		r = ht_run(0,1,0,0,0x800000,0,0,1,1,0,0,0,0,0,0);
+		printf("follow on read: "); ht_err(r);
+		errors += r;
+		printf("\n");
+
 		printf("\n");
 		cb_set_col(CB_WHITE, CB_RED);
 		tests++;
