@@ -513,7 +513,7 @@ begin
         when RWR =>
           h_dq_t <= '0';
           count  <= count + 1;
-          if count = tLAT-4 then
+          if count = tRWR-4 then
             s_a_ready <= '1';
             phase     <= '0';
             count     <= 0;
