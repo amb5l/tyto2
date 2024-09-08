@@ -19,8 +19,12 @@ use work.MEGAtest_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 entity MEGAtest_r3 is
+  generic (
+    GIT_COMMIT : integer
+  );
   port (
 
     clk_in           : in    std_logic;                      -- clock in (100MHz)
@@ -202,6 +206,10 @@ begin
   rst <= '0';
 
   MAIN: component MEGAtest
+    generic map (
+      BOARD_REV  => x"3",      -- r3
+      GIT_COMMIT => to_bit_vector(std_ulogic_vector(to_unsigned(GIT_COMMIT, 32)))
+    )
     port map (
       ref_rst     => rst,
       ref_clk     => clk_in,

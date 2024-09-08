@@ -6,6 +6,10 @@ library ieee;
 package MEGAtest_pkg is
 
   component MEGAtest is
+    generic (
+      BOARD_REV  : bit_vector( 3 downto 0) := "0000";
+      GIT_COMMIT : bit_vector(31 downto 0) := (others => '0')
+    );
     port (
       ref_rst     : in    std_ulogic;
       ref_clk     : in    std_ulogic;
@@ -39,6 +43,10 @@ library unisim;
   use unisim.vcomponents.all;
 
 entity MEGAtest is
+  generic (
+    BOARD_REV  : bit_vector( 3 downto 0) := "0000";
+    GIT_COMMIT : bit_vector(31 downto 0) := (others => '0')
+  );
   port (
 
     ref_rst     : in    std_ulogic;
@@ -95,6 +103,10 @@ begin
     );
 
   U_CPU: component cpu
+    generic map (
+      BOARD_REV  => BOARD_REV,
+      GIT_COMMIT => GIT_COMMIT
+    )
     port map (
       rst        => s_rst,
       clk        => s_clk,

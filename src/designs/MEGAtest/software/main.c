@@ -21,7 +21,7 @@ int main() {
 	cb_set_border(CB_LIGHT_BLUE);
 
 	cb_set_col(CB_YELLOW, CB_BLACK);
-	printf("MEGAtest application 18\n\n");
+	printf("MEGAtest application : board rev %d commit %08X\n\n", bsp_board_rev(), bsp_commit());
 
 	cb_set_col(CB_GREEN, CB_BLACK);
 

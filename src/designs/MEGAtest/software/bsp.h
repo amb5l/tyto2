@@ -26,6 +26,8 @@ extern XIOModule io;
 
 void bsp_interval(uint32_t t);
 void bsp_cb_border(uint8_t c);
+#define bsp_board_rev() (XIOModule_DiscreteRead(&io,4) & 0xF)
+#define bsp_commit() (XIOModule_DiscreteRead(&io,3))
 int bsp_init();
 
 #endif

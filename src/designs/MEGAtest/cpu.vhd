@@ -8,6 +8,10 @@ library ieee;
 package cpu_pkg is
 
   component cpu is
+    generic (
+      BOARD_REV  : bit_vector( 3 downto 0) := "0000";
+      GIT_COMMIT : bit_vector(31 downto 0) := (others => '0')
+    );
     port (
       rst        : in    std_ulogic;
       clk        : in    std_ulogic;
@@ -46,6 +50,10 @@ library ieee;
   use ieee.std_logic_1164.all;
 
 entity cpu is
+  generic (
+    BOARD_REV  : bit_vector( 3 downto 0) := "0000";
+    GIT_COMMIT : bit_vector(31 downto 0) := (others => '0')
+  );
   port (
     rst        : in    std_ulogic;
     clk        : in    std_ulogic;
@@ -114,6 +122,8 @@ begin
 
     gpi <= (others => (others => '0'));
     gpi(1)(0) <= ts_bsy;
+    gpi(3) <= to_std_ulogic_vector(GIT_COMMIT);
+    gpi(4)(3 downto 0) <= to_std_ulogic_vector(BOARD_REV);
 
   end process P_GPIO;
 
