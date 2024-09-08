@@ -4,6 +4,8 @@
 
 default: bit
 
+git_commit_hex=$(shell git rev-parse --short=8 HEAD)
+git_commit_dec=$(shell printf "%d" 0x$(git_commit_hex))
 toplevel=$(shell git rev-parse --show-toplevel)
 make_fpga=$(toplevel)/submodules/make-fpga
 
@@ -57,6 +59,7 @@ VIVADO_PART=$(FPGA_DEVICE)
 VIVADO_LANGUAGE=VHDL
 VIVADO_VHDL_LRM=2008
 VIVADO_DSN_TOP=$(DESIGN)$(addprefix _,$(BOARD_VARIANT))
+VIVADO_DSN_GEN=GIT_COMMIT=$(git_commit_dec)
 VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/tyto_types_pkg.vhd \
 	$(toplevel)/src/common/tyto_utils_pkg.vhd \
