@@ -23,31 +23,34 @@ library ieee;
 
 package hram_ctrl_pkg is
 
-  -- controller parameter bundle type
+  -- constant parameter bundle type
   -- integers correspond to clock cycles
   type hram_ctrl_params_t is record
     tRP  : positive;  -- reset pulse width
     tRPH : positive;  -- reset assertion to chip select assertion
-    tRWR : positive;  -- read-write recovery
-    tLAT : positive;  -- latency
   end record hram_ctrl_params_t;
+
+  type hram_ctrl_cfg_t is record
+    tRWR   : std_ulogic_vector(2 downto 0); -- read-write recovery cycles
+    tLAT   : std_ulogic_vector(2 downto 0); -- latency cycles
+    fix_w2 : std_ulogic;                    -- enable ISSI write bug fix (minimum 2 cycles for writes)
+  end record hram_ctrl_cfg_t;
 
   -- parameters for: 100MHz HyperRAM, 100MHz clock
   constant HRAM_CTRL_PARAMS_100_100 : hram_ctrl_params_t := (
     tRP      => 20, -- 200 ns
-    tRPH     => 40, -- 400 ns
-    tRWR     => 4,  -- 40 ns (marginal)
-    tLAT     => 4   -- 40 ns (marginal)
+    tRPH     => 40  -- 400 ns
   );
 
   component hram_ctrl is
     generic (
-      PARAMS   : hram_ctrl_params_t
+      PARAMS : hram_ctrl_params_t
     );
     port (
       s_rst     : in    std_ulogic;
       s_clk     : in    std_ulogic;
       s_clk_dly : in    std_ulogic;
+      s_cfg     : in    hram_ctrl_cfg_t;
       s_a_ready : out   std_ulogic;
       s_a_valid : in    std_ulogic;
       s_a_r_w   : in    std_ulogic;
@@ -91,7 +94,7 @@ library unisim;
 
 entity hram_ctrl is
   generic (
-    PARAMS   : hram_ctrl_params_t
+    PARAMS : hram_ctrl_params_t
   );
   port (
 
@@ -102,6 +105,9 @@ entity hram_ctrl is
     s_rst     : in    std_ulogic;                     -- reset (asynchronous)
     s_clk     : in    std_ulogic;                     -- clock
     s_clk_dly : in    std_ulogic;                     -- delayed clock (=> h_clk) (nominally 270 degrees)
+
+    -- configuration
+    s_cfg     : in    hram_ctrl_cfg_t;
 
     -- A (address) channel
     s_a_ready : out   std_ulogic;
@@ -148,8 +154,6 @@ architecture rtl of hram_ctrl is
   -- break parameter bundle out to discrete signals (better for linting)
   constant tRP  : positive := PARAMS.tRP  ;
   constant tRPH : positive := PARAMS.tRPH ;
-  constant tRWR : positive := PARAMS.tRWR ;
-  constant tLAT : positive := PARAMS.tLAT ;
 
   type state_t is (
     RESET, -- reset
@@ -158,6 +162,7 @@ architecture rtl of hram_ctrl is
     ALAT,  -- additional latency
     LAT,   -- latency
     WR,    -- write
+    WRX,   -- write extra cycle (ISSI bug fix)
     RBSY1, -- (previous) read busy 1
     RBSY2, -- (previous) read busy 2
     RD,    -- read
@@ -198,6 +203,7 @@ architecture rtl of hram_ctrl is
   signal en_clk        : std_ulogic;                      -- enable h_clk pulse
   signal en_cs         : std_ulogic;                      -- enable h_cs_n assertion
   signal en_cs_next    : std_ulogic;                      -- enable h_cs_n assertion for next cycle
+  signal en_wrx        : std_ulogic;                      -- enable extra write cycle (ISSI bug fix)
 
   -- read data path
   signal r_rst         : std_ulogic;                       -- reset FIFO pointers, reset/set IDDRs
@@ -227,6 +233,7 @@ architecture rtl of hram_ctrl is
   signal h_rwds_o_d1_r : std_ulogic;                       -- RWDS ODDR D1 for sampling on rising clock edge
   signal h_rwds_o_d2_f : std_ulogic;                       -- RWDS ODDR D2 for sampling on falling clock edge
   signal h_rwds_o      : std_ulogic;                       -- RWDS ODDR Q output to IOBUF
+  signal h_rwds_o_ce   : std_ulogic;                       -- RWDS ODDR clock enable
   signal h_rwds_t      : std_ulogic;                       -- RWDS IOBUF tristate control
   signal h_dq_i        : std_ulogic_vector(7 downto 0);    -- DQ input from IOBUF to IDDR
   signal h_dq_i_ce     : std_ulogic;                       -- DQ IDDR clock enable
@@ -264,9 +271,9 @@ begin
     ca(4) := x"00";
     ca(5) := "00000" & a32(3 downto 1);
 
-    h_rwds_o_d1_f <= not s_w_be_1(0);
+    h_rwds_o_d1_f <= en_wrx or not s_w_be_1(0);
 
-    h_rwds_o_d2_f <= not s_w_be_1(1);
+    h_rwds_o_d2_f <= en_wrx or not s_w_be_1(1);
 
     h_dq_o_d1_r <=
       ca(1) when phase = '0' and (count mod 4) = 1 else
@@ -306,6 +313,7 @@ begin
       s_r_ref     <= '0';
       s_r_last    <= '0';
       h_rst_n_o   <= '0';
+      h_rwds_o_ce <= '0';
       h_rwds_t    <= '1';
       h_dq_o_ce   <= '0';
       h_dq_i_ce   <= '0';
@@ -325,6 +333,7 @@ begin
       count       <= 0;
       en_clk      <= '0';
       en_cs_next  <= '0';
+      en_wrx      <= '0';
       r_rst       <= '0';
       r_bsy       <= '0';
       r_cfifo_we  <= '0';
@@ -339,6 +348,7 @@ begin
       s_w_ready_1 <= s_w_ready;
       s_w_be_1    <= s_w_be;
       s_w_data_1  <= s_w_data;
+      en_wrx      <= '0';
       r_rst       <= '0';
       r_cfifo_we  <= '0';
       r_cfifo_wd  <= '0';
@@ -401,7 +411,7 @@ begin
         when ALAT =>
           burst.ref <= '1';
           count <= count + 1;
-          if count = tLAT-1 then
+          if count = to_integer(unsigned(s_cfg.tLAT))-1 then
             count <= 0;
             state <= LAT;
           end if;
@@ -413,11 +423,11 @@ begin
           elsif count = 2 then -- drive RWDS for write
             h_rwds_t <= burst.r_w;
           end if;
-          if count = tLAT-2 then -- ready for write data / read reset
+          if count = to_integer(unsigned(s_cfg.tLAT))-2 then -- ready for write data / read reset
             s_w_ready <= not burst.r_w;
             s_w_last  <= not burst.r_w when unsigned(burst.trk) = 1 else '0';
             r_rst     <= burst.r_w and not r_bsy;
-          elsif count = tLAT-1 then -- data transfer (or stall)
+          elsif count = to_integer(unsigned(s_cfg.tLAT))-1 then -- data transfer (or stall)
             count <= 0;
             if burst.r_w then
               if r_bsy then
@@ -442,8 +452,9 @@ begin
                 burst.trk <= decr(burst.trk);
                 en_clk <= '1';
               end if;
-              h_dq_o_ce <= '1';
-              state  <= WR;
+              h_rwds_o_ce <= '1';
+              h_dq_o_ce   <= '1';
+              state       <= WR;
             end if;
           end if;
 
@@ -459,14 +470,29 @@ begin
             burst.trk <= decr(burst.trk);
             en_clk <= '1';
           end if;
-          if en_clk = '1' then
+          if en_clk then
             if unsigned(burst.trk) = 0 then -- end of burst
-              en_clk     <= '0';
-              en_cs_next <= '0';
-              h_dq_o_ce  <= '0';
-              state      <= CSH;
+              if burst.reg = '0' and s_cfg.fix_w2 = '1' and unsigned(burst.len) = 1 then
+                en_clk    <= '1';
+                en_wrx    <= '1';
+                h_dq_o_ce <= '0';
+                state     <= WRX;
+              else
+                en_clk      <= '0';
+                en_cs_next  <= '0';
+                h_rwds_o_ce <= '0';
+                h_dq_o_ce   <= '0';
+                state       <= CSH;
+              end if;
             end if;
           end if;
+
+        when WRX =>
+          en_clk      <= '0';
+          en_cs_next  <= '0';
+          h_rwds_o_ce <= '0';
+          h_dq_o_ce   <= '0';
+          state       <= CSH;
 
         when RBSY1 =>
           if not r_bsy then
@@ -502,7 +528,7 @@ begin
           h_dq_i_ce  <= '0';
           en_cs_next <= '0';
           count      <= 0;
-          if tRWR >= 4 then
+          if to_integer(unsigned(s_cfg.tRWR)) >= 4 then
             state <= RWR;
           else
             s_a_ready <= '1';
@@ -513,7 +539,7 @@ begin
         when RWR =>
           h_dq_t <= '0';
           count  <= count + 1;
-          if count = tRWR-4 then
+          if count = to_integer(unsigned(s_cfg.tRWR))-4 then
             s_a_ready <= '1';
             phase     <= '0';
             count     <= 0;
@@ -608,10 +634,10 @@ begin
         SRTYPE       => "ASYNC"
       )
       port map (
-        r  => s_rst,
+        r  => not phase,
         s  => '0',
         c  => s_clk,
-        ce => h_dq_o_ce,
+        ce => h_rwds_o_ce,
         d1 => h_rwds_o_d1_r,
         d2 => h_rwds_o_d2_f,
         q  => h_rwds_o
@@ -647,17 +673,17 @@ begin
     port map (
       clr => '0',
       ce  => '1',
-      i => h_rwds_i_d,
-      o => h_rwds_i_b
+      i   => h_rwds_i_d,
+      o   => h_rwds_i_b
     );
   h_rwds_i_c <= h_rwds_i_b after 2 ns;
 
   U_IOBUF_RWDS: component iobuf
     port map (
-      O  => h_rwds_i,
-      I  => h_rwds_o,
-      T  => h_rwds_t,
-      IO => h_rwds
+      o  => h_rwds_i,
+      i  => h_rwds_o,
+      t  => h_rwds_t,
+      io => h_rwds
     );
 
   GEN_DQ: for i in 0 to 7 generate
@@ -679,10 +705,10 @@ begin
 
     U_IOBUF: component iobuf
       port map (
-        O  => h_dq_i(i),
-        I  => h_dq_o(i),
-        T  => h_dq_t,
-        IO => h_dq(i)
+        o  => h_dq_i(i),
+        i  => h_dq_o(i),
+        t  => h_dq_t,
+        io => h_dq(i)
       );
 
     U_IDDR: component iddr

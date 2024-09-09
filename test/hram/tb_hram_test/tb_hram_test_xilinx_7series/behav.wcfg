@@ -22,15 +22,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="91,113.250 ns"></ZoomStartTime>
-      <ZoomEndTime time="91,337.351 ns"></ZoomEndTime>
-      <Cursor1Time time="91,300.000 ns"></Cursor1Time>
+      <ZoomStartTime time="0.000000 us"></ZoomStartTime>
+      <ZoomEndTime time="1,408.550001 us"></ZoomEndTime>
+      <Cursor1Time time="5.750000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="152"></NameColumnWidth>
-      <ValueColumnWidth column_width="158"></ValueColumnWidth>
+      <NameColumnWidth column_width="188"></NameColumnWidth>
+      <ValueColumnWidth column_width="58"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="170" />
+   <WVObjectSize size="172" />
    <wvobject fp_name="/tb_hram_test/clk_100m" type="logic">
       <obj_property name="ElementShortName">clk_100m</obj_property>
       <obj_property name="ObjectShortName">clk_100m</obj_property>
@@ -454,13 +454,41 @@
       <obj_property name="label">/hram_test/hram_ctrl</obj_property>
       <obj_property name="DisplayName">label</obj_property>
    </wvobject>
-   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/s_rst" type="logic">
-      <obj_property name="ElementShortName">s_rst</obj_property>
-      <obj_property name="ObjectShortName">s_rst</obj_property>
-   </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/s_clk" type="logic">
       <obj_property name="ElementShortName">s_clk</obj_property>
       <obj_property name="ObjectShortName">s_clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_cs_n" type="logic">
+      <obj_property name="ElementShortName">h_cs_n</obj_property>
+      <obj_property name="ObjectShortName">h_cs_n</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_clk" type="logic">
+      <obj_property name="ElementShortName">h_clk</obj_property>
+      <obj_property name="ObjectShortName">h_clk</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds" type="logic">
+      <obj_property name="ElementShortName">h_rwds</obj_property>
+      <obj_property name="ObjectShortName">h_rwds</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_dq" type="array">
+      <obj_property name="ElementShortName">h_dq[7:0]</obj_property>
+      <obj_property name="ObjectShortName">h_dq[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/s_r_data" type="array">
+      <obj_property name="ElementShortName">s_r_data[15:0]</obj_property>
+      <obj_property name="ObjectShortName">s_r_data[15:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/s_rst" type="logic">
+      <obj_property name="ElementShortName">s_rst</obj_property>
+      <obj_property name="ObjectShortName">s_rst</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/s_clk_dly" type="logic">
       <obj_property name="ElementShortName">s_clk_dly</obj_property>
@@ -530,37 +558,9 @@
       <obj_property name="ElementShortName">s_r_last</obj_property>
       <obj_property name="ObjectShortName">s_r_last</obj_property>
    </wvobject>
-   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/s_r_data" type="array">
-      <obj_property name="ElementShortName">s_r_data[15:0]</obj_property>
-      <obj_property name="ObjectShortName">s_r_data[15:0]</obj_property>
-   </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rst_n" type="logic">
       <obj_property name="ElementShortName">h_rst_n</obj_property>
       <obj_property name="ObjectShortName">h_rst_n</obj_property>
-      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_cs_n" type="logic">
-      <obj_property name="ElementShortName">h_cs_n</obj_property>
-      <obj_property name="ObjectShortName">h_cs_n</obj_property>
-      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_clk" type="logic">
-      <obj_property name="ElementShortName">h_clk</obj_property>
-      <obj_property name="ObjectShortName">h_clk</obj_property>
-      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds" type="logic">
-      <obj_property name="ElementShortName">h_rwds</obj_property>
-      <obj_property name="ObjectShortName">h_rwds</obj_property>
-      <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_dq" type="array">
-      <obj_property name="ElementShortName">h_dq[7:0]</obj_property>
-      <obj_property name="ObjectShortName">h_dq[7:0]</obj_property>
       <obj_property name="CustomSignalColor">#FFFFFF</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
@@ -607,6 +607,10 @@
    <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/en_cs_next" type="logic">
       <obj_property name="ElementShortName">en_cs_next</obj_property>
       <obj_property name="ObjectShortName">en_cs_next</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/en_wrx" type="logic">
+      <obj_property name="ElementShortName">en_wrx</obj_property>
+      <obj_property name="ObjectShortName">en_wrx</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/r_cfifo_we" type="logic">
       <obj_property name="ElementShortName">r_cfifo_we</obj_property>
@@ -699,6 +703,10 @@
    <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_o" type="logic">
       <obj_property name="ElementShortName">h_rwds_o</obj_property>
       <obj_property name="ObjectShortName">h_rwds_o</obj_property>
+   </wvobject>
+   <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_o_ce" type="logic">
+      <obj_property name="ElementShortName">h_rwds_o_ce</obj_property>
+      <obj_property name="ObjectShortName">h_rwds_o_ce</obj_property>
    </wvobject>
    <wvobject fp_name="/tb_hram_test/DUT/U_CTRL/h_rwds_t" type="logic">
       <obj_property name="ElementShortName">h_rwds_t</obj_property>

@@ -112,7 +112,10 @@ begin
     end procedure reg_peek;
 
     variable clksel : std_ulogic_vector(1 downto 0);
-    variable rd   : std_ulogic_vector(31 downto 0);
+    variable tlat   : std_ulogic_vector(2 downto 0);
+    variable trwr   : std_ulogic_vector(2 downto 0);
+    variable fix_w2 : std_ulogic;
+    variable rd     : std_ulogic_vector(31 downto 0);
 
     procedure run(
       w      : in    std_ulogic;
@@ -139,7 +142,12 @@ begin
       reg_poke(RA_DATA,data);
       reg_poke(RA_INCR,incr);
       reg_poke(RA_SIZE,size);
-      reg_poke(RA_CTRL,clksel & "00" & x"000" & bmag & brnd & cb_pol & cb_i & cb_m & '0' & dinv & drnd & arnd & reg & r & w & '1'); -- run
+      reg_poke(RA_CTRL,
+        "00" & clksel & "000" & '1' &
+        '0' & trwr & '0' & tlat &
+        bmag & brnd & cb_pol & cb_i & cb_m &
+        '0' & dinv & drnd & arnd & reg & r & w & '1'
+      ); -- run
       loop -- wait for busy
         reg_peek(RA_STAT,rd);
         if rd(0) = '1' then exit; end if;
@@ -182,6 +190,7 @@ begin
       severity failure;
 
     --------------------------------------------------------------------------------
+    -- initialise
 
     x_rst  <= '1';
     s_rst  <= '1';
@@ -196,7 +205,11 @@ begin
     wait until rising_edge(s_clk);
 
     clksel := "00";
-    reg_poke(RA_CTRL,clksel & "00" & x"000_0000"); -- select 100 MHz clock
+    tLAT   := "100";
+    tRWR   := "100";
+    fix_w2 := '1';
+
+    reg_poke(RA_CTRL,"00" & clksel & x"0_00_00_00"); -- select clock
 
     -- wait for MMCM lock
     loop

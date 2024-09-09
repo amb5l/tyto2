@@ -18,6 +18,8 @@
 
 extern u8 ht_clksel;
 
+#define ht_lol() (peek8(RA_STAT+3) & 1) // loss of lock
+
 u8 ht_run(
     u8  w      ,
     u8  r      ,

@@ -4,6 +4,8 @@
 
 default: bit
 
+$(info This may take a few seconds...)
+
 git_commit_hex=$(shell git rev-parse --short=8 HEAD)
 git_commit_dec=$(shell printf "%d" 0x$(git_commit_hex))
 toplevel=$(shell git rev-parse --show-toplevel)

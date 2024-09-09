@@ -1,7 +1,10 @@
 #include "hram_test.h"
 #include "printf.h"
 
-u8 ht_clksel = 0;
+u8 ht_clksel;
+u8 ht_tlat;
+u8 ht_trwr;
+u8 ht_fix_w2;
 
 u8 ht_run(
     u8  w      ,
@@ -27,7 +30,10 @@ u8 ht_run(
     poke32(RA_DATA,data);
     poke32(RA_INCR,incr);
     u32 x =
-        ((ht_clksel & 3) << 30) |
+        ((ht_clksel & 3) << 28) |
+        ((ht_fix_w2 & 1) << 24) |
+        ((ht_trwr & 7)   << 20) |
+        ((ht_tlat & 7)   << 16) |
         ((bmag   & 15)   << 12) |
         ((brnd   &  1)   << 11) |
         ((cb_pol &  1)   << 10) |
@@ -66,6 +72,13 @@ void ht_err(u8 r) {
 }
 
 u8 ht_init(void) {
+    ht_clksel = 0; // 100 MHz
+    ht_tlat   = 4; // latency = 4 cycles
+    ht_trwr   = 4; // read-write recovery = 4 cycles
+    ht_fix_w2 = 1; // enable ISSI single write bug fix
+    poke32(RA_CTRL,ht_clksel << 28);
+    while (ht_lol()) // wait for MMCM lock
+        ;
 	ht_run(1,0,1,0x1000,2,0xBFF7,0,0,0,0,0,0,0,0,0); // write CFGREG0 - 46 ohms, variable latency = 4
 	u8 r = ht_run(0,1,1,0x0000,2,0x0C83,0,0,0,0,0,0,0,0,0); // read IDREG0
 	return r;

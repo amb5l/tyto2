@@ -126,9 +126,12 @@ set_multicycle_path 1  -hold -end -from [get_clocks i_clk] -through [get_cells {
 # exclude RWDS to itself
 set_false_path -from [get_ports hr_rwds] -to [get_ports hr_rwds]
 
-# exclude IDDR set/reset
+# exclude DQ IDDR set/reset
 set_false_path -from [get_pins MAIN/U_HRAM_TEST/U_CTRL/r_rst_reg/C] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR/R]
 set_false_path -from [get_pins MAIN/U_HRAM_TEST/U_CTRL/r_rst_reg/C] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/GEN_DQ[*].U_IDDR/S]
+
+# exclude RWDS ODDR reset
+set_false_path -from [get_pins MAIN/U_HRAM_TEST/U_CTRL/phase_reg/C] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/U_ODDR_RWDS/R]
 
 ################################################################################
 # pullups/pulldowns
@@ -144,6 +147,8 @@ set_property PULLTYPE PULLDOWN [get_ports {hr_d[1] hr_d[3] hr_d[5] hr_d[7]}]
 # Miscellaneous
 
 # unconstrained I/Os
+set_input_delay -max 0 -clock clk_in [get_ports max10_tx] -add_delay
+set_input_delay -min 0 -clock clk_in [get_ports max10_tx] -add_delay
 set_output_delay -max 0 [get_ports {hdmi_clk_p hdmi_data_p[*] hr_rst_n}] -add_delay
 set_output_delay -min 0 [get_ports {hdmi_clk_p hdmi_data_p[*] hr_rst_n}] -add_delay
 set_false_path -through [get_ports {hdmi_clk_p hdmi_data_p[*] hr_rst_n}]

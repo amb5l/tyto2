@@ -129,30 +129,38 @@ architecture rtl of hram_test is
   alias reg_data_t is hram_test_reg_data_t;
   subtype regs_data_t is sulv_vector(open)(31 downto 0);
 
-  function csr_bits_addr return csr_bits_t is
+  constant csr_ctrl_bits : csr_bits_t(31 downto 0) := (
+    29 downto 28 => RW,
+    24 => RW,
+    22 downto 20 => RW,
+    18 downto 16 => RW,
+    BMW+11 downto 0 => RW,
+    others => RO
+  );
+  function csr_addr_bits return csr_bits_t is
     variable r : csr_bits_t(reg_data_t'range) := (others => RO);
   begin
     r(ADDR_MSB downto 1) := (others => RW);
     return r;
-  end function csr_bits_addr;
+  end function csr_addr_bits;
 
   constant CSR_DEFS : csr_defs_t(open)(
     addr(RA_HI downto RA_LO),
     init(reg_data_t'range),
     bits(reg_data_t'range)
   ) := (
-      ( ra(RA_CTRL), x"00000000", (31 downto 30 => RW, BMW+11 downto 0 => RW, others => RO) ),
-      ( ra(RA_STAT), x"00000000", (others => RO)                                            ),
-      ( ra(RA_BASE), x"00000000", csr_bits_addr                                             ),
-      ( ra(RA_SIZE), x"00000000", csr_bits_addr                                             ),
-      ( ra(RA_DATA), x"00000000", (others => RW)                                            ),
-      ( ra(RA_INCR), x"00000000", (others => RW)                                            ),
-      ( ra(RA_EADD), x"00000000", (others => RO)                                            ),
-      ( ra(RA_EDAT), x"00000000", (others => RO)                                            ),
-      ( ra(RA_EDR0), x"00000000", (others => RO)                                            ),
-      ( ra(RA_EDR1), x"00000000", (others => RO)                                            ),
-      ( ra(RA_EDR2), x"00000000", (others => RO)                                            ),
-      ( ra(RA_EDR3), x"00000000", (others => RO)                                            )
+      ( ra(RA_CTRL), x"00000000", csr_ctrl_bits  ),
+      ( ra(RA_STAT), x"00000000", (others => RO) ),
+      ( ra(RA_BASE), x"00000000", csr_addr_bits  ),
+      ( ra(RA_SIZE), x"00000000", csr_addr_bits  ),
+      ( ra(RA_DATA), x"00000000", (others => RW) ),
+      ( ra(RA_INCR), x"00000000", (others => RW) ),
+      ( ra(RA_EADD), x"00000000", (others => RO) ),
+      ( ra(RA_EDAT), x"00000000", (others => RO) ),
+      ( ra(RA_EDR0), x"00000000", (others => RO) ),
+      ( ra(RA_EDR1), x"00000000", (others => RO) ),
+      ( ra(RA_EDR2), x"00000000", (others => RO) ),
+      ( ra(RA_EDR3), x"00000000", (others => RO) )
   );
 
   signal s_csr_w : regs_data_t(CSR_DEFS'range);
@@ -183,7 +191,10 @@ architecture rtl of hram_test is
   alias s_csr_ctrl_cb     : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(10 downto 8);
   alias s_csr_ctrl_brnd   : std_ulogic                        is s_csr_ctrl(11);               -- burst mode: 0 = fixed, 1 = PRNG
   alias s_csr_ctrl_bmag   : std_ulogic_vector(BMW-1 downto 0) is s_csr_ctrl(BMW+11 downto 12); -- burst magnitude
-  alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(31 downto 30);
+  alias s_csr_ctrl_tlat   : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(18 downto 16);     -- tLAT (latency) in clock cycles
+  alias s_csr_ctrl_trwr   : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(22 downto 20);     -- tRWR (read write recovery) in clock cycles
+  alias s_csr_ctrl_fix_w2 : std_ulogic                        is s_csr_ctrl(24);               -- fix ISSI single write bug (add dummy write to single writes)
+  alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(29 downto 28);
 
   alias s_csr_ctrl_cb_m   : std_ulogic is s_csr_ctrl_cb(0); -- checkerboard masking
   alias s_csr_ctrl_cb_i   : std_ulogic is s_csr_ctrl_cb(1); -- checkerboard inversion
@@ -208,6 +219,7 @@ architecture rtl of hram_test is
   signal i_clk_dly   : std_ulogic;
 
   -- controller system interface
+  signal i_cfg       : hram_ctrl_cfg_t;
   signal i_a_ready   : std_ulogic;
   signal i_a_valid   : std_ulogic;
   signal i_a_rb      : std_ulogic; -- readback
@@ -460,7 +472,9 @@ begin
 
     elsif rising_edge(i_clk) then
 
+      --------------------------------------------------------------------------------
       -- synchronous ROM
+
       a_row_rnd <= ROW_RND(to_integer(unsigned(a_row)));
 
       --------------------------------------------------------------------------------
@@ -770,6 +784,12 @@ begin
     end if;
   end process P_MAIN;
 
+  --------------------------------------------------------------------------------
+
+  i_cfg.tLAT   <= s_csr_ctrl_tlat;
+  i_cfg.tRWR   <= s_csr_ctrl_trwr;
+  i_cfg.fix_w2 <= s_csr_ctrl_fix_w2;
+
   U_CTRL: component hram_ctrl
     generic map (
       PARAMS => HRAM_CTRL_PARAMS_100_100
@@ -778,6 +798,7 @@ begin
       s_rst     => i_rst,
       s_clk     => i_clk,
       s_clk_dly => i_clk_dly,
+      s_cfg     => i_cfg,
       s_a_ready => i_a_ready,
       s_a_valid => i_a_valid,
       s_a_r_w   => i_a_r_w,
