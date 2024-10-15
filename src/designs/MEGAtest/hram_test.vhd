@@ -131,9 +131,7 @@ architecture rtl of hram_test is
 
   constant csr_ctrl_bits : csr_bits_t(31 downto 0) := (
     29 downto 28 => RW,
-    24 => RW,
-    22 downto 20 => RW,
-    18 downto 16 => RW,
+    24 downto 16 => RW,
     BMW+11 downto 0 => RW,
     others => RO
   );
@@ -192,7 +190,8 @@ architecture rtl of hram_test is
   alias s_csr_ctrl_brnd   : std_ulogic                        is s_csr_ctrl(11);               -- burst mode: 0 = fixed, 1 = PRNG
   alias s_csr_ctrl_bmag   : std_ulogic_vector(BMW-1 downto 0) is s_csr_ctrl(BMW+11 downto 12); -- burst magnitude
   alias s_csr_ctrl_tlat   : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(18 downto 16);     -- tLAT (latency) in clock cycles
-  alias s_csr_ctrl_trwr   : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(22 downto 20);     -- tRWR (read write recovery) in clock cycles
+  alias s_csr_ctrl_trwr   : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(21 downto 19);     -- tRWR (read write recovery) in clock cycles
+  alias s_csr_ctrl_trac   : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(23 downto 22);     -- tRAC (read access) in clock cycles
   alias s_csr_ctrl_fix_w2 : std_ulogic                        is s_csr_ctrl(24);               -- fix ISSI single write bug (add dummy write to single writes)
   alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(29 downto 28);
 
@@ -653,7 +652,6 @@ begin
             if t_err nor rc_err then
               d_eadd <= i_a_addr;
             end if;
-            rc_rbx <= '0';
             rc_err <= '0';
             rc_cnt <= 0;
             state_d <= D_RB when i_a_rb else D_RD when i_a_r_w else D_WR;
@@ -711,7 +709,18 @@ begin
             d_word <= not d_word;
             if i_r_last then
               i_r_ready <= '0';
-              state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
+              if state_a = A_DONE then
+                state_d <= D_DONE;
+              elsif i_a_valid and i_a_ready then
+                if t_err nor rc_err then
+                  d_eadd <= i_a_addr;
+                end if;
+                rc_err <= '0';
+                rc_cnt <= 0;
+                state_d <= D_RB when i_a_rb else D_RD when i_a_r_w else D_WR;
+              else
+                state_d <= D_WAIT;
+              end if;
             end if;
           end if;
           if not i_r_ready then
@@ -734,7 +743,18 @@ begin
             end if;
             if i_r_last then
               i_r_ready <= '0';
-              state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
+              if state_a = A_DONE then
+                state_d <= D_DONE;
+              elsif i_a_valid and i_a_ready then
+                if t_err nor rc_err then
+                  d_eadd <= i_a_addr;
+                end if;
+                rc_err <= '0';
+                rc_cnt <= 0;
+                state_d <= D_RB when i_a_rb else D_RD when i_a_r_w else D_WR;
+              else
+                state_d <= D_WAIT;
+              end if;
             end if;
           end if;
           if not i_r_ready then
@@ -777,6 +797,9 @@ begin
           when others => null;
         end case;
       end if;
+      if rc_en and rc_last then
+        rc_rbx <= '0';
+      end if;
       rc_cnt <= rc_cnt + 1 when rc_en;
 
       --------------------------------------------------------------------------------
@@ -788,6 +811,7 @@ begin
 
   i_cfg.tLAT   <= s_csr_ctrl_tlat;
   i_cfg.tRWR   <= s_csr_ctrl_trwr;
+  i_cfg.tRAC   <= s_csr_ctrl_trac;
   i_cfg.fix_w2 <= s_csr_ctrl_fix_w2;
 
   U_CTRL: component hram_ctrl

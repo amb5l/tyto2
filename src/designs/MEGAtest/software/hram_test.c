@@ -1,10 +1,11 @@
 #include "hram_test.h"
 #include "printf.h"
 
-u8 ht_clksel;
-u8 ht_tlat;
-u8 ht_trwr;
-u8 ht_fix_w2;
+u8 ht_clksel; // clock select: 00 = 100MHz, 01 = 105MHz, 10 = 110MHz, 11 = 120MHz
+u8 ht_tlat;   // HyperRAM latency, 0-7, typically 4 cycles
+u8 ht_trwr;   // HyperRAM read-write recovery, 0-7, typically 4 cycles
+u8 ht_trac;   // read access through FIFO, 0-3, typically 2
+u8 ht_fix_w2; // ISSI single write bug fix enable
 
 u8 ht_run(
     u8  w      ,
@@ -32,7 +33,8 @@ u8 ht_run(
     u32 x =
         ((ht_clksel & 3) << 28) |
         ((ht_fix_w2 & 1) << 24) |
-        ((ht_trwr & 7)   << 20) |
+        ((ht_trac & 3)   << 22) |
+        ((ht_trwr & 7)   << 19) |
         ((ht_tlat & 7)   << 16) |
         ((bmag   & 15)   << 12) |
         ((brnd   &  1)   << 11) |
@@ -75,7 +77,8 @@ u8 ht_init(void) {
     ht_clksel = 0; // 100 MHz
     ht_tlat   = 4; // latency = 4 cycles
     ht_trwr   = 4; // read-write recovery = 4 cycles
-    ht_fix_w2 = 1; // enable ISSI single write bug fix
+    ht_trac   = 3; // read access through FIFO = 3 cycles
+    ht_fix_w2 = 0; // disable ISSI single write bug fix
     poke32(RA_CTRL,ht_clksel << 28);
     while (ht_lol()) // wait for MMCM lock
         ;

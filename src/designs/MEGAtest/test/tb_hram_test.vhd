@@ -112,8 +112,9 @@ begin
     end procedure reg_peek;
 
     variable clksel : std_ulogic_vector(1 downto 0);
-    variable tlat   : std_ulogic_vector(2 downto 0);
-    variable trwr   : std_ulogic_vector(2 downto 0);
+    variable tLAT   : std_ulogic_vector(2 downto 0);
+    variable tRWR   : std_ulogic_vector(2 downto 0);
+    variable tRAC   : std_ulogic_vector(1 downto 0);
     variable fix_w2 : std_ulogic;
     variable rd     : std_ulogic_vector(31 downto 0);
 
@@ -143,8 +144,8 @@ begin
       reg_poke(RA_INCR,incr);
       reg_poke(RA_SIZE,size);
       reg_poke(RA_CTRL,
-        "00" & clksel & "000" & '1' &
-        '0' & trwr & '0' & tlat &
+        "00" & clksel & "000" & fix_w2 &
+        tRAC & tRWR & tLAT &
         bmag & brnd & cb_pol & cb_i & cb_m &
         '0' & dinv & drnd & arnd & reg & r & w & '1'
       ); -- run
@@ -207,6 +208,7 @@ begin
     clksel := "00";
     tLAT   := "100";
     tRWR   := "100";
+    tRAC   := "11";
     fix_w2 := '1';
 
     reg_poke(RA_CTRL,"00" & clksel & x"0_00_00_00"); -- select clock
@@ -267,7 +269,7 @@ begin
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
       brnd   => '0',          -- must be 0 (readback)
-      bmag   => x"0"          -- burst length 1
+      bmag   => x"3"          -- burst length 8
     );
 
     report "fill and check (interleaved read/write), inverted incrementing data, readback burst length 8";

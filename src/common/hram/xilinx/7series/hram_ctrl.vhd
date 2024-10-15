@@ -33,6 +33,7 @@ package hram_ctrl_pkg is
   type hram_ctrl_cfg_t is record
     tRWR   : std_ulogic_vector(2 downto 0); -- read-write recovery cycles
     tLAT   : std_ulogic_vector(2 downto 0); -- latency cycles
+    tRAC   : std_ulogic_vector(1 downto 0); -- read access time
     fix_w2 : std_ulogic;                    -- enable ISSI write bug fix (minimum 2 cycles for writes)
   end record hram_ctrl_cfg_t;
 
@@ -208,11 +209,9 @@ architecture rtl of hram_ctrl is
   -- read data path
   signal r_rst         : std_ulogic;                       -- reset FIFO pointers, reset/set IDDRs
   signal r_bsy         : std_ulogic;                       -- read data path busy (to hold off next cycle)
-  signal r_cfifo_we    : std_ulogic;                       -- read control FIFO, write enable
-  signal r_cfifo_wa    : std_ulogic_vector(2 downto 0);    -- read control FIFO, write address
-  signal r_cfifo_wd    : std_ulogic;                       -- read control FIFO, write data (0 = not last, 1 = last)
-  signal r_cfifo_ra    : std_ulogic_vector(2 downto 0);    -- read control FIFO, read address
-  signal r_cfifo_rd    : std_ulogic;                       -- read control FIFO, read data (0 = not last, 1 = last)
+  signal r_valid       : std_ulogic_vector(0 to 3);        -- read data valid for latencies of 0 to 3
+  signal r_ref         : std_ulogic_vector(0 to 3);        -- read data refresh collision for latencies of 0 to 3
+  signal r_last        : std_ulogic_vector(0 to 3);        -- read data last word for latencies of 0 to 3
   signal r_dfifo_we    : std_ulogic;                       -- read data FIFO, write enable
   signal r_dfifo_wa    : std_ulogic_vector(2 downto 0);    -- read data FIFO, write address
   signal r_dfifo_wd    : r_dfifo_d_t;                      -- read data FIFO, write data
@@ -309,9 +308,6 @@ begin
       s_w_ready   <= '0';
       s_w_last    <= '0';
       s_w_be_1    <= (others => '0');
-      s_r_valid   <= '0';
-      s_r_ref     <= '0';
-      s_r_last    <= '0';
       h_rst_n_o   <= '0';
       h_rwds_o_ce <= '0';
       h_rwds_t    <= '1';
@@ -336,11 +332,8 @@ begin
       en_wrx      <= '0';
       r_rst       <= '0';
       r_bsy       <= '0';
-      r_cfifo_we  <= '0';
-      r_cfifo_wd  <= '0';
-      r_cfifo_wa  <= (others => '0');
-      r_cfifo_wd  <= '0';
-      r_cfifo_ra  <= (others => '0');
+      r_valid     <= (others => '0');
+      r_last      <= (others => '0');
       r_dfifo_ra  <= (others => '0');
 
     elsif rising_edge(s_clk) then
@@ -350,8 +343,13 @@ begin
       s_w_data_1  <= s_w_data;
       en_wrx      <= '0';
       r_rst       <= '0';
-      r_cfifo_we  <= '0';
-      r_cfifo_wd  <= '0';
+      r_valid(0)  <= '0';
+      r_ref(0)    <= '0';
+      r_last(0)   <= '0';
+
+      r_valid (1 to 3) <= r_valid (0 to 2);
+      r_ref   (1 to 3) <= r_ref   (0 to 2);
+      r_last  (1 to 3) <= r_last  (0 to 2);
 
       case state is
 
@@ -507,11 +505,12 @@ begin
           state     <= RD;
 
         when RD =>
-          r_cfifo_we <= '1';
-          r_cfifo_wd <= '0';
+          r_valid(0) <= '1';
+          r_ref(0)   <= burst.ref;
+          r_last(0)  <= '0';
           en_clk <= s_r_ready;
           if unsigned(burst.trk) = 1 then -- end of burst
-            r_cfifo_wd <= '1';
+            r_last(0) <= '1';
             en_clk     <= '0';
             state      <= CSHR;
           end if;
@@ -549,32 +548,22 @@ begin
       end case;
 
       -- read data path
-      if r_cfifo_we then
-        r_cfifo_wa <= incr(r_cfifo_wa);
-      end if;
       if s_r_valid and s_r_ready then
         r_dfifo_ra <= incr(r_dfifo_ra) when s_r_last = '0' else r_dfifo_ra;
         if s_r_last then
           r_bsy   <= '0';
-          s_r_ref <= '0';
         end if;
-        s_r_valid <= '0';
-        s_r_last  <= '0';
-      end if;
-      if r_cfifo_wa /= r_cfifo_ra then
-        s_r_valid  <= '1';
-        s_r_ref    <= burst.ref;
-        s_r_last   <= r_cfifo_rd;
-        r_cfifo_ra <= incr(r_cfifo_ra);
       end if;
       if r_rst then
-        r_cfifo_wa <= (others => '0');
-        r_cfifo_ra <= (others => '0');
         r_dfifo_ra <= (others => '0');
       end if;
 
     end if;
   end process P_MAIN;
+
+  s_r_valid <= r_valid (to_integer(unsigned(s_cfg.tRAC)));
+  s_r_ref   <= r_ref   (to_integer(unsigned(s_cfg.tRAC)));
+  s_r_last  <= r_last  (to_integer(unsigned(s_cfg.tRAC)));
 
   --------------------------------------------------------------------------------
   -- I/O primitives
@@ -754,26 +743,6 @@ begin
   r_dfifo_wd(0) <=        h_dq_i_r( 5 downto  0);
   r_dfifo_wd(1) <=        h_dq_i_r(11 downto  6);
   r_dfifo_wd(2) <= "00" & h_dq_i_r(15 downto 12);
-
-  -- read control FIFO (8 deep x 1 bit)
-  CFIFO_RAM: ram32x1d
-    port map (
-      wclk  => s_clk,
-      we    => r_cfifo_we,
-      a0    => r_cfifo_wa(0),
-      a1    => r_cfifo_wa(1),
-      a2    => r_cfifo_wa(2),
-      a3    => '0',
-      a4    => '0',
-      d     => r_cfifo_wd,
-      spo   => open,
-      dpra0 => r_cfifo_ra(0),
-      dpra1 => r_cfifo_ra(1),
-      dpra2 => r_cfifo_ra(2),
-      dpra3 => '0',
-      dpra4 => '0',
-      dpo  => r_cfifo_rd
-    );
 
   -- read data fifo (8 deep x 18 bits)
   GEN_DFIFO: for i in 0 to 2 generate
