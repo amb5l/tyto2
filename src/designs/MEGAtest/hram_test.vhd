@@ -581,7 +581,7 @@ begin
             i_a_addr  <= rb_addr(rb_addr'high);
             state_a   <= A_RB_VALID;
           else
-            rb_data(2 to rb_addr'high) <= rb_data(1 to rb_data'high-1);
+            rb_data(2 to rb_data'high) <= rb_data(1 to rb_data'high-1);
             rb_data(1) <= (others => 'X');
             state_a <= A_PREP1 when unsigned(a_count) /= 0;
           end if;
@@ -738,7 +738,7 @@ begin
             rc_xdat <= rb_data(rb_data'high);
             rc_ref  <= i_r_ref;
             if rc_en nor rc_rbx then -- first word of readback
-              rb_data(2 to rb_addr'high) <= rb_data(1 to rb_data'high-1);
+              rb_data(2 to rb_data'high) <= rb_data(1 to rb_data'high-1);
               rb_data(1) <= (others => 'X');
             end if;
             if i_r_last then

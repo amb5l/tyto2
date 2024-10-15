@@ -74,10 +74,10 @@ void ht_err(u8 r) {
 }
 
 u8 ht_init(void) {
-    ht_clksel = 0; // 100 MHz
+    ht_clksel = 3; // 120 MHz
     ht_tlat   = 4; // latency = 4 cycles
     ht_trwr   = 4; // read-write recovery = 4 cycles
-    ht_trac   = 3; // read access through FIFO = 3 cycles
+    ht_trac   = 2; // read access through FIFO = 2 cycles
     ht_fix_w2 = 0; // disable ISSI single write bug fix
     poke32(RA_CTRL,ht_clksel << 28);
     while (ht_lol()) // wait for MMCM lock

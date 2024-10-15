@@ -16,7 +16,11 @@
 #define RA_EDR2 (HT_BASE+0x28)
 #define RA_EDR3 (HT_BASE+0x2C)
 
-extern u8 ht_clksel;
+extern u8 ht_clksel; // clock select: 00 = 100MHz, 01 = 105MHz, 10 = 110MHz, 11 = 120MHz
+extern u8 ht_tlat;   // HyperRAM latency, 0-7, typically 4 cycles
+extern u8 ht_trwr;   // HyperRAM read-write recovery, 0-7, typically 4 cycles
+extern u8 ht_trac;   // read access through FIFO, 0-3, typically 2
+extern u8 ht_fix_w2; // ISSI single write bug fix enable
 
 #define ht_lol() (peek8(RA_STAT+3) & 1) // loss of lock
 

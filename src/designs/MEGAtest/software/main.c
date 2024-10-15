@@ -15,6 +15,7 @@ int main() {
 	u8 r;
 	u32 tests = 0;
 	u32 errors = 0;
+	u8 rb_mag = 0;
 
 	bsp_init();
 
@@ -39,9 +40,9 @@ int main() {
 	while (errors == 0) {
 
 		printf("temperature x 10 = %d\n", xadc_temp10());
-#if 0
+#if 1
 		printf("fill and test, sequential address, all 1s... ");
-		r = ht_run(1,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0,0);
+		r = ht_run(1,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
 		r = ht_run(0,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0,0);
@@ -50,7 +51,7 @@ int main() {
 		printf("\n");
 
 		printf("fill and test, sequential address, all 0s... ");
-		r = ht_run(1,1,0,0,0x800000,0,0,0,0,0,0,0,0,0,0);
+		r = ht_run(1,1,0,0,0x800000,0,0,0,0,0,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
 		r = ht_run(0,1,0,0,0x800000,0,0,0,0,0,0,0,0,0,0);
@@ -59,7 +60,7 @@ int main() {
 		printf("\n");
 
 		printf("fill and test, sequential address, incrementing data... ");
-		r = ht_run(1,1,0,0x550000,0x2200,0x00010000,0x00020002,0,0,0,0,0,0,0,0);
+		r = ht_run(1,1,0,0x550000,0x2200,0x00010000,0x00020002,0,0,0,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
 		r = ht_run(0,1,0,0x550000,0x2200,0x00010000,0x00020002,0,0,0,0,0,0,0,0);
@@ -68,7 +69,7 @@ int main() {
 		printf("\n");
 
 		printf("fill and test, sequential address, incrementing data (inverted)... ");
-		r = ht_run(1,1,0,0,0x800000,0x00010000,0x00020002,0,0,1,0,0,0,0,0);
+		r = ht_run(1,1,0,0,0x800000,0x00010000,0x00020002,0,0,1,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
 		r = ht_run(0,1,0,0,0x800000,0x00010000,0x00020002,0,0,1,0,0,0,0,0);
@@ -148,25 +149,26 @@ int main() {
 		printf("\n");
 #endif
 		printf("fill and test, sequential address, incrementing data...");
-		r = ht_run(1,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,3);
+		r = ht_run(1,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
-		//r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,3);
-		//printf("follow on read: "); ht_err(r);
-		//errors += r;
+		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,0);
+		printf("follow on read: "); ht_err(r);
+		errors += r;
 		printf("\n");
 
 		printf("fill and test, sequential address, incrementing data (inverted)...");
-		r = ht_run(1,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,3);
+		r = ht_run(1,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
-		//r = ht_run(0,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,3);
-		//printf("follow on read: "); ht_err(r);
-		//errors += r;
+		r = ht_run(0,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,0);
+		printf("follow on read: "); ht_err(r);
+		errors += r;
 		printf("\n");
-#if 0
+
+#if 1
 		printf("fill and test, random address, random data... ");
-		r = ht_run(1,1,0,0,0x800000,0,0,1,1,0,0,0,0,0,0);
+		r = ht_run(1,1,0,0,0x800000,0,0,1,1,0,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
 		r = ht_run(0,1,0,0,0x800000,0,0,1,1,0,0,0,0,0,0);
@@ -179,9 +181,10 @@ int main() {
 		tests++;
 		printf(" tests: %d   errors: %d ", tests, errors);
 		cb_set_col(CB_GREEN, CB_BLACK);
-		printf(" - ISSI single write bug fix disabled, tRAC=3, readback burst len = 8\n");
+		printf(" - clksel = %d, w2 = %d, tRAC = %d, readback bmag = %d\n",
+			ht_clksel, ht_fix_w2, ht_trac, rb_mag
+		);
 		printf("\n");
-
 	}
 
 	while (1)
