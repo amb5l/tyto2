@@ -81,8 +81,8 @@ set_output_delay -min -$tIH -clock hr_clk [get_ports {hr_cs_n hr_rwds hr_d[*]}] 
 set_output_delay -min -$tIH -clock hr_clk [get_ports {hr_cs_n hr_rwds hr_d[*]}] -clock_fall -add_delay ; # hold,  falling edge
 
 # HyperRAM to FPGA: RWDS as an input sampled by state machine (clocked by i_clk)
-set_input_delay -max [expr $tCO_hr_cs_n_max+$tDSVmax] -clock clk_in [get_ports hr_rwds] -add_delay
-set_input_delay -min [expr $tCO_hr_cs_n_min+$tDSVmin] -clock clk_in [get_ports hr_rwds] -add_delay
+set_input_delay -max [expr $tCO_hr_clk_max+$tCKDSmax] -clock clk_in [get_ports hr_rwds] -add_delay
+set_input_delay -min [expr $tCO_hr_clk_min+$tCKDSmin] -clock clk_in [get_ports hr_rwds] -add_delay
 set_multicycle_path 3 -setup -end -from [get_clocks clk_in] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/FSM_sequential_state_reg[*]/D] ; # setup to end of 3rd CA cycle
 set_multicycle_path 2 -hold  -end -from [get_clocks clk_in] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/FSM_sequential_state_reg[*]/D] ; # corresponding hold
 set_false_path -from [get_clocks hr_rwds_fast] -to [get_pins MAIN/U_HRAM_TEST/U_CTRL/FSM_sequential_state_reg[*]/D]
