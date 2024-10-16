@@ -133,7 +133,7 @@ begin
 
   P_READ: process(en,addr,w,r)
   begin
-    if en = '1' then
+    if en = '1' then -- TODO: this can and does result in a latch...
       for i in CSR_DEFS'range loop
         if addr = CSR_DEFS(i).addr then
           for j in dout'range loop
