@@ -198,12 +198,20 @@ end entity MEGAtest_r3;
 
 architecture rtl of MEGAtest_r3 is
 
-  signal rst : std_ulogic;
+  signal rst_count : integer range 0 to 15 := 0;
+  signal rst       : std_ulogic;
 
 begin
 
-  --rst <= max10_tx;
-  rst <= '0';
+  P_RST: process(clk_in)
+  begin
+    if rising_edge(clk_in) then
+      if rst_count < 15 then
+        rst_count <= rst_count + 1;
+      end if;
+    end if;
+  end process P_RST;
+  rst <= '0' when rst_count = 15 else '1';
 
   MAIN: component MEGAtest
     generic map (
