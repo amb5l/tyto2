@@ -21,6 +21,7 @@ use work.model_vga_sink_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 library std;
   use std.env.all;
@@ -55,6 +56,9 @@ architecture sim of tb_MEGAtest_r5 is
   signal cap_stb       : std_logic;
 
   component MEGAtest_r5 is
+    generic (
+      GIT_COMMIT : integer
+    );
     port (
       clk_in          : in    std_logic;
       rst             : in    std_logic;
@@ -272,6 +276,9 @@ begin
   end process TEST;
 
   DUT: component MEGAtest_r5
+    generic map (
+      GIT_COMMIT => 16#12345678#
+    )
     port map (
       clk_in          => clk_in,
       rst             => rst,
@@ -460,7 +467,7 @@ begin
   HYPERRAM: component model_hram
     generic map (
       SIM_MEM_SIZE => 8*1024*1024,
-      OUTPUT_DELAY => "MAX",
+      OUTPUT_DELAY => "UNIFORM",
       PARAMS       => hram_params(IS66WVH8M8DBLL_100B1LI)
     )
     port map (
