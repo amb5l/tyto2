@@ -27,12 +27,15 @@
 
 uint8_t cb_width = 0;
 uint8_t cb_height = 0;
-uint8_t cb_x = 0;
-uint8_t cb_y = 0;
-uint8_t cb_attr = 0x0F;
+uint8_t cb_x;
+uint8_t cb_y;
+uint8_t cb_attr;
 
 void cb_init(uint8_t w, uint8_t h)
 {
+	cb_x = 0;
+	cb_y = 0;
+	cb_attr = 0x0F;
     cb_width  = w;
     cb_height = h;
 #ifndef BUILD_CFG_DBG
