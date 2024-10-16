@@ -147,8 +147,6 @@ set_property PULLTYPE PULLDOWN [get_ports {hr_d[1] hr_d[3] hr_d[5] hr_d[7]}]
 # Miscellaneous
 
 # unconstrained I/Os
-set_input_delay -max 0 -clock clk_in [get_ports max10_tx] -add_delay
-set_input_delay -min 0 -clock clk_in [get_ports max10_tx] -add_delay
 set_output_delay -max 0 [get_ports {hdmi_clk_p hdmi_data_p[*] hr_rst_n}] -add_delay
 set_output_delay -min 0 [get_ports {hdmi_clk_p hdmi_data_p[*] hr_rst_n}] -add_delay
 set_false_path -through [get_ports {hdmi_clk_p hdmi_data_p[*] hr_rst_n}]
