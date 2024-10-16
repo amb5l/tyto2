@@ -51,7 +51,7 @@ u8 ht_run(
     poke32(RA_CTRL,x); // run
     while(!(peek8(RA_STAT+1))) // wait until done
         ;
-    poke32(RA_CTRL,0); // negate run
+    poke32(RA_CTRL,x & ~(1 << 0)); // negate run
     while(peek8(RA_STAT+1)) // wait until done cleared
         ;
     return peek8(RA_STAT+2); // return error status
@@ -74,12 +74,13 @@ void ht_err(u8 r) {
 }
 
 u8 ht_init(void) {
-    ht_clksel = 3; // 120 MHz
+    ht_clksel = 2; // 110 MHz
     ht_tlat   = 4; // latency = 4 cycles
     ht_trwr   = 4; // read-write recovery = 4 cycles
     ht_trac   = 2; // read access through FIFO = 2 cycles
     ht_fix_w2 = 0; // disable ISSI single write bug fix
     poke32(RA_CTRL,ht_clksel << 28);
+    ht_lol(); // dummy read to allow time for LOL to assert
     while (ht_lol()) // wait for MMCM lock
         ;
 	ht_run(1,0,1,0x1000,2,0xBFF7,0,0,0,0,0,0,0,0,0); // write CFGREG0 - 46 ohms, variable latency = 4
