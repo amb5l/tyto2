@@ -1,7 +1,9 @@
 #include "hram_test.h"
 #include "printf.h"
 
-u8 ht_clksel; // clock select: 00 = 100MHz, 01 = 105MHz, 10 = 110MHz, 11 = 120MHz
+u8 ht_clksel; // clock select:
+              // 000 = 100MHz, 001 = 105MHz, 010 = 110MHz, 011 = 120MHz,
+              // 100 =  70MHz, 101 =  80MHz, 110 =  90MHz, 111 =  95MHz
 u8 ht_tlat;   // HyperRAM latency, 0-7, typically 4 cycles
 u8 ht_trwr;   // HyperRAM read-write recovery, 0-7, typically 4 cycles
 u8 ht_trac;   // read access through FIFO, 0-3, typically 2
@@ -31,7 +33,7 @@ u8 ht_run(
     poke32(RA_DATA,data);
     poke32(RA_INCR,incr);
     u32 x =
-        ((ht_clksel & 3) << 28) |
+        ((ht_clksel & 7) << 28) |
         ((ht_fix_w2 & 1) << 24) |
         ((ht_trac & 3)   << 22) |
         ((ht_trwr & 7)   << 19) |

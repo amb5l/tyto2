@@ -130,7 +130,7 @@ architecture rtl of hram_test is
   subtype regs_data_t is sulv_vector(open)(31 downto 0);
 
   constant csr_ctrl_bits : csr_bits_t(31 downto 0) := (
-    29 downto 28 => RW,
+    30 downto 28 => RW,
     24 downto 16 => RW,
     BMW+11 downto 0 => RW,
     others => RO
@@ -193,7 +193,7 @@ architecture rtl of hram_test is
   alias s_csr_ctrl_trwr   : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(21 downto 19);     -- tRWR (read write recovery) in clock cycles
   alias s_csr_ctrl_trac   : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(23 downto 22);     -- tRAC (read access) in clock cycles
   alias s_csr_ctrl_fix_w2 : std_ulogic                        is s_csr_ctrl(24);               -- fix ISSI single write bug (add dummy write to single writes)
-  alias s_csr_ctrl_clksel : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(29 downto 28);
+  alias s_csr_ctrl_clksel : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(30 downto 28);
 
   alias s_csr_ctrl_cb_m   : std_ulogic is s_csr_ctrl_cb(0); -- checkerboard masking
   alias s_csr_ctrl_cb_i   : std_ulogic is s_csr_ctrl_cb(1); -- checkerboard inversion

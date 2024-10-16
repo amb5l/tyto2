@@ -55,7 +55,7 @@ package mmcm_drp_pkg is
     port (
       rsti      : in    std_ulogic;
       clki      : in    std_ulogic;
-      sel       : in    std_ulogic_vector(1 downto 0);
+      sel       : in    std_ulogic_vector;
       rsto      : out   std_ulogic;
       clko0     : out   std_ulogic;
       clko1     : out   std_ulogic;
@@ -116,7 +116,7 @@ architecture rtl of mmcm_drp is
   signal locked       : std_ulogic;                             -- MMCM locked output
   signal locked_s     : std_ulogic;                             -- above, synchronised to clki
 
-  signal sel_prev     : std_ulogic_vector(2 downto 0);    -- to detect changes
+  signal sel_prev     : std_ulogic_vector(sel'length downto 0); -- to detect changes
   signal clk_fb       : std_ulogic;                             -- feedback clock
   signal clku_fb      : std_ulogic;                             -- unbuffered feedback clock
   signal clko_u       : std_ulogic_vector(0 to 6);              -- unbuffered output clock
@@ -205,7 +205,7 @@ begin
               cfg_tbl_addr <= (others => '0');
               cfg_state    <= LOCK_WAIT;
             else                                                                                                                   -- do next entry in table
-              cfg_tbl_addr(4 downto 0) <= std_ulogic_vector(unsigned(cfg_tbl_addr(4 downto 0)) + 1);
+              cfg_tbl_addr(4 downto 0) <= incr(cfg_tbl_addr(4 downto 0));
               cfg_state                <= TBL;
             end if;
           end if;
@@ -229,17 +229,15 @@ begin
 
   CDC : component sync
     generic map (
-      WIDTH => 3
+      WIDTH => 1+sel_s'length
     )
     port map (
       rst   => rsti,
       clk   => clki,
-      i(0)  => locked,
-      i(1)  => sel(0),
-      i(2)  => sel(1),
-      o(0)  => locked_s,
-      o(1)  => sel_s(0),
-      o(2)  => sel_s(1)
+      i(sel_s'range)  => sel,
+      i(sel_s'length) => locked,
+      o(sel_s'range)  => sel_s,
+      o(sel_s'length) => locked_s
     );
 
   mmcm_rst <= cfg_rst or rsti;
