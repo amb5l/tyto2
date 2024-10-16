@@ -29,13 +29,16 @@ int main() {
 	r = ht_init();
 	printf("ht_init: ");
 	ht_err(r);
+	printf("\n");
 
+#if 0
 	printf("simple 128kbyte fill then test...");
 	r = ht_run(1,0,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,0,4);
 	r = ht_run(0,1,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,0,4);
 	printf("read 1: "); ht_err(r);
 	r = ht_run(0,1,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,0,4);
 	printf("read 2: "); ht_err(r);
+#endif
 
 	while (errors == 0) {
 
@@ -59,16 +62,16 @@ int main() {
 		errors += r;
 		printf("\n");
 
-		printf("fill and test, sequential address, incrementing data... ");
-		r = ht_run(1,1,0,0x550000,0x2200,0x00010000,0x00020002,0,0,0,0,0,0,0,rb_mag);
+		printf("fill and test, sequential address, incrementing 16-bit data... ");
+		r = ht_run(1,1,0,0,0x800000,0x00010000,0x00020002,0,0,0,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0x550000,0x2200,0x00010000,0x00020002,0,0,0,0,0,0,0,0);
+		r = ht_run(0,1,0,0,0x800000,0x00010000,0x00020002,0,0,0,0,0,0,0,0);
 		printf("follow on read: "); ht_err(r);
 		errors += r;
 		printf("\n");
 
-		printf("fill and test, sequential address, incrementing data (inverted)... ");
+		printf("fill and test, sequential address, incrementing 16-bit data (inverted)... ");
 		r = ht_run(1,1,0,0,0x800000,0x00010000,0x00020002,0,0,1,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
@@ -77,9 +80,9 @@ int main() {
 		errors += r;
 		printf("\n");
 
-		printf("fill then test, sequential address, incrementing data, random burst (1..256)...");
-		r = ht_run(1,0,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,0,1,8);
-		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,0,1,8);
+		printf("fill then test, sequential address, incrementing 16-bit data, random burst (1..256)...");
+		r = ht_run(1,0,0,0,0x800000,0x00010000,0x00020002,0,0,0,0,0,0,1,8);
+		r = ht_run(0,1,0,0,0x800000,0x00010000,0x00020002,0,0,0,0,0,0,1,8);
 		printf("read 1: "); ht_err(r);
 		errors += r;
 		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,0,0,8);
@@ -87,9 +90,9 @@ int main() {
 		errors += r;
 		printf("\n");
 
-		printf("fill then test, sequential address, incrementing data (inverted), random burst (1..256)...");
-		r = ht_run(1,0,0,0,0x10000,0x00010000,0x00020002,0,0,1,0,0,0,1,8);
-		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,1,0,0,0,1,8);
+		printf("fill then test, sequential address, incrementing 16-bit data (inverted), random burst (1..256)...");
+		r = ht_run(1,0,0,0,0x800000,0x00010000,0x00020002,0,0,1,0,0,0,1,8);
+		r = ht_run(0,1,0,0,0x800000,0x00010000,0x00020002,0,0,1,0,0,0,1,8);
 		printf("read 1: "); ht_err(r);
 		errors += r;
 		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,1,0,0,0,0,8);
@@ -107,7 +110,7 @@ int main() {
 		errors += r;
 		printf("\n");
 
-		printf("fill then test, sequential address, incrementing data, random burst (1..256)...");
+		printf("fill then test, sequential address, data = address, random burst (1..256)...");
 		r = ht_run(1,0,0,0,0x800000,0,4,0,0,0,0,0,0,1,8);
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,1,8);
 		printf("read 1: "); ht_err(r);
@@ -148,7 +151,7 @@ int main() {
 		errors += r;
 		printf("\n");
 #endif
-		printf("fill and test, sequential address, incrementing data...");
+		printf("fill and test, sequential address, data = address...");
 		r = ht_run(1,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
@@ -157,7 +160,7 @@ int main() {
 		errors += r;
 		printf("\n");
 
-		printf("fill and test, sequential address, incrementing data (inverted)...");
+		printf("fill and test, sequential address, data = address (inverted)...");
 		r = ht_run(1,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
