@@ -54,6 +54,9 @@ random_1to1_vhd=$(abspath ./random_1to1.vhd)
 $(random_1to1_vhd): $(random_1to1_py)
 	python $(random_1to1_py) $(ROWS_LOG2) > $@
 
+clean::
+	rm -f $(random_1to1_vhd)
+
 ################################################################################
 # Vivado
 
