@@ -56,7 +56,7 @@ architecture sim of tb_MEGAtest_r3 is
 
   component MEGAtest_r3 is
     generic (
-      GIT_COMMIT : bit_vector(31 downto 0) := (others => '0')
+      GIT_COMMIT : integer
     );
     port (
       clk_in           : in    std_logic;
@@ -228,9 +228,9 @@ begin
 
   TEST: process is
   begin
-    max10_tx <= '1';
-    wait for 200 ns;
     max10_tx <= '0';
+    wait for 100 ns;
+    max10_tx <= '1';
     wait;
     wait until rising_edge(cap_stb);
     stop;
@@ -238,7 +238,7 @@ begin
 
   DUT: component MEGAtest_r3
     generic map (
-      GIT_COMMIT => x"DEADBEEF"
+      GIT_COMMIT => 16#12345678#
     )
     port map (
       clk_in          => clk_in,
