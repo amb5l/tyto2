@@ -28,7 +28,7 @@ int main() {
 
 	r = ht_init();
 	printf("ht_init: ");
-	ht_err(1);
+	ht_err(r);
 
 	printf("simple 128kbyte fill then test...");
 	r = ht_run(1,0,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,0,4);
