@@ -330,6 +330,28 @@ architecture rtl of hram_test is
   constant ROW_RND : sulv_vector(0 to (2**ROWS_LOG2)-1)(ROWS_LOG2-1 downto 0) := random_1to1_v(ROWS_LOG2);
 
   --------------------------------------------------------------------------------
+  -- attributes
+
+  attribute mark_debug : string;
+  attribute mark_debug of rc_err    : signal is "true";
+  attribute mark_debug of rc_ref    : signal is "true";
+  attribute mark_debug of i_a_ready : signal is "true";
+  attribute mark_debug of i_a_valid : signal is "true";
+  attribute mark_debug of i_a_rb    : signal is "true";
+  attribute mark_debug of i_a_r_w   : signal is "true";
+  attribute mark_debug of i_a_reg   : signal is "true";
+  attribute mark_debug of i_a_len   : signal is "true";
+  attribute mark_debug of i_a_addr  : signal is "true";
+  attribute mark_debug of i_w_ready : signal is "true";
+  attribute mark_debug of i_w_valid : signal is "true";
+  attribute mark_debug of i_w_last  : signal is "true";
+  attribute mark_debug of i_w_be    : signal is "true";
+  attribute mark_debug of i_w_data  : signal is "true";
+  attribute mark_debug of i_r_ready : signal is "true";
+  attribute mark_debug of i_r_valid : signal is "true";
+  attribute mark_debug of i_r_ref   : signal is "true";
+  attribute mark_debug of i_r_last  : signal is "true";
+  attribute mark_debug of i_r_data  : signal is "true";
 
 begin
 

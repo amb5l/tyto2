@@ -249,6 +249,16 @@ architecture rtl of hram_ctrl is
   attribute dont_touch : string;
   attribute dont_touch of U_MUX2 : label is "TRUE";
 
+  attribute mark_debug : string;
+  attribute mark_debug of h_rst_n_o  : signal is "true";
+  attribute mark_debug of en_cs      : signal is "true";
+  attribute mark_debug of en_clk     : signal is "true";
+  attribute mark_debug of h_rwds_i_d : signal is "true";
+  attribute mark_debug of h_rwds_t   : signal is "true";
+  attribute mark_debug of h_dq_i     : signal is "true";
+  attribute mark_debug of h_dq_i_r   : signal is "true";
+  attribute mark_debug of h_dq_t     : signal is "true";
+
   --------------------------------------------------------------------------------
 
 begin
