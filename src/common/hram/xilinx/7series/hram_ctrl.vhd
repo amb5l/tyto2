@@ -191,58 +191,58 @@ architecture rtl of hram_ctrl is
   -- signals
 
   -- delayed system interface signals
-  signal s_w_be_1      : std_ulogic_vector(1 downto 0);   -- write byte enable delayed by 1 clock
-  signal s_w_data_1    : std_ulogic_vector(15 downto 0);  -- write data  delayed by 1 clock
-  signal s_w_ready_1   : std_ulogic;                      -- write ready delayed by 1 clock
+  signal s_w_be_1      : std_ulogic_vector(1 downto 0);  -- write byte enable delayed by 1 clock
+  signal s_w_data_1    : std_ulogic_vector(15 downto 0); -- write data  delayed by 1 clock
+  signal s_w_ready_1   : std_ulogic;                     -- write ready delayed by 1 clock
 
   -- main control
-  signal burst         : burst_t;                         -- details of current burst
-  signal state         : state_t;                         -- state machine state
-  signal phase         : std_ulogic;                      -- access phase: 0 = CA and latency, 1 = data
-  signal count_rst     : integer range 0 to tRP+tRPH;     -- reset counter
-  signal count         : integer range 0 to 7;            -- general purpose counter
-  signal en_clk        : std_ulogic;                      -- enable h_clk pulse
-  signal en_cs         : std_ulogic;                      -- enable h_cs_n assertion
-  signal en_cs_next    : std_ulogic;                      -- enable h_cs_n assertion for next cycle
-  signal en_wrx        : std_ulogic;                      -- enable extra write cycle (ISSI bug fix)
+  signal burst         : burst_t;                        -- details of current burst
+  signal state         : state_t;                        -- state machine state
+  signal phase         : std_ulogic;                     -- access phase: 0 = CA and latency, 1 = data
+  signal count_rst     : integer range 0 to tRP+tRPH;    -- reset counter
+  signal count         : integer range 0 to 7;           -- general purpose counter
+  signal en_clk        : std_ulogic;                     -- enable h_clk pulse
+  signal en_cs         : std_ulogic;                     -- enable h_cs_n assertion
+  signal en_cs_next    : std_ulogic;                     -- enable h_cs_n assertion for next cycle
+  signal en_wrx        : std_ulogic;                     -- enable extra write cycle (ISSI bug fix)
 
   -- read data path
-  signal r_rst         : std_ulogic;                       -- reset FIFO pointers, reset/set IDDRs
-  signal r_bsy         : std_ulogic;                       -- read data path busy (to hold off next cycle)
-  signal r_valid       : std_ulogic_vector(0 to 3);        -- read data valid for latencies of 0 to 3
-  signal r_ref         : std_ulogic_vector(0 to 3);        -- read data refresh collision for latencies of 0 to 3
-  signal r_last        : std_ulogic_vector(0 to 3);        -- read data last word for latencies of 0 to 3
-  signal r_dfifo_we    : std_ulogic;                       -- read data FIFO, write enable
-  signal r_dfifo_wa    : std_ulogic_vector(2 downto 0);    -- read data FIFO, write address
-  signal r_dfifo_wd    : r_dfifo_d_t;                      -- read data FIFO, write data
-  signal r_dfifo_ra    : std_ulogic_vector(2 downto 0);    -- read data FIFO, read address
-  signal r_dfifo_rd    : r_dfifo_d_t;                      -- read data FIFO, read data
-  signal r_mux_i0      : std_ulogic_vector(15 downto 0);   -- read mux input 0
-  signal r_mux_i1      : std_ulogic_vector(15 downto 0);   -- read mux input 1
+  signal r_rst         : std_ulogic;                     -- reset FIFO pointers, reset/set IDDRs
+  signal r_bsy         : std_ulogic;                     -- read data path busy (to hold off next cycle)
+  signal r_valid       : std_ulogic_vector(0 to 3);      -- read data valid for latencies of 0 to 3
+  signal r_ref         : std_ulogic_vector(0 to 3);      -- read data refresh collision for latencies of 0 to 3
+  signal r_last        : std_ulogic_vector(0 to 3);      -- read data last word for latencies of 0 to 3
+  signal r_dfifo_we    : std_ulogic;                     -- read data FIFO, write enable
+  signal r_dfifo_wa    : std_ulogic_vector(2 downto 0);  -- read data FIFO, write address
+  signal r_dfifo_wd    : r_dfifo_d_t;                    -- read data FIFO, write data
+  signal r_dfifo_ra    : std_ulogic_vector(2 downto 0);  -- read data FIFO, read address
+  signal r_dfifo_rd    : r_dfifo_d_t;                    -- read data FIFO, read data
+  signal r_mux_i0      : std_ulogic_vector(15 downto 0); -- read mux input 0
+  signal r_mux_i1      : std_ulogic_vector(15 downto 0); -- read mux input 1
 
   -- HyperRAM I/O related
   signal h_rst_n_o     : std_logic;
   signal h_cs_n_o      : std_logic;
-  signal h_clk_o       : std_logic;                        -- clock ODDR Q output to OBUF
-  signal h_rwds_i      : std_ulogic;                       -- RWDS input from IOBUF to IDELAY
-  signal h_rwds_i_d    : std_ulogic;                       -- RWDS IDELAY output
-  signal h_rwds_i_b    : std_ulogic;                       -- RWDS BUFR output
-  signal h_rwds_i_c    : std_ulogic;                       -- RWDS BUFR output with delay for functional simulation
-  signal h_rwds_o_d1_f : std_ulogic;                       -- RWDS ODDR D1 for sampling on falling clock edge (half clock early)
-  signal h_rwds_o_d1_r : std_ulogic;                       -- RWDS ODDR D1 for sampling on rising clock edge
-  signal h_rwds_o_d2_f : std_ulogic;                       -- RWDS ODDR D2 for sampling on falling clock edge
-  signal h_rwds_o      : std_ulogic;                       -- RWDS ODDR Q output to IOBUF
-  signal h_rwds_o_ce   : std_ulogic;                       -- RWDS ODDR clock enable
-  signal h_rwds_t      : std_ulogic;                       -- RWDS IOBUF tristate control
-  signal h_dq_i        : std_ulogic_vector(7 downto 0);    -- DQ input from IOBUF to IDDR
-  signal h_dq_i_ce     : std_ulogic;                       -- DQ IDDR clock enable
-  signal h_dq_i_r      : std_ulogic_vector(15 downto 0);   -- DQ IDDR Q
-  signal h_dq_o_d1_f   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D1 for sampling on falling clock edge (half clock early)
-  signal h_dq_o_d1_r   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D1 for sampling on rising clock edge
-  signal h_dq_o_d2_f   : std_ulogic_vector(7 downto 0);    -- DQ ODDR D2 for sampling on falling clock edge
-  signal h_dq_o        : std_ulogic_vector(7 downto 0);    -- DQ ODDR Q output to IOBUF
-  signal h_dq_o_ce     : std_ulogic;                       -- DQ ODDR clock enable
-  signal h_dq_t        : std_ulogic;                       -- DQ IOBUF tristate control
+  signal h_clk_o       : std_logic;                      -- clock ODDR Q output to OBUF
+  signal h_rwds_i      : std_ulogic;                     -- RWDS input from IOBUF to IDELAY
+  signal h_rwds_i_d    : std_ulogic;                     -- RWDS IDELAY output
+  signal h_rwds_i_b    : std_ulogic;                     -- RWDS BUFR output
+  signal h_rwds_i_c    : std_ulogic;                     -- RWDS BUFR output with delay for functional simulation
+  signal h_rwds_o_d1_f : std_ulogic;                     -- RWDS ODDR D1 for sampling on falling clock edge (half clock early)
+  signal h_rwds_o_d1_r : std_ulogic;                     -- RWDS ODDR D1 for sampling on rising clock edge
+  signal h_rwds_o_d2_f : std_ulogic;                     -- RWDS ODDR D2 for sampling on falling clock edge
+  signal h_rwds_o      : std_ulogic;                     -- RWDS ODDR Q output to IOBUF
+  signal h_rwds_o_ce   : std_ulogic;                     -- RWDS ODDR clock enable
+  signal h_rwds_t      : std_ulogic;                     -- RWDS IOBUF tristate control
+  signal h_dq_i        : std_ulogic_vector(7 downto 0);  -- DQ input from IOBUF to IDDR
+  signal h_dq_i_ce     : std_ulogic;                     -- DQ IDDR clock enable
+  signal h_dq_i_r      : std_ulogic_vector(15 downto 0); -- DQ IDDR Q
+  signal h_dq_o_d1_f   : std_ulogic_vector(7 downto 0);  -- DQ ODDR D1 for sampling on falling clock edge (half clock early)
+  signal h_dq_o_d1_r   : std_ulogic_vector(7 downto 0);  -- DQ ODDR D1 for sampling on rising clock edge
+  signal h_dq_o_d2_f   : std_ulogic_vector(7 downto 0);  -- DQ ODDR D2 for sampling on falling clock edge
+  signal h_dq_o        : std_ulogic_vector(7 downto 0);  -- DQ ODDR Q output to IOBUF
+  signal h_dq_o_ce     : std_ulogic;                     -- DQ ODDR clock enable
+  signal h_dq_t        : std_ulogic;                     -- DQ IOBUF tristate control
 
   --------------------------------------------------------------------------------
 
@@ -384,7 +384,7 @@ begin
           count <= count + 1;
           if count = 2 then
             s_w_ready <= burst.reg and not burst.r_w;
-            s_w_last  <= not burst.r_w when unsigned(burst.trk) = 1 else '0';
+            s_w_last  <= burst.reg and not burst.r_w when unsigned(burst.trk) = 1 else '0';
           elsif count = 3 then
             phase <= '1';
             if burst.reg and not burst.r_w then -- register write
