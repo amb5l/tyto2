@@ -15,8 +15,8 @@
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
 -- TODO
---  allow variable tLAT and tRWR
---  support single write bug workaround
+--  support burst break on page and/or row boundary
+--  NB we do not yet support RWDS pauses during reads
 
 library ieee;
   use ieee.std_logic_1164.all;
