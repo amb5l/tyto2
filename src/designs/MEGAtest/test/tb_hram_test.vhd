@@ -63,8 +63,9 @@ architecture sim of tb_hram_test is
     variable r : hram_params_t;
   begin
     r := i;
-    r.abound := 9;    -- row boundary (9 column address bits)
-    r.tVCS   := 10.0; -- override tVCS to shorten simulation time
+    r.abw  := 9;    -- write address boundary = row (9 column address bits)
+    r.abr  := -1;   -- read address boundary = none
+    r.tVCS := 10.0; -- override tVCS to shorten simulation time
     return r;
   end function hram_params;
 

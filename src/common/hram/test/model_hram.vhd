@@ -35,7 +35,8 @@ package model_hram_pkg is
     idreg1   : std_ulogic_vector(15 downto 0); -- ID register 1 value
     cfgreg0  : std_ulogic_vector(15 downto 0); -- configuration register 0 default value
     cfgreg1  : std_ulogic_vector(15 downto 0); -- configuration register 1 default value
-    abound   : integer;                        -- address boundary (-1 = none)
+    abw      : integer;                        -- address boundary for writes (-1 = none)
+    abr      : integer;                        -- address boundary for reads (-1 = none)
     tDRI     : real;                           -- distributed refresh interval
     tVCS     : real;                           -- power on and reset high to first access
     tRP      : real;                           -- reset pulse width, min
@@ -96,7 +97,8 @@ package model_hram_pkg is
     idreg1   => x"0000",  -- ID register 1 value
     cfgreg0  => x"8F1F",  -- configuration register 0 default value
     cfgreg1  => x"0002",  -- configuration register 1 default value
-    abound   => -1,       -- no address boundary
+    abw      => -1,       -- address boundary for writes = none
+    abr      => -1,       -- address boundary for reads = none
     tDRI     => 4000.0,   -- distributed refresh interval (4 uS)
     tVCS     => 150000.0, -- power on and reset high to first access (150uS)
     tRP      => 200.0,    -- reset pulse width, min
@@ -662,20 +664,35 @@ begin
 
     procedure handle_event is
 
-      procedure abound_check is
+      procedure abw_check is
         variable a  : std_ulogic_vector(31 downto 0);
         variable ok : boolean;
       begin
-        if count /= 0 and PARAMS.abound /= -1 then
+        if count /= 0 and PARAMS.abw /= -1 then
           a  := (ca(44 downto 16),ca(2 downto 0));
           ok := false;
-          if PARAMS.abound > 0 then
-            ok := unsigned(a(PARAMS.abound-1 downto 0)) /= 0;
+          if PARAMS.abw > 0 then
+            ok := unsigned(a(PARAMS.abw-1 downto 0)) /= 0;
           end if;
           assert ok
-            report PREFIX & "address boundary crossed" severity failure;
+            report PREFIX & "write address boundary crossed" severity failure;
         end if;
-      end procedure abound_check;
+      end procedure abw_check;
+
+      procedure abr_check is
+        variable a  : std_ulogic_vector(31 downto 0);
+        variable ok : boolean;
+      begin
+        if count /= 0 and PARAMS.abr /= -1 then
+          a  := (ca(44 downto 16),ca(2 downto 0));
+          ok := false;
+          if PARAMS.abr > 0 then
+            ok := unsigned(a(PARAMS.abr-1 downto 0)) /= 0;
+          end if;
+          assert ok
+            report PREFIX & "read address boundary crossed" severity failure;
+        end if;
+      end procedure abr_check;
 
     begin
       --------------------------------------------------------------------------------
@@ -785,12 +802,14 @@ begin
             end if;
 
           when WR =>
-            abound_check;
+            if rwds_i = '0' then
+              abw_check;
+            end if;
             wm(1) := rwds_i;
             wdata := (15 downto 8 => dq_i, others => 'U');
 
           when RD =>
-            abound_check;
+            abr_check;
             rdata := (others => 'U');
             if ca(46) = '1' and unsigned(ca(44 downto 32)) = 0 then
               case ca(31 downto 0) is
@@ -873,6 +892,9 @@ begin
             end if;
 
           when WR =>
+            if rwds_i = '0' then
+              abw_check;
+            end if;
             wm(0) := rwds_i;
             wdata(7 downto 0) := dq_i;
             if ca(46) = '1' then
