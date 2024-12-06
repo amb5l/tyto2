@@ -539,7 +539,7 @@ begin
             if now-ts_cs_a > tCSM then
               report PREFIX & "tCSM violation - chip select active time exceeded:"
                 & " measured " & time'image(now-ts_cs_a)
-                & " required " & time'image(tCSHI)
+                & " required " & time'image(tCSM)
                 severity SEV_tCSM;
             end if;
           end if;
