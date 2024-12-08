@@ -175,5 +175,7 @@ int main() {
 		printf("follow on read: "); ht_err(r);
 		errors += r;
 		printf("\n");
+
+		printf("\n");
 	}
 }
