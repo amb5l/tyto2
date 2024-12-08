@@ -39,6 +39,7 @@ architecture sim of tb_hram_ctrl is
   signal s_rst     : std_ulogic;
   signal s_clk     : std_ulogic;
   signal s_clk_dly : std_ulogic;
+  signal s_cfg     : hram_ctrl_cfg_t;
   signal s_a_ready : std_ulogic;
   signal s_a_valid : std_ulogic;
   signal s_a_r_w   : std_ulogic;
@@ -244,6 +245,12 @@ begin
       dq    => h_dq
     );
 
+  s_cfg.tRWR   <= "100";
+  s_cfg.tLAT   <= "100";
+  s_cfg.tRAC   <= "10";
+  s_cfg.abw    <= "1010";
+  s_cfg.fix_w2 <= '1';
+
   CTRL: component hram_ctrl
     generic map (
       PARAMS   => HRAM_CTRL_PARAMS_100_100
@@ -252,6 +259,7 @@ begin
       s_rst     => s_rst,
       s_clk     => s_clk,
       s_clk_dly => s_clk_dly,
+      s_cfg     => s_cfg,
       s_a_ready => s_a_ready,
       s_a_valid => s_a_valid,
       s_a_r_w   => s_a_r_w,
