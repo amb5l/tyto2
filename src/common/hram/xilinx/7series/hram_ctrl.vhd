@@ -17,6 +17,7 @@
 -- TODO
 --  support burst break on page and/or row boundary
 --  NB we do not yet support RWDS pauses during reads
+--  fully test against system interface read and write pauses
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -34,6 +35,7 @@ package hram_ctrl_pkg is
     tRWR   : std_ulogic_vector(2 downto 0); -- read-write recovery cycles
     tLAT   : std_ulogic_vector(2 downto 0); -- latency cycles
     tRAC   : std_ulogic_vector(1 downto 0); -- read access time
+    abw    : std_ulogic_vector(3 downto 0); -- write page/row boundary address bit (4..15), 0 to disable (10 c.w. 9 bit column address)
     fix_w2 : std_ulogic;                    -- enable ISSI write bug fix (minimum 2 cycles for writes)
   end record hram_ctrl_cfg_t;
 
@@ -163,13 +165,15 @@ architecture rtl of hram_ctrl is
     ALAT,  -- additional latency
     LAT,   -- latency
     WR,    -- write
-    WRX,   -- write extra cycle (ISSI bug fix)
+    WRX1,  -- write extra cycle (ISSI bug fix)
+    WRX2,  -- write extra extra cycle (speculative ISSI bug fix)
     RBSY1, -- (previous) read busy 1
     RBSY2, -- (previous) read busy 2
     RD,    -- read
     CSHR,  -- hold for final RWDS pulse
     CSH,   -- hold before negating chip select to meet tCSH
-    RWR    -- read-write recovery
+    RWR,   -- read-write recovery
+    BRK    -- burst break
   );
 
   type burst_t is record
@@ -205,6 +209,9 @@ architecture rtl of hram_ctrl is
   signal en_cs         : std_ulogic;                     -- enable h_cs_n assertion
   signal en_cs_next    : std_ulogic;                     -- enable h_cs_n assertion for next cycle
   signal en_wrx        : std_ulogic;                     -- enable extra write cycle (ISSI bug fix)
+  signal w2            : std_ulogic;                     -- true from second write cycle onward
+  signal abound        : std_ulogic;                     -- address boundary reached
+  signal break         : std_ulogic;                     -- break burst on address boundary
 
   -- read data path
   signal r_rst         : std_ulogic;                     -- reset FIFO pointers, reset/set IDDRs
@@ -250,6 +257,8 @@ architecture rtl of hram_ctrl is
   attribute dont_touch of U_MUX2 : label is "TRUE";
 
   attribute mark_debug : string;
+  attribute mark_debug of abound     : signal is "true";
+  attribute mark_debug of break      : signal is "true";
   attribute mark_debug of h_rst_n_o  : signal is "true";
   attribute mark_debug of en_cs      : signal is "true";
   attribute mark_debug of en_clk     : signal is "true";
@@ -269,7 +278,34 @@ begin
     variable ca  : ca_t;
   begin
 
-    en_cs <= (bool2sl(state = IDLE) and s_a_valid and s_a_ready) or en_cs_next;
+    -- SYNTHESIS REDUCES THIS TO abound <= 0
+    --abound <= '0';
+    --if unsigned(s_cfg.abw) >= 3 then
+    --  if unsigned(not burst.addr(to_integer(unsigned(s_cfg.abw)) downto 1)) = 0 then
+    --    abound <= '1';
+    --  end if;
+    --end if;
+
+    with s_cfg.abw select abound <=
+      bool2sl(burst.addr( 15 downto 1 ) = "111111111111111") when "1111",
+      bool2sl(burst.addr( 14 downto 1 ) =  "11111111111111") when "1110",
+      bool2sl(burst.addr( 13 downto 1 ) =   "1111111111111") when "1101",
+      bool2sl(burst.addr( 12 downto 1 ) =    "111111111111") when "1100",
+      bool2sl(burst.addr( 11 downto 1 ) =     "11111111111") when "1011",
+      bool2sl(burst.addr( 10 downto 1 ) =      "1111111111") when "1010",
+      bool2sl(burst.addr(  9 downto 1 ) =       "111111111") when "1001",
+      bool2sl(burst.addr(  8 downto 1 ) =        "11111111") when "1000",
+      bool2sl(burst.addr(  7 downto 1 ) =         "1111111") when "0111",
+      bool2sl(burst.addr(  6 downto 1 ) =          "111111") when "0110",
+      bool2sl(burst.addr(  5 downto 1 ) =           "11111") when "0101",
+      bool2sl(burst.addr(  4 downto 1 ) =            "1111") when "0100",
+      bool2sl(burst.addr(  3 downto 1 ) =             "111") when "0011",
+      '0' when others;
+
+    en_cs <=
+      (bool2sl(state = IDLE) and s_a_valid and s_a_ready) or
+      bool2sl(state = BRK) or
+      en_cs_next;
 
     a32 := (others => '0');
     a32(s_a_addr'length downto 1) := burst.addr;
@@ -299,7 +335,7 @@ begin
       s_w_data_1(15 downto 8) when ((burst.reg = '1' and burst.r_w = '0') or (s_w_ready_1 = '1')) else
       (others => 'X');
 
-  end process;
+  end process P_COMB;
 
   P_MAIN: process(s_rst,s_clk)
   begin
@@ -340,6 +376,8 @@ begin
       en_clk      <= '0';
       en_cs_next  <= '0';
       en_wrx      <= '0';
+      break       <= '0';
+      w2          <= '0';
       r_rst       <= '0';
       r_bsy       <= '0';
       r_valid     <= (others => '0');
@@ -385,6 +423,8 @@ begin
             s_a_ready  <= '0';
             en_cs_next <= '1';
             en_clk     <= '1';
+            break      <= '0';
+            w2         <= '0';
             h_dq_o_ce  <= '1';
             count      <= 1;
             state      <= CA;
@@ -398,18 +438,12 @@ begin
           elsif count = 3 then
             phase <= '1';
             if burst.reg and not burst.r_w then -- register write
-              if s_w_valid then
-                if s_w_last then
-                  s_w_ready <= '0';
-                  s_w_last  <= '0';
-                else
-                  s_w_last <= '1' when unsigned(burst.trk) = 2 else '0';
-                end if;
-                burst.trk <= decr(burst.trk);
-                en_clk    <= '1';
-              end if;
-              state <= WR;
-            else
+              s_w_ready <= '0'; -- register write bursts are broken into single cycles
+              break     <= not s_w_last;
+              burst.trk <= decr(burst.trk);
+              en_clk    <= '1';
+              state     <= WR;
+            else -- register read or memory read/write
               h_dq_o_ce <= '0';
               count     <= 1;
               state     <= ALAT when h_rwds_i_d = '1' else LAT;
@@ -437,7 +471,7 @@ begin
             r_rst     <= burst.r_w and not r_bsy;
           elsif count = to_integer(unsigned(s_cfg.tLAT))-1 then -- data transfer (or stall)
             count <= 0;
-            if burst.r_w then
+            if burst.r_w then -- read
               if r_bsy then
                 state <= RBSY1;
               elsif not r_rst then
@@ -449,16 +483,19 @@ begin
                 r_bsy     <= '1';
                 state     <= RD;
               end if;
-            else
+            else -- write (s_w_ready is asserted here)
               if s_w_valid then
                 if s_w_last then
                   s_w_ready <= '0';
-                  s_w_last  <= '0';
-                else
-                  s_w_last <= '1' when unsigned(burst.trk) = 2 else '0';
+                elsif abound then -- check address boundary
+                  s_w_ready <= '0';
+                  break     <= '1';
+                elsif unsigned(burst.trk) = 2 then
+                  s_w_last  <= '1';
                 end if;
-                burst.trk <= decr(burst.trk);
-                en_clk <= '1';
+                burst.trk  <= decr(burst.trk);
+                burst.addr <= incr(burst.addr);
+                en_clk     <= '1';
               end if;
               h_rwds_o_ce <= '1';
               h_dq_o_ce   <= '1';
@@ -468,34 +505,42 @@ begin
 
         when WR =>
           en_clk <= s_w_valid and s_w_ready;
-          if s_w_valid then
+          if s_w_valid and s_w_ready then
             if s_w_last then
               s_w_ready <= '0';
-              s_w_last  <= '0';
-            else
-              s_w_last <= '1' when unsigned(burst.trk) = 2 else '0';
+            elsif abound then
+              s_w_ready <= '0';
+              break     <= '1';
+            elsif unsigned(burst.trk) = 2 then
+              s_w_last <= '1';
             end if;
-            burst.trk <= decr(burst.trk);
-            en_clk <= '1';
+            burst.trk  <= decr(burst.trk);
+            burst.addr <= incr(burst.addr);
+            en_clk     <= '1';
           end if;
           if en_clk then
-            if unsigned(burst.trk) = 0 then -- end of burst
-              if burst.reg = '0' and s_cfg.fix_w2 = '1' and unsigned(burst.len) = 1 then
-                en_clk    <= '1';
-                en_wrx    <= '1';
-                h_dq_o_ce <= '0';
-                state     <= WRX;
+            if (s_w_last and not s_w_ready) or break then
+              s_w_last  <= '0';
+              h_dq_o_ce <= '0';
+              if s_cfg.fix_w2 = '1' and w2 = '0' then
+                en_clk <= '1';
+                en_wrx <= '1';
+                state  <= WRX1;
               else
                 en_clk      <= '0';
                 en_cs_next  <= '0';
                 h_rwds_o_ce <= '0';
-                h_dq_o_ce   <= '0';
                 state       <= CSH;
               end if;
             end if;
+            w2 <= '1';
           end if;
 
-        when WRX =>
+        when WRX1 =>
+          en_wrx <= '1';
+          state  <= WRX2;
+
+        when WRX2 =>
           en_clk      <= '0';
           en_cs_next  <= '0';
           h_rwds_o_ce <= '0';
@@ -518,19 +563,20 @@ begin
           r_valid(0) <= '1';
           r_ref(0)   <= burst.ref;
           r_last(0)  <= '0';
-          en_clk <= s_r_ready;
+          en_clk     <= s_r_ready;
           if unsigned(burst.trk) = 1 then -- end of burst
             r_last(0) <= '1';
-            en_clk     <= '0';
-            state      <= CSHR;
+            en_clk    <= '0';
+            state     <= CSHR;
           end if;
           if en_clk = '1' then
-            burst.trk <= decr(burst.trk);
+            burst.trk  <= decr(burst.trk);
+            burst.addr <= incr(burst.addr);
           end if;
 
         when CSHR =>
           en_cs_next <= '0';
-          state   <= CSH;
+          state      <= CSH;
 
         when CSH =>
           h_rwds_t   <= '1';
@@ -540,20 +586,32 @@ begin
           if to_integer(unsigned(s_cfg.tRWR)) >= 4 then
             state <= RWR;
           else
-            s_a_ready <= '1';
+            s_a_ready <= not break;
             phase     <= '0';
-            state     <= IDLE;
+            state     <= BRK when break else IDLE;
           end if;
 
         when RWR =>
           h_dq_t <= '0';
           count  <= count + 1;
           if count = to_integer(unsigned(s_cfg.tRWR))-4 then
-            s_a_ready <= '1';
+            s_a_ready <= not break;
             phase     <= '0';
             count     <= 0;
-            state     <= IDLE;
+            state     <= BRK when break else IDLE;
           end if;
+
+        when BRK =>
+          h_dq_t <= '0';
+          burst.len  <= burst.trk;
+          burst.ref  <= '0';
+          en_cs_next <= '1';
+          en_clk     <= '1';
+          break      <= '0';
+          w2         <= '0';
+          h_dq_o_ce  <= '1';
+          count      <= 1;
+          state      <= CA;
 
       end case;
 

@@ -21,6 +21,7 @@ extern u8 ht_tlat;   // HyperRAM latency, 0-7, typically 4 cycles
 extern u8 ht_trwr;   // HyperRAM read-write recovery, 0-7, typically 4 cycles
 extern u8 ht_trac;   // read access through FIFO, 0-3, typically 2
 extern u8 ht_fix_w2; // ISSI single write bug fix enable
+extern u8 ht_abw;    // address boundary for writes (e.g. 9 for 9 bit column address)
 
 #define ht_lol() (peek8(RA_STAT+3) & 1) // loss of lock
 
@@ -43,5 +44,6 @@ u8 ht_run(
 );
 void ht_err(u8 r);
 u8 ht_init(void);
+void ht_info(void);
 
 #endif

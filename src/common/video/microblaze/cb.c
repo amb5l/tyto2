@@ -27,13 +27,14 @@
 
 uint8_t cb_width = 0;
 uint8_t cb_height = 0;
+uint8_t cb_i = 0; // indent
 uint8_t cb_x;
 uint8_t cb_y;
 uint8_t cb_attr;
 
 void cb_init(uint8_t w, uint8_t h)
 {
-	cb_x = 0;
+	cb_x = cb_i;
 	cb_y = 0;
 	cb_attr = 0x0F;
     cb_width  = w;
@@ -111,7 +112,7 @@ void cb_scroll_up()
 
 void cb_newline()
 {
-	cb_x = 0;
+	cb_x = cb_i;
 	if (++cb_y == cb_height) {
 		cb_y--;
 		cb_scroll_up();
@@ -132,7 +133,7 @@ void cb_putc(void *p, char c)
 				cb_newline();
 				break;
 			case 13 :	// CR
-				cb_x = 0;
+				cb_x = cb_i;
 				break;
 		}
 	}

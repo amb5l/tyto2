@@ -41,6 +41,7 @@
 
 extern uint8_t cb_width;
 extern uint8_t cb_height;
+extern uint8_t cb_i;
 extern uint8_t cb_x;
 extern uint8_t cb_y;
 extern uint8_t cb_attr;

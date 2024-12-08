@@ -15,35 +15,33 @@ int main() {
 	u8 r;
 	u32 tests = 0;
 	u32 errors = 0;
-	u8 rb_mag = 0;
+	u8 rb_mag = 1;
+	u16 t10;
 
 	bsp_init();
-
 	cb_set_border(CB_LIGHT_BLUE);
 
 	cb_set_col(CB_YELLOW, CB_BLACK);
 	printf("MEGAtest application : board rev %d commit %08X\n\n", bsp_board_rev(), bsp_commit());
-
 	cb_set_col(CB_GREEN, CB_BLACK);
-
 	r = ht_init();
 	printf("ht_init: ");
 	ht_err(r);
-	printf("\n");
+	printf("\n\n");
 
-#if 0
-	printf("simple 128kbyte fill then test...");
-	r = ht_run(1,0,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,0,4);
-	r = ht_run(0,1,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,0,4);
-	printf("read 1: "); ht_err(r);
-	r = ht_run(0,1,0,0,0x20000,0x00010000,0x00020002,0,0,0,0,0,0,0,4);
-	printf("read 2: "); ht_err(r);
-#endif
+	while (1) {
 
-	while (errors == 0) {
+		cb_set_col(CB_YELLOW, CB_BLACK);
+		printf("MEGAtest application : board rev %d commit %08X\n", bsp_board_rev(), bsp_commit());
+		cb_set_col(CB_WHITE, CB_RED);
+		printf("\n tests: %d   errors: %d \n\n", tests, errors);
+		tests++;
+		ht_info();
+		cb_set_col(CB_WHITE, CB_BLACK);
+		t10 = xadc_temp10();
+		printf("temperature = %d.%d\n\n", t10 / 10, t10 % 10);
+		cb_set_col(CB_GREEN, CB_BLACK);
 
-		printf("temperature x 10 = %d\n", xadc_temp10());
-#if 1
 		printf("fill and test, sequential address, all 1s... ");
 		r = ht_run(1,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
@@ -85,7 +83,7 @@ int main() {
 		r = ht_run(0,1,0,0,0x800000,0x00010000,0x00020002,0,0,0,0,0,0,1,8);
 		printf("read 1: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,0,0,0,0,0,8);
+		r = ht_run(0,1,0,0,0x800000,0x00010000,0x00020002,0,0,0,0,0,0,0,8);
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
@@ -95,7 +93,7 @@ int main() {
 		r = ht_run(0,1,0,0,0x800000,0x00010000,0x00020002,0,0,1,0,0,0,1,8);
 		printf("read 1: "); ht_err(r);
 		errors += r;
-		r = ht_run(0,1,0,0,0x10000,0x00010000,0x00020002,0,0,1,0,0,0,0,8);
+		r = ht_run(0,1,0,0,0x800000,0x00010000,0x00020002,0,0,1,0,0,0,0,8);
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
@@ -150,7 +148,7 @@ int main() {
 		printf("read 2: "); ht_err(r);
 		errors += r;
 		printf("\n");
-#endif
+
 		printf("fill and test, sequential address, data = address...");
 		r = ht_run(1,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
@@ -169,8 +167,7 @@ int main() {
 		errors += r;
 		printf("\n");
 
-#if 1
-		printf("fill and test, random address, random data... ");
+		printf("fill and test, random address, random data... (rb_mag = %d) ", rb_mag);
 		r = ht_run(1,1,0,0,0x800000,0,0,1,1,0,0,0,0,0,rb_mag);
 		printf("concurrent read: "); ht_err(r);
 		errors += r;
@@ -178,19 +175,5 @@ int main() {
 		printf("follow on read: "); ht_err(r);
 		errors += r;
 		printf("\n");
-#endif
-		printf("\n");
-		cb_set_col(CB_WHITE, CB_RED);
-		tests++;
-		printf(" tests: %d   errors: %d ", tests, errors);
-		cb_set_col(CB_GREEN, CB_BLACK);
-		printf(" - clksel = %d, w2 = %d, tRAC = %d, readback bmag = %d\n",
-			ht_clksel, ht_fix_w2, ht_trac, rb_mag
-		);
-		printf("\n");
 	}
-
-	while (1)
-		;
-
 }

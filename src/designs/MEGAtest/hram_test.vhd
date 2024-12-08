@@ -111,9 +111,9 @@ architecture rtl of hram_test is
 
   --------------------------------------------------------------------------------
 
-  constant BMW       : integer := 4; -- burst magitude (BMAG) field width
-  constant ADDR_MSB  : integer := ROWS_LOG2+COLS_LOG2;
-  constant LEN_MSB   : integer := (2**BMW)-1;
+  constant BMW      : integer := 4; -- burst magitude (BMAG) field width
+  constant ADDR_MSB : integer := ROWS_LOG2+COLS_LOG2;
+  constant LEN_MSB  : integer := (2**BMW)-1;
 
   --------------------------------------------------------------------------------
   -- registers
@@ -130,8 +130,7 @@ architecture rtl of hram_test is
   subtype regs_data_t is sulv_vector(open)(31 downto 0);
 
   constant csr_ctrl_bits : csr_bits_t(31 downto 0) := (
-    30 downto 28 => RW,
-    24 downto 16 => RW,
+    30 downto 16 => RW,
     BMW+11 downto 0 => RW,
     others => RO
   );
@@ -191,8 +190,9 @@ architecture rtl of hram_test is
   alias s_csr_ctrl_bmag   : std_ulogic_vector(BMW-1 downto 0) is s_csr_ctrl(BMW+11 downto 12); -- burst magnitude
   alias s_csr_ctrl_tlat   : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(18 downto 16);     -- tLAT (latency) in clock cycles
   alias s_csr_ctrl_trwr   : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(21 downto 19);     -- tRWR (read write recovery) in clock cycles
-  alias s_csr_ctrl_trac   : std_ulogic_vector(1 downto 0)     is s_csr_ctrl(23 downto 22);     -- tRAC (read access) in clock cycles
-  alias s_csr_ctrl_fix_w2 : std_ulogic                        is s_csr_ctrl(24);               -- fix ISSI single write bug (add dummy write to single writes)
+  alias s_csr_ctrl_trac0  : std_ulogic                        is s_csr_ctrl(22);               -- tRAC (read access) in clock cycles (LSB)
+  alias s_csr_ctrl_fix_w2 : std_ulogic                        is s_csr_ctrl(23);               -- fix ISSI single write bug (add dummy write to single writes)
+  alias s_csr_ctrl_abw    : std_ulogic_vector(3 downto 0)     is s_csr_ctrl(27 downto 24);     -- address boundary for writes
   alias s_csr_ctrl_clksel : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(30 downto 28);
 
   alias s_csr_ctrl_cb_m   : std_ulogic is s_csr_ctrl_cb(0); -- checkerboard masking
@@ -432,7 +432,7 @@ begin
   P_LM: process(s_csr_ctrl_bmag)
   begin
     a_lm <= (others => '0');
-    a_lm(to_integer(unsigned(s_csr_ctrl_bmag)) downto 0) <= (others => '1');
+    a_lm(to_integer(unsigned(s_csr_ctrl_bmag))-1 downto 0) <= (others => '1');
   end process P_LM;
 
   a_addr_rnd <= a_row_rnd & a_col;
@@ -527,13 +527,13 @@ begin
 
         when A_PREP1 =>
           a_len <= (0 => '1', others => '0'); -- default burst length is 1
-          if not s_csr_ctrl_arnd then -- sequential addressing
-            if not s_csr_ctrl_brnd then -- fixed burst length
-              a_len <= (others => '0');
-              a_len(to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
-            else -- PRNG burst length
-              a_len <= incr(a_lm and prng_a_data(a_lm'range));
-            end if;
+          if (s_csr_ctrl_arnd nor s_csr_ctrl_brnd) -- sequential addressing, fixed burst length
+          or (s_csr_ctrl_w and s_csr_ctrl_r)       -- test with readback
+          then
+            a_len <= (others => '0');
+            a_len(to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
+          elsif s_csr_ctrl_brnd and not s_csr_ctrl_arnd then -- sequential address, random burst length
+            a_len <= incr(a_lm and prng_a_data(a_lm'range));
           end if;
           state_a <= A_PREP2;
 
@@ -833,7 +833,8 @@ begin
 
   i_cfg.tLAT   <= s_csr_ctrl_tlat;
   i_cfg.tRWR   <= s_csr_ctrl_trwr;
-  i_cfg.tRAC   <= s_csr_ctrl_trac;
+  i_cfg.tRAC   <= '1' & s_csr_ctrl_trac0;
+  i_cfg.abw    <= s_csr_ctrl_abw;
   i_cfg.fix_w2 <= s_csr_ctrl_fix_w2;
 
   U_CTRL: component hram_ctrl

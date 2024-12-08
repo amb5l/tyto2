@@ -63,9 +63,9 @@ architecture sim of tb_hram_test is
     variable r : hram_params_t;
   begin
     r := i;
-    r.abw  := 9;    -- write address boundary = row (9 column address bits)
-    r.abr  := -1;   -- read address boundary = none
-    r.tVCS := 10.0; -- override tVCS to shorten simulation time
+    r.abw  := COLS_LOG2; -- write address boundary = row
+    r.abr  := -1;        -- read address boundary = none
+    r.tVCS := 10.0;      -- override tVCS to shorten simulation time
     return r;
   end function hram_params;
 
@@ -113,11 +113,12 @@ begin
       s_addr <= (others => 'X');
     end procedure reg_peek;
 
-    variable clksel : std_ulogic_vector(1 downto 0);
+    variable clksel : std_ulogic_vector(2 downto 0);
     variable tLAT   : std_ulogic_vector(2 downto 0);
     variable tRWR   : std_ulogic_vector(2 downto 0);
     variable tRAC   : std_ulogic_vector(1 downto 0);
     variable fix_w2 : std_ulogic;
+    variable abw    : std_ulogic_vector(3 downto 0);
     variable rd     : std_ulogic_vector(31 downto 0);
 
     procedure run(
@@ -140,17 +141,17 @@ begin
       variable eadd : std_ulogic_vector(31 downto 0);
       variable edat : std_ulogic_vector(31 downto 0);
       variable edr  : sulv_vector(0 to 3)(31 downto 0);
+      variable x    : std_ulogic_vector(31 downto 1);
     begin
+      x := "0" & clksel & abw & fix_w2 &
+        tRAC(0) & tRWR & tLAT &
+        bmag & brnd & cb_pol & cb_i & cb_m &
+        '0' & dinv & drnd & arnd & reg & r & w;
       reg_poke(RA_BASE,addr);
       reg_poke(RA_DATA,data);
       reg_poke(RA_INCR,incr);
       reg_poke(RA_SIZE,size);
-      reg_poke(RA_CTRL,
-        "00" & clksel & "000" & fix_w2 &
-        tRAC & tRWR & tLAT &
-        bmag & brnd & cb_pol & cb_i & cb_m &
-        '0' & dinv & drnd & arnd & reg & r & w & '1'
-      ); -- run
+      reg_poke(RA_CTRL,x & '1'); -- run
       loop -- wait for busy
         reg_peek(RA_STAT,rd);
         if rd(0) = '1' then exit; end if;
@@ -159,7 +160,7 @@ begin
         reg_peek(RA_STAT,rd);
         if rd(8) = '1' then exit; end if;
       end loop;
-      reg_poke(RA_CTRL,x"0000_000" & "00" & clksel);
+      reg_poke(RA_CTRL,x & '0'); -- stop
       loop -- wait for not busy
         reg_peek(RA_STAT,rd);
         if rd(0) = '0' then exit; end if;
@@ -207,13 +208,14 @@ begin
     wait until rising_edge(s_clk);
     wait until rising_edge(s_clk);
 
-    clksel := "00";
+    clksel := "000";
     tLAT   := "100";
     tRWR   := "100";
     tRAC   := "11";
     fix_w2 := '1';
+    abw    := "1001";
 
-    reg_poke(RA_CTRL,"00" & clksel & x"0_00_00_00"); -- select clock
+    reg_poke(RA_CTRL, "0" & clksel & abw & fix_w2 & tRAC(0) & tRWR & tLAT & x"0000"); -- set up
 
     -- wait for MMCM lock
     loop
@@ -236,7 +238,7 @@ begin
     --------------------------------------------------------------------------------
     -- short tests
 
-    report "fill and check (interleaved read/write), incrementing data, readback burst length 8";
+    report "fill and check (interleaved read/write), incrementing data, readback burst length 2";
     run(
       w      => '1',
       r      => '1',
@@ -252,7 +254,7 @@ begin
       cb_i   => '0',          -- no inversion
       cb_pol => '0',          -- n/a
       brnd   => '0',          -- must be 0 (readback)
-      bmag   => x"3"          -- BURST LENGTH 8
+      bmag   => x"1"          -- BURST LENGTH 2^1 = 2
     );
 
     report "follow on read";

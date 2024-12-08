@@ -47,7 +47,7 @@ entity overclock is
   port (
     rsti      : in    std_logic;                    -- input (reference) clock synchronous reset
     clki      : in    std_logic;                    -- input (reference) clock
-    sel       : in    std_logic_vector(2 downto 0); -- output clock select: 00 = 100, 01 = 105, 10 = 110, 11 = 120 (MHz)
+    sel       : in    std_logic_vector(2 downto 0); -- output clock select
     s_rst     : out   std_logic;                    -- system clock synchronous reset
     s_clk     : out   std_logic;                    -- system clock (100/105/110/120 MHz)
     s_clk_dly : out   std_logic                     -- delayed system clock (100/105/110/120 MHz) for HyperRAM controller
@@ -56,7 +56,17 @@ end entity overclock;
 
 architecture rtl of overclock is
 
-  -- TODO remove 200MHz clock from this recipe
+  -- see overclock.xlsx
+  -- | sel | freq    |
+  -- |-----|---------|
+  -- | 000 | 100 MHz |
+  -- | 001 | 105 MHz |
+  -- | 010 | 110 MHz |
+  -- | 011 | 120 MHz |
+  -- | 100 |  50 MHz |
+  -- | 101 |  75 MHz |
+  -- | 110 |  90 MHz |
+  -- | 111 |  95 MHz |
   constant TABLE : sulv_vector(0 to 255)(39 downto 0) := (
     16#00# => x"06" & x"1000" & x"1000",
     16#01# => x"07" & x"0000" & x"8000",

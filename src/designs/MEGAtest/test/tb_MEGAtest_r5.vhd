@@ -249,7 +249,9 @@ architecture sim of tb_MEGAtest_r5 is
     variable r : hram_params_t;
   begin
     r := i;
-    r.tVCS := 10.0; -- override tVCS to shorten simulation time
+    r.tVCS := 10.0;   -- override tVCS to shorten simulation time
+    r.tCSM := 6000.0; -- override tCSM (50MHz bodge)
+    r.abw  := 9;      -- report write row boundary crossing
     return r;
   end function hram_params;
 
