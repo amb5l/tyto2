@@ -56,7 +56,7 @@ $(random_1to1_vhd): $(random_1to1_py)
 	python $(random_1to1_py) $(ROWS_LOG2) > $@
 
 clean::
-	rm -f $(random_1to1_vhd)
+	@rm -f $(random_1to1_vhd)
 
 ################################################################################
 # Vivado
