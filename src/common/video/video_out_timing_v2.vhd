@@ -52,7 +52,7 @@ end package video_out_timing_v2_pkg;
 
 use work.tyto_utils_pkg.all;
 use work.video_mode_v2_pkg.all;
-use work.sync_reg_u_pkg.all;
+use work.sync_pkg.all;
 use work.video_out_timing_v2_pkg.all;
 
 library ieee;
@@ -148,10 +148,7 @@ begin
     pos_v_fp2  <= pos_v_act2 + shift_right(unsigned(params.v_act), 1);
   end process P_COMB;
 
-  SYNC: component sync_reg_u
-    generic map (
-      stages => 2
-    )
+  CDC: component sync
     port map (
       rst  => rst,
       clk  => clk,

@@ -24,78 +24,77 @@ library unisim;
 entity mega65_r3 is
   port (
 
-    clk_in           : in    std_ulogic;                      -- clock in (100MHz)
+    clk_in           : in    std_logic;                      -- clock in (100MHz)
 
     max10_clk        : inout std_ulogic;                      -- MAX10 CPLD
     max10_tx         : in    std_ulogic;
     max10_rx         : out   std_ulogic;
 
-    uled             : out   std_ulogic;                      -- LED D9 "ULED"
+    uled             : out   std_logic;                      -- LED D9 "ULED"
 
-    uart_tx          : out   std_ulogic;                      -- debug UART
-    uart_rx          : in    std_ulogic;
+    uart_tx          : out   std_logic;                      -- debug UART
+    uart_rx          : in    std_logic;
 
-    qspi_cs_n        : out   std_ulogic;                      -- QSPI flash
-    qspi_d           : inout std_ulogic_vector(3 downto 0);
+    qspi_cs_n        : out   std_logic;                      -- QSPI flash
+    qspi_d           : inout std_logic_vector(3 downto 0);
 
-    sdi_cd_n         : inout std_ulogic;                      -- internal SD/MMC card
-    sdi_wp_n         : in    std_ulogic;
-    sdi_ss_n         : out   std_ulogic;
-    sdi_clk          : out   std_ulogic;
-    sdi_mosi         : out   std_ulogic;
-    sdi_miso         : inout std_ulogic;
-    sdi_d1           : inout std_ulogic;
-    sdi_d2           : inout std_ulogic;
+    sdi_cd_n         : inout std_logic;                      -- internal SD/MMC card
+    sdi_wp_n         : in    std_logic;
+    sdi_ss_n         : out   std_logic;
+    sdi_clk          : out   std_logic;
+    sdi_mosi         : out   std_logic;
+    sdi_miso         : inout std_logic;
+    sdi_d1           : inout std_logic;
+    sdi_d2           : inout std_logic;
 
-    sdx_cd_n         : inout std_ulogic;                      -- external micro SD card
-    sdx_ss_n         : out   std_ulogic;
-    sdx_clk          : out   std_ulogic;
-    sdx_mosi         : out   std_ulogic;
-    sdx_miso         : inout std_ulogic;
-    sdx_d1           : inout std_ulogic;
-    sdx_d2           : inout std_ulogic;
+    sdx_cd_n         : inout std_logic;                      -- external micro SD card
+    sdx_ss_n         : out   std_logic;
+    sdx_clk          : out   std_logic;
+    sdx_mosi         : out   std_logic;
+    sdx_miso         : inout std_logic;
+    sdx_d1           : inout std_logic;
+    sdx_d2           : inout std_logic;
 
-    i2c_scl          : inout std_ulogic;                      -- on-board I2C bus
-    i2c_sda          : inout std_ulogic;
+    i2c_scl          : inout std_logic;                      -- on-board I2C bus
+    i2c_sda          : inout std_logic;
 
-    grove_scl        : inout std_ulogic;                      -- Grove connector
-    grove_sda        : inout std_ulogic;
+    grove_scl        : inout std_logic;                      -- Grove connector
+    grove_sda        : inout std_logic;
 
-    kb_io0           : out   std_ulogic;                      -- keyboard
-    kb_io1           : out   std_ulogic;
-    kb_io2           : in    std_ulogic;
-    kb_jtagen        : out   std_ulogic;
-    kb_tck           : out   std_ulogic;
-    kb_tms           : out   std_ulogic;
-    kb_tdi           : out   std_ulogic;
-    kb_tdo           : in    std_ulogic;
+    kb_io0           : out   std_logic;                      -- keyboard
+    kb_io1           : out   std_logic;
+    kb_io2           : in    std_logic;
+    kb_jtagen        : out   std_logic;
+    kb_tck           : out   std_logic;
+    kb_tms           : out   std_logic;
+    kb_tdi           : out   std_logic;
+    kb_tdo           : in    std_logic;
 
-    jsa_up_n         : in    std_ulogic;                      -- joysticks/paddles
-    jsa_down_n       : in    std_ulogic;
-    jsa_left_n       : in    std_ulogic;
-    jsa_right_n      : in    std_ulogic;
-    jsa_fire_n       : in    std_ulogic;
-    jsb_up_n         : in    std_ulogic;
-    jsb_down_n       : in    std_ulogic;
-    jsb_left_n       : in    std_ulogic;
-    jsb_right_n      : in    std_ulogic;
-    jsb_fire_n       : in    std_ulogic;
+    jsa_up_n         : in    std_logic;                      -- joysticks/paddles
+    jsa_down_n       : in    std_logic;
+    jsa_left_n       : in    std_logic;
+    jsa_right_n      : in    std_logic;
+    jsa_fire_n       : in    std_logic;
+    jsb_up_n         : in    std_logic;
+    jsb_down_n       : in    std_logic;
+    jsb_left_n       : in    std_logic;
+    jsb_right_n      : in    std_logic;
+    jsb_fire_n       : in    std_logic;
+    paddle           : in    std_logic_vector(3 downto 0);
+    paddle_drain     : out   std_logic;
 
-    paddle           : in    std_ulogic_vector(3 downto 0);
-    paddle_drain     : out   std_ulogic;
+    audio_pd_n       : out   std_logic;                      -- audio codec
+    audio_mclk       : out   std_logic;
+    audio_bclk       : out   std_logic;
+    audio_lrclk      : out   std_logic;
+    audio_sdata      : out   std_logic;
+    audio_pwm_l      : out   std_logic;
+    audio_pwm_r      : out   std_logic;
 
-    audio_pd_n       : out   std_ulogic;                      -- audio codec
-    audio_mclk       : out   std_ulogic;
-    audio_bclk       : out   std_ulogic;
-    audio_lrclk      : out   std_ulogic;
-    audio_sdata      : out   std_ulogic;
-    audio_pwm_r      : out   std_ulogic;
-    audio_pwm_l      : out   std_ulogic;
-
-    hdmi_clk_p       : out   std_ulogic;                      -- HDMI out
-    hdmi_clk_n       : out   std_ulogic;
-    hdmi_data_p      : out   std_ulogic_vector(0 to 2);
-    hdmi_data_n      : out   std_ulogic_vector(0 to 2);
+    hdmi_clk_p       : out   std_logic;                      -- HDMI out
+    hdmi_clk_n       : out   std_logic;
+    hdmi_data_p      : out   std_logic_vector(0 to 2);
+    hdmi_data_n      : out   std_logic_vector(0 to 2);
     hdmi_ct_hpd      : out   std_ulogic;
     hdmi_hpd         : inout std_ulogic;
     hdmi_ls_oe       : out   std_ulogic;
@@ -103,72 +102,72 @@ entity mega65_r3 is
     hdmi_sda         : inout std_ulogic;
     hdmi_cec         : inout std_ulogic;
 
-    vga_clk          : out   std_ulogic;                      -- VGA out
-    vga_vsync        : out   std_ulogic;
-    vga_hsync        : out   std_ulogic;
-    vga_sync_n       : out   std_ulogic;
-    vga_blank_n      : out   std_ulogic;
-    vga_r            : out   std_ulogic_vector (7 downto 0);
-    vga_g            : out   std_ulogic_vector (7 downto 0);
-    vga_b            : out   std_ulogic_vector (7 downto 0);
-    vga_scl          : inout std_ulogic;
-    vga_sda          : inout std_ulogic;
+    vga_clk          : out   std_logic;                      -- VGA out
+    vga_vsync        : out   std_logic;
+    vga_hsync        : out   std_logic;
+    vga_sync_n       : out   std_logic;
+    vga_blank_n      : out   std_logic;
+    vga_r            : out   std_logic_vector (7 downto 0);
+    vga_g            : out   std_logic_vector (7 downto 0);
+    vga_b            : out   std_logic_vector (7 downto 0);
+    vga_scl          : inout std_logic;
+    vga_sda          : inout std_logic;
 
-    fdd_chg_n        : in    std_ulogic;                      -- FDD
-    fdd_wp_n         : in    std_ulogic;
-    fdd_den          : out   std_ulogic;
-    fdd_sela         : out   std_ulogic;
-    fdd_selb         : out   std_ulogic;
-    fdd_mota_n       : out   std_ulogic;
-    fdd_motb_n       : out   std_ulogic;
-    fdd_side_n       : out   std_ulogic;
-    fdd_dir_n        : out   std_ulogic;
-    fdd_step_n       : out   std_ulogic;
-    fdd_trk0_n       : in    std_ulogic;
-    fdd_idx_n        : in    std_ulogic;
-    fdd_wgate_n      : out   std_ulogic;
-    fdd_wdata        : out   std_ulogic;
-    fdd_rdata        : in    std_ulogic;
+    fdd_chg_n        : in    std_logic;                      -- FDD
+    fdd_wp_n         : in    std_logic;
+    fdd_den          : out   std_logic;
+    fdd_sela         : out   std_logic;
+    fdd_selb         : out   std_logic;
+    fdd_mota_n       : out   std_logic;
+    fdd_motb_n       : out   std_logic;
+    fdd_side_n       : out   std_logic;
+    fdd_dir_n        : out   std_logic;
+    fdd_step_n       : out   std_logic;
+    fdd_trk0_n       : in    std_logic;
+    fdd_idx_n        : in    std_logic;
+    fdd_wgate_n      : out   std_logic;
+    fdd_wdata        : out   std_logic;
+    fdd_rdata        : in    std_logic;
 
-    iec_rst_n        : out   std_ulogic;                      -- CBM-488/IEC serial port
-    iec_atn_n        : out   std_ulogic;
-    iec_srq_n_en_n   : out   std_ulogic;
-    iec_srq_n_o      : out   std_ulogic;
-    iec_srq_n_i      : in    std_ulogic;
-    iec_clk_en_n     : out   std_ulogic;
-    iec_clk_o        : out   std_ulogic;
-    iec_clk_i        : in    std_ulogic;
-    iec_data_en_n    : out   std_ulogic;
-    iec_data_o       : out   std_ulogic;
-    iec_data_i       : in    std_ulogic;
+    iec_rst_n        : out   std_logic;                      -- CBM-488/IEC serial port
+    iec_atn_n        : out   std_logic;
+    iec_srq_n_en_n   : out   std_logic;
+    iec_srq_n_o      : out   std_logic;
+    iec_srq_n_i      : in    std_logic;
+    iec_clk_en_n     : out   std_logic;
+    iec_clk_o        : out   std_logic;
+    iec_clk_i        : in    std_logic;
+    iec_data_en_n    : out   std_logic;
+    iec_data_o       : out   std_logic;
+    iec_data_i       : in    std_logic;
 
-    eth_rst_n        : out   std_ulogic;                      -- ethernet PHY (RMII)
-    eth_clk          : out   std_ulogic;
-    eth_txen         : out   std_ulogic;
-    eth_txd          : out   std_ulogic_vector(1 downto 0);
-    eth_rxdv         : in    std_ulogic;
-    eth_rxer         : in    std_ulogic;
-    eth_rxd          : in    std_ulogic_vector(1 downto 0);
-    eth_mdc          : out   std_ulogic;
-    eth_mdio         : inout std_ulogic;
-    eth_led_n        : inout std_ulogic;
+    eth_rst_n        : out   std_logic;                      -- ethernet PHY (RMII)
+    eth_clk          : out   std_logic;
+    eth_txen         : out   std_logic;
+    eth_txd          : out   std_logic_vector(1 downto 0);
+    eth_rxdv         : in    std_logic;
+    eth_rxer         : in    std_logic;
+    eth_rxd          : in    std_logic_vector(1 downto 0);
+    eth_mdc          : out   std_logic;
+    eth_mdio         : inout std_logic;
+    eth_led_n        : inout std_logic;
 
-    cart_dotclk      : out   std_ulogic;                      -- C64 cartridge
-    cart_phi2        : out   std_ulogic;
-    cart_rst_n       : out   std_ulogic;
-    cart_dma_n       : in    std_ulogic;
-    cart_nmi_n       : in    std_ulogic;
-    cart_irq_n       : in    std_ulogic;
-    cart_ba          : inout std_ulogic;
-    cart_r_w         : inout std_ulogic;
-    cart_exrom_n     : in    std_ulogic;
-    cart_game_n      : in    std_ulogic;
-    cart_io1_n       : inout std_ulogic;
-    cart_io2_n       : inout std_ulogic;
-    cart_roml_n      : inout std_ulogic;
-    cart_romh_n      : inout std_ulogic;
-    cart_a           : inout std_ulogic_vector(15 downto 0);
-    cart_d           : inout std_ulogic_vector(7 downto 0);
+    cart_dotclk      : out   std_logic;                      -- C64 cartridge
+    cart_phi2        : out   std_logic;
+    cart_rst_n       : out   std_logic;
+    cart_dma_n       : in    std_logic;
+    cart_nmi_n       : in    std_logic;
+    cart_irq_n       : in    std_logic;
+    cart_ba          : inout std_logic;
+    cart_r_w         : inout std_logic;
+    cart_exrom_n     : in    std_logic;
+    cart_game_n      : in    std_logic;
+    cart_io1_n       : inout std_logic;
+    cart_io2_n       : inout std_logic;
+    cart_roml_n      : inout std_logic;
+    cart_romh_n      : inout std_logic;
+    cart_a           : inout std_logic_vector(15 downto 0);
+    cart_d           : inout std_logic_vector(7 downto 0);
 
     cart_ctrl_oe_n   : out   std_ulogic;                      -- C64 cartridge ctrl
     cart_ctrl_dir    : out   std_ulogic;
@@ -178,34 +177,34 @@ entity mega65_r3 is
     cart_data_oe_n   : out   std_ulogic;
     cart_data_dir    : out   std_ulogic;
 
-    hr_rst_n         : out   std_ulogic;                      -- HyperRAM
-    hr_clk_p         : out   std_ulogic;
-    hr_cs_n          : out   std_ulogic;
-    hr_rwds          : inout std_ulogic;
-    hr_d             : inout std_ulogic_vector(7 downto 0);
+    hr_rst_n         : out   std_logic;                      -- HyperRAM
+    hr_clk_p         : out   std_logic;
+    hr_cs_n          : out   std_logic;
+    hr_rwds          : inout std_logic;
+    hr_d             : inout std_logic_vector(7 downto 0);
 
-    pmod1lo          : inout std_ulogic_vector(3 downto 0);   -- PMODs
-    pmod1hi          : inout std_ulogic_vector(3 downto 0);
-    pmod2lo          : inout std_ulogic_vector(3 downto 0);
-    pmod2hi          : inout std_ulogic_vector(3 downto 0);
+    pmod1lo          : inout std_logic_vector(3 downto 0);   -- PMODs
+    pmod1hi          : inout std_logic_vector(3 downto 0);
+    pmod2lo          : inout std_logic_vector(3 downto 0);
+    pmod2hi          : inout std_logic_vector(3 downto 0);
 
-    tp               : inout std_ulogic_vector(1 to 8)        -- testpoints
+    tp               : inout std_ulogic_vector(1 to 8)       -- testpoints
 
   );
 end entity mega65_r3;
 
 architecture rtl of mega65_r3 is
 
-  signal hdmi_clk  : std_ulogic;
-  signal hdmi_data : std_ulogic_vector(0 to 2);
+  signal hdmi_clk  : std_logic;
+  signal hdmi_data : std_logic_vector(0 to 2);
 
 begin
 
   -- safe states for unused I/Os
 
-  uled           <= '0';
   max10_clk      <= '0';
   max10_rx       <= '0';
+  uled           <= '0';
   uart_tx        <= '1';
   qspi_cs_n      <= '1';
   qspi_d         <= (others => '1');

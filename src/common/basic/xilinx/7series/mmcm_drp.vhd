@@ -55,7 +55,7 @@ package mmcm_drp_pkg is
     port (
       rsti      : in    std_ulogic;
       clki      : in    std_ulogic;
-      sel       : in    std_ulogic_vector(1 downto 0);
+      sel       : in    std_ulogic_vector;
       rsto      : out   std_ulogic;
       clko0     : out   std_ulogic;
       clko1     : out   std_ulogic;
@@ -73,7 +73,7 @@ end package mmcm_drp_pkg;
 
 use work.tyto_types_pkg.all;
 use work.tyto_utils_pkg.all;
-use work.sync_reg_u_pkg.all;
+use work.sync_pkg.all;
 use work.mmcm_drp_pkg.all;
 
 library ieee;
@@ -90,11 +90,11 @@ entity mmcm_drp is
     BW    : string := "OPTIMIZED"
   );
   port (
-    rsti      : in    std_ulogic;               -- input (reference) clock synchronous reset
-    clki      : in    std_ulogic;               -- input (reference) clock
-    sel       : in    std_ulogic_vector;        -- output clock select
-    rsto      : out   std_ulogic;               -- output reset (asynchronous)
-    clko0     : out   std_ulogic;               -- output clocks
+    rsti      : in    std_ulogic;        -- input (reference) clock synchronous reset
+    clki      : in    std_ulogic;        -- input (reference) clock
+    sel       : in    std_ulogic_vector; -- output clock select
+    rsto      : out   std_ulogic;        -- output reset (asynchronous)
+    clko0     : out   std_ulogic;        -- output clocks
     clko1     : out   std_ulogic;
     clko2     : out   std_ulogic;
     clko3     : out   std_ulogic;
@@ -108,52 +108,63 @@ architecture rtl of mmcm_drp is
 
   constant AMSB : integer := log2(TABLE'length)-1;
 
-  signal sel_s        : std_ulogic_vector(1 downto 0);    -- sel, synchronised to clki
+  signal sel_s        : std_ulogic_vector(sel'range);           -- sel, synchronised to clki
 
-  signal rsto_req     : std_ulogic;                       -- rsto request, synchronous to clki
+  signal rsto_req     : std_ulogic;                             -- rsto request, synchronous to clki
 
-  signal mmcm_rst     : std_ulogic;                       -- MMCM reset
-  signal locked       : std_ulogic;                       -- MMCM locked output
-  signal locked_s     : std_ulogic;                       -- above, synchronised to clki
+  signal mmcm_rst     : std_ulogic;                             -- MMCM reset
+  signal locked       : std_ulogic;                             -- MMCM locked output
+  signal locked_s     : std_ulogic;                             -- above, synchronised to clki
 
-  signal sel_prev     : std_ulogic_vector(2 downto 0);    -- to detect changes
-  signal clk_fb       : std_ulogic;                       -- feedback clock
-  signal clku_fb      : std_ulogic;                       -- unbuffered feedback clock
-  signal clko_u       : std_ulogic_vector(0 to 6);        -- unbuffered output clock
+  signal sel_prev     : std_ulogic_vector(sel'length downto 0); -- to detect changes
+  signal clk_fb       : std_ulogic;                             -- feedback clock
+  signal clku_fb      : std_ulogic;                             -- unbuffered feedback clock
+  signal clko_u       : std_ulogic_vector(0 to 6);              -- unbuffered output clock
 
-  signal cfg_tbl_addr : std_ulogic_vector(AMSB downto 0); -- table address
-  signal cfg_tbl_data : std_ulogic_vector(39 downto 0);   -- table data = 8 bit address + 16 bit write data + 16 bit read mask
+  signal cfg_tbl_addr : std_ulogic_vector(AMSB downto 0);       -- table address
+  signal cfg_tbl_data : std_ulogic_vector(39 downto 0);         -- table data = 8 bit address + 16 bit write data + 16 bit read mask
 
-  signal cfg_rst      : std_ulogic;                       -- DRP reset
-  signal cfg_daddr    : std_ulogic_vector(6 downto 0);    -- DRP register address
-  signal cfg_den      : std_ulogic;                       -- DRP enable (pulse)
-  signal cfg_dwe      : std_ulogic;                       -- DRP write enable
-  signal cfg_di       : std_ulogic_vector(15 downto 0);   -- DRP write data
-  signal cfg_do       : std_ulogic_vector(15 downto 0);   -- DRP read data
-  signal cfg_drdy     : std_ulogic;                       -- DRP access complete
+  signal cfg_rst      : std_ulogic;                             -- DRP reset
+  signal cfg_daddr    : std_ulogic_vector(6 downto 0);          -- DRP register address
+  signal cfg_den      : std_ulogic;                             -- DRP enable (pulse)
+  signal cfg_dwe      : std_ulogic;                             -- DRP write enable
+  signal cfg_di       : std_ulogic_vector(15 downto 0);         -- DRP write data
+  signal cfg_do       : std_ulogic_vector(15 downto 0);         -- DRP read data
+  signal cfg_drdy     : std_ulogic;                             -- DRP access complete
 
-  signal clko         : std_ulogic_vector(0 to 6);        -- output clocks
+  signal clko         : std_ulogic_vector(0 to 6);              -- output clocks
 
 
-  type cfg_state_t is (                                   -- state machine states
-    IDLE,                                                 -- waiting for fsel change
-    RESET,                                                -- put MMCM into reset
-    TBL,                                                  -- get first/next table value
-    RD,                                                   -- start read
-    RD_WAIT,                                              -- wait for read to complete
-    WR,                                                   -- start write
-    WR_WAIT,                                              -- wait for write to complete
-    LOCK_WAIT                                             -- wait for reconfig to complete
+  type cfg_state_t is (                                         -- state machine states
+    IDLE,                                                       -- waiting for fsel change
+    RESET,                                                      -- put MMCM into reset
+    TBL,                                                        -- get first/next table value
+    RD,                                                         -- start read
+    RD_WAIT,                                                    -- wait for read to complete
+    WR,                                                         -- start write
+    WR_WAIT,                                                    -- wait for write to complete
+    LOCK_WAIT                                                   -- wait for reconfig to complete
   );
   signal cfg_state : cfg_state_t;
 
 begin
 
-  MAIN: process (clki) is
+  MAIN: process (rsti,clki) is
   begin
-    if rising_edge(clki) then
 
-      cfg_tbl_data <= TABLE(to_integer(unsigned(cfg_tbl_addr)));                                                                   -- synchronous ROM
+    if rsti = '1' then                                                                                                           -- full reset
+
+      sel_prev  <= (others => '1');                                                                                              -- force reconfig
+      cfg_rst   <= '1';
+      cfg_daddr <= (others => '0');
+      cfg_den   <= '0';
+      cfg_dwe   <= '0';
+      cfg_di    <= (others => '0');
+      cfg_state <= RESET;
+
+      rsto_req <= '1';
+
+    elsif rising_edge(clki) then
 
       -- defaults
       cfg_den <= '0';
@@ -194,7 +205,7 @@ begin
               cfg_tbl_addr <= (others => '0');
               cfg_state    <= LOCK_WAIT;
             else                                                                                                                   -- do next entry in table
-              cfg_tbl_addr(4 downto 0) <= std_ulogic_vector(unsigned(cfg_tbl_addr(4 downto 0)) + 1);
+              cfg_tbl_addr(4 downto 0) <= incr(cfg_tbl_addr(4 downto 0));
               cfg_state                <= TBL;
             end if;
           end if;
@@ -206,53 +217,35 @@ begin
           end if;
       end case;
 
-      if rsti = '1' then                                                                                                           -- full reset
-
-        sel_prev  <= (others => '1');                                                                                              -- force reconfig
-        cfg_rst   <= '1';
-        cfg_daddr <= (others => '0');
-        cfg_den   <= '0';
-        cfg_dwe   <= '0';
-        cfg_di    <= (others => '0');
-        cfg_state <= RESET;
-
-        rsto_req <= '1';
-
-      end if;
-
     end if;
+
+    if rising_edge(clki) then
+      cfg_tbl_data <= TABLE(to_integer(unsigned(cfg_tbl_addr)));                                                                   -- synchronous ROM
+    end if;
+
   end process MAIN;
 
   -- clock domain crossing
 
-  SYNC : component sync_reg_u
+  CDC : component sync
     generic map (
-      STAGES => 3
+      WIDTH => 1+sel_s'length
     )
     port map (
       rst   => rsti,
       clk   => clki,
-      i(0)  => locked,
-      i(1)  => sel(0),
-      i(2)  => sel(1),
-      o(0)  => locked_s,
-      o(1)  => sel_s(0),
-      o(2)  => sel_s(1)
+      i(sel_s'range)  => sel,
+      i(sel_s'length) => locked,
+      o(sel_s'range)  => sel_s,
+      o(sel_s'length) => locked_s
     );
 
   mmcm_rst <= cfg_rst or rsti;
   rsto <= rsto_req or not locked or mmcm_rst;
 
-  -- The 7 series LVDS serdes is rated at as follows for DDR outputs:
-  --  1200Mbps max for -2 speed grade
-  --  950Mbps max for -1 speed grade
-  -- 1485Mbps (for full HD) mmcm_drps these, so we use a fictional
-  --  recipe for the MMCM to achieve timing closure:
-  --   m = 9.25, d = 1, outdiv0 = 2.0, outdiv1 = 6
-  --    => fVCO = 925 MHz, fclko_x5 = 462.5 MHz, fclko = 154.166 MHz
   MMCM: component mmcme2_adv
     generic map (
-      bandwidth            => "OPTIMIZED",
+      bandwidth            => BW,
       clkfbout_mult_f      => INIT.mul,
       clkfbout_phase       => 0.0,
       clkfbout_use_fine_ps => false,

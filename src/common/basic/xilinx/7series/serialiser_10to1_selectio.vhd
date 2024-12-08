@@ -53,7 +53,7 @@ entity serialiser_10to1_selectio is
   );
 end entity serialiser_10to1_selectio;
 
-architecture synth of serialiser_10to1_selectio is
+architecture rtl of serialiser_10to1_selectio is
 
   signal s1 : std_logic;
   signal s2 : std_logic;
@@ -159,4 +159,4 @@ begin
       ob => out_n
     );
 
-end architecture synth;
+end architecture rtl;

@@ -37,7 +37,7 @@ end package video_out_clock_v2_pkg;
 
 use work.tyto_types_pkg.all;
 use work.mmcm_drp_pkg.all;
-use work.sync_reg_u_pkg.all;
+use work.sync_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
@@ -178,7 +178,7 @@ architecture rtl of video_out_clock_v2 is
 
 begin
 
-  MMCM: component mmcm_drp
+  MMCM: component mmcm_drp -- v4p ignore w-301 (unconnected outputs)
   generic map (
     TABLE => TABLE,
     INIT  => INIT
@@ -192,10 +192,9 @@ begin
     clko1 => clko
   );
 
-  SYNC: component sync_reg_u
+  CDC: component sync
     generic map (
-      STAGES    => 3,
-      RST_STATE => '1'
+      SR => "1"
     )
     port map (
       rst  => rsta,

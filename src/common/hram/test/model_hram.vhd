@@ -15,7 +15,10 @@
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
 -- assumption: simulator time resolution is 1 ps
--- TODO add wrap and hybrid wrap burst support
+-- TODO
+--  add wrap and hybrid wrap burst support
+--  support RWDS pauses during reads at page/row boundary
+--  latch refresh during cycles
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -28,43 +31,46 @@ package model_hram_pkg is
   -- HyperRAM parameter bundle type
   -- tXXX reals correspond to nanoseconds
   type hram_params_t is record
-    ra_bits  : integer;                       -- memory array row address bits
-    ca_bits  : integer;                       -- memory array column address bits
-    tDRI     : real;                          -- distributed refresh interval
-    tVCS     : real;                          -- power on and reset high to first access
-    tRP      : real;                          -- reset pulse width, min
-    tRH      : real;                          -- reset negation to chip select assertion, min
-    tRPH     : real;                          -- reset assertion to chip select assertion, min
-    tCK      : real;                          -- clock period, min
-    CKHPmin  : real;                          -- half clock period, min
-    CKHPmax  : real;                          -- half clock period, min
-    tCSHI    : real;                          -- chip select high, min
-    tRWR     : real;                          -- read-write recovery time, min
-    tCSS     : real;                          -- chip select setup
-    tDSVmin  : real;                          -- data strobe valid, min
-    tDSVmax  : real;                          -- data strobe valid, max
-    tIS      : real;                          -- input setup, min
-    tIH      : real;                          -- input hold, min
-    tACC     : real;                          -- access, max
-    tDQLZmin : real;                          -- clock to DQ low Z, min
-    tCKDmin  : real;                          -- clock to DQ valid, min
-    tCKDmax  : real;                          -- clock to DQ valid, max
-    tCKDImin : real;                          -- clock to DQ invalid, min
-    tCKDImax : real;                          -- clock to DQ invalid, max
-    tCKDSmin : real;                          -- clock to RDWS valid, min
-    tCKDSmax : real;                          -- clock to RDWS valid, max
-    tDSSmin  : real;                          -- RDWS to DQ valid, min
-    tDSSmax  : real;                          -- RDWS to DQ valid, max
-    tDSHmin  : real;                          -- RDWS to DQ hold, min
-    tDSHmax  : real;                          -- RDWS to DQ hold, max
-    tCSH     : real;                          -- chip select hold, min
-    tDSZmin  : real;                          -- chip select inactive to RWDS hi Z, min
-    tDSZmax  : real;                          -- chip select inactive to RWDS hi Z, max
-    tOZmin   : real;                          -- chip select inactive to DQ hi Z, min
-    tOZmax   : real;                          -- chip select inactive to DQ hi Z, max
-    tCSM     : real;                          -- chip select, max
-    tRFH     : real;                          -- refresh duration
-    manuf    : std_ulogic_vector(3 downto 0); -- manufacturer field of idreg0
+    idreg0   : std_ulogic_vector(15 downto 0); -- ID register 0 value
+    idreg1   : std_ulogic_vector(15 downto 0); -- ID register 1 value
+    cfgreg0  : std_ulogic_vector(15 downto 0); -- configuration register 0 default value
+    cfgreg1  : std_ulogic_vector(15 downto 0); -- configuration register 1 default value
+    abw      : integer;                        -- address boundary for writes (-1 = none)
+    abr      : integer;                        -- address boundary for reads (-1 = none)
+    tDRI     : real;                           -- distributed refresh interval
+    tVCS     : real;                           -- power on and reset high to first access
+    tRP      : real;                           -- reset pulse width, min
+    tRH      : real;                           -- reset negation to chip select assertion, min
+    tRPH     : real;                           -- reset assertion to chip select assertion, min
+    tCK      : real;                           -- clock period, min
+    CKHPmin  : real;                           -- half clock period, min
+    CKHPmax  : real;                           -- half clock period, min
+    tCSHI    : real;                           -- chip select high, min
+    tRWR     : real;                           -- read-write recovery time, min
+    tCSS     : real;                           -- chip select setup
+    tDSVmin  : real;                           -- data strobe valid, min
+    tDSVmax  : real;                           -- data strobe valid, max
+    tIS      : real;                           -- input setup, min
+    tIH      : real;                           -- input hold, min
+    tACC     : real;                           -- access, max
+    tDQLZmin : real;                           -- clock to DQ low Z, min
+    tCKDmin  : real;                           -- clock to DQ valid, min
+    tCKDmax  : real;                           -- clock to DQ valid, max
+    tCKDImin : real;                           -- clock to DQ invalid, min
+    tCKDImax : real;                           -- clock to DQ invalid, max
+    tCKDSmin : real;                           -- clock to RDWS valid, min
+    tCKDSmax : real;                           -- clock to RDWS valid, max
+    tDSSmin  : real;                           -- RDWS to DQ valid, min
+    tDSSmax  : real;                           -- RDWS to DQ valid, max
+    tDSHmin  : real;                           -- RDWS to DQ hold, min
+    tDSHmax  : real;                           -- RDWS to DQ hold, max
+    tCSH     : real;                           -- chip select hold, min
+    tDSZmin  : real;                           -- chip select inactive to RWDS hi Z, min
+    tDSZmax  : real;                           -- chip select inactive to RWDS hi Z, max
+    tOZmin   : real;                           -- chip select inactive to DQ hi Z, min
+    tOZmax   : real;                           -- chip select inactive to DQ hi Z, max
+    tCSM     : real;                           -- chip select, max
+    tRFH     : real;                           -- refresh duration
   end record hram_params_t;
 
   -- timing violation severity bundle type
@@ -86,50 +92,13 @@ package model_hram_pkg is
     tCSM     : severity_level;
   end record hram_sev_t;
 
-  constant HRAM_PARAMS_NULL : hram_params_t := (
-    ra_bits  => 0,
-    ca_bits  => 0,
-    tDRI     => 0.0,
-    tVCS     => 0.0,
-    tRP      => 0.0,
-    tRH      => 0.0,
-    tRPH     => 0.0,
-    tCK      => 0.0,
-    CKHPmin  => 0.0,
-    CKHPmax  => 0.0,
-    tCSHI    => 0.0,
-    tRWR     => 0.0,
-    tCSS     => 0.0,
-    tDSVmin  => 0.0,
-    tDSVmax  => 0.0,
-    tIS      => 0.0,
-    tIH      => 0.0,
-    tACC     => 0.0,
-    tDQLZmin => 0.0,
-    tCKDmin  => 0.0,
-    tCKDmax  => 0.0,
-    tCKDImin => 0.0,
-    tCKDImax => 0.0,
-    tCKDSmin => 0.0,
-    tCKDSmax => 0.0,
-    tDSSmin  => 0.0,
-    tDSSmax  => 0.0,
-    tDSHmin  => 0.0,
-    tDSHmax  => 0.0,
-    tCSH     => 0.0,
-    tDSZmin  => 0.0,
-    tDSZmax  => 0.0,
-    tOZmin   => 0.0,
-    tOZmax   => 0.0,
-    tCSM     => 0.0,
-    tRFH     => 0.0,
-    manuf    => "XXXX"
-  );
-
-  -- parameter bundle for ISSI 8Mx8 100MHz 3.0V e.g. IS66WVH8M8DBLL-100B1LI
-  constant HRAM_8Mx8_100_3V0 : hram_params_t := (
-    ra_bits  => 13,       -- log2(memory array rows) (c.w. 8192)
-    ca_bits  => 9,        -- log2(memory array columns) (c.w. 512)
+  constant IS66WVH8M8DBLL_100B1LI : hram_params_t := (
+    idreg0   => x"0C83",  -- ID register 0 value
+    idreg1   => x"0000",  -- ID register 1 value
+    cfgreg0  => x"8F1F",  -- configuration register 0 default value
+    cfgreg1  => x"0002",  -- configuration register 1 default value
+    abw      => -1,       -- address boundary for writes = none
+    abr      => -1,       -- address boundary for reads = none
     tDRI     => 4000.0,   -- distributed refresh interval (4 uS)
     tVCS     => 150000.0, -- power on and reset high to first access (150uS)
     tRP      => 200.0,    -- reset pulse width, min
@@ -163,49 +132,7 @@ package model_hram_pkg is
     tOZmin   => 0.0,      -- chip select inactive to DQ hi Z, min
     tOZmax   => 7.0,      -- chip select inactive to DQ hi Z, max
     tCSM     => 4000.0,   -- chip select, max
-    tRFH     => 40.0,     -- refresh
-    manuf    => "0011"    -- ISSI manufacturer ID
-  );
-
-  -- parameter bundle for ISSI 8Mx8 133MHz 3.0V e.g. IS66WVH8M8DBLL-133B1LI
-  constant HRAM_8Mx8_133_3V0 : hram_params_t := (
-    ra_bits  => 13,       -- log2(memory array rows) (c.w. 8192)
-    ca_bits  => 9,        -- log2(memory array columns) (c.w. 512)
-    tDRI     => 4000.0,   -- distributed refresh interval (4 uS)
-    tVCS     => 150000.0, -- power on and reset high to first access (150uS)
-    tRP      => 200.0,    -- reset pulse width, min
-    tRH      => 200.0,    -- reset negation to chip select assertion, min
-    tRPH     => 400.0,    -- reset assertion to chip select assertion, min
-    tCK      => 7.5,      -- clock period, min
-    CKHPmin  => 0.45,     -- half clock period, min
-    CKHPmax  => 0.55,     -- half clock period, min
-    tCSHI    => 7.5,      -- chip select high, min
-    tRWR     => 37.5,     -- read-write recovery time, min
-    tCSS     => 3.0,      -- chip select setup
-    tDSVmin  => 0.0,      -- data strobe valid, min
-    tDSVmax  => 12.0,     -- data strobe valid, max
-    tIS      => 0.8,      -- input setup, min
-    tIH      => 0.8,      -- input hold, min
-    tACC     => 37.5,     -- access, max
-    tDQLZmin => 0.0,      -- clock to DQ low Z, min
-    tCKDmin  => 1.0,      -- clock to DQ valid, min
-    tCKDmax  => 7.0,      -- clock to DQ valid, max
-    tCKDImin => 0.5,      -- clock to DQ invalid, min
-    tCKDImax => 5.6,      -- clock to DQ invalid, max
-    tCKDSmin => 1.0,      -- clock to RDWS valid, min
-    tCKDSmax => 7.0,      -- clock to RDWS valid, max
-    tDSSmin  => -0.6,     -- RDWS to DQ valid, min
-    tDSSmax  => +0.6,     -- RDWS to DQ valid, max
-    tDSHmin  => -0.6,     -- RDWS to DQ hold, min
-    tDSHmax  => +0.6,     -- RDWS to DQ hold, max
-    tCSH     => 3.0,      -- chip select hold, min
-    tDSZmin  => 0.0,      -- chip select inactive to RWDS hi Z, min
-    tDSZmax  => 6.0,      -- chip select inactive to RWDS hi Z, max
-    tOZmin   => 0.0,      -- chip select inactive to DQ hi Z, min
-    tOZmax   => 6.0,      -- chip select inactive to DQ hi Z, max
-    tCSM     => 4000.0,   -- chip select, max
-    tRFH     => 37.5,     -- refresh
-    manuf    => "0011"    -- ISSI manufacturer ID
+    tRFH     => 40.0      -- refresh
   );
 
   -- default severity bundle
@@ -232,7 +159,7 @@ package model_hram_pkg is
       SIM_MEM_SIZE : integer;
       OUTPUT_DELAY : string        := "MAX_MIN";
       CHECK_TIMING : boolean       := true;
-      PARAMS       : hram_params_t := HRAM_PARAMS_NULL;
+      PARAMS       : hram_params_t;
       SEV          : hram_sev_t    := HRAM_SEV_DEFAULT;
       PREFIX       : string        := "model_hram: "
     );
@@ -249,7 +176,7 @@ end package model_hram_pkg;
 
 --------------------------------------------------------------------------------
 
-use work.tyto_sim_pkg.all;
+use work.tyto_utils_pkg.all;
 use work.model_hram_pkg.all;
 
 library ieee;
@@ -259,10 +186,10 @@ library ieee;
 
 entity model_hram is
   generic (
-    SIM_MEM_SIZE : integer;
-    OUTPUT_DELAY : string        := "MAX_MIN"; -- "MIN", "MAX", "MAX_MIN" or "UNIFORM"
+    SIM_MEM_SIZE : integer;                           -- size of simulated memory in bytes
+    OUTPUT_DELAY : string        := "MAX_MIN";        -- "MIN", "MAX", "MAX_MIN" or "UNIFORM"
     CHECK_TIMING : boolean       := true;
-    PARAMS       : hram_params_t := HRAM_PARAMS_NULL;
+    PARAMS       : hram_params_t;
     SEV          : hram_sev_t    := HRAM_SEV_DEFAULT;
     PREFIX       : string        := "model_hram: "
   );
@@ -295,8 +222,8 @@ architecture model of model_hram is
   --------------------------------------------------------------------------------
   -- build discrete constants from generics (better for linting)
 
-  constant RA_BITS      : integer := PARAMS.ra_bits;
-  constant CA_BITS      : integer := PARAMS.ca_bits;
+  constant RA_BITS      : integer := to_integer(unsigned(PARAMS.idreg0(12 downto 8))+1);
+  constant CA_BITS      : integer := to_integer(unsigned(PARAMS.idreg0( 7 downto 4))+1);
   constant tDRI         : time := real_to_ns( PARAMS.tDRI     );
   constant tVCS         : time := real_to_ns( PARAMS.tVCS     );
   constant tRP          : time := real_to_ns( PARAMS.tRP      );
@@ -349,18 +276,6 @@ architecture model of model_hram is
   constant SEV_tCSM     : severity_level := SEV.tCSM     ;
 
   --------------------------------------------------------------------------------
-  -- other constants
-
-  constant IDREG0       : word_t :=
-    "000" &
-    std_ulogic_vector(to_unsigned(ra_bits-1,5)) &
-    std_ulogic_vector(to_unsigned(ca_bits-1,4)) &
-    PARAMS.manuf;
-  constant IDREG1       : word_t := (others => '0');
-  constant C_CFGREG0    : word_t := "1000111100011111";
-  constant C_CFGREG1    : word_t := "0000000000000010";
-
-  --------------------------------------------------------------------------------
 
   type state_por_t is (POR_STD, POR_EXT, POR_DONE);
 
@@ -377,7 +292,7 @@ architecture model of model_hram is
     UNKNOWN  -- unknown/crazy
   );
 
-  type mem_t is array(0 to SIM_MEM_SIZE-1) of word_t;
+  type mem_t is array(0 to (SIM_MEM_SIZE/2)-1) of word_t;
 
   --------------------------------------------------------------------------------
 
@@ -398,11 +313,15 @@ architecture model of model_hram is
   signal state      : state_t;
   signal count      : integer := 0;
   signal ca         : std_ulogic_vector(47 downto 0);
+  signal addr       : unsigned(31 downto 0);
   signal refresh    : std_ulogic;
 
   -- configuration registers
-  signal cfgreg0 : hram_cr_t := C_CFGREG0;
-  signal cfgreg1 : hram_cr_t := C_CFGREG1;
+  signal cfgreg0 : hram_cr_t := PARAMS.cfgreg0;
+  signal cfgreg1 : hram_cr_t := PARAMS.cfgreg1;
+
+  -- simulation visibility
+  signal sim_ref  : std_ulogic; -- v4p ignore w-303 | refresh on this cycle
 
   --------------------------------------------------------------------------------
 
@@ -467,9 +386,9 @@ begin
   rst_n_i <= res01x(rst_n);
   clk_i   <= res01x(clk);
   cs_n_i  <= res01x(cs_n);
-  rwds    <= 'X' when res01x(rwds_oe) = 'X' else rwds_o when res01x(rwds_oe) = '1' else 'Z';
+  rwds    <= 'U' when res01x(rwds_oe) = 'X' else rwds_o when res01x(rwds_oe) = '1' else 'Z';
   rwds_i  <= res01x(rwds);
-  dq      <= (others => 'X') when res01x(dq_oe) = 'X' else dq_o when res01x(dq_oe) = '1' else (others => 'Z');
+  dq      <= (others => 'U') when res01x(dq_oe) = 'X' else dq_o when res01x(dq_oe) = '1' else (others => 'Z');
   dq_i    <= res01x(dq);
 
   --------------------------------------------------------------------------------
@@ -620,7 +539,7 @@ begin
             if now-ts_cs_a > tCSM then
               report PREFIX & "tCSM violation - chip select active time exceeded:"
                 & " measured " & time'image(now-ts_cs_a)
-                & " required " & time'image(tCSHI)
+                & " required " & time'image(tCSM)
                 severity SEV_tCSM;
             end if;
           end if;
@@ -739,48 +658,77 @@ begin
     variable tCKDS    : time;
     variable tCKD     : time;
     variable tDSS     : time;
+    variable wm       : std_ulogic_vector(1 downto 0);
     variable wdata    : word_t;
     variable rdata    : word_t;
 
     procedure handle_event is
 
-      function incr(x : std_ulogic_vector) return std_ulogic_vector is
+      procedure abw_check is
+        variable a  : std_ulogic_vector(31 downto 0);
+        variable ok : boolean;
       begin
-        return std_ulogic_vector(unsigned(x)+1);
-      end function incr;
+        if count /= 0 and PARAMS.abw /= -1 then
+          a  := (ca(44 downto 16),ca(2 downto 0));
+          ok := false;
+          if PARAMS.abw > 0 then
+            ok := unsigned(a(PARAMS.abw-1 downto 0)) /= 0;
+          end if;
+          assert ok
+            report PREFIX & "write address boundary crossed" severity failure;
+        end if;
+      end procedure abw_check;
+
+      procedure abr_check is
+        variable a  : std_ulogic_vector(31 downto 0);
+        variable ok : boolean;
+      begin
+        if count /= 0 and PARAMS.abr /= -1 then
+          a  := (ca(44 downto 16),ca(2 downto 0));
+          ok := false;
+          if PARAMS.abr > 0 then
+            ok := unsigned(a(PARAMS.abr-1 downto 0)) /= 0;
+          end if;
+          assert ok
+            report PREFIX & "read address boundary crossed" severity failure;
+        end if;
+      end procedure abr_check;
 
     begin
       --------------------------------------------------------------------------------
 
       if rst_n_i = 'X' or clk_i = 'X' or cs_n_i = 'X' then
 
-        rwds_o     <= 'X';
-        rwds_oe    <= 'X';
-        dq_o       <= (others => 'X');
-        dq_oe      <= 'X';
+        rwds_o     <= 'U';
+        rwds_oe    <= 'U';
+        dq_o       <= (others => 'U');
+        dq_oe      <= 'U';
         count_hclk <= 0;
         count      <= 0;
-        ca         <= (others => 'X');
+        ca         <= (others => 'U');
         state      <= UNKNOWN;
-        cfgreg0    <= (others => 'X');
-        cfgreg1    <= (others => 'X');
+        cfgreg0    <= (others => 'U');
+        cfgreg1    <= (others => 'U');
+        sim_ref    <= 'U';
 
       elsif rst_n_i = '0' then
 
-        rwds_o     <= 'X';
+        rwds_o     <= 'U';
         rwds_oe    <= '0';
-        dq_o       <= (others => 'X');
+        dq_o       <= (others => 'U');
         dq_oe      <= '0';
         count_hclk <= 0;
         count      <= 0;
-        ca         <= (others => 'X');
+        ca         <= (others => 'U');
         state      <= RESET;
-        cfgreg0    <= C_CFGREG0;
-        cfgreg1    <= C_CFGREG1;
+        cfgreg0    <= PARAMS.cfgreg0;
+        cfgreg1    <= PARAMS.cfgreg1;
+        sim_ref    <= '0';
 
       elsif falling_edge(cs_n_i) then -- start of access
 
-        alat_req := refresh;
+        alat_req := refresh or cfgreg0(3); -- allow for fixed latency
+        sim_ref <= alat_req;
         if (OUTPUT_DELAY = "MAX_MIN" and max_min)
         or OUTPUT_DELAY = "MAX"
         then
@@ -816,13 +764,13 @@ begin
         end if;
         max_min  := not max_min;
         if tDSV > tDSVmin then
-          rwds_o   <= 'X' after tDSVmin, refresh after tDSV;
-          rwds_oe  <= 'X' after tDSVmin, '1' after tDSV;
+          rwds_o  <= transport 'U' after tDSVmin, alat_req after tDSV;
+          rwds_oe <= transport 'U' after tDSVmin, '1' after tDSV;
         else
-          rwds_o   <= refresh after tDSV;
-          rwds_oe  <= '1' after tDSV;
+          rwds_o  <= transport alat_req after tDSV;
+          rwds_oe <= transport '1' after tDSV;
         end if;
-        state    <= CA1;
+        state <= CA1;
 
       elsif rising_edge(clk_i) and cs_n_i = '0' then
 
@@ -849,34 +797,39 @@ begin
 
           when LAT =>
             if count = get_lat-1 then
-              dq_oe <= ca(47) after tDQLZmin; -- drive DQ for reads
-              dq_o  <= (others => 'X');
+              dq_oe <= transport ca(47) after tDQLZmin; -- drive DQ for reads
+              dq_o  <= (others => 'U');
             end if;
 
           when WR =>
-            wdata := (15 downto 8 => dq_i, others => 'X');
+            if rwds_i = '0' then
+              abw_check;
+            end if;
+            wm(1) := rwds_i;
+            wdata := (15 downto 8 => dq_i, others => 'U');
 
           when RD =>
-            rdata := (others => 'X');
+            abr_check;
+            rdata := (others => 'U');
             if ca(46) = '1' and unsigned(ca(44 downto 32)) = 0 then
               case ca(31 downto 0) is
-                when x"00_00_00_00" => rdata := IDREG0;
-                when x"00_00_00_01" => rdata := IDREG1;
+                when x"00_00_00_00" => rdata := PARAMS.idreg0;
+                when x"00_00_00_01" => rdata := PARAMS.idreg1;
                 when x"01_00_00_00" => rdata := cfgreg0;
                 when x"01_00_00_01" => rdata := cfgreg1;
                 when others         => null;
               end case;
             else
-              rdata := mem(to_integer(unsigned(ca(44 downto 16)) & unsigned(ca(2 downto 0))));
+              rdata := mem(to_integer(addr));
             end if;
             rwds_o <= transport '1' after tCKDS;
             dq_o   <= transport rdata(15 downto 8) after tCKD;
 
           when UNKNOWN =>
-            rwds_o  <= 'X';
-            rwds_oe <= 'X';
-            dq_o    <= (others => 'X');
-            dq_oe   <= 'X';
+            rwds_o  <= 'U';
+            rwds_oe <= 'U';
+            dq_o    <= (others => 'U');
+            dq_oe   <= 'U';
 
         end case;
 
@@ -901,16 +854,16 @@ begin
 
           when CA3 =>
             ca( 7 downto  0) <= dq_i;
-            if ca(47) = '1' then
+            if ca(47) = '1' then -- read
               rwds_o <= transport '0' after tCKDS;
-            else
-              rwds_o  <= transport 'X' after tCKDS;
-              rwds_oe <= transport 'X' after tDSZmin, '0' after tDSZmax;
+            elsif ca(46) = '0' then -- memory write
+              rwds_o  <= transport 'U' after tCKDS;
+              rwds_oe <= transport 'U' after tDSZmin, '0' after tDSZmax;
             end if;
             if ca(47 downto 46) = "01" then -- register write
               count <= 0;
               state <= WR;
-            elsif alat_req and not ca(46) then -- memory access during refresh
+            elsif alat_req then -- additional latency required
               count <= 1;
               state <= ALAT;
             else
@@ -939,6 +892,10 @@ begin
             end if;
 
           when WR =>
+            if rwds_i = '0' then
+              abw_check;
+            end if;
+            wm(0) := rwds_i;
             wdata(7 downto 0) := dq_i;
             if ca(46) = '1' then
               case ca is
@@ -947,7 +904,12 @@ begin
                 when others               => null;
               end case;
             else
-              mem(to_integer(unsigned(ca(44 downto 16)) & unsigned(ca(2 downto 0)))) := wdata;
+              if wm(0) = '0' then
+                mem(to_integer(addr))(7 downto 0) := wdata(7 downto 0);
+              end if;
+              if wm(1) = '0' then
+                mem(to_integer(addr))(15 downto 8) := wdata(15 downto 8);
+              end if;
             end if;
             (ca(44 downto 16),ca(2 downto 0)) <= incr((ca(44 downto 16),ca(2 downto 0)));
             count <= count + 1;
@@ -959,26 +921,27 @@ begin
             count <= count + 1;
 
           when UNKNOWN =>
-            rwds_o  <= 'X';
-            rwds_oe <= 'X';
-            dq_o    <= (others => 'X');
-            dq_oe   <= 'X';
+            rwds_o  <= 'U';
+            rwds_oe <= 'U';
+            dq_o    <= (others => 'U');
+            dq_oe   <= 'U';
 
         end case;
 
       elsif rising_edge(cs_n_i) then -- end of access (or initial conditions)
 
+        sim_ref <= '0';
         if rwds_oe = '1' then
-          rwds_o  <= transport 'X' after tDSZmin;
-          rwds_oe <= transport 'X' after tDSZmin, '0' after tDSZmax;
+          rwds_o  <= transport 'U' after tDSZmin;
+          rwds_oe <= transport 'U' after tDSZmin, '0' after tDSZmax;
         end if;
         if dq_oe = '1' then
-          dq_o  <= transport (others => 'X') after tOZmin;
-          dq_oe <= transport 'X' after tOZmin, '0' after tOZmax;
+          dq_o  <= transport (others => 'U') after tOZmin;
+          dq_oe <= transport 'U' after tOZmin, '0' after tOZmax;
         end if;
         count_hclk <= 0;
         count      <= 0;
-        ca         <= (others => 'X');
+        ca         <= (others => 'U');
         state      <= IDLE;
 
       end if;
@@ -991,6 +954,8 @@ begin
     handle_event;
 
   end process P_MAIN;
+
+  addr <= unsigned(ca(44 downto 16)) & unsigned(ca(2 downto 0));
 
   --------------------------------------------------------------------------------
 

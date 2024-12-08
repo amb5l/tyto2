@@ -226,18 +226,18 @@ set pins {
     { cart_haddr_dir  L18   LVCMOS33                                         }
     { cart_data_oe_n  U21   LVCMOS33                                         }
     { cart_data_dir   V22   LVCMOS33                                         }
-    { hr_rst_n        B22   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_clk_p        D22   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_cs_n         C22   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_rwds         B21   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_d[0]         A21   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_d[1]         D21   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_d[2]         C20   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_d[3]         A20   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_d[4]         B20   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_d[5]         A19   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_d[6]         E21   LVCMOS33                     SLEW FAST  DRIVE 16 }
-    { hr_d[7]         E22   LVCMOS33                     SLEW FAST  DRIVE 16 }
+    { hr_rst_n        B22   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_clk_p        D22   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_cs_n         C22   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_rwds         B21   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_d[0]         A21   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_d[1]         D21   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_d[2]         C20   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_d[3]         A20   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_d[4]         B20   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_d[5]         A19   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_d[6]         E21   LVCMOS33                     SLEW FAST  DRIVE 8  }
+    { hr_d[7]         E22   LVCMOS33                     SLEW FAST  DRIVE 8  }
     { sdram_clk       V8    LVCMOS33                     SLEW FAST  DRIVE 16 }
     { sdram_cke       U5    LVCMOS33                     SLEW FAST  DRIVE 16 }
     { sdram_cs_n      G3    LVCMOS33                     SLEW FAST  DRIVE 16 }
