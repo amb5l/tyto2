@@ -22,6 +22,7 @@ COLS_LOG2=9
 # Vitis
 
 VITIS_FLOW=classic
+VITIS_ARCH=riscv
 VITIS_SRC=\
 	$(toplevel)/src/common/video/microblaze/cb.c \
 	$(toplevel)/src/common/video/microblaze/cb.h \
