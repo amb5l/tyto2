@@ -126,7 +126,7 @@ package model_hram_pkg is
     tDSSmax  => +0.8,     -- RDWS to DQ valid, max
     tDSHmin  => -0.8,     -- RDWS to DQ hold, min
     tDSHmax  => +0.8,     -- RDWS to DQ hold, max
-    tCSH     => 0.0,      -- chip select hold, min
+    tCSH     => 3.0,      -- chip select hold, min
     tDSZmin  => 0.0,      -- chip select inactive to RWDS hi Z, min
     tDSZmax  => 7.0,      -- chip select inactive to RWDS hi Z, max
     tOZmin   => 0.0,      -- chip select inactive to DQ hi Z, min
