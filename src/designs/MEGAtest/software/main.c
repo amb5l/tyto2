@@ -29,13 +29,13 @@ int main() {
 	ht_err(r);
 	printf("\n\n");
 
-	while (1) {
+	while (errors == 0) {
 
 		cb_set_col(CB_YELLOW, CB_BLACK);
 		printf("MEGAtest application : board rev %d commit %08X\n", bsp_board_rev(), bsp_commit());
 		cb_set_col(CB_WHITE, CB_RED);
-		printf("\n tests: %d   errors: %d \n\n", tests, errors);
 		tests++;
+		printf("\n test: %d \n\n", tests);
 		ht_info();
 		cb_set_col(CB_WHITE, CB_BLACK);
 		t10 = xadc_temp10();
@@ -178,4 +178,9 @@ int main() {
 
 		printf("\n");
 	}
+
+		cb_set_col(CB_WHITE, CB_RED);
+		printf("\n HALTED DUE TO ERROR AFTER %d TESTS \n", tests);
+		while(1)
+			;
 }
