@@ -55,7 +55,7 @@ architecture sim of tb_MEGAtest_r4 is
 
   signal cap_stb       : std_logic;
 
-  component MEGAtest_r5 is
+  component MEGAtest_r4 is
     generic (
       GIT_COMMIT : integer
     );
@@ -243,7 +243,7 @@ architecture sim of tb_MEGAtest_r4 is
       pmod2hi         : inout std_logic_vector(3 downto 0);
       dbg             : inout std_logic_vector(11 to 11)
     );
-  end component MEGAtest_r5;
+  end component MEGAtest_r4;
 
   function hram_params(i : hram_params_t) return hram_params_t is
     variable r : hram_params_t;
@@ -277,7 +277,7 @@ begin
     stop;
   end process TEST;
 
-  DUT: component MEGAtest_r5
+  DUT: component MEGAtest_r4
     generic map (
       GIT_COMMIT => 16#12345678#
     )
