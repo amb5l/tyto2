@@ -7,7 +7,7 @@ board_variant=r3
 
 default: bit
 
-toplevel=$(shell git rev-parse --show-toplevel)
+toplevel:=$(shell git rev-parse --show-toplevel)
 src=$(toplevel)/src
 
 VIVADO_PART=xc7a200tfbg484-2

@@ -4,7 +4,7 @@
 
 default: sim_gui
 
-toplevel=$(shell git rev-parse --show-toplevel)
+toplevel:=$(shell git rev-parse --show-toplevel)
 make_fpga=$(toplevel)/submodules/make-fpga
 
 DUT=hram_test

@@ -4,7 +4,7 @@
 
 default: sim
 
-toplevel=$(shell git rev-parse --show-toplevel)
+toplevel:=$(shell git rev-parse --show-toplevel)
 
 ################################################################################
 # Vivado
