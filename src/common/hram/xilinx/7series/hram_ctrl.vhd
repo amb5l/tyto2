@@ -165,8 +165,7 @@ architecture rtl of hram_ctrl is
     ALAT,  -- additional latency
     LAT,   -- latency
     WR,    -- write
-    WRX1,  -- write extra cycle (ISSI bug fix)
-    WRX2,  -- write extra extra cycle (speculative ISSI bug fix)
+    WRX,   -- write extra cycle (ISSI bug fix)
     RBSY1, -- (previous) read busy 1
     RBSY2, -- (previous) read busy 2
     RD,    -- read
@@ -525,7 +524,7 @@ begin
               if s_cfg.fix_w2 = '1' and w2 = '0' then
                 en_clk <= '1';
                 en_wrx <= '1';
-                state  <= WRX1;
+                state  <= WRX;
               else
                 en_clk      <= '0';
                 en_cs_next  <= '0';
@@ -536,11 +535,7 @@ begin
             w2 <= '1';
           end if;
 
-        when WRX1 =>
-          en_wrx <= '1';
-          state  <= WRX2;
-
-        when WRX2 =>
+        when WRX =>
           en_clk      <= '0';
           en_cs_next  <= '0';
           h_rwds_o_ce <= '0';
