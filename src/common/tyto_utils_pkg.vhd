@@ -28,6 +28,7 @@ package tyto_utils_pkg is
     impure function rand_slv  (min, max, length : in integer ) return std_ulogic_vector;
   end protected prng_t;
 
+  function ternary (c : boolean; a, b : integer) return integer;
   function ternary (c : boolean; a, b : std_logic) return std_logic;
   function ternary (c : boolean; a, b : std_logic_vector) return std_logic_vector;
   function bool2sl( b : boolean ) return std_ulogic;
@@ -35,7 +36,9 @@ package tyto_utils_pkg is
   function reverse(x : std_ulogic_vector) return std_ulogic_vector;
   function mirror(x : std_ulogic_vector) return std_ulogic_vector;
   function add(a,b : std_ulogic_vector) return std_ulogic_vector;
+  function add(a : std_ulogic_vector; b : integer) return std_ulogic_vector;
   function sub(a,b : std_ulogic_vector) return std_ulogic_vector;
+  function sub(a : std_ulogic_vector; b : integer) return std_ulogic_vector;
   function incr(x : std_ulogic_vector) return std_ulogic_vector;
   function decr(x : std_ulogic_vector) return std_ulogic_vector;
 
@@ -84,6 +87,15 @@ package body tyto_utils_pkg is
       return std_ulogic_vector(to_unsigned(integer(r * real(max - min) + real(min)), length));
     end function rand_slv;
   end protected body prng_t;
+
+  function ternary (c : boolean; a, b : integer) return integer is
+  begin
+    if c then
+      return a;
+    else
+      return b;
+    end if;
+  end function ternary;
 
   function ternary (c : boolean; a, b : std_logic) return std_logic is
   begin
@@ -137,12 +149,22 @@ package body tyto_utils_pkg is
 
   function add(a,b : std_ulogic_vector) return std_ulogic_vector is
   begin
-    return std_ulogic_vector(unsigned(a)+unsigned(b));
+    return std_ulogic_vector(unsigned(a)+resize(unsigned(b), a'length));
+  end function add;
+
+  function add(a : std_ulogic_vector; b : integer) return std_ulogic_vector is
+  begin
+    return std_ulogic_vector(unsigned(a)+to_unsigned(b, a'length));
   end function add;
 
   function sub(a,b : std_ulogic_vector) return std_ulogic_vector is
   begin
-    return std_ulogic_vector(unsigned(a)-unsigned(b));
+    return std_ulogic_vector(unsigned(a)-resize(unsigned(b), a'length));
+  end function sub;
+
+  function sub(a : std_ulogic_vector; b : integer) return std_ulogic_vector is
+  begin
+    return std_ulogic_vector(unsigned(a)-to_unsigned(b, a'length));
   end function sub;
 
   function incr(x : std_ulogic_vector) return std_ulogic_vector is
