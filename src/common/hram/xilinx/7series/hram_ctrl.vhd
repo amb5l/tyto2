@@ -521,7 +521,7 @@ begin
             if (s_w_last and not s_w_ready) or break then
               s_w_last  <= '0';
               h_dq_o_ce <= '0';
-              if s_cfg.fix_w2 = '1' and w2 = '0' then
+              if s_cfg.fix_w2 and not w2 and not burst.reg then
                 en_clk <= '1';
                 en_wrx <= '1';
                 state  <= WRX;
