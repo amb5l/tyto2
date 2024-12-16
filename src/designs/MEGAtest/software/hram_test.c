@@ -24,6 +24,7 @@ u8 ht_run(
     u8  arnd   ,
     u8  drnd   ,
     u8  dinv   ,
+    u8  d32    ,
     u8  cb_m   ,
     u8  cb_i   ,
     u8  cb_pol ,
@@ -48,6 +49,7 @@ u8 ht_run(
         ((cb_pol    &  1) << 10) |
         ((cb_i      &  1) <<  9) |
         ((cb_m      &  1) <<  8) |
+        ((d32       &  1) <<  7) |
         ((dinv      &  1) <<  6) |
         ((drnd      &  1) <<  5) |
         ((arnd      &  1) <<  4) |
@@ -93,8 +95,8 @@ u8 ht_init(void) {
     ht_lol(); // dummy read to allow time for LOL to assert
     while (ht_lol()) // wait for MMCM lock
         ;
-	ht_run(1,0,1,0x1000,2,ht_cfgreg0,0,0,0,0,0,0,0,0,0); // write CFGREG0
-	u8 r = ht_run(0,1,1,0x0000,2,ht_idreg0,0,0,0,0,0,0,0,0,0); // read and check IDREG0
+	ht_run(1,0,1,0x1000,2,ht_cfgreg0,0,0,0,0,0,0,0,0,0,0); // write CFGREG0
+	u8 r = ht_run(0,1,1,0x0000,2,ht_idreg0,0,0,0,0,0,0,0,0,0,0); // read and check IDREG0
 	return r;
 }
 

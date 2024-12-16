@@ -184,7 +184,7 @@ architecture rtl of hram_test is
   alias s_csr_ctrl_arnd   : std_ulogic                        is s_csr_ctrl(4);                -- 0 = sequential, 1 = randomised
   alias s_csr_ctrl_drnd   : std_ulogic                        is s_csr_ctrl(5);
   alias s_csr_ctrl_dinv   : std_ulogic                        is s_csr_ctrl(6);
---alias s_csr_ctrl_spare  : std_ulogic                        is s_csr_ctrl(7);
+  alias s_csr_ctrl_d32    : std_ulogic                        is s_csr_ctrl(7);                -- 0/1 = 16/32 bit single cycle size
   alias s_csr_ctrl_cb     : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(10 downto 8);
   alias s_csr_ctrl_brnd   : std_ulogic                        is s_csr_ctrl(11);               -- burst mode: 0 = fixed, 1 = PRNG
   alias s_csr_ctrl_bmag   : std_ulogic_vector(BMW-1 downto 0) is s_csr_ctrl(BMW+11 downto 12); -- burst magnitude
@@ -250,25 +250,29 @@ architecture rtl of hram_test is
   signal a_count     : std_ulogic_vector(i_a_addr'range); -- count remaining words
   signal a_lm        : std_ulogic_vector(i_a_len'range);  -- len mask
   signal a_len       : std_ulogic_vector(i_a_len'range);
-  signal a_addr      : std_ulogic_vector(i_a_addr'range);
+  signal a_addr32    : std_ulogic_vector(31 downto 0);
+  signal a_incr      : std_ulogic_vector(i_a_len'range);
   signal a_row_rnd   : std_ulogic_vector(ROWS_LOG2-1 downto 0);
   signal a_addr_rnd  : std_ulogic_vector(i_a_addr'range); -- address, swizzled
-  alias a_col : std_ulogic_vector(COLS_LOG2-1 downto 0) is a_addr(COLS_LOG2 downto 1);
-  alias a_row : std_ulogic_vector(ROWS_LOG2-1 downto 0) is a_addr(ROWS_LOG2+COLS_LOG2 downto COLS_LOG2+1);
+  alias a_addr : std_ulogic_vector(i_a_addr'range) is a_addr32(i_a_addr'range);
+  alias a_col  : std_ulogic_vector(COLS_LOG2-1 downto 0) is a_addr(COLS_LOG2 downto 1);
+  alias a_row  : std_ulogic_vector(ROWS_LOG2-1 downto 0) is a_addr(ROWS_LOG2+COLS_LOG2 downto COLS_LOG2+1);
 
   -- data state machine
-  type state_d_t is (D_IDLE,D_PRNG,D_PREP,D_WAIT,D_WR,D_RD,D_RB,D_DONE);
+  type state_d_t is (D_IDLE,D_WAIT,D_WR,D_RD,D_RB,D_DONE);
   signal state_d     : state_d_t;
+  signal d_seq       : std_ulogic_vector(31 downto 0);
+  signal d_addr32    : std_ulogic_vector(31 downto 0);
   signal d_word      : std_ulogic;
-  signal d_data      : std_ulogic_vector(31 downto 0);
+  signal d_adv       : std_ulogic;                         -- advance 32 bit data pattern
   signal d_eadd      : std_ulogic_vector(i_a_addr'range);
   signal d_edat      : std_ulogic_vector(31 downto 0);
   signal d_edr       : sulv_vector(0 to 3)(31 downto 0);
-  signal incr_data   : std_ulogic_vector(31 downto 0);
+  alias d_addr : std_ulogic_vector(ADDR_MSB downto 1) is d_addr32(ADDR_MSB downto 1);
 
   -- interleaved read/write (readback)
   type rb_addr_t is array(natural range <>) of std_ulogic_vector(i_a_addr'range);
-  type rb_data_t is array(natural range <>) of std_ulogic_vector(15 downto 0);
+  type rb_data_t is array(natural range <>) of std_ulogic_vector(31 downto 0);
   signal rb_valid    : std_ulogic_vector(1 to 2);
   signal rb_addr     : rb_addr_t(rb_valid'range);
   signal rb_data     : rb_data_t(rb_valid'range);
@@ -276,9 +280,9 @@ architecture rtl of hram_test is
   -- read check
   signal rc_en       : std_ulogic;
   signal rc_last     : std_ulogic;
-  signal rc_rbx      : std_ulogic;
+  signal rc_inh      : std_ulogic;
   signal rc_err      : std_ulogic;
-  signal rc_cnt      : integer range 0 to 7;
+  signal rc_cnt      : std_ulogic_vector(2 downto 0);
   signal rc_rdat     : std_ulogic_vector(15 downto 0);
   signal rc_xdat     : std_ulogic_vector(15 downto 0);
   signal rc_ref      : std_ulogic;
@@ -286,13 +290,11 @@ architecture rtl of hram_test is
   --------------------------------------------------------------------------------
   -- synthesisable PRNG
 
-  signal prng_a_init  : std_ulogic;
+  signal prng_init    : std_ulogic;
   signal prng_a_seed  : std_ulogic_vector(127 downto 0);
   signal prng_a_ready : std_ulogic;
   signal prng_a_valid : std_ulogic;
   signal prng_a_data  : std_ulogic_vector(31 downto 0);
-
-  signal prng_d_init  : std_ulogic;
   signal prng_d_seed  : std_ulogic_vector(127 downto 0);
   signal prng_d_ready : std_ulogic;
   signal prng_d_valid : std_ulogic;
@@ -435,14 +437,20 @@ begin
     a_lm(to_integer(unsigned(s_csr_ctrl_bmag))-1 downto 0) <= (others => '1');
   end process P_LM;
 
+  a_addr32(31 downto ADDR_MSB+1) <= (others => '0');
+  a_addr32(0) <= '0';
+
   a_addr_rnd <= a_row_rnd & a_col;
 
-  prng_a_ready <= bool2sl(state_a = A_PREP1) and s_csr_ctrl_brnd and not s_csr_ctrl_arnd;
+  d_addr32(31 downto ADDR_MSB+1) <= (others => '0');
+  d_addr32(0) <= '0';
 
-  prng_d_ready <=
-    bool2sl(state_d = D_PREP) or
+  d_adv <=
     (bool2sl(state_d = D_WR) and d_word and ((i_w_valid and i_w_ready and not i_w_last) or not i_w_valid)) or
     (bool2sl(state_d = D_RD) and d_word and i_r_valid and i_r_ready);
+
+  prng_a_ready <= bool2sl(state_a = A_PREP1) and s_csr_ctrl_brnd and not s_csr_ctrl_arnd;
+  prng_d_ready <= d_adv and s_csr_ctrl_drnd;
 
   P_MAIN: process(i_rst,i_clk)
 
@@ -470,9 +478,9 @@ begin
       a_len       <= (others => 'X');
       a_addr      <= (others => 'X');
       state_a     <= A_IDLE;
+      d_seq       <= (others => 'X');
+      d_addr      <= (others => 'X');
       d_word      <= 'X';
-      d_data      <= (others => 'X');
-      incr_data   <= (others => 'X');
       d_eadd      <= (others => 'X');
       d_edat      <= (others => 'X');
       d_edr       <= (others => (others => 'X'));
@@ -482,14 +490,13 @@ begin
       rb_data     <= (others => (others => 'X'));
       rc_en       <= '0';
       rc_last     <= '0';
-      rc_rbx      <= '0';
+      rc_inh      <= '0';
       rc_err      <= '0';
-      rc_cnt      <= 0;
+      rc_cnt      <= (others => 'X');
       rc_rdat     <= (others => 'X');
       rc_xdat     <= (others => 'X');
       rc_ref      <= '0';
-      prng_a_init <= '0';
-      prng_d_init <= '0';
+      prng_init   <= '0';
 
     elsif rising_edge(i_clk) then
 
@@ -501,8 +508,7 @@ begin
       --------------------------------------------------------------------------------
       -- address state machine
 
-      prng_a_init <= '0';
-      prng_d_init <= '0';
+      prng_init <= '0';
 
       x( 7 downto  0) := (others => not s_csr_ctrl_cb_pol);
       x(15 downto  8) := (others =>     s_csr_ctrl_cb_pol);
@@ -513,68 +519,68 @@ begin
 
         when A_IDLE =>
           if i_csr_ctrl_run then
-            t_bsy       <= '1';
-            a_count     <= s_csr_size(ADDR_MSB downto 1);
-            a_addr      <= s_csr_base(ADDR_MSB downto 1);
-            d_word      <= '0';
-            incr_data   <= s_csr_data;
-            prng_a_init <= '1';
-            state_a     <= A_PRNG;
+            t_bsy     <= '1';
+            a_count   <= s_csr_size(ADDR_MSB downto 2) & (s_csr_size(1) and not s_csr_ctrl_d32);
+            a_addr    <= s_csr_base(ADDR_MSB downto 2) & (s_csr_base(1) and not s_csr_ctrl_d32);
+            prng_init <= '1';
+            state_a   <= A_PRNG;
           end if;
 
         when A_PRNG => -- wait until PRNG ready
-          state_a <= A_PREP1 when prng_a_valid and not prng_a_init;
+          state_a <= A_PREP1 when prng_a_valid and prng_d_valid and not prng_init;
 
-        when A_PREP1 =>
-          a_len <= (0 => '1', others => '0'); -- default burst length is 1
-          if (s_csr_ctrl_arnd nor s_csr_ctrl_brnd) -- sequential addressing, fixed burst length
-          or (s_csr_ctrl_w and s_csr_ctrl_r)       -- test with readback
-          then
-            a_len <= (others => '0');
-            a_len(to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
-          elsif s_csr_ctrl_brnd and not s_csr_ctrl_arnd then -- sequential address, random burst length
-            a_len <= incr(a_lm and prng_a_data(a_lm'range));
-          end if;
-          state_a <= A_PREP2;
-
-        when A_PREP2 =>
-          if s_csr_ctrl_w nand s_csr_ctrl_r then -- not test with readback
-            if (unsigned(a_count) /= 0) and (unsigned(a_len) > unsigned(a_count)) then
-              a_len <= a_count(a_count'right+a_len'length-1 downto a_count'right);
+        when A_PREP1 => -- set burst length
+          a_len  <= (0 => not s_csr_ctrl_d32, 1 => s_csr_ctrl_d32, others => '0'); -- default: single 16 or 32 bit accesses
+          a_incr <= (0 => not s_csr_ctrl_d32, 1 => s_csr_ctrl_d32, others => '0');
+          state_a <= A_PREP3; -- default: skip burst length clipping
+          if s_csr_ctrl_w and s_csr_ctrl_r then -- interleaved write/read
+            null; -- single 16 or 32 bit write
+          elsif s_csr_ctrl_arnd then -- random addressing
+            if s_csr_ctrl_w then -- random address writes are single 16 or 32 bit accesses
+              null;
+            else -- random address read bursts can be longer (for diagnostics) but must be fixed length
+              a_len <= (others => '0');
+              a_len(to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
             end if;
+          else -- sequential addressing
+            a_len  <= (others => '0');
+            a_incr <= (others => '0');
+            if s_csr_ctrl_brnd then -- random burst length
+              a_len  <= incr(a_lm and prng_a_data(a_lm'range));
+              a_incr <= incr(a_lm and prng_a_data(a_lm'range));
+            else -- fixed burst length
+              a_len  (to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
+              a_incr (to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
+            end if;
+            state_a <= A_PREP2; -- clip burst length
+          end if;
+
+        when A_PREP2 => -- clip burst length
+          if (unsigned(a_count) /= 0) -- zero count means maximum test size
+          and (unsigned(a_count(a_count'left downto a_count'right+a_len'length)) = 0) -- count MSBs are zero
+          and (unsigned(a_len) > unsigned(a_count(a_count'right+a_len'length-1 downto a_count'right))) -- len > count LSBs
+          then -- clip burst length to prevent it going beyond end of test memory
+            a_len  <= a_count(a_count'right+a_len'length-1 downto a_count'right);
+            a_incr <= a_count(a_count'right+a_len'length-1 downto a_count'right);
           end if;
           state_a <= A_PREP3;
 
-        when A_PREP3 =>
-          i_a_valid <= '1';
-          i_a_r_w   <= not s_csr_ctrl_w;
-          i_a_reg   <= s_csr_ctrl_reg;
-          if not s_csr_ctrl_arnd then -- sequential addressing
-            i_a_addr <= a_addr;
-            if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
-              i_a_len     <= (0 => '1', others => '0'); -- write burst length must be 1
-              a_addr      <= incr(a_addr);
-              a_count     <= decr(a_count);
-              rb_valid(1) <= '1';
-              rb_addr(1)  <= a_addr;
-            else
-              i_a_len <= a_len; -- variable burst length
-              a_addr  <= add(a_addr,a_len);
-              a_count <= sub(a_count,a_len);
-            end if;
-          else -- randomised addressing => burst length is always 1
-            i_a_len  <= (0 => '1', others => '0');
-            i_a_addr <= a_addr_rnd;
-            a_addr   <= incr(a_addr);
-            a_row    <= incr(a_row);
-            a_col    <= incr(a_col) when unsigned(not a_row) = 0 else a_col;
-            a_count  <= decr(a_count);
-            if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
-              rb_valid(1) <= '1';
-              rb_addr(1)  <= a_addr_rnd;
-            end if;
+        when A_PREP3 => -- present address to controller
+          i_a_valid   <= '1';
+          i_a_r_w     <= not s_csr_ctrl_w;
+          i_a_reg     <= s_csr_ctrl_reg;
+          i_a_addr    <= a_addr_rnd when s_csr_ctrl_arnd else a_addr;
+          i_a_len     <= a_len;
+          a_count     <= sub(a_count,a_incr);
+          rb_valid(1) <= s_csr_ctrl_w and s_csr_ctrl_r;
+          rb_addr(1)  <= a_addr_rnd when s_csr_ctrl_arnd else a_addr;
+          if s_csr_ctrl_arnd then
+            a_row <= incr(a_row);
+            a_col <= add(a_col,ternary(??s_csr_ctrl_d32,2,1)) when unsigned(not a_row) = 0;
+          else
+            a_addr <= add(a_addr,a_incr);
           end if;
-          state_a <= A_VALID;
+          state_a     <= A_VALID;
 
         when A_VALID => -- present address until it is accepted
           if i_a_ready then
@@ -590,10 +596,18 @@ begin
             end if;
           end if;
 
-        when A_RB_WAIT =>
-          state_a <= A_RB_PREP when state_d = D_WR;
+        when A_RB_WAIT => -- wait for write data phase to complete before readback
+          if state_d = D_WR then
+            a_len <= (others => '0');
+            if s_csr_ctrl_d32 = '1' and unsigned(s_csr_ctrl_bmag) = 0 then -- 32 bit => minimum burst length = 2
+              a_len(1) <= '1';
+            else
+              a_len(to_integer(unsigned(s_csr_ctrl_bmag))) <= '1';
+            end if;
+            state_a <= A_RB_PREP when state_d = D_WR;
+          end if;
 
-        when A_RB_PREP =>
+        when A_RB_PREP => -- present readback address, advance readback address pipeline
           if rb_valid(rb_valid'high) then
             i_a_valid <= '1';
             i_a_rb    <= '1';
@@ -611,7 +625,7 @@ begin
           rb_addr(2 to rb_addr'high) <= rb_addr(1 to rb_addr'high-1);
           rb_addr(1) <= (others => 'X');
 
-        when A_RB_VALID =>
+        when A_RB_VALID => -- present readback address until it is accepted
           if i_a_ready then
             i_a_valid <= '0';
             i_a_rb    <= '0';
@@ -629,13 +643,11 @@ begin
           if state_d = D_DONE then
             t_fin <= '1';
             if not i_csr_ctrl_run then
-              t_bsy     <= '0';
-              t_fin     <= '0';
-              a_count   <= (others => 'X');
-              a_len     <= (others => 'X');
-              a_addr    <= (others => 'X');
-              d_word    <= 'X';
-              incr_data <= (others => 'X');
+              t_bsy   <= '0';
+              t_fin   <= '0';
+              a_count <= (others => 'X');
+              a_len   <= (others => 'X');
+              a_addr  <= (others => 'X');
               state_a <= A_IDLE;
             end if;
           end if;
@@ -652,93 +664,93 @@ begin
       case state_d is
 
         when D_IDLE =>
-          prng_d_init <= i_csr_ctrl_run;
-          state_d     <= D_PRNG when i_csr_ctrl_run;
-
-        when D_PRNG => -- wait until PRNG ready
-          state_d <= D_PREP when prng_d_valid and not prng_d_init;
-
-        when D_PREP =>
-          d_data    <= prng_d_data   when s_csr_ctrl_drnd else
-                      not incr_data  when s_csr_ctrl_dinv else
-                      incr_data;
-          incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
-          t_err     <= '0';
-          t_ref     <= '0';
-          d_edat    <= (others => 'X');
-          d_edr     <= (others => (others => 'X'));
-          state_d   <= D_WAIT;
+          if i_csr_ctrl_run then
+            d_seq   <= s_csr_data;
+            d_word  <= '0';
+            t_err   <= '0';
+            t_ref   <= '0';
+            d_edat  <= (others => 'X');
+            d_edr   <= (others => (others => 'X'));
+            state_d <= D_WAIT;
+          end if;
 
         when D_WAIT =>
           if i_a_valid and i_a_ready then
-            if t_err nor rc_err then
-              d_eadd <= i_a_addr;
-            end if;
-            rc_err <= '0';
-            rc_cnt <= 0;
+            rc_err  <= '0';
+            rc_cnt  <= (others => '0');
+            d_addr  <= i_a_addr;
             state_d <= D_RB when i_a_rb else D_RD when i_a_r_w else D_WR;
           end if;
 
         when D_WR =>
-          d := d_data xor x when s_csr_ctrl_cb_i else d_data;
-          if (i_w_valid and i_w_ready) or (not i_w_valid) then
+          if (i_w_valid and i_w_ready) or not i_w_valid then -- first or subsequent write
             if i_w_last then
               i_w_valid <= '0';
               i_w_be    <= (others => 'X');
               i_w_data  <= (others => 'X');
               state_d   <= D_DONE when state_a = A_DONE else D_WAIT;
             else
-              if d_word then
-                i_w_be <= not s_csr_ctrl_cb_pol & s_csr_ctrl_cb_pol
-                  when s_csr_ctrl_cb_m else "11";
-                i_w_data  <= d(31 downto 16);
-                d_data    <= prng_d_data    when s_csr_ctrl_drnd else
-                             not incr_data  when s_csr_ctrl_dinv else
-                             incr_data;
-                incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
-                if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
-                  rb_data(1) <= d(31 downto 16);
-                end if;
-              else
-                i_w_be <= s_csr_ctrl_cb_pol & not s_csr_ctrl_cb_pol
-                  when s_csr_ctrl_cb_m else "11";
-                i_w_data   <= d(15 downto 0);
-                if s_csr_ctrl_w and s_csr_ctrl_r then -- test with readback
-                  rb_data(1) <= d(15 downto 0);
-                end if;
+              d := (others => '0');
+              if s_csr_ctrl_arnd and not s_csr_ctrl_drnd and s_csr_ctrl_dinv then -- random address + sequential data, inverted
+                d := not d_addr32;
+              elsif s_csr_ctrl_arnd and not s_csr_ctrl_drnd then                  -- random address + sequential data
+                d := d_addr32;
+              elsif s_csr_ctrl_drnd and s_csr_ctrl_dinv then                      -- random data, inverted
+                d := not prng_d_data;
+              elsif s_csr_ctrl_drnd then                                          -- random data
+                d := prng_d_data;
+              elsif s_csr_ctrl_dinv then                                          -- sequential data, inverted
+                d := not d_seq;
+              else                                                                -- sequential data
+                d := d_seq;
+              end if;
+              d := d xor x when s_csr_ctrl_cb_i;
+              i_w_valid <= '1';
+              i_w_be    <= "11";
+              i_w_data  <= d(31 downto 16) when d_word else d(15 downto 0);
+              if s_csr_ctrl_cb_m then
+                i_w_be(0)             <= s_csr_ctrl_cb_pol xor not d_word;
+                i_w_be(1)             <= s_csr_ctrl_cb_pol xor     d_word;
+                i_w_data( 7 downto 0) <= (others => 'X') when s_csr_ctrl_cb_pol xor     d_word; -- drive masked byte to 'X'
+                i_w_data(15 downto 8) <= (others => 'X') when s_csr_ctrl_cb_pol xor not d_word; -- drive masked byte to 'X'
+              end if;
+              if s_csr_ctrl_w and s_csr_ctrl_r and not i_w_valid then -- test with readback
+                rb_data(1)(15 downto  0) <= d(31 downto 16) when d_word else d(15 downto  0);
+                rb_data(1)(31 downto 16) <= d(31 downto 16) when s_csr_ctrl_d32 else (others => 'X');
               end if;
               d_word <= not d_word;
             end if;
           end if;
-          if not i_w_valid then
-            i_w_valid <= '1';
-          end if;
 
         when D_RD =>
-          d := d_data xor x when s_csr_ctrl_cb_i else d_data;
           if i_r_valid and i_r_ready then
+            d := (others => '0');
+            if s_csr_ctrl_arnd and not s_csr_ctrl_drnd and s_csr_ctrl_dinv then -- random address + sequential data, inverted
+              d := not d_addr32;
+            elsif s_csr_ctrl_arnd and not s_csr_ctrl_drnd then                  -- random address + sequential data
+              d := d_addr32;
+            elsif s_csr_ctrl_drnd and s_csr_ctrl_dinv then                      -- random data, inverted
+              d := not prng_d_data;
+            elsif s_csr_ctrl_drnd then                                          -- random data
+              d := prng_d_data;
+            elsif s_csr_ctrl_dinv then                                          -- sequential data, inverted
+              d := not d_seq;
+            else                                                                -- sequential data
+              d := d_seq;
+            end if;
+            d := d xor x when s_csr_ctrl_cb_i;
             rc_en   <= '1';
             rc_last <= i_r_last;
             rc_rdat <= i_r_data;
-            rc_xdat <= d(31 downto 16) when d_word = '1' else d(15 downto 0);
+            rc_xdat <= d(31 downto 16) when d_word else d(15 downto 0);
             rc_ref  <= i_r_ref;
-            if d_word then
-              d_data    <= prng_d_data    when s_csr_ctrl_drnd else
-                           not incr_data  when s_csr_ctrl_dinv else
-                           incr_data;
-              incr_data <= add(incr_data,s_csr_incr) when not s_csr_ctrl_drnd;
-            end if;
             d_word <= not d_word;
             if i_r_last then
               i_r_ready <= '0';
               if state_a = A_DONE then
                 state_d <= D_DONE;
               elsif i_a_valid and i_a_ready then
-                if t_err nor rc_err then
-                  d_eadd <= i_a_addr;
-                end if;
-                rc_err <= '0';
-                rc_cnt <= 0;
+                d_addr  <= i_a_addr;
                 state_d <= D_RB when i_a_rb else D_RD when i_a_r_w else D_WR;
               else
                 state_d <= D_WAIT;
@@ -748,31 +760,29 @@ begin
           if not i_r_ready then
             i_r_ready <= '1';
           end if;
+          if (s_csr_ctrl_arnd = '1' and s_csr_ctrl_d32 = '0' and rc_en = '1'                    )
+          or (s_csr_ctrl_arnd = '1' and s_csr_ctrl_d32 = '1' and rc_en = '1' and rc_cnt(0) = '1')
+          then
+            rc_inh  <= '1'; -- don't check diagnostic reads
+            rc_xdat <= (others => 'X');
+          end if;
+          rc_xdat <= (others => 'X') when rc_inh;
 
         when D_RB =>
-          if rc_en then
-            rc_rbx <= '1';
-          end if;
           if i_r_valid and i_r_ready then
             rc_en   <= '1';
             rc_last <= i_r_last;
             rc_rdat <= i_r_data;
-            rc_xdat <= rb_data(rb_data'high);
+            rc_xdat <= rb_data(rb_data'high)(31 downto 16) when rc_en else rb_data(rb_data'high)(15 downto 0);
             rc_ref  <= i_r_ref;
-            if rc_en nor rc_rbx then -- first word of readback
+            if i_r_last then
               rb_data(2 to rb_data'high) <= rb_data(1 to rb_data'high-1);
               rb_data(1) <= (others => 'X');
-            end if;
-            if i_r_last then
               i_r_ready <= '0';
               if state_a = A_DONE then
                 state_d <= D_DONE;
               elsif i_a_valid and i_a_ready then
-                if t_err nor rc_err then
-                  d_eadd <= i_a_addr;
-                end if;
-                rc_err <= '0';
-                rc_cnt <= 0;
+                d_addr  <= i_a_addr;
                 state_d <= D_RB when i_a_rb else D_RD when i_a_r_w else D_WR;
               else
                 state_d <= D_WAIT;
@@ -782,16 +792,27 @@ begin
           if not i_r_ready then
             i_r_ready <= '1';
           end if;
+          if (s_csr_ctrl_d32 = '0' and rc_en = '1'                    )
+          or (s_csr_ctrl_d32 = '1' and rc_en = '1' and rc_cnt(0) = '1')
+          then
+            rc_inh  <= '1'; -- don't check diagnostic reads
+            rc_xdat <= (others => 'X');
+          end if;
+          rc_xdat <= (others => 'X') when rc_inh;
 
         when D_DONE =>
+          d_seq   <= (others => 'X');
+          d_word  <= 'X';
           state_d <= D_IDLE when not i_csr_ctrl_run;
 
       end case;
 
+      d_seq <= add(d_seq, s_csr_incr) when d_adv and not s_csr_ctrl_drnd;
+
       --------------------------------------------------------------------------------
       -- read data error checking - 1 cycle delay to improve timing
 
-      if rc_en and not (rc_rbx or rc_err or t_err) then
+      if rc_en and not (rc_inh or rc_err or t_err) then
         if rc_rdat /= rc_xdat then
           rc_err <= '1';
           if rc_last then
@@ -800,14 +821,11 @@ begin
           t_ref  <= rc_ref;
           d_edat <= rc_xdat & rc_rdat;
         else
-          d_eadd <= incr(d_eadd); -- not relevant to scattered addressing
+          d_eadd <= incr(d_eadd) when not rc_last; -- not relevant to scattered addressing
         end if;
       end if;
-      if rc_en and rc_last and rc_err then
-        t_err <= '1';
-      end if;
       if rc_en and not t_err then
-        case rc_cnt is
+        case to_integer(unsigned(rc_cnt)) is
           when 0 => d_edr(0)(15 downto  0) <= rc_rdat;
           when 1 => d_edr(0)(31 downto 16) <= rc_rdat;
           when 2 => d_edr(1)(15 downto  0) <= rc_rdat;
@@ -819,10 +837,16 @@ begin
           when others => null;
         end case;
       end if;
+      rc_cnt <= incr(rc_cnt) when rc_en;
       if rc_en and rc_last then
-        rc_rbx <= '0';
+        t_err  <= '1' when rc_err;
+        rc_inh <= '0';
+        rc_err <= '0';
+        rc_cnt <= (others => '0');
       end if;
-      rc_cnt <= rc_cnt + 1 when rc_en;
+      if i_a_valid and i_a_ready and (t_err nor rc_err) then
+        d_eadd <= i_a_addr;
+      end if;
 
       --------------------------------------------------------------------------------
 
@@ -883,7 +907,7 @@ begin
     port map (
       clk       => i_clk,
       rst       => i_rst,
-      reseed    => prng_a_init,
+      reseed    => prng_init,
       newseed   => prng_a_seed,
       out_ready => prng_a_ready,
       out_valid => prng_a_valid,
@@ -900,7 +924,7 @@ begin
     port map (
       clk       => i_clk,
       rst       => i_rst,
-      reseed    => prng_d_init,
+      reseed    => prng_init,
       newseed   => prng_d_seed,
       out_ready => prng_d_ready,
       out_valid => prng_d_valid,

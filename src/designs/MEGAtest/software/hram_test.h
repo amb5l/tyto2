@@ -36,6 +36,7 @@ u8 ht_run(
     u8  arnd   ,
     u8  drnd   ,
     u8  dinv   ,
+    u8  d32    ,
     u8  cb_m   ,
     u8  cb_i   ,
     u8  cb_pol ,
