@@ -222,6 +222,8 @@ architecture model of model_hram is
   --------------------------------------------------------------------------------
   -- build discrete constants from generics (better for linting)
 
+  constant MEM_WORDS    : integer := SIM_MEM_SIZE / 2;
+
   constant RA_BITS      : integer := to_integer(unsigned(PARAMS.idreg0(12 downto 8))+1);
   constant CA_BITS      : integer := to_integer(unsigned(PARAMS.idreg0( 7 downto 4))+1);
   constant tDRI         : time := real_to_ns( PARAMS.tDRI     );
@@ -292,7 +294,7 @@ architecture model of model_hram is
     UNKNOWN  -- unknown/crazy
   );
 
-  type mem_t is array(0 to (SIM_MEM_SIZE/2)-1) of word_t;
+  type mem_t is array(0 to MEM_WORDS-1) of word_t;
 
   --------------------------------------------------------------------------------
 
@@ -820,7 +822,7 @@ begin
                 when others         => null;
               end case;
             else
-              rdata := mem(to_integer(addr));
+              rdata := mem(to_integer(addr) mod MEM_WORDS);
             end if;
             rwds_o <= transport '1' after tCKDS;
             dq_o   <= transport rdata(15 downto 8) after tCKD;
@@ -905,10 +907,10 @@ begin
               end case;
             else
               if wm(0) = '0' then
-                mem(to_integer(addr))(7 downto 0) := wdata(7 downto 0);
+                mem(to_integer(addr) mod MEM_WORDS)(7 downto 0) := wdata(7 downto 0);
               end if;
               if wm(1) = '0' then
-                mem(to_integer(addr))(15 downto 8) := wdata(15 downto 8);
+                mem(to_integer(addr) mod MEM_WORDS)(15 downto 8) := wdata(15 downto 8);
               end if;
             end if;
             (ca(44 downto 16),ca(2 downto 0)) <= incr((ca(44 downto 16),ca(2 downto 0)));
