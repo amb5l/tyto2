@@ -66,9 +66,11 @@ u8 ht_run(
     return peek8(RA_STAT+2); // return error status
 }
 
-void ht_err(u8 r) {
-    if (r)
-        printf("\nread %04X expected %04X address %08X EDR %08X %08X %08X %08X (ref = %d)\n",
+u8 ht_err(u8 r) {
+    u8 attr = cb_get_attr();
+    if (r) {
+        cb_set_col(CB_WHITE, CB_RED);
+        printf("\n read %04X expected %04X address %08X EDR %08X %08X %08X %08X (ref = %d) \n",
             peek16(RA_EDAT),
             peek16(RA_EDAT+2),
             peek32(RA_EADD),
@@ -78,8 +80,12 @@ void ht_err(u8 r) {
 			peek32(RA_EDR3),
 			(peek8(RA_STAT+2) >> 1) & 1
         );
-    else
-        printf("OK  ");
+    } else {
+        cb_set_col(CB_WHITE, CB_BLACK);
+        printf("OK\n");
+    }
+    cb_set_attr(attr);
+    return r;
 }
 
 u8 ht_init(void) {

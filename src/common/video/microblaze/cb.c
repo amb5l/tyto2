@@ -89,6 +89,11 @@ void cb_set_attr(uint8_t attr)
 	cb_attr = attr;
 }
 
+uint8_t cb_get_attr(void)
+{
+	return cb_attr;
+}
+
 void cb_set_col(uint8_t fg, uint8_t bg)
 {
 	cb_attr = ((bg & 0x0F) << 4) | (fg & 0x0F);

@@ -27,113 +27,126 @@ int main() {
 	printf("ht_init: ");
 	ht_err(r);
 	printf("\n\n");
+	if (r) {
+		cb_set_col(CB_WHITE, CB_RED);
+		printf("\n HALTED DUE TO BAD ID \n", tests);
+		while(1)
+			;
+	}
 
 	while (errors == 0) {
 
-		cb_set_col(CB_YELLOW, CB_BLACK);
-		printf("MEGAtest application : board rev %d commit %08X\n", bsp_board_rev(), bsp_commit());
-		cb_set_col(CB_WHITE, CB_RED);
 		tests++;
-		printf("\n test: %d \n\n", tests);
-		ht_info();
-		cb_set_col(CB_WHITE, CB_BLACK);
 		t10 = xadc_temp10();
-		printf("temperature = %d.%d\n\n", t10 / 10, t10 % 10);
+		cb_set_col(CB_YELLOW, CB_BLACK);
+		printf("MEGAtest application : board rev %d  commit %08X  temperature %d.%d  test %d\n\n",
+			bsp_board_rev(), bsp_commit(), t10 / 10, t10 % 10, tests
+		);
+		ht_info();
+		printf("\n");
 		cb_set_col(CB_GREEN, CB_BLACK);
 
-		printf("write then read: sequential address, data = all 1s... ");
+		printf("write then read: sequential address, data = all 1s, single cycles................................................... ");
 		r = ht_run(1,0,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0,0,0);
 		r = ht_run(0,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0,0,0);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("write then read: sequential address, data = all 0s... ");
+		printf("read: sequential address, data = all 1s, single cycles.............................................................. ");
+		r = ht_run(0,1,0,0,0x800000,0xFFFFFFFF,0,0,0,0,0,0,0,0,0,0);
+		errors += ht_err(r);
+
+		printf("write then read: sequential address, data = all 0s, single cycles................................................... ");
 		r = ht_run(1,0,0,0,0x800000,0,0,0,0,0,0,0,0,0,0,0);
 		r = ht_run(0,1,0,0,0x800000,0,0,0,0,0,0,0,0,0,0,0);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("interleaved write/read: sequential address, data = address... ");
+		printf("read: sequential address, data = all 0s, single cycles.............................................................. ");
+		r = ht_run(0,1,0,0,0x800000,0,0,0,0,0,0,0,0,0,0,0);
+		errors += ht_err(r);
+
+		printf("interleaved write/read: sequential address, data = address.......................................................... ");
 		r = ht_run(1,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,0,0);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("read: sequential address, data = address, burst 256... ");
+		printf("read: sequential address, data = address, burst 256................................................................. ");
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,0,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("interleaved write/read: sequential address, data = inverted address... ");
+		printf("interleaved write/read: sequential address, data = inverted address................................................. ");
 		r = ht_run(1,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,0,0);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("read: sequential address, data = inverted address, burst 256... ");
+		printf("read: sequential address, data = inverted address, burst 256........................................................ ");
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,0,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
 		printf("checkboard masked write (bytes 0,3,4,7...) then verify: sequential address, data = address, random burst (1..256)... ");
 		r = ht_run(1,0,0,0,0x800000,0,4,0,0,0,0,1,0,0,1,8);
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,1,1,1,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
 		printf("checkboard masked write (bytes 1,2,5,6...) then verify: sequential address, data = address, random burst (1..256)... ");
 		r = ht_run(1,0,0,0,0x800000,0,4,0,0,0,0,1,0,1,1,8);
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,1,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("write then read: sequential address, random data, random burst (1..256)... ");
+		printf("write then read: sequential address, random data, random burst (1..256)............................................. ");
 		r = ht_run(1,0,0,0,0x800000,0,0,0,1,0,0,0,0,0,1,8);
 		r = ht_run(0,1,0,0,0x800000,0,0,0,1,0,0,0,0,0,1,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("read: sequential address, random data, burst 256... ");
+		printf("read: sequential address, random data, burst 256.................................................................... ");
 		r = ht_run(0,1,0,0,0x800000,0,4,0,1,0,0,0,0,0,0,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("write then read: sequential address, inverted random data, random burst (1..256)... ");
+		printf("write then read: sequential address, inverted random data, random burst (1..256).................................... ");
 		r = ht_run(1,0,0,0,0x800000,0,0,0,1,1,0,0,0,0,1,8);
 		r = ht_run(0,1,0,0,0x800000,0,0,0,1,1,0,0,0,0,1,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("read: sequential address, inverted random data, burst 256... ");
+		printf("read: sequential address, inverted random data, burst 256........................................................... ");
 		r = ht_run(0,1,0,0,0x800000,0,4,0,1,1,0,0,0,0,0,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("write then read: sequential address, data = address, random burst (1..256)... ");
+		printf("write then read: sequential address, data = address, random burst (1..256).......................................... ");
 		r = ht_run(1,0,0,0,0x800000,0,4,0,0,0,0,0,0,0,1,8);
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,1,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("read: sequential address, data = address, burst 256... ");
+		printf("read: sequential address, data = address, burst 256................................................................. ");
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,0,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("write then read: sequential address, data = inverted address, random burst (1..256)... ");
+		printf("write then read: sequential address, data = inverted address, random burst (1..256)................................. ");
 		r = ht_run(1,0,0,0,0x800000,0,4,0,0,1,0,0,0,0,1,8);
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,1,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("read: sequential address, data = inverted address, burst 256... ");
+		printf("read: sequential address, data = inverted address, burst 256........................................................ ");
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,0,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("interleaved write/read: random address, data = address, read burst = 8... ");
+		printf("interleaved write/read: random address, data = address, read burst = 8.............................................. ");
 		r = ht_run(1,1,0,0,0x800000,0,0,1,0,0,1,0,0,0,0,3);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
-		printf("read: sequential address, data = address, burst = 256... ");
+		printf("read: sequential address, data = address, burst = 256............................................................... ");
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,0,0,0,0,0,0,8);
-		ht_err(r); errors += r;	 printf("\n");
+		errors += ht_err(r);
 
-		printf("interleaved write/read: random address, data = inverted address, read burst = 8... ");
-		r = ht_run(1,1,0,0,0x800000,0,0,1,0,1,1,0,0,0,0,0);
-		ht_err(r); errors += r; printf("\n");
+		printf("interleaved write/read: random address, data = inverted address, read burst = 8..................................... ");
+		r = ht_run(1,1,0,0,0x800000,0,0,1,0,1,1,0,0,0,0,3);
+		errors += ht_err(r);
 
-		printf("read: sequential address, data = inverted address, burst = 256... ");
+		printf("read: sequential address, data = inverted address, burst = 256...................................................... ");
 		r = ht_run(0,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,0,8);
-		ht_err(r); errors += r; printf("\n");
+		errors += ht_err(r);
 
 		printf("\n");
 	}
 
-		cb_set_col(CB_WHITE, CB_RED);
-		printf("\n HALTED DUE TO ERROR AFTER %d TESTS \n", tests);
-		while(1)
-			;
+	cb_set_col(CB_WHITE, CB_RED);
+	printf(" HALTED DUE TO ERROR AFTER %d TESTS ", tests);
+	while(1)
+		;
 }

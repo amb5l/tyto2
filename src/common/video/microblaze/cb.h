@@ -63,6 +63,7 @@ void cb_poke_char_attr(uint8_t x, uint8_t y, uint8_t c, uint8_t a);
 void cb_set_pos(uint8_t x, uint8_t y);
 void cb_set_border(uint8_t col);
 void cb_set_attr(uint8_t attr);
+uint8_t cb_get_attr(void);
 void cb_set_col(uint8_t fg, uint8_t bg);
 void cb_set_col_fg(uint8_t col);
 void cb_set_col_bg(uint8_t col);
