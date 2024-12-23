@@ -1,0 +1,11 @@
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/ModelParametersPtPkg.vhd=osvvm_common
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/ModelParametersSingletonPkg.vhd=osvvm_common
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/FifoFillPkg_slv.vhd=osvvm_common
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/StreamTransactionPkg.vhd=osvvm_common
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/StreamTransactionArrayPkg.vhd=osvvm_common
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/AddressBusTransactionPkg_xilinx.vhd=osvvm_common
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/AddressBusTransactionArrayPkg.vhd=osvvm_common
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/AddressBusResponderTransactionPkg.vhd=osvvm_common
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/AddressBusResponderTransactionArrayPkg.vhd=osvvm_common
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/AddressBusVersionCompatibilityPkg.vhd=osvvm_common
+VIVADO_SIM_SRC+=$(OsvvmLibraries)/Common/src/OsvvmCommonContext_xilinx.vhd=osvvm_common

@@ -1,0 +1,17 @@
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/ModelParametersPtPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/ModelParametersSingletonPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/FifoFillPkg_slv.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/StreamTransactionPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/StreamTransactionArrayPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/AddressBusTransactionPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/AddressBusTransactionArrayPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/AddressBusResponderTransactionPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/AddressBusResponderTransactionArrayPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/AddressBusVersionCompatibilityPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/InterruptGlobalSignalPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/InterruptHandler.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/InterruptHandlerComponentPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/InterruptGeneratorBit.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/InterruptGeneratorBitVti.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/InterruptGeneratorComponentPkg.vhd=osvvm_common
+VSIM_SRC+=$(OsvvmLibraries)/Common/src/OsvvmCommonContext.vhd=osvvm_common

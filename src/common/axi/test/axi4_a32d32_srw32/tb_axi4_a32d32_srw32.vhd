@@ -100,12 +100,12 @@ architecture sim of tb_axi4_a32d32_srw32 is
 
 begin
 
-  Osvvm.TbUtilPkg.CreateClock(
+  Osvvm.ClockResetPkg.CreateClock(
     Clk    => Clk,
     Period => Tperiod_Clk
   ) ;
 
-  Osvvm.TbUtilPkg.CreateReset(
+  Osvvm.ClockResetPkg.CreateReset(
     Reset       => nReset,
     ResetActive => '0',
     Clk         => Clk,
