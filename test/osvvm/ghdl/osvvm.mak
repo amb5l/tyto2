@@ -1,5 +1,7 @@
-current_dir:=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-OsvvmLibraries?=$(current_dir)/../submodules/OsvvmLibraries
+ifndef toplevel
+toplevel:=$(shell git rev-parse --show-toplevel)
+endif
+OsvvmLibraries?=$(toplevel)/submodules/OsvvmLibraries
 
 GHDL_SRC+=$(OsvvmLibraries)/osvvm/IfElsePkg.vhd=osvvm
 GHDL_SRC+=$(OsvvmLibraries)/osvvm/OsvvmTypesPkg.vhd=osvvm
