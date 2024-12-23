@@ -2,7 +2,7 @@
 -- axi_pkg.vhd                                                                --
 -- AXI type definitions.                                                      --
 --------------------------------------------------------------------------------
---(C) Copyright 2023 Adam Barnes <ambarnes@gmail.com>                        --
+--(C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
 -- you can redistribute it and/or modify it under the terms of the GNU Lesser --
 -- General Public License as published by the Free Software Foundation,       --
@@ -20,9 +20,31 @@ library ieee;
 
 package axi_pkg is
 
-  type axi4lite_a32d32_mosi_t is record
+  type axi4l_a32d32_t is record
+    awaddr   : std_logic_vector( 31 downto 0 );
+    awprot   : std_logic_vector(  2 downto 0 );
+    awvalid  : std_logic;
+    awready  : std_logic;
+    wdata    : std_logic_vector( 31 downto 0 );
+    wstrb    : std_logic_vector(  3 downto 0 );
+    wvalid   : std_logic;
+    wready   : std_logic;
+    bid      : std_logic_vector(  7 downto 0 );
+    bresp    : std_logic_vector(  1 downto 0 );
+    bvalid   : std_logic;
+    bready   : std_logic;
+    araddr   : std_logic_vector( 31 downto 0 );
+    arprot   : std_logic_vector(  2 downto 0 );
+    arvalid  : std_logic;
+    arready  : std_logic;
+    rdata    : std_logic_vector( 31 downto 0 );
+    rresp    : std_logic_vector(  1 downto 0 );
+    rvalid   : std_logic;
+    rready   : std_logic;
+  end record axi4l_a32d32_t;
+
+  type axi4l_a32d32_mosi_t is record
     awaddr  : std_logic_vector( 31 downto 0 );
-    awcache : std_logic_vector(  3 downto 0 );
     awprot  : std_logic_vector(  2 downto 0 );
     awvalid : std_logic;
     wdata   : std_logic_vector( 31 downto 0 );
@@ -30,16 +52,14 @@ package axi_pkg is
     wvalid  : std_logic;
     bready  : std_logic;
     araddr  : std_logic_vector( 31 downto 0 );
-    arcache : std_logic_vector(  3 downto 0 );
     arprot  : std_logic_vector(  2 downto 0 );
     arvalid : std_logic;
     rready  : std_logic;
-  end record axi4lite_a32d32_mosi_t;
+  end record axi4l_a32d32_mosi_t;
 
-  constant AXI4LITE_A32D32_MOSI_DEFAULT : axi4lite_a32d32_mosi_t :=
+  constant AXI4L_A32D32_MOSI_DEFAULT : axi4l_a32d32_mosi_t :=
     (
       awaddr  => (others => 'U'),
-      awcache => (others => '0'), -- device non bufferable
       awprot  => (others => 'U'),
       awvalid => 'U',
       wdata   => (others => 'U'),
@@ -47,13 +67,12 @@ package axi_pkg is
       wvalid  => 'U',
       bready  => 'U',
       araddr  => (others => 'U'),
-      arcache => (others => '0'), -- device non bufferable
       arprot  => (others => 'U'),
       arvalid => 'U',
       rready  => 'U'
     );
 
-  type axi4lite_a32d32_miso_t is record
+  type axi4l_a32d32_miso_t is record
     awready : std_logic;
     wready  : std_logic;
     bresp   : std_logic_vector(  1 downto 0 );
@@ -62,9 +81,9 @@ package axi_pkg is
     rdata   : std_logic_vector( 31 downto 0 );
     rresp   : std_logic_vector(  1 downto 0 );
     rvalid  : std_logic;
-  end record axi4lite_a32d32_miso_t;
+  end record axi4l_a32d32_miso_t;
 
-  constant AXI4LITE_A32D32_MISO_DEFAULT : axi4lite_a32d32_miso_t :=
+  constant AXI4L_A32D32_MISO_DEFAULT : axi4l_a32d32_miso_t :=
     (
       awready => 'U',
       wready  => 'U',
