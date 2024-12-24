@@ -34,7 +34,7 @@ SIM_RUN=$(foreach t,$(tests),$t=cfg_tb_$(DUT)_$t)
 #include $(toplevel)/test/osvvm/vivado/osvvm.mak
 #include $(toplevel)/test/osvvm/vivado/osvvm_common.mak
 #include $(toplevel)/test/osvvm/vivado/osvvm_axi4common.mak
-#include $(toplevel)/test/osvvm/vivado/osvvm_axi4.mak
+#include $(toplevel)/test/osvvm/vivado/osvvm_axi4lite.mak
 #
 #VIVADO_LANGUAGE=VHDL
 #VIVADO_VHDL_LRM=$(SIM_LRM)
@@ -49,7 +49,7 @@ SIM_RUN=$(foreach t,$(tests),$t=cfg_tb_$(DUT)_$t)
 #include $(toplevel)/test/osvvm/xsim/osvvm.mak
 #include $(toplevel)/test/osvvm/xsim/osvvm_common.mak
 #include $(toplevel)/test/osvvm/xsim/osvvm_axi4common.mak
-#include $(toplevel)/test/osvvm/xsim/osvvm_axi4.mak
+#include $(toplevel)/test/osvvm/xsim/osvvm_axi4lite.mak
 #
 #XSIM_VHDL_LRM=$(SIM_LRM)
 #XSIM_SRC+=$(SIM_SRC)
@@ -59,40 +59,41 @@ SIM_RUN=$(foreach t,$(tests),$t=cfg_tb_$(DUT)_$t)
 #
 #xsim:: post
 #
-#################################################################################
-## GHDL
-#
-#include $(toplevel)/test/osvvm/ghdl/osvvm.mak
-#include $(toplevel)/test/osvvm/ghdl/osvvm_common.mak
-#include $(toplevel)/test/osvvm/ghdl/osvvm_axi4common.mak
-#include $(toplevel)/test/osvvm/ghdl/osvvm_axi4.mak
-#
-#GHDL_LRM=$(SIM_LRM)
-#GHDL_SRC+=$(SIM_SRC)
-#GHDL_RUN=$(SIM_RUN)
-#
-#include $(make_fpga)/ghdl.mak
-#
-#ghdl::
-#	@grep -q ERROR $(wildcard $(GHDL_DIR)/*test*.txt) && echo errors seen! && exit 1 || echo all tests passed!
-#
-#################################################################################
-## NVC
-#
-#include $(toplevel)/test/osvvm/nvc/osvvm.mak
-#include $(toplevel)/test/osvvm/nvc/osvvm_common.mak
-#include $(toplevel)/test/osvvm/nvc/osvvm_axi4common.mak
-#include $(toplevel)/test/osvvm/nvc/osvvm_axi4.mak
-#
-#NVC_VHDL_LRM=$(SIM_LRM)
-#NVC_SRC+=$(SIM_SRC)
-#NVC_RUN=$(SIM_RUN)
-#
-#include $(make_fpga)/nvc.mak
-#
-#nvc::
-#	@grep -q ERROR $(wildcard $(NVC_DIR)/*test*.txt) && echo errors seen! && exit 1 || echo all tests passed!
-#
+################################################################################
+# GHDL
+
+include $(toplevel)/test/osvvm/ghdl/osvvm.mak
+include $(toplevel)/test/osvvm/ghdl/osvvm_common.mak
+include $(toplevel)/test/osvvm/ghdl/osvvm_axi4common.mak
+include $(toplevel)/test/osvvm/ghdl/osvvm_axi4lite.mak
+
+GHDL_LRM=$(SIM_LRM)
+GHDL_SRC+=$(SIM_SRC)
+GHDL_RUN=$(SIM_RUN)
+
+include $(make_fpga)/ghdl.mak
+
+ghdl::
+	@grep -q ERROR $(wildcard $(GHDL_DIR)/*test*.txt) && echo errors seen! && exit 1 || echo all tests passed!
+
+################################################################################
+# NVC
+
+include $(toplevel)/test/osvvm/nvc/osvvm.mak
+include $(toplevel)/test/osvvm/nvc/osvvm_common.mak
+include $(toplevel)/test/osvvm/nvc/osvvm_axi4common.mak
+include $(toplevel)/test/osvvm/nvc/osvvm_axi4lite.mak
+
+NVC_VHDL_LRM=$(SIM_LRM)
+NVC_SRC+=$(SIM_SRC)
+NVC_RUN=$(SIM_RUN)
+
+NVC_G_OPTS=-L. -H 128M
+include $(make_fpga)/nvc.mak
+
+nvc::
+	@grep -q ERROR $(wildcard $(NVC_DIR)/*test*.txt) && echo errors seen! && exit 1 || echo all tests passed!
+
 ################################################################################
 # ModelSim etc
 
