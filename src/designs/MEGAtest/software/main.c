@@ -124,17 +124,34 @@ int main() {
 			e += ht_run(0,1,0,0,0x800000,0,4,0,0,1,0,0,0,0,0,8);
 			ht_err("2nd read: sequential address, data = inverted address, burst = 256");
 
-			if (bsp_getc_rdy()) {
-				char c = bsp_getc(0);
-				while (bsp_getc_rdy()) // drain receive buffer
-					bsp_getc(0);
-				if (c == '!') {
-					jtag_uart_en = 1;
+#if IS_BD(mbv_maxi_j)
+			if (!jtag_uart_en) {
+				if (e) {
 					cb_set_col(CB_WHITE, CB_RED);
-					printf("\n\nJTAG UART enabled\n\n");
-					break;
+					printf("\n HALTED DUE TO ERROR(S) AFTER %d TESTS\n", tests);
+					while(1)
+						;
 				}
+				if (bsp_getc_rdy()) {
+					while (bsp_getc_rdy()) // drain receive buffer
+						if (bsp_getc(0) == '!') {
+							jtag_uart_en = 1;
+							cb_set_col(CB_WHITE, CB_RED);
+							printf("\n\nJTAG UART enabled\n\n");
+							break;
+						}
+				}
+				if (jtag_uart_en)
+					break;
 			}
+#else
+			if (e) {
+				cb_set_col(CB_WHITE, CB_RED);
+				printf("\n HALTED DUE TO ERROR(S) AFTER %d TESTS\n", tests);
+				while(1)
+					;
+			}
+#endif
 		}
 	}
 

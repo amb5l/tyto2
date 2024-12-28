@@ -43,14 +43,14 @@ void bsp_putc(void *p, char c)
 }
 
 #if IS_BD(mbv_maxi_j)
+uint8_t bsp_getc_rdy(void) {
+    return !XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS);
+}
+
 char bsp_getc(void *p) {
     return XUartLite_RecvByte(STDIN_BASEADDRESS);
 }
 #endif
-
-uint8_t bsp_getc_rdy(void) {
-    return !XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS);
-}
 
 int bsp_init() {
 #if IS_BD(mb_mcs)
