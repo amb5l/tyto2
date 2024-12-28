@@ -41,7 +41,7 @@ package csr_pkg is
       rst  : in    std_ulogic;
       clk  : in    std_ulogic;
       en   : in    std_ulogic;
-      we   : in    std_ulogic_vector;
+      bwe  : in    std_ulogic_vector;
       addr : in    std_ulogic_vector;
       din  : in    std_ulogic_vector;
       dout : out   std_ulogic_vector;
@@ -74,6 +74,7 @@ use work.csr_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
 
 entity csr is
   generic (
@@ -83,7 +84,7 @@ entity csr is
     rst  : in    std_ulogic;
     clk  : in    std_ulogic;
     en   : in    std_ulogic;
-    we   : in    std_ulogic_vector;
+    bwe  : in    std_ulogic_vector;
     addr : in    std_ulogic_vector;
     din  : in    std_ulogic_vector;
     dout : out   std_ulogic_vector;
@@ -113,8 +114,8 @@ begin
       if en ='1' then
         for i in CSR_DEFS'range loop
           if addr = CSR_DEFS(i).addr then
-            for j in we'low to we'high loop -- traverse all byte lanes
-              if we(j) = '1' then -- write this byte
+            for j in bwe'low to bwe'high loop -- traverse all byte lanes
+              if bwe(j) = '1' then -- write this byte
                 for k in 0 to 7 loop -- 8 bits per byte
                   b := (j*8)+k;
                   case CSR_DEFS(i).bits(b) is
@@ -151,4 +152,3 @@ begin
   end process P_READ;
 
 end architecture rtl;
-

@@ -29,12 +29,8 @@ package hram_test_pkg is
   constant RA_SIZE : std_ulogic_vector(7 downto 0) := x"0C";
   constant RA_DATA : std_ulogic_vector(7 downto 0) := x"10";
   constant RA_INCR : std_ulogic_vector(7 downto 0) := x"14";
-  constant RA_EADD : std_ulogic_vector(7 downto 0) := x"18";
-  constant RA_EDAT : std_ulogic_vector(7 downto 0) := x"1C";
-  constant RA_EDR0 : std_ulogic_vector(7 downto 0) := x"20";
-  constant RA_EDR1 : std_ulogic_vector(7 downto 0) := x"24";
-  constant RA_EDR2 : std_ulogic_vector(7 downto 0) := x"28";
-  constant RA_EDR3 : std_ulogic_vector(7 downto 0) := x"2C";
+  constant RA_ERRL : std_ulogic_vector(7 downto 0) := x"18";
+  constant RA_ERRH : std_ulogic_vector(7 downto 0) := x"1C";
 
   component hram_test is
     generic (
@@ -47,7 +43,8 @@ package hram_test_pkg is
       s_rst   : in    std_ulogic;
       s_clk   : in    std_ulogic;
       s_en    : in    std_ulogic;
-      s_we    : in    std_ulogic_vector(3 downto 0);
+      s_r_w   : in    std_ulogic;
+      s_bwe   : in    std_ulogic_vector(3 downto 0);
       s_addr  : in    std_ulogic_vector(7 downto 2);
       s_din   : in    std_ulogic_vector(31 downto 0);
       s_dout  : out   std_ulogic_vector(31 downto 0);
@@ -77,6 +74,9 @@ library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
 
+library unisim;
+  use unisim.vcomponents.all;
+
 entity hram_test is
   generic (
     ROWS_LOG2 : integer; -- e.g. 13 for 8k rows
@@ -92,7 +92,8 @@ entity hram_test is
     s_rst   : in    std_ulogic;
     s_clk   : in    std_ulogic;
     s_en    : in    std_ulogic;
-    s_we    : in    std_ulogic_vector(3 downto 0);
+    s_r_w   : in    std_ulogic;
+    s_bwe   : in    std_ulogic_vector(3 downto 0);
     s_addr  : in    std_ulogic_vector(7 downto 2);
     s_din   : in    std_ulogic_vector(31 downto 0);
     s_dout  : out   std_ulogic_vector(31 downto 0);
@@ -118,7 +119,7 @@ architecture rtl of hram_test is
   --------------------------------------------------------------------------------
   -- registers
 
-  constant RA_HI : integer := 5; -- register address MSB (enough for 16 registers)
+  constant RA_HI : integer := 4; -- register address MSB (enough for 8 registers)
   constant RA_LO : integer := 2; -- register address LSB
 
   function ra(addr : std_ulogic_vector) return std_ulogic_vector is
@@ -130,7 +131,7 @@ architecture rtl of hram_test is
   subtype regs_data_t is sulv_vector(open)(31 downto 0);
 
   constant csr_ctrl_bits : csr_bits_t(31 downto 0) := (
-    30 downto 16 => RW,
+    31 downto 16 => RW,
     BMW+11 downto 0 => RW,
     others => RO
   );
@@ -152,12 +153,8 @@ architecture rtl of hram_test is
       ( ra(RA_SIZE), x"00000000", csr_addr_bits  ),
       ( ra(RA_DATA), x"00000000", (others => RW) ),
       ( ra(RA_INCR), x"00000000", (others => RW) ),
-      ( ra(RA_EADD), x"00000000", (others => RO) ),
-      ( ra(RA_EDAT), x"00000000", (others => RO) ),
-      ( ra(RA_EDR0), x"00000000", (others => RO) ),
-      ( ra(RA_EDR1), x"00000000", (others => RO) ),
-      ( ra(RA_EDR2), x"00000000", (others => RO) ),
-      ( ra(RA_EDR3), x"00000000", (others => RO) )
+      ( ra(RA_ERRL), x"00000000", (others => RO) ),
+      ( ra(RA_ERRH), x"00000000", (others => RO) )
   );
 
   signal s_csr_w : regs_data_t(CSR_DEFS'range);
@@ -170,12 +167,8 @@ architecture rtl of hram_test is
   alias s_csr_size : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_SIZE),CSR_DEFS));
   alias s_csr_data : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_DATA),CSR_DEFS));
   alias s_csr_incr : reg_data_t is s_csr_w(csr_addr_to_idx(ra(RA_INCR),CSR_DEFS));
-  alias s_csr_eadd : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EADD),CSR_DEFS));
-  alias s_csr_edat : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDAT),CSR_DEFS));
-  alias s_csr_edr0 : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDR0),CSR_DEFS));
-  alias s_csr_edr1 : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDR1),CSR_DEFS));
-  alias s_csr_edr2 : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDR2),CSR_DEFS));
-  alias s_csr_edr3 : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_EDR3),CSR_DEFS));
+  alias s_csr_errl : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_ERRL),CSR_DEFS));
+  alias s_csr_errh : reg_data_t is s_csr_r(csr_addr_to_idx(ra(RA_ERRH),CSR_DEFS));
 
   alias s_csr_ctrl_run    : std_ulogic                        is s_csr_ctrl(0);
   alias s_csr_ctrl_w      : std_ulogic                        is s_csr_ctrl(1);
@@ -194,6 +187,7 @@ architecture rtl of hram_test is
   alias s_csr_ctrl_fix_w2 : std_ulogic                        is s_csr_ctrl(23);               -- fix ISSI single write bug (add dummy write to single writes)
   alias s_csr_ctrl_abw    : std_ulogic_vector(3 downto 0)     is s_csr_ctrl(27 downto 24);     -- address boundary for writes
   alias s_csr_ctrl_clksel : std_ulogic_vector(2 downto 0)     is s_csr_ctrl(30 downto 28);
+  alias s_csr_ctrl_rst    : std_ulogic                        is s_csr_ctrl(31);
 
   alias s_csr_ctrl_cb_m   : std_ulogic is s_csr_ctrl_cb(0); -- checkerboard masking
   alias s_csr_ctrl_cb_i   : std_ulogic is s_csr_ctrl_cb(1); -- checkerboard inversion
@@ -201,8 +195,9 @@ architecture rtl of hram_test is
 
   alias s_csr_stat_bsy : std_ulogic is s_csr_stat( 0); -- running
   alias s_csr_stat_fin : std_ulogic is s_csr_stat( 8); -- finished
-  alias s_csr_stat_err : std_ulogic is s_csr_stat(16); -- error occurred
-  alias s_csr_stat_ref : std_ulogic is s_csr_stat(17); -- error occurred on refresh collision
+  alias s_csr_stat_ef  : std_ulogic is s_csr_stat(16); -- underflow
+  alias s_csr_stat_uf  : std_ulogic is s_csr_stat(17); -- underflow
+  alias s_csr_stat_of  : std_ulogic is s_csr_stat(18); -- overflow
   alias s_csr_ctrl_lol : std_ulogic is s_csr_stat(24); -- loss of lock
 
   -- register fields synchronised to internal clock domain
@@ -241,8 +236,6 @@ architecture rtl of hram_test is
   -- test controller status
   signal t_bsy       : std_ulogic;
   signal t_fin       : std_ulogic;
-  signal t_err       : std_ulogic;
-  signal t_ref       : std_ulogic; -- test status: error on refresh collision
 
   -- address state machine
   type state_a_t is (A_IDLE,A_PRNG,A_PREP1,A_PREP2,A_PREP3,A_VALID,A_RB_WAIT,A_RB_PREP,A_RB_VALID,A_DONE);
@@ -260,15 +253,11 @@ architecture rtl of hram_test is
 
   -- data state machine
   type state_d_t is (D_IDLE,D_WAIT,D_WR,D_RD,D_RB,D_DONE);
-  signal state_d     : state_d_t;
-  signal d_seq       : std_ulogic_vector(31 downto 0);
-  signal d_addr32    : std_ulogic_vector(31 downto 0);
-  signal d_word      : std_ulogic;
-  signal d_adv       : std_ulogic;                         -- advance 32 bit data pattern
-  signal d_eadd      : std_ulogic_vector(i_a_addr'range);
-  signal d_edat      : std_ulogic_vector(31 downto 0);
-  signal d_edr       : sulv_vector(0 to 3)(31 downto 0);
-  alias d_addr : std_ulogic_vector(ADDR_MSB downto 1) is d_addr32(ADDR_MSB downto 1);
+  signal state_d     : state_d_t;                         -- data machine state
+  signal d_seq       : std_ulogic_vector(31 downto 0);    -- sequential data value
+  signal d_word      : std_ulogic;                        -- word select (within dword)
+  signal d_adv       : std_ulogic;                        -- advance 32 bit data pattern
+  signal d_addr      : std_ulogic_vector(i_a_addr'range); -- address of current data access
 
   -- interleaved read/write (readback)
   type rb_addr_t is array(natural range <>) of std_ulogic_vector(i_a_addr'range);
@@ -278,14 +267,22 @@ architecture rtl of hram_test is
   signal rb_data     : rb_data_t(rb_valid'range);
 
   -- read check
-  signal rc_en       : std_ulogic;
-  signal rc_last     : std_ulogic;
-  signal rc_inh      : std_ulogic;
-  signal rc_err      : std_ulogic;
-  signal rc_cnt      : std_ulogic_vector(2 downto 0);
+  signal rc_en       : std_ulogic;                      -- enable
+  signal rc_addr     : std_ulogic_vector(d_addr'range);
   signal rc_rdat     : std_ulogic_vector(15 downto 0);
   signal rc_xdat     : std_ulogic_vector(15 downto 0);
   signal rc_ref      : std_ulogic;
+
+  -- error FIFO
+  signal efifo_rst   : std_ulogic;                      -- reset
+  signal efifo_we    : std_ulogic;                      -- write enable
+  signal efifo_wd    : std_ulogic_vector(63 downto 0);  -- write data
+  signal efifo_re    : std_ulogic;                      -- read enable
+  signal efifo_rd    : std_ulogic_vector(63 downto 0);  -- read data
+  signal efifo_ef    : std_ulogic;                      -- empty flag
+  signal efifo_af    : std_ulogic;                      -- almost full flag
+  signal efifo_uf    : std_ulogic;                      -- underflow flag
+  signal efifo_of    : std_ulogic;                      -- overflow flag
 
   --------------------------------------------------------------------------------
   -- synthesisable PRNG
@@ -334,26 +331,7 @@ architecture rtl of hram_test is
   --------------------------------------------------------------------------------
   -- attributes
 
-  attribute mark_debug : string;
-  attribute mark_debug of rc_err    : signal is "true";
-  attribute mark_debug of rc_ref    : signal is "true";
-  attribute mark_debug of i_a_ready : signal is "true";
-  attribute mark_debug of i_a_valid : signal is "true";
-  attribute mark_debug of i_a_rb    : signal is "true";
-  attribute mark_debug of i_a_r_w   : signal is "true";
-  attribute mark_debug of i_a_reg   : signal is "true";
-  attribute mark_debug of i_a_len   : signal is "true";
-  attribute mark_debug of i_a_addr  : signal is "true";
-  attribute mark_debug of i_w_ready : signal is "true";
-  attribute mark_debug of i_w_valid : signal is "true";
-  attribute mark_debug of i_w_last  : signal is "true";
-  attribute mark_debug of i_w_be    : signal is "true";
-  attribute mark_debug of i_w_data  : signal is "true";
-  attribute mark_debug of i_r_ready : signal is "true";
-  attribute mark_debug of i_r_valid : signal is "true";
-  attribute mark_debug of i_r_ref   : signal is "true";
-  attribute mark_debug of i_r_last  : signal is "true";
-  attribute mark_debug of i_r_data  : signal is "true";
+  -- attribute mark_debug : string;
 
 begin
 
@@ -367,7 +345,7 @@ begin
       rst  => s_rst,
       clk  => s_clk,
       en   => s_en,
-      we   => s_we,
+      bwe  => s_bwe,
       addr => s_addr(RA_HI downto RA_LO),
       din  => s_din,
       dout => s_dout,
@@ -378,33 +356,30 @@ begin
 
   P_CSR: process(all)
   begin
-    s_csr_eadd <= (others => '0');
-    s_csr_eadd(ADDR_MSB downto 1) <= d_eadd;
-    s_csr_edat <= d_edat;
-    s_csr_edr0 <= d_edr(0);
-    s_csr_edr1 <= d_edr(1);
-    s_csr_edr2 <= d_edr(2);
-    s_csr_edr3 <= d_edr(3);
+    s_csr_errl <= efifo_rd(31 downto 0);
+    s_csr_errh <= efifo_rd(63 downto 32);
   end process P_CSR;
 
   --------------------------------------------------------------------------------
 
   U_SYNC_S: component sync -- v4p ignore w-301 (missing port associations)
     generic map (
-      WIDTH => 5
+      WIDTH => 6
     )
     port map (
       clk  => s_clk,
       i(0) => t_bsy,
       i(1) => t_fin,
-      i(2) => t_err,
-      i(3) => t_ref,
-      i(4) => i_rst,
+      i(2) => efifo_ef,
+      i(3) => efifo_uf,
+      i(4) => efifo_of,
+      i(5) => i_rst,
       o(0) => s_csr_stat_bsy,
       o(1) => s_csr_stat_fin,
-      o(2) => s_csr_stat_err,
-      o(3) => s_csr_stat_ref,
-      o(4) => s_csr_ctrl_lol
+      o(2) => s_csr_stat_ef,
+      o(3) => s_csr_stat_uf,
+      o(4) => s_csr_stat_of,
+      o(5) => s_csr_ctrl_lol
     );
 
   U_SYNC_I: component sync
@@ -442,9 +417,6 @@ begin
 
   a_addr_rnd <= a_row_rnd & a_col;
 
-  d_addr32(31 downto ADDR_MSB+1) <= (others => '0');
-  d_addr32(0) <= '0';
-
   d_adv <=
     (bool2sl(state_d = D_WR) and d_word and ((i_w_valid and i_w_ready and not i_w_last) or not i_w_valid)) or
     (bool2sl(state_d = D_RD) and d_word and i_r_valid and i_r_ready);
@@ -472,30 +444,24 @@ begin
       i_r_ready   <= '0';
       t_bsy       <= '0';
       t_fin       <= '0';
-      t_err       <= '0';
-      t_ref       <= '0';
       a_count     <= (others => 'X');
       a_len       <= (others => 'X');
       a_addr      <= (others => 'X');
       state_a     <= A_IDLE;
       d_seq       <= (others => 'X');
-      d_addr      <= (others => 'X');
       d_word      <= 'X';
-      d_eadd      <= (others => 'X');
-      d_edat      <= (others => 'X');
-      d_edr       <= (others => (others => 'X'));
+      d_addr      <= (others => 'X');
       state_d     <= D_IDLE;
       rb_valid    <= (others => '0');
       rb_addr     <= (others => (others => 'X'));
       rb_data     <= (others => (others => 'X'));
       rc_en       <= '0';
-      rc_last     <= '0';
-      rc_inh      <= '0';
-      rc_err      <= '0';
-      rc_cnt      <= (others => 'X');
+      rc_addr     <= (others => 'X');
       rc_rdat     <= (others => 'X');
       rc_xdat     <= (others => 'X');
       rc_ref      <= '0';
+      efifo_we    <= '0';
+      efifo_wd    <= (others => 'X');
       prng_init   <= '0';
 
     elsif rising_edge(i_clk) then
@@ -658,7 +624,6 @@ begin
       -- data state machine
 
       rc_en   <= '0';
-      rc_last <= '0';
       rc_ref  <= '0';
 
       case state_d is
@@ -667,17 +632,11 @@ begin
           if i_csr_ctrl_run then
             d_seq   <= s_csr_data;
             d_word  <= '0';
-            t_err   <= '0';
-            t_ref   <= '0';
-            d_edat  <= (others => 'X');
-            d_edr   <= (others => (others => 'X'));
             state_d <= D_WAIT;
           end if;
 
         when D_WAIT =>
           if i_a_valid and i_a_ready then
-            rc_err  <= '0';
-            rc_cnt  <= (others => '0');
             d_addr  <= i_a_addr;
             state_d <= D_RB when i_a_rb else D_RD when i_a_r_w else D_WR;
           end if;
@@ -692,9 +651,9 @@ begin
             else
               d := (others => '0');
               if s_csr_ctrl_arnd and not s_csr_ctrl_drnd and s_csr_ctrl_dinv then -- random address + sequential data, inverted
-                d := not d_addr32;
+                d := (others => '1'); d(d_addr'range) := not d_addr;
               elsif s_csr_ctrl_arnd and not s_csr_ctrl_drnd then                  -- random address + sequential data
-                d := d_addr32;
+                d := (others => '0'); d(d_addr'range) := d_addr;
               elsif s_csr_ctrl_drnd and s_csr_ctrl_dinv then                      -- random data, inverted
                 d := not prng_d_data;
               elsif s_csr_ctrl_drnd then                                          -- random data
@@ -726,9 +685,9 @@ begin
           if i_r_valid and i_r_ready then
             d := (others => '0');
             if s_csr_ctrl_arnd and not s_csr_ctrl_drnd and s_csr_ctrl_dinv then -- random address + sequential data, inverted
-              d := not d_addr32;
+              d := (others => '1'); d(d_addr'range) := not d_addr;
             elsif s_csr_ctrl_arnd and not s_csr_ctrl_drnd then                  -- random address + sequential data
-              d := d_addr32;
+              d := (others => '0'); d(d_addr'range) := d_addr;
             elsif s_csr_ctrl_drnd and s_csr_ctrl_dinv then                      -- random data, inverted
               d := not prng_d_data;
             elsif s_csr_ctrl_drnd then                                          -- random data
@@ -740,11 +699,12 @@ begin
             end if;
             d := d xor x when s_csr_ctrl_cb_i;
             rc_en   <= '1';
-            rc_last <= i_r_last;
+            rc_addr <= d_addr;
             rc_rdat <= i_r_data;
             rc_xdat <= d(31 downto 16) when d_word else d(15 downto 0);
             rc_ref  <= i_r_ref;
             d_word <= not d_word;
+            d_addr <= incr(d_addr);
             if i_r_last then
               i_r_ready <= '0';
               if state_a = A_DONE then
@@ -760,18 +720,11 @@ begin
           if not i_r_ready then
             i_r_ready <= '1';
           end if;
-          if (s_csr_ctrl_arnd = '1' and s_csr_ctrl_d32 = '0' and rc_en = '1'                    )
-          or (s_csr_ctrl_arnd = '1' and s_csr_ctrl_d32 = '1' and rc_en = '1' and rc_cnt(0) = '1')
-          then
-            rc_inh  <= '1'; -- don't check diagnostic reads
-            rc_xdat <= (others => 'X');
-          end if;
-          rc_xdat <= (others => 'X') when rc_inh;
 
         when D_RB =>
           if i_r_valid and i_r_ready then
             rc_en   <= '1';
-            rc_last <= i_r_last;
+            rc_addr <= d_addr;
             rc_rdat <= i_r_data;
             rc_xdat <= rb_data(rb_data'high)(31 downto 16) when rc_en else rb_data(rb_data'high)(15 downto 0);
             rc_ref  <= i_r_ref;
@@ -792,13 +745,6 @@ begin
           if not i_r_ready then
             i_r_ready <= '1';
           end if;
-          if (s_csr_ctrl_d32 = '0' and rc_en = '1'                    )
-          or (s_csr_ctrl_d32 = '1' and rc_en = '1' and rc_cnt(0) = '1')
-          then
-            rc_inh  <= '1'; -- don't check diagnostic reads
-            rc_xdat <= (others => 'X');
-          end if;
-          rc_xdat <= (others => 'X') when rc_inh;
 
         when D_DONE =>
           d_seq   <= (others => 'X');
@@ -812,46 +758,74 @@ begin
       --------------------------------------------------------------------------------
       -- read data error checking - 1 cycle delay to improve timing
 
-      if rc_en and not (rc_inh or rc_err or t_err) then
-        if rc_rdat /= rc_xdat then
-          rc_err <= '1';
-          if rc_last then
-            t_err <= '1';
-          end if;
-          t_ref  <= rc_ref;
-          d_edat <= rc_xdat & rc_rdat;
-        else
-          d_eadd <= incr(d_eadd) when not rc_last; -- not relevant to scattered addressing
-        end if;
-      end if;
-      if rc_en and not t_err then
-        case to_integer(unsigned(rc_cnt)) is
-          when 0 => d_edr(0)(15 downto  0) <= rc_rdat;
-          when 1 => d_edr(0)(31 downto 16) <= rc_rdat;
-          when 2 => d_edr(1)(15 downto  0) <= rc_rdat;
-          when 3 => d_edr(1)(31 downto 16) <= rc_rdat;
-          when 4 => d_edr(2)(15 downto  0) <= rc_rdat;
-          when 5 => d_edr(2)(31 downto 16) <= rc_rdat;
-          when 6 => d_edr(3)(15 downto  0) <= rc_rdat;
-          when 7 => d_edr(3)(31 downto 16) <= rc_rdat;
-          when others => null;
-        end case;
-      end if;
-      rc_cnt <= incr(rc_cnt) when rc_en;
-      if rc_en and rc_last then
-        t_err  <= '1' when rc_err;
-        rc_inh <= '0';
-        rc_err <= '0';
-        rc_cnt <= (others => '0');
-      end if;
-      if i_a_valid and i_a_ready and (t_err nor rc_err) then
-        d_eadd <= i_a_addr;
+      efifo_we <= '0';
+      efifo_wd <= (others => 'X');
+      if efifo_af = '0' and rc_en = '1' and (rc_rdat /= rc_xdat) then
+        efifo_we               <= '1';
+        efifo_wd               <= (others => '0');
+        efifo_wd(d_addr'range) <= rc_addr;          -- address of data access
+        efifo_wd(31)           <= rc_ref;          -- refresh collision
+        efifo_wd(47 downto 32) <= rc_rdat;         -- data read
+        efifo_wd(63 downto 48) <= rc_xdat;         -- data expected
       end if;
 
       --------------------------------------------------------------------------------
 
     end if;
   end process P_MAIN;
+
+  --------------------------------------------------------------------------------
+  -- error FIFO
+  -- bits:
+  --  16  expected
+  --  16  actual
+  --  x   address (LSB 1 = invalid, 0 = valid)
+
+  efifo_rst <= s_rst or i_rst or s_csr_ctrl_rst;
+
+  efifo_re <= s_en and s_r_w and bool2sl(ra(s_addr) = ra(RA_ERRH));
+
+  U_EFIFO : component fifo36e1
+    generic map (
+      almost_empty_offset     => x"0010",
+      almost_full_offset      => x"01F0",
+      data_width              => 72,
+      do_reg                  => 1,
+      en_ecc_read             => false,
+      en_ecc_write            => false,
+      en_syn                  => false,
+      fifo_mode               => "FIFO36_72",
+      first_word_fall_through => true,
+      init                    => x"000000000000000000",
+      sim_device              => "7SERIES",
+      srval                   => x"000000000000000000"
+    )
+    port map (
+      wrclk         => i_clk,
+      wren          => efifo_we,
+      di            => efifo_wd,
+      dip           => (others => '0'),
+      rdclk         => s_clk,
+      rden          => efifo_re,
+      regce         => '1',
+      rst           => efifo_rst,
+      rstreg        => efifo_rst,
+      do            => efifo_rd,
+      dop           => open,
+      almostempty   => open,
+      almostfull    => efifo_af,
+      empty         => efifo_ef,
+      full          => open,
+      rdcount       => open,
+      rderr         => efifo_uf,
+      wrcount       => open,
+      wrerr         => efifo_of,
+      injectdbiterr => '0',
+      injectsbiterr => '0',
+      dbiterr       => open,
+      eccparity     => open,
+      sbiterr       => open
+    );
 
   --------------------------------------------------------------------------------
 

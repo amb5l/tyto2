@@ -2,7 +2,7 @@
 #include "cb.h"
 #include "printf.h"
 
-u16 ht_cfgreg0; // configuration register 0
+uint16_t ht_cfgreg0; // configuration register 0
 u16 ht_idreg0;  // ID register 0
 u8 ht_clksel;   // clock select:
                 // 000 = 100MHz, 001 = 105MHz, 010 = 110MHz, 011 = 120MHz,
@@ -13,6 +13,8 @@ u8 ht_trac;     // read access through FIFO, 0-3, typically 2
 u8 ht_fix_w2;   // ISSI single write bug fix enable
 u8 ht_abw;      // address boundary for writes (e.g. 9 for 9 bit column address)
 
+
+// return value: 1 = errors detected, 0 = no errors detected
 u8 ht_run(
     u8  w      ,
     u8  r      ,
@@ -55,37 +57,41 @@ u8 ht_run(
         ((arnd      &  1) <<  4) |
         ((reg       &  1) <<  3) |
         ((r         &  1) <<  2) |
-        ((w         &  1) <<  1) |
-        (1                <<  0);
-    poke32(RA_CTRL,x); // run
-    while(!(peek8(RA_STAT+1))) // wait until done
+        ((w         &  1) <<  1);
+    poke32(RA_CTRL,x | (1 << 31)); // reset assert
+    poke32(RA_CTRL,x);             // reset negate
+    poke32(RA_CTRL,x | 1);         // run assert
+    while(!(peek8(RA_STAT+1)))     // wait until done
         ;
-    poke32(RA_CTRL,x & ~(1 << 0)); // negate run
-    while(peek8(RA_STAT+1)) // wait until done cleared
+    poke32(RA_CTRL,x);             // run negate
+    while(peek8(RA_STAT+1))        // wait until done cleared
         ;
-    return peek8(RA_STAT+2); // return error status
+    return ((peek8(RA_STAT+2) & 1) == 0); // return error status
 }
 
-u8 ht_err(u8 r) {
-    u8 attr = cb_get_attr();
-    if (r) {
+void ht_err(const char *s) {
+    if (!(peek8(RA_STAT+2) & 1)) {
+        u8 attr = cb_get_attr();
+        u8 c = 0;
+        cb_set_col(CB_WHITE, CB_GREEN);
+        printf("%s\n", s);
         cb_set_col(CB_WHITE, CB_RED);
-        printf("\n read %04X expected %04X address %08X EDR %08X %08X %08X %08X (ref = %d) \n",
-            peek16(RA_EDAT),
-            peek16(RA_EDAT+2),
-            peek32(RA_EADD),
-			peek32(RA_EDR0),
-			peek32(RA_EDR1),
-			peek32(RA_EDR2),
-			peek32(RA_EDR3),
-			(peek8(RA_STAT+2) >> 1) & 1
-        );
+        do {
+            u32 ea = peek32(RA_ERRL);
+            u32 ed = peek32(RA_ERRH);
+            u16 er = ed & 0xFFFF;
+            u16 ex = ed >> 16;
+            printf("address %08X read %04X expected %04X\n", ea, er, ex);
+        } while ((!(peek8(RA_STAT+2) & 1)) && (++c < 10));
+        cb_set_attr(attr);
     } else {
-        cb_set_col(CB_WHITE, CB_BLACK);
-        printf("OK\n");
+        u8 attr = cb_get_attr();
+        cb_set_col(CB_GREEN, CB_BLACK);
+        jtag_uart_en_tx = 0;
+        printf("%s - OK\n", s);
+        jtag_uart_en_tx = 1;
+        cb_set_attr(attr);
     }
-    cb_set_attr(attr);
-    return r;
 }
 
 u8 ht_init(void) {
@@ -99,11 +105,9 @@ u8 ht_init(void) {
     ht_abw     = 9;      // address boundary for writes = row boundary (9 bit column)
     poke32(RA_CTRL,(ht_clksel & 7) << 28);
     ht_lol(); // dummy read to allow time for LOL to assert
-    while (ht_lol()) // wait for MMCM lock
-        ;
+    while (ht_lol()); // wait for MMCM lock
 	ht_run(1,0,1,0x1000,2,ht_cfgreg0,0,0,0,0,0,0,0,0,0,0); // write CFGREG0
-	u8 r = ht_run(0,1,1,0x0000,2,ht_idreg0,0,0,0,0,0,0,0,0,0,0); // read and check IDREG0
-	return r;
+	return ht_run(0,1,1,0x0000,2,ht_idreg0,0,0,0,0,0,0,0,0,0,0); // read and check IDREG0;
 }
 
 void ht_info(void) {

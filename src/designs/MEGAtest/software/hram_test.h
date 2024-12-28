@@ -9,12 +9,8 @@
 #define RA_SIZE (HT_BASE+0x0C)
 #define RA_DATA (HT_BASE+0x10)
 #define RA_INCR (HT_BASE+0x14)
-#define RA_EADD (HT_BASE+0x18)
-#define RA_EDAT (HT_BASE+0x1C)
-#define RA_EDR0 (HT_BASE+0x20)
-#define RA_EDR1 (HT_BASE+0x24)
-#define RA_EDR2 (HT_BASE+0x28)
-#define RA_EDR3 (HT_BASE+0x2C)
+#define RA_ERRL (HT_BASE+0x18)
+#define RA_ERRH (HT_BASE+0x1C)
 
 extern u8 ht_clksel; // clock select: 00 = 100MHz, 01 = 105MHz, 10 = 110MHz, 11 = 120MHz
 extern u8 ht_tlat;   // HyperRAM latency, 0-7, typically 4 cycles
@@ -43,7 +39,7 @@ u8 ht_run(
     u8  brnd   ,
     u8  bmag
 );
-u8 ht_err(u8 r);
+void ht_err(const char *s);
 u8 ht_init(void);
 void ht_info(void);
 

@@ -86,6 +86,8 @@ architecture rtl of MEGAtest is
   signal ts_bsy     : std_ulogic;
 
   signal ht_en      : std_ulogic;
+  signal ht_r_w     : std_ulogic;
+  signal ht_bwe     : std_ulogic_vector(3 downto 0);
   signal ht_we      : std_ulogic_vector(3 downto 0);
   signal ht_addr    : std_ulogic_vector(7 downto 2);
   signal ht_din     : std_ulogic_vector(31 downto 0);
@@ -125,7 +127,8 @@ begin
       ts_rdy     => ts_rdy,
       ts_bsy     => ts_bsy,
       ht_en      => ht_en,
-      ht_we      => ht_we,
+      ht_r_w     => ht_r_w,
+      ht_bwe     => ht_bwe,
       ht_addr    => ht_addr,
       ht_dout    => ht_dout,
       ht_din     => ht_din
@@ -172,7 +175,8 @@ begin
       s_rst   => s_rst,
       s_clk   => s_clk,
       s_en    => ht_en,
-      s_we    => ht_we,
+      s_r_w   => ht_r_w,
+      s_bwe   => ht_bwe,
       s_addr  => ht_addr,
       s_din   => ht_dout,
       s_dout  => ht_din,
