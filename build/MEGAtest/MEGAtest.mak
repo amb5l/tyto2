@@ -13,6 +13,7 @@ FPGA_VENDOR=$(word 1,$(FPGA))
 FPGA_FAMILY=$(word 2,$(FPGA))
 FPGA_DEVICE=$(word 3,$(FPGA))
 
+BD=mbv_maxi_j
 ROWS_LOG2=13
 COLS_LOG2=9
 
@@ -38,7 +39,9 @@ VITIS_INC=\
 	$(toplevel)/src/common/basic/microblaze \
 	$(toplevel)/src/common/video/microblaze \
 	$(toplevel)/src/designs/$(DESIGN)/software
-VITIS_SYM=APP_NAME=$(DESIGN)$(addprefix _,$(BOARD_VARIANT))
+VITIS_SYM+=\
+	APP_NAME=$(DESIGN)$(addprefix _,$(BOARD_VARIANT)) \
+	BD=$(BD)
 VITIS_SYM_RLS=BUILD_CFG_RLS
 VITIS_SYM_DBG=BUILD_CFG_DBG
 
@@ -89,14 +92,16 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/submodules/vhdl_prng/rtl/rng_xoshiro128plusplus.vhdl \
 	$(toplevel)/src/designs/MEGAtest/hram_test.vhd \
 	$(toplevel)/src/designs/MEGAtest/temp_sense.vhd \
-	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
+	$(toplevel)/src/common/axi/axi_pkg.vhd \
+	$(toplevel)/src/common/axi/axi4l_sp32.vhd \
+	$(toplevel)/src/common/mb/$(BD)_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/cpu.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN).vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(VIVADO_DSN_TOP).vhd
 VIVADO_BD_TCL=\
-	$(toplevel)/src/common/mb/mcs/mb_mcs.tcl=mbv;100000000;1
-VIVADO_PROC_REF=mb_mcs
-VIVADO_PROC_CELL=cpu/U0/microblaze_I
+	$(toplevel)/src/common/mb/$(BD).tcl=100000000
+VIVADO_PROC_REF=$(BD)
+VIVADO_PROC_CELL=cpu
 VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
 VIVADO_SIM_SRC=\
 	$(abspath $(XILINX_VIVADO))/data/verilog/src/glbl.v \

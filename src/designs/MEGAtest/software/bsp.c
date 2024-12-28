@@ -1,12 +1,21 @@
 // bsp.c
 
 #include "xparameters.h"
-#include "xiomodule.h"
-#include "xil_printf.h"
-#include "peekpoke.h"
-#include "printf.h"
 #include "bsp.h"
 #include "cb.h"
+#include "printf.h"
+#if IS_BD(mb_mcs)
+#include "xiomodule.h"
+#endif
+#if IS_BD(mbv_maxi_j)
+#include "xuartlite_l.h"
+
+uint8_t jtag_uart_en    = 0;
+uint8_t jtag_uart_en_tx = 0;
+
+#endif
+
+#if IS_BD(mb_mcs)
 
 XIOModule io;
 
@@ -17,13 +26,37 @@ void bsp_interval(uint32_t t) {
 		;
 }
 
+#endif
+
 void bsp_cb_border(uint8_t c) {
 	gpormw(1, 0xF << 4, (c & 0xF) << 4);
 }
 
+void bsp_putc(void *p, char c)
+{
+    cb_putc(0, c);
+#if IS_BD(mbv_maxi_j)
+    if (jtag_uart_en && jtag_uart_en_tx) {
+	    XUartLite_SendByte(STDOUT_BASEADDRESS, c);
+    }
+#endif
+}
+
+#if IS_BD(mbv_maxi_j)
+char bsp_getc(void *p) {
+    return XUartLite_RecvByte(STDIN_BASEADDRESS);
+}
+#endif
+
+uint8_t bsp_getc_rdy(void) {
+    return !XUartLite_IsReceiveEmpty(STDIN_BASEADDRESS);
+}
+
 int bsp_init() {
+#if IS_BD(mb_mcs)
     XIOModule_Initialize(&io, XPAR_IOMODULE_0_DEVICE_ID);
 	XIOModule_Timer_SetOptions(&io, 0, 0);
+#endif
 #if 0
     gpormw(1, 0xF, 1);                 // set video mode (720x480p60)
     gpormw(1, 0x3 << 8, 0 << 8);       // text params: no pixel repetition
@@ -41,6 +74,6 @@ int bsp_init() {
     gpormw(2, 0xFFFF << 16, 24 << 16); // text params: offset Y = 24
     cb_init(154,42);
 #endif
-    init_printf(NULL,cb_putc);
+    init_printf(0, bsp_putc);
     return 0;
 }

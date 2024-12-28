@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- muart_tx.vhd                                                               --
--- Modular UART: TX side.                                                     --
+-- muart_fifo.vhd                                                             --
+-- Modular UART: FIFO.                                                        --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
