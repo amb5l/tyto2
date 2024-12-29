@@ -26,7 +26,7 @@ entity mega65_r3 is
 
     clk_in           : in    std_logic;                      -- clock in (100MHz)
 
-    max10_clk        : inout std_ulogic;                      -- MAX10 CPLD
+    max10_clk        : inout std_ulogic;                     -- MAX10 CPLD
     max10_tx         : in    std_ulogic;
     max10_rx         : out   std_ulogic;
 
@@ -169,7 +169,7 @@ entity mega65_r3 is
     cart_a           : inout std_logic_vector(15 downto 0);
     cart_d           : inout std_logic_vector(7 downto 0);
 
-    cart_ctrl_oe_n   : out   std_ulogic;                      -- C64 cartridge ctrl
+    cart_ctrl_oe_n   : out   std_ulogic;                     -- C64 cartridge ctrl
     cart_ctrl_dir    : out   std_ulogic;
     cart_addr_oe_n   : out   std_ulogic;
     cart_laddr_dir   : out   std_ulogic;
