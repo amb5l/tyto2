@@ -19,6 +19,7 @@ LOG_FILE=$(call xpath,./log.txt)
 # Vitis
 
 VITIS_FLOW=classic
+VITIS_ARCH=$(if $(filter v,$(CPU_VARIANT)),riscv,microblaze)
 VITIS_SRC=\
 	$(toplevel)/src/common/basic/microblaze/printf.c \
 	$(toplevel)/src/common/basic/microblaze/printf.h \
