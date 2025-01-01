@@ -65,12 +65,11 @@ include $(make_fpga)/vitis.mak
 VIVADO_PART=$(FPGA_DEVICE)
 VIVADO_LANGUAGE=VHDL
 VIVADO_VHDL_LRM=2008
-VIVADO_DSN_TOP=$(DESIGN)_$(BOARD)
+VIVADO_DSN_TOP=$(DESIGN)_$(BOARD)$(addprefix _,$(BOARD_VARIANT))
 VIVADO_DSN_GEN=\
-	RGMII_TX_ALIGN=$(MEMAC_RGMII_TX_ALIGN) \
-	RGMII_RX_ALIGN=$(MEMAC_RGMII_RX_ALIGN) \
 	TX_BUF_SIZE=$(MEMAC_TX_BUF_SIZE) \
-	RX_BUF_SIZE=$(MEMAC_RX_BUF_SIZE)
+	RX_BUF_SIZE=$(MEMAC_RX_BUF_SIZE) \
+	$(if $(filter rgmii,$(PHY_IF)),RGMII_TX_ALIGN=$(MEMAC_RGMII_TX_ALIGN) RGMII_RX_ALIGN=$(MEMAC_RGMII_RX_ALIGN))
 VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/tyto_types_pkg.vhd \
 	$(toplevel)/src/common/basic/sync_reg_u.vhd \
@@ -90,10 +89,11 @@ VIVADO_DSN_SRC=\
 	$(toplevel)/src/common/ethernet/memac_rx.vhd \
 	$(toplevel)/src/common/ethernet/memac_spd.vhd \
 	$(toplevel)/src/common/ethernet/memac_tx_$(PHY_IF).vhd \
+	$(if $(filter rmii,$(PHY_IF)),$(toplevel)/src/common/ethernet/memac_sr560.vhd) \
 	$(toplevel)/src/common/ethernet/memac_rx_$(PHY_IF).vhd \
-	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/$(FPGA_FAMILY)/memac_rx_$(PHY_IF)_io.vhd \
+	$(if $(filter rgmii,$(PHY_IF)),$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/$(FPGA_FAMILY)/memac_rx_$(PHY_IF)_io.vhd) \
 	$(toplevel)/src/common/ethernet/memac_mdio.vhd \
-	$(toplevel)/src/common/ethernet/memac_raw_rgmii.vhd \
+	$(toplevel)/src/common/ethernet/memac_raw_$(PHY_IF).vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(DESIGN)_bridge.vhd \
 	$(toplevel)/src/common/mb/mcs/mb_mcs_wrapper.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(VIVADO_DSN_TOP).vhd
@@ -104,19 +104,17 @@ VIVADO_PROC_CELL=cpu/U0/microblaze_I
 VIVADO_DSN_ELF=$(VITIS_DIR)/$(VITIS_ELF_RLS)
 VIVADO_SIM_SRC=\
 	$(toplevel)/src/common/ethernet/test/model_mdio.vhd \
-	$(toplevel)/src/common/ethernet/test/model_rgmii_rx.vhd \
-	$(toplevel)/src/common/ethernet/test/model_rgmii_tx.vhd \
+	$(toplevel)/src/common/ethernet/test/model_$(PHY_IF)_rx.vhd \
+	$(toplevel)/src/common/ethernet/test/model_$(PHY_IF)_tx.vhd \
 	$(toplevel)/src/common/uart/test/model_uart_rx.vhd \
 	$(toplevel)/src/common/uart/test/model_console.vhd \
 	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/tb_$(VIVADO_DSN_TOP).vhd
 VIVADO_SIM_ELF=$(VITIS_DIR)/$(VITIS_ELF_DBG)
 VIVADO_SIM_RUN=\
-	tb_$(DESIGN)_$(BOARD);FILENAME=$(LOG_FILE),RGMII_TX_ALIGN=$(RGMII_TX_ALIGN),RGMII_RX_ALIGN=$(RGMII_RX_ALIGN)
+	tb_$(VIVADO_DSN_TOP);FILENAME=$(LOG_FILE)$(if $(filter rgmii,$(PHY_IF)),$(comma)RGMII_TX_ALIGN=$(MEMAC_RGMII_TX_ALIGN)$(comma)RGMII_RX_ALIGN=$(MEMAC_RGMII_RX_ALIGN))
 VIVADO_XDC=\
-	$(toplevel)/src/boards/$(BOARD)/$(BOARD).tcl=IMPL \
-	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).tcl=SYNTH,IMPL \
-	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/memac_tx_rgmii.tcl=IMPL \
-	$(toplevel)/src/common/ethernet/$(FPGA_VENDOR)/memac_rx_rgmii.tcl=IMPL
+	$(toplevel)/src/boards/$(BOARD)/$(BOARD)$(addprefix _,$(BOARD_VARIANT)).tcl=IMPL \
+	$(toplevel)/src/designs/$(DESIGN)/$(BOARD)/$(DESIGN)_$(BOARD).tcl=SYNTH,IMPL
 VIVADO_LIB_SRC=\
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim \
 	$(XILINX_VIVADO)/data/vhdl/src/unisims/primitive/MMCME2_ADV.vhd=unisim \

@@ -1,0 +1,10 @@
+CPU_VARIANT=v
+DESIGN=mb_mcs_memac
+PHY=ksz8081r
+PHY_IF=rmii
+BOARD=MEGA65
+BOARD_VARIANT=r3
+FPGA=xilinx 7series xc7a200tfbg484-2
+MEMAC_TX_BUF_SIZE=8192
+MEMAC_RX_BUF_SIZE=8192
+include ../$(DESIGN).mak
