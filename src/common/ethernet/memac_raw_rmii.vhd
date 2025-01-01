@@ -204,18 +204,18 @@ end entity memac_raw_rmii;
 
 architecture rtl of memac_raw_rmii is
 
-  signal umi_rst          : std_ulogic;
-  signal umi_clk          : std_ulogic;
+  signal umii_rst      : std_ulogic;
+  signal umii_clk      : std_ulogic;
 
-  signal umi_tx_clken     : std_ulogic;
-  signal umi_tx_dv        : std_ulogic;
-  signal umi_tx_er        : std_ulogic;
-  signal umi_tx_data      : std_ulogic_vector(7 downto 0);
+  signal umii_tx_clken : std_ulogic;
+  signal umii_tx_dv    : std_ulogic;
+  signal umii_tx_er    : std_ulogic;
+  signal umii_tx_data  : std_ulogic_vector(7 downto 0);
 
-  signal umi_rx_clken     : std_ulogic;
-  signal umi_rx_dv        : std_ulogic;
-  signal umi_rx_er        : std_ulogic;
-  signal umi_rx_data      : std_ulogic_vector(7 downto 0);
+  signal umii_rx_clken : std_ulogic;
+  signal umii_rx_dv    : std_ulogic;
+  signal umii_rx_er    : std_ulogic;
+  signal umii_rx_data  : std_ulogic_vector(7 downto 0);
 
 begin
 
@@ -244,99 +244,99 @@ begin
 
   --------------------------------------------------------------------------------
 
-  umi_rst <= 
-  umi_clk <= phy_rmii_clk;
+  umii_rst <= 
+  umii_clk <= phy_rmii_clk;
 
   --------------------------------------------------------------------------------
 
-  umi_tx_rst <= sys_tx_rst;
+  umii_tx_rst <= sys_tx_rst;
 
   U_MEMAC_TX: component memac_tx
     port map (
-      sys_rst   => sys_rst,
-      sys_clk   => sys_clk,
-      prq_rdy   => sys_tx_prq_rdy,
-      prq_len   => sys_tx_prq_len,
-      prq_idx   => sys_tx_prq_idx,
-      prq_tag   => sys_tx_prq_tag,
-      prq_opt   => sys_tx_prq_opt,
-      prq_stb   => sys_tx_prq_stb,
-      pfq_rdy   => sys_tx_pfq_rdy,
-      pfq_len   => sys_tx_pfq_len,
-      pfq_idx   => sys_tx_pfq_idx,
-      pfq_tag   => sys_tx_pfq_tag,
-      pfq_stb   => sys_tx_pfq_stb,
-      buf_en    => sys_tx_buf_en,
-      buf_bwe   => sys_tx_buf_bwe,
-      buf_addr  => sys_tx_buf_addr,
-      buf_din   => sys_tx_buf_din,
-      buf_dpin  => sys_tx_buf_dpin,
-      buf_dout  => sys_tx_buf_dout,
-      buf_dpout => sys_tx_buf_dpout,
-      umi_rst   => umi_rst,
-      umi_clk   => umi_clk,
-      umi_clken => umi_tx_clken,
-      umi_dv    => umi_tx_dv,
-      umi_er    => umi_tx_er,
-      umi_d     => umi_tx_data
+      sys_rst    => sys_rst,
+      sys_clk    => sys_clk,
+      prq_rdy    => sys_tx_prq_rdy,
+      prq_len    => sys_tx_prq_len,
+      prq_idx    => sys_tx_prq_idx,
+      prq_tag    => sys_tx_prq_tag,
+      prq_opt    => sys_tx_prq_opt,
+      prq_stb    => sys_tx_prq_stb,
+      pfq_rdy    => sys_tx_pfq_rdy,
+      pfq_len    => sys_tx_pfq_len,
+      pfq_idx    => sys_tx_pfq_idx,
+      pfq_tag    => sys_tx_pfq_tag,
+      pfq_stb    => sys_tx_pfq_stb,
+      buf_en     => sys_tx_buf_en,
+      buf_bwe    => sys_tx_buf_bwe,
+      buf_addr   => sys_tx_buf_addr,
+      buf_din    => sys_tx_buf_din,
+      buf_dpin   => sys_tx_buf_dpin,
+      buf_dout   => sys_tx_buf_dout,
+      buf_dpout  => sys_tx_buf_dpout,
+      umii_rst   => umii_rst,
+      umii_clk   => umii_clk,
+      umii_clken => umii_tx_clken,
+      umii_dv    => umii_tx_dv,
+      umii_er    => umii_tx_er,
+      umii_d     => umii_tx_data
     );
 
   U_RMII_TX: component memac_tx_rmii
     port map (
-      umi_rst   => umi_rst,
-      umi_clk   => umi_clk,
-      umi_clken => umi_tx_clken,
-      umi_dv    => umi_tx_dv,
-      umi_er    => umi_tx_er,
-      umi_d     => umi_tx_data,
-      rmii_en   => phy_rmii_tx_en,
-      rmii_d    => phy_rmii_tx_d
+      umii_rst   => umii_rst,
+      umii_clk   => umii_clk,
+      umii_clken => umii_tx_clken,
+      umii_dv    => umii_tx_dv,
+      umii_er    => umii_tx_er,
+      umii_d     => umii_tx_data,
+      rmii_en    => phy_rmii_tx_en,
+      rmii_d     => phy_rmii_tx_d
     );
 
   --------------------------------------------------------------------------------
 
-  umi_rx_rst <= sys_rx_rst;
+  umii_rx_rst <= sys_rx_rst;
 
   U_MEMAC_RX: component memac_rx
     port map (
-      sys_rst   => sys_rst,
-      sys_clk   => sys_clk,
-      ctrl      => sys_rx_ctrl,
-      drops     => sys_rx_stat.drops,
-      prq_rdy   => sys_rx_prq_rdy,
-      prq_len   => sys_rx_prq_len,
-      prq_idx   => sys_rx_prq_idx,
-      prq_flag  => sys_rx_prq_flag,
-      prq_stb   => sys_rx_prq_stb,
-      pfq_rdy   => sys_rx_pfq_rdy,
-      pfq_len   => sys_rx_pfq_len,
-      pfq_stb   => sys_rx_pfq_stb,
-      buf_en    => sys_rx_buf_en,
-      buf_bwe   => sys_rx_buf_bwe,
-      buf_addr  => sys_rx_buf_addr,
-      buf_din   => sys_rx_buf_din,
-      buf_dpin  => sys_rx_buf_dpin,
-      buf_dout  => sys_rx_buf_dout,
-      buf_dpout => sys_rx_buf_dpout,
-      umi_rst   => umi_rst,
-      umi_clk   => umi_clk,
-      umi_clken => umi_rx_clken,
-      umi_dv    => umi_rx_dv,
-      umi_er    => umi_rx_er,
-      umi_data  => umi_rx_data
+      sys_rst    => sys_rst,
+      sys_clk    => sys_clk,
+      ctrl       => sys_rx_ctrl,
+      drops      => sys_rx_stat.drops,
+      prq_rdy    => sys_rx_prq_rdy,
+      prq_len    => sys_rx_prq_len,
+      prq_idx    => sys_rx_prq_idx,
+      prq_flag   => sys_rx_prq_flag,
+      prq_stb    => sys_rx_prq_stb,
+      pfq_rdy    => sys_rx_pfq_rdy,
+      pfq_len    => sys_rx_pfq_len,
+      pfq_stb    => sys_rx_pfq_stb,
+      buf_en     => sys_rx_buf_en,
+      buf_bwe    => sys_rx_buf_bwe,
+      buf_addr   => sys_rx_buf_addr,
+      buf_din    => sys_rx_buf_din,
+      buf_dpin   => sys_rx_buf_dpin,
+      buf_dout   => sys_rx_buf_dout,
+      buf_dpout  => sys_rx_buf_dpout,
+      umii_rst   => umii_rst,
+      umii_clk   => umii_clk,
+      umii_clken => umii_rx_clken,
+      umii_dv    => umii_rx_dv,
+      umii_er    => umii_rx_er,
+      umii_data  => umii_rx_data
     );
 
   U_RMII_RX: component memac_rx_rmii
     port map (
-      umi_rst   => umi_rst,
-      umi_clk   => umi_clk,
-      umi_clken => umi_rx_clken,
-      umi_dv    => umi_rx_dv,
-      umi_er    => umi_rx_er,
-      umi_d     => umi_rx_data,
-      rmii_dv   => phy_rmii_rx_dv,
-      rmii_er   => phy_rmii_rx_er,
-      rmii_d    => phy_rmii_rx_d
+      umii_rst   => umii_rst,
+      umii_clk   => umii_clk,
+      umii_clken => umii_rx_clken,
+      umii_dv    => umii_rx_dv,
+      umii_er    => umii_rx_er,
+      umii_d     => umii_rx_data,
+      rmii_dv    => phy_rmii_rx_dv,
+      rmii_er    => phy_rmii_rx_er,
+      rmii_d     => phy_rmii_rx_d
     );
 
   --------------------------------------------------------------------------------

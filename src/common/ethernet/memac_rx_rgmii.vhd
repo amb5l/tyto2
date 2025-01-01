@@ -24,26 +24,26 @@ package memac_rx_rgmii_pkg is
 
   component memac_rx_rgmii is
     port (
-      ref_rst   : in    std_ulogic;
-      ref_clk   : in    std_ulogic;                    -- 125 MHz
-      umi_spdi  : in    std_ulogic_vector(1 downto 0); -- requested speed
-      umi_spdo  : out   std_ulogic_vector(1 downto 0); -- measured speed
-      umi_rst   : in    std_ulogic;
-      umi_clk   : in    std_ulogic;
-      umi_clken : out   std_ulogic;
-      umi_dv    : out   std_ulogic;
-      umi_er    : out   std_ulogic;
-      umi_d     : out   std_ulogic_vector(7 downto 0);
-      ibs_crs   : out   std_ulogic;                    -- carrier sense
-      ibs_crx   : out   std_ulogic;                    -- carrier extend
-      ibs_crxer : out   std_ulogic;                    -- carrier extend error
-      ibs_crf   : out   std_ulogic;                    -- carrier false
-      ibs_link  : out   std_ulogic;                    -- link up
-      ibs_spd   : out   std_ulogic_vector(1 downto 0); -- speed
-      ibs_fdx   : out   std_ulogic;                    -- full duplex
-      rgmii_clk : in    std_ulogic;
-      rgmii_ctl : in    std_ulogic;
-      rgmii_d   : in    std_ulogic_vector(3 downto 0)
+      ref_rst    : in    std_ulogic;
+      ref_clk    : in    std_ulogic;                    -- 125 MHz
+      umii_spdi  : in    std_ulogic_vector(1 downto 0); -- requested speed
+      umii_spdo  : out   std_ulogic_vector(1 downto 0); -- measured speed
+      umii_rst   : in    std_ulogic;
+      umii_clk   : in    std_ulogic;
+      umii_clken : out   std_ulogic;
+      umii_dv    : out   std_ulogic;
+      umii_er    : out   std_ulogic;
+      umii_d     : out   std_ulogic_vector(7 downto 0);
+      ibs_crs    : out   std_ulogic;                    -- carrier sense
+      ibs_crx    : out   std_ulogic;                    -- carrier extend
+      ibs_crxer  : out   std_ulogic;                    -- carrier extend error
+      ibs_crf    : out   std_ulogic;                    -- carrier false
+      ibs_link   : out   std_ulogic;                    -- link up
+      ibs_spd    : out   std_ulogic_vector(1 downto 0); -- speed
+      ibs_fdx    : out   std_ulogic;                    -- full duplex
+      rgmii_clk  : in    std_ulogic;
+      rgmii_ctl  : in    std_ulogic;
+      rgmii_d    : in    std_ulogic_vector(3 downto 0)
     );
   end component memac_rx_rgmii;
 
@@ -61,32 +61,32 @@ library ieee;
 
 entity memac_rx_rgmii is
   port (
-    ref_rst   : in    std_ulogic;
-    ref_clk   : in    std_ulogic;                    -- 125 MHz
-    umi_spdi  : in    std_ulogic_vector(1 downto 0); -- requested speed
-    umi_spdo  : out   std_ulogic_vector(1 downto 0); -- measured speed
-    umi_rst   : in    std_ulogic;
-    umi_clk   : in    std_ulogic;
-    umi_clken : out   std_ulogic;
-    umi_dv    : out   std_ulogic;
-    umi_er    : out   std_ulogic;
-    umi_d     : out   std_ulogic_vector(7 downto 0);
-    ibs_crs   : out   std_ulogic;                    -- carrier sense
-    ibs_crx   : out   std_ulogic;                    -- carrier extend
-    ibs_crxer : out   std_ulogic;                    -- carrier extend error
-    ibs_crf   : out   std_ulogic;                    -- carrier false
-    ibs_link  : out   std_ulogic;                    -- link up
-    ibs_spd   : out   std_ulogic_vector(1 downto 0); -- speed
-    ibs_fdx   : out   std_ulogic;                    -- full duplex
-    rgmii_clk : in    std_ulogic;
-    rgmii_ctl : in    std_ulogic;
-    rgmii_d   : in    std_ulogic_vector(3 downto 0)
+    ref_rst    : in    std_ulogic;
+    ref_clk    : in    std_ulogic;                    -- 125 MHz
+    umii_spdi  : in    std_ulogic_vector(1 downto 0); -- requested speed
+    umii_spdo  : out   std_ulogic_vector(1 downto 0); -- measured speed
+    umii_rst   : in    std_ulogic;
+    umii_clk   : in    std_ulogic;
+    umii_clken : out   std_ulogic;
+    umii_dv    : out   std_ulogic;
+    umii_er    : out   std_ulogic;
+    umii_d     : out   std_ulogic_vector(7 downto 0);
+    ibs_crs    : out   std_ulogic;                    -- carrier sense
+    ibs_crx    : out   std_ulogic;                    -- carrier extend
+    ibs_crxer  : out   std_ulogic;                    -- carrier extend error
+    ibs_crf    : out   std_ulogic;                    -- carrier false
+    ibs_link   : out   std_ulogic;                    -- link up
+    ibs_spd    : out   std_ulogic_vector(1 downto 0); -- speed
+    ibs_fdx    : out   std_ulogic;                    -- full duplex
+    rgmii_clk  : in    std_ulogic;
+    rgmii_ctl  : in    std_ulogic;
+    rgmii_d    : in    std_ulogic_vector(3 downto 0)
   );
 end entity memac_rx_rgmii;
 
 architecture rtl of memac_rx_rgmii is
 
-  signal umi_spdi_s    : std_ulogic_vector(1 downto 0);
+  signal umii_spdi_s   : std_ulogic_vector(1 downto 0);
   signal iddr_d        : std_ulogic_vector(4 downto 0);
   signal iddr_q1       : std_ulogic_vector(4 downto 0);
   signal iddr_q2       : std_ulogic_vector(4 downto 0);
@@ -104,10 +104,10 @@ begin
       RST_STATE => '0'
     )
     port map (
-      rst  => umi_rst,
-      clk  => umi_clk,
-      i    => umi_spdi,
-      o    => umi_spdi_s
+      rst  => umii_rst,
+      clk  => umii_clk,
+      i    => umii_spdi,
+      o    => umii_spdi_s
     );
 
   U_IDDR: component iddr
@@ -126,13 +126,13 @@ begin
   rgmii_ctl_f <= iddr_q2(4);
   rgmii_d_f   <= iddr_q2(3 downto 0);
 
-  P_MAIN: process(umi_rst,umi_clk)
+  P_MAIN: process(umii_rst,umii_clk)
   begin
-    if umi_rst = '1' then
-      umi_clken     <= '0';
-      umi_dv        <= '0';
-      umi_er        <= '0';
-      umi_d         <= (others => '0');
+    if umii_rst = '1' then
+      umii_clken    <= '0';
+      umii_dv       <= '0';
+      umii_er       <= '0';
+      umii_d        <= (others => '0');
       rgmii_ctl_r_l <= '0';
       ibs_crs       <= '0';
       ibs_crx       <= '0';
@@ -141,48 +141,48 @@ begin
       ibs_link      <= '0';
       ibs_spd       <= (others => '0');
       ibs_fdx       <= '0';
-    elsif rising_edge(umi_clk) then
+    elsif rising_edge(umii_clk) then
       -- IBS
-      if umi_dv = '0' and umi_er = '0' then
-        ibs_link <= umi_d(0);
-        ibs_spd  <= umi_d(2 downto 1);
-        ibs_fdx  <= umi_d(3);
-      elsif umi_dv = '0' and umi_er = '1' then
-        ibs_crs   <= bool2sl(umi_d = x"FF");
-        ibs_crx   <= bool2sl(umi_d = x"0F");
-        ibs_crxer <= bool2sl(umi_d = x"1F");
-        ibs_crf   <= bool2sl(umi_d = x"0E");
+      if umii_dv = '0' and umii_er = '0' then
+        ibs_link <= umii_d(0);
+        ibs_spd  <= umii_d(2 downto 1);
+        ibs_fdx  <= umii_d(3);
+      elsif umii_dv = '0' and umii_er = '1' then
+        ibs_crs   <= bool2sl(umii_d = x"FF");
+        ibs_crx   <= bool2sl(umii_d = x"0F");
+        ibs_crxer <= bool2sl(umii_d = x"1F");
+        ibs_crf   <= bool2sl(umii_d = x"0E");
       end if;
       -- dv, er, d
-      case umi_spdi_s is
+      case umii_spdi_s is
         when "00" | "01" => -- 10/100 Mbps
-          umi_clken <= not umi_clken;
+          umii_clken <= not umii_clken;
           if rgmii_ctl_r xor rgmii_ctl_r_l then
-            umi_clken <= '1';
+            umii_clken <= '1';
           end if;
           rgmii_ctl_r_l <= rgmii_ctl_r;
-          if umi_clken then
-            umi_dv <= rgmii_ctl_r;
-            umi_er <= rgmii_ctl_f xor rgmii_ctl_r;
-            umi_d  <= rgmii_d_f & rgmii_d_r;
+          if umii_clken then
+            umii_dv <= rgmii_ctl_r;
+            umii_er <= rgmii_ctl_f xor rgmii_ctl_r;
+            umii_d  <= rgmii_d_f & rgmii_d_r;
           end if;
         when "10" => -- 1000 Mbps
-          umi_clken <= '1';
-          umi_dv    <= rgmii_ctl_r;
-          umi_er    <= rgmii_ctl_f xor rgmii_ctl_r;
-          umi_d     <= rgmii_d_f & rgmii_d_r;
+          umii_clken <= '1';
+          umii_dv    <= rgmii_ctl_r;
+          umii_er    <= rgmii_ctl_f xor rgmii_ctl_r;
+          umii_d     <= rgmii_d_f & rgmii_d_r;
         when others => -- bad
-          umi_clken <= '0';
-          umi_dv    <= '0';
-          umi_er    <= '0';
-          umi_d     <= (others => 'X');
-          ibs_link  <= '0';
-          ibs_spd   <= "11";
-          ibs_fdx   <= '1';
-          ibs_crs   <= '0';
-          ibs_crx   <= '0';
-          ibs_crxer <= '0';
-          ibs_crf   <= '0';
+          umii_clken <= '0';
+          umii_dv    <= '0';
+          umii_er    <= '0';
+          umii_d     <= (others => 'X');
+          ibs_link   <= '0';
+          ibs_spd    <= "11";
+          ibs_fdx    <= '1';
+          ibs_crs    <= '0';
+          ibs_crx    <= '0';
+          ibs_crxer  <= '0';
+          ibs_crf    <= '0';
       end case;
     end if;
   end process P_MAIN;
@@ -191,9 +191,9 @@ begin
     port map (
       ref_rst  => ref_rst,
       ref_clk  => ref_clk,
-      umi_rst  => umi_rst,
-      umi_clk  => umi_clk,
-      umi_spd  => umi_spdo
+      umii_rst => umii_rst,
+      umii_clk => umii_clk,
+      umii_spd => umii_spdo
     );
 
 end architecture rtl;

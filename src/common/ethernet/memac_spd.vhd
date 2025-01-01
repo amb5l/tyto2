@@ -22,11 +22,11 @@ package memac_spd_pkg is
 
   component memac_spd is
     port (
-      ref_rst : in    std_ulogic;
-      ref_clk : in    std_ulogic;
-      umi_rst : in    std_ulogic;
-      umi_clk : in    std_ulogic;
-      umi_spd : out   std_ulogic_vector(1 downto 0)
+      ref_rst  : in    std_ulogic;
+      ref_clk  : in    std_ulogic;
+      umii_rst : in    std_ulogic;
+      umii_clk : in    std_ulogic;
+      umii_spd : out   std_ulogic_vector(1 downto 0)
     );
   end component memac_spd;
 
@@ -42,11 +42,11 @@ library ieee;
 
 entity memac_spd is
   port (
-    ref_rst : in    std_ulogic;
-    ref_clk : in    std_ulogic;
-    umi_rst : in    std_ulogic;
-    umi_clk : in    std_ulogic;
-    umi_spd : out   std_ulogic_vector(1 downto 0)
+    ref_rst  : in    std_ulogic;
+    ref_clk  : in    std_ulogic;
+    umii_rst : in    std_ulogic;
+    umii_clk : in    std_ulogic;
+    umii_spd : out   std_ulogic_vector(1 downto 0)
   );
 end entity memac_spd;
 
@@ -60,11 +60,11 @@ architecture rtl of memac_spd is
 
 begin
 
-  P_DIV: process(umi_rst,umi_clk)
+  P_DIV: process(umii_rst,umii_clk)
   begin
-    if umi_rst = '1' then
+    if umii_rst = '1' then
       clk_div <= (others => '0');
-    elsif rising_edge(umi_clk) then
+    elsif rising_edge(umii_clk) then
       clk_div <= std_ulogic_vector(unsigned(clk_div)+1);
     end if;
   end process P_DIV;
@@ -86,7 +86,7 @@ begin
       phase <= '0';
       count <= (others => '0');
       f_r   <= '0';
-      umi_spd   <= "11";
+      umii_spd   <= "11";
     elsif rising_edge(ref_clk) then
       f_r <= f;
       if f = '1' and f_r = '1' then
@@ -95,15 +95,15 @@ begin
         phase <= '0';
       end if;
       if f = '1' and f_r = '1' and phase = '0' then
-        if    count >= 750 and count <= 850 then umi_spd <= "00";
-        elsif count >=  70 and count <=  90 then umi_spd <= "01";
-        elsif count >=  14 and count <=  18 then umi_spd <= "10";
-        else                                     umi_spd <= "11";
+        if    count >= 750 and count <= 850 then umii_spd <= "00";
+        elsif count >=  70 and count <=  90 then umii_spd <= "01";
+        elsif count >=  14 and count <=  18 then umii_spd <= "10";
+        else                                     umii_spd <= "11";
         end if;
         count <= (others => '0');
       else
         if (not count) = 0 then
-          umi_spd <= "11";
+          umii_spd <= "11";
         end if;
         count <= count + 1;
       end if;

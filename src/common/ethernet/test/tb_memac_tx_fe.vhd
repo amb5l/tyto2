@@ -149,9 +149,9 @@ architecture sim of tb_memac_tx_fe is
   signal buf_wptr : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0);
 
   -- PHY
-  signal umi_dv : std_ulogic;
-  signal umi_er : std_ulogic;
-  signal umi_d  : std_ulogic_vector(7 downto 0);
+  signal umii_dv : std_ulogic;
+  signal umii_er : std_ulogic;
+  signal umii_d  : std_ulogic_vector(7 downto 0);
 
   -- simulation only: signals to allow shared variables to be added to waveform
   signal sim_prq_items : integer;                        -- v4p ignore w-303
@@ -379,7 +379,7 @@ begin
     while pcount < PACKET_COUNT loop
       -- IPG
       count := 0;
-      while umi_dv /= '1' loop
+      while umii_dv /= '1' loop
         count := count + 1;
         wait until falling_edge(clk);
       end loop;
@@ -387,26 +387,26 @@ begin
         report "IPG too short (" & integer'image(count) & " cycles)" severity failure;
       -- preamble
       for i in 1 to 7 loop
-        assert umi_dv = '1'
+        assert umii_dv = '1'
           report "unexpected DV negation" severity failure;
-        assert umi_er = '0'
+        assert umii_er = '0'
           report "unexpected ER assertion" severity failure;
-        assert umi_d(7 downto 0) = x"55"
-          report "preamble error - expected 055, received " & to_hstring(umi_d(7 downto 0)) severity failure;
+        assert umii_d(7 downto 0) = x"55"
+          report "preamble error - expected 055, received " & to_hstring(umii_d(7 downto 0)) severity failure;
         wait until falling_edge(clk);
       end loop;
       -- SFD
-      assert umi_dv = '1'
+      assert umii_dv = '1'
         report "unexpected DV negation" severity failure;
-      assert umi_er = '0'
+      assert umii_er = '0'
         report "unexpected ER assertion" severity failure;
-      assert umi_d(7 downto 0) = x"D5"
-          report "SFD error - expected 0D5, received " & to_hstring(umi_d(7 downto 0)) severity failure;
+      assert umii_d(7 downto 0) = x"D5"
+          report "SFD error - expected 0D5, received " & to_hstring(umii_d(7 downto 0)) severity failure;
         wait until falling_edge(clk);
       -- packet data
       count := 0;
-      while umi_dv = '1' loop
-        rpkt.data(count) := umi_er & umi_d;
+      while umii_dv = '1' loop
+        rpkt.data(count) := umii_er & umii_d;
         count := count + 1;
         wait until falling_edge(clk);
       end loop;
@@ -470,27 +470,27 @@ begin
 
   DUT: component memac_tx_fe
     port map (
-      rst      => rst,
-      clk      => clk,
-      clken    => clken,
-      dv       => umi_dv,
-      er       => umi_er,
-      d        => umi_d,
-      prq_rdy  => prq_rdy,
-      prq_len  => prq_len,
-      prq_idx  => prq_idx,
-      prq_tag  => prq_tag,
-      prq_opt  => prq_opt,
-      prq_stb  => prq_stb,
-      pfq_rdy  => pfq_rdy,
-      pfq_len  => pfq_len,
-      pfq_idx  => pfq_idx,
-      pfq_tag  => pfq_tag,
-      pfq_stb  => pfq_stb,
-      buf_re   => buf_re,
-      buf_idx  => buf_rptr,
-      buf_d    => buf_d,
-      buf_er   => buf_er
+      rst     => rst,
+      clk     => clk,
+      clken   => clken,
+      umii_dv => umii_dv,
+      umii_er => umii_er,
+      umii_d  => umii_d,
+      prq_rdy => prq_rdy,
+      prq_len => prq_len,
+      prq_idx => prq_idx,
+      prq_tag => prq_tag,
+      prq_opt => prq_opt,
+      prq_stb => prq_stb,
+      pfq_rdy => pfq_rdy,
+      pfq_len => pfq_len,
+      pfq_idx => pfq_idx,
+      pfq_tag => pfq_tag,
+      pfq_stb => pfq_stb,
+      buf_re  => buf_re,
+      buf_idx => buf_rptr,
+      buf_d   => buf_d,
+      buf_er  => buf_er
     );
 
   --------------------------------------------------------------------------------

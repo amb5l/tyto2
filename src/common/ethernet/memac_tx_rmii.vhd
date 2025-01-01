@@ -22,15 +22,15 @@ package memac_tx_rmii_pkg is
 
   component memac_tx_rmii is
     port (
-      umi_rst   : in    std_ulogic;
-      umi_clk   : out   std_ulogic;
-      umi_clken : out   std_ulogic;
-      umi_dv    : in    std_ulogic;
-      umi_er    : in    std_ulogic;
-      umi_d     : in    std_ulogic_vector(7 downto 0);
-      rmii_clk  : in    std_ulogic;
-      rmii_en   : out   std_ulogic;
-      rmii_d    : out   std_ulogic_vector(1 downto 0)
+      umii_rst   : in    std_ulogic;
+      umii_clk   : out   std_ulogic;
+      umii_clken : out   std_ulogic;
+      umii_dv    : in    std_ulogic;
+      umii_er    : in    std_ulogic;
+      umii_d     : in    std_ulogic_vector(7 downto 0);
+      rmii_clk   : in    std_ulogic;
+      rmii_en    : out   std_ulogic;
+      rmii_d     : out   std_ulogic_vector(1 downto 0)
     );
   end component memac_tx_rmii;
 
@@ -44,15 +44,15 @@ library ieee;
 
 entity memac_tx_rmii is
   port (
-    umi_rst   : in    std_ulogic;
-    umi_clk   : out   std_ulogic;
-    umi_clken : out   std_ulogic;
-    umi_dv    : in    std_ulogic;
-    umi_er    : in    std_ulogic;
-    umi_d     : in    std_ulogic_vector(7 downto 0);
-    rmii_clk  : in    std_ulogic;
-    rmii_en   : out   std_ulogic;
-    rmii_d    : out   std_ulogic_vector(1 downto 0)
+    umii_rst   : in    std_ulogic;
+    umii_clk   : out   std_ulogic;
+    umii_clken : out   std_ulogic;
+    umii_dv    : in    std_ulogic;
+    umii_er    : in    std_ulogic;
+    umii_d     : in    std_ulogic_vector(7 downto 0);
+    rmii_clk   : in    std_ulogic;
+    rmii_en    : out   std_ulogic;
+    rmii_d     : out   std_ulogic_vector(1 downto 0)
   );
 end entity memac_tx_rmii;
 

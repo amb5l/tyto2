@@ -131,9 +131,9 @@ architecture sim of tb_memac_rx_fe is
   signal dut_buf_idx  : std_ulogic_vector(log2(BUF_SIZE)-1 downto 0); -- 8kB
   signal dut_buf_data : std_ulogic_vector(7 downto 0);
   signal dut_buf_er   : std_ulogic;
-  signal umi_dv       : std_ulogic;
-  signal umi_er       : std_ulogic;
-  signal umi_data     : std_ulogic_vector(7 downto 0);
+  signal umii_dv      : std_ulogic;
+  signal umii_er      : std_ulogic;
+  signal umii_data    : std_ulogic_vector(7 downto 0);
 
   -- testbench side of queues
   signal tb_prq_rdy   : std_ulogic;
@@ -243,32 +243,32 @@ begin
   P_TX: process
     variable pkt  : packet_t;
   begin
-    umi_dv   <= '0';
-    umi_er   <= '0';
-    umi_data <= (others => 'X');
+    umii_dv   <= '0';
+    umii_er   <= '0';
+    umii_data <= (others => 'X');
     for i in 1 to PACKET_COUNT loop
       -- random IPG
       for j in 1 to prng.rand_int(1,MTU) loop
         wait until rising_edge(clk);
       end loop;
       -- start of packet
-      umi_dv   <= '1';
-      umi_er   <= '0';
+      umii_dv <= '1';
+      umii_er <= '0';
       -- random packet (including premable)
       pkt.len := prng.rand_int(1,MTU);
       for j in 0 to pkt.len-1 loop
         pkt.data(j) := prng.rand_int(0,255);
       end loop;
       for j in 0 to pkt.len-1 loop
-        umi_data <= std_ulogic_vector(to_unsigned(pkt.data(j),8));
+        umii_data <= std_ulogic_vector(to_unsigned(pkt.data(j),8));
         wait until rising_edge(clk);
       end loop;
       report "enqueing packet - len = " & integer'image(pkt.len);
       expected.enq(pkt);
       -- end of packet
-      umi_dv   <= '0';
-      umi_er   <= '0';
-      umi_data <= (others => 'X');
+      umii_dv   <= '0';
+      umii_er   <= '0';
+      umii_data <= (others => 'X');
     end loop;
   end process P_TX;
 
@@ -388,28 +388,28 @@ begin
 
   DUT: component memac_rx_fe
     port map (
-    rst      => rst,
-    clk      => clk,
-    clken    => clken,
-    ipg_min  => ipg_min,
-    pre_inc  => pre_inc,
-    fcs_inc  => fcs_inc,
-    drops    => drops,
-    prq_rdy  => dut_prq_rdy,
-    prq_len  => dut_prq_len,
-    prq_idx  => dut_prq_idx,
-    prq_flag => dut_prq_flag,
-    prq_stb  => dut_prq_stb,
-    pfq_rdy  => dut_pfq_rdy,
-    pfq_len  => dut_pfq_len,
-    pfq_stb  => dut_pfq_stb,
-    buf_we   => dut_buf_we,
-    buf_idx  => dut_buf_idx,
-    buf_data => dut_buf_data,
-    buf_er   => dut_buf_er,
-    umi_dv   => umi_dv,
-    umi_er   => umi_er,
-    umi_data => umi_data
+    rst       => rst,
+    clk       => clk,
+    clken     => clken,
+    ipg_min   => ipg_min,
+    pre_inc   => pre_inc,
+    fcs_inc   => fcs_inc,
+    drops     => drops,
+    prq_rdy   => dut_prq_rdy,
+    prq_len   => dut_prq_len,
+    prq_idx   => dut_prq_idx,
+    prq_flag  => dut_prq_flag,
+    prq_stb   => dut_prq_stb,
+    pfq_rdy   => dut_pfq_rdy,
+    pfq_len   => dut_pfq_len,
+    pfq_stb   => dut_pfq_stb,
+    buf_we    => dut_buf_we,
+    buf_idx   => dut_buf_idx,
+    buf_data  => dut_buf_data,
+    buf_er    => dut_buf_er,
+    umii_dv   => umii_dv,
+    umii_er   => umii_er,
+    umii_data => umii_data
     );
 
   --------------------------------------------------------------------------------

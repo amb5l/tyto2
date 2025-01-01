@@ -30,10 +30,10 @@ package memac_rx_rmii_pkg is
       rst         : in    std_ulogic;
       clk         : out   std_ulogic;
       spd         : in    std_ulogic;
-      umi_clken   : out   std_ulogic;
-      umi_dv      : out   std_ulogic;
-      umi_er      : out   std_ulogic;
-      umi_d       : out   std_ulogic_vector(7 downto 0);
+      umii_clken  : out   std_ulogic;
+      umii_dv     : out   std_ulogic;
+      umii_er     : out   std_ulogic;
+      umii_d      : out   std_ulogic_vector(7 downto 0);
       rmii_clk    : in    std_ulogic;
       rmii_crs_dv : in    std_ulogic;
       rmii_er     : in    std_ulogic;
@@ -53,11 +53,11 @@ entity memac_rx_rmii is
     rst         : in    std_ulogic;                    -- reset
     clk         : out   std_ulogic;                    -- 50MHz
     spd         : in    std_ulogic;                    -- link speed: 0 = 10Mbps, 1 = 100Mbps
-    umi_clken   : out   std_ulogic;                    -- UMI clock enable
-    umi_crs     : out   std_ulogic;                    -- UMI carrier sense
-    umi_dv      : out   std_ulogic;
-    umi_er      : out   std_ulogic;
-    umi_d       : out   std_ulogic_vector(7 downto 0);
+    umii_clken  : out   std_ulogic;                    -- UMI clock enable
+    umii_crs    : out   std_ulogic;                    -- UMI carrier sense
+    umii_dv     : out   std_ulogic;
+    umii_er     : out   std_ulogic;
+    umii_d      : out   std_ulogic_vector(7 downto 0);
     rmii_clk    : in    std_ulogic;
     rmii_crs_dv : in    std_ulogic;
     rmii_er     : in    std_ulogic;
@@ -140,12 +140,12 @@ begin
                    not s2_nibble when s2_dibit;
 
 
-      umi_dv <= s2_dv and s2_nibble and s2_dibit;
-      umi_er <= s2_er;
-      umi_d(1 downto 0) <= s2_d when s2_nibble = '0' and s2_dibit = '0';
-      umi_d(3 downto 2) <= s2_d when s2_nibble = '0' and s2_dibit = '1';
-      umi_d(5 downto 4) <= s2_d when s2_nibble = '1' and s2_dibit = '0';
-      umi_d(7 downto 6) <= s2_d when s2_nibble = '1' and s2_dibit = '1';
+      umii_dv <= s2_dv and s2_nibble and s2_dibit;
+      umii_er <= s2_er;
+      umii_d(1 downto 0) <= s2_d when s2_nibble = '0' and s2_dibit = '0';
+      umii_d(3 downto 2) <= s2_d when s2_nibble = '0' and s2_dibit = '1';
+      umii_d(5 downto 4) <= s2_d when s2_nibble = '1' and s2_dibit = '0';
+      umii_d(7 downto 6) <= s2_d when s2_nibble = '1' and s2_dibit = '1';
 
       -- packet starts at leading edge of DV
 
