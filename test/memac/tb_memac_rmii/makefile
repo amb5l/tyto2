@@ -31,7 +31,22 @@ VIVADO_SIM_RUN=$(SIM_RUN)
 include $(make_fpga)/vivado.mak
 
 ################################################################################
+# XSim
+
+XSIM_VHDL_LRM=$(SIM_LRM)
+XSIM_SRC=$(SIM_SRC)
+XSIM_RUN=$(SIM_RUN)
+
+include $(make_fpga)/xsim.mak
+
+################################################################################
 # GHDL
+
+GHDL_LRM=$(SIM_LRM)
+GHDL_SRC=$(SIM_SRC)
+GHDL_RUN=$(SIM_RUN)
+
+include $(toplevel)/submodules/make-fpga/ghdl.mak
 
 ################################################################################
 # NVC
