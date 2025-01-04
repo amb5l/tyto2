@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
--- memac_sr560.vhd                                                            --
--- Modular Ethernet MAC (MEMAC): 560 bit shift register.                      --
+-- memac_rmii_pkg.vhd                                                         --
+-- Modular Ethernet MAC: RMII types and constants.                            --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
@@ -18,51 +18,29 @@
 library ieee;
   use ieee.std_logic_1164.all;
 
-package memac_sr560_pkg is
-  component memac_sr560 is
-    port (
-      clk : in    std_ulogic;
-      d   : in    std_ulogic;
-      q   : out   std_ulogic
-    );
-  end component;
-end package memac_sr560_pkg;
+package memac_rmii_pkg is
 
---------------------------------------------------------------------------------
+  type rmii_rx_t is record
+    spd    : std_logic;
+    clk    : std_logic;
+    crs_dv : std_logic;
+    er     : std_logic;
+    d      : std_logic_vector(1 downto 0);
+  end record rmii_rx_t;
 
-library unisim;
-  use unisim.vcomponents.all;
+  type rmii_rx_dibit_t is record
+    crs_dv : std_logic;
+    er     : std_logic;
+    d      : std_logic_vector(1 downto 0);
+  end record rmii_rx_dibit_t;
 
-library ieee;
-  use ieee.std_logic_1164.all;
+  type rmii_tx_t is record
+    spd   : std_logic;
+    clk   : std_logic;
+    en    : std_logic;
+    d     : std_logic_vector(1 downto 0);
+  end record rmii_tx_t;
 
-entity memac_sr560 is
-    port (
-      clk : in    std_ulogic;
-      d   : in    std_ulogic;
-      q   : out   std_ulogic
-    );
-end entity memac_sr560;
+  constant RMII_CLK_PERIOD : time := 20 ns;
 
-architecture rtl of memac_sr560 is
-
-  signal di : std_ulogic_vector(1 to 17);
-  signal qi : std_ulogic_vector(0 to 17);
-
-begin
-
-  qi(0) <= d;
-  GEN: for i in 1 to 17 generate
-    U_SRL32E: component srl32e
-      port map (
-        a   => "11111", -- length = 32 bits
-        ce  => '1',
-        clk => clk,
-        d   => di(i),
-        q   => qi(i)
-      );
-    di(i) <= qi(i-1);
-  end generate GEN;
-  q <= qi(17);
-
-end architecture rtl;
+end package memac_rmii_pkg;

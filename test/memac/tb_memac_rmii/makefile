@@ -9,18 +9,24 @@ make_fpga=$(toplevel)/submodules/make-fpga
 
 TB=tb_memac_rmii
 
+SIM_LRM=2008
+SIM_SRC=\
+	$(toplevel)/src/common/ethernet/memac_pkg.vhd=memac \
+	$(toplevel)/src/common/ethernet/memac_rmii_pkg.vhd=memac \
+	$(toplevel)/src/common/ethernet/memac_rx_rmii.vhd=memac \
+	$(toplevel)/src/common/ethernet/memac_tx_rmii.vhd=memac \
+	$(toplevel)/src/common/ethernet/test/memac_sim_pkg.vhd=memac \
+	$(toplevel)/src/common/ethernet/test/memac_sim_rmii_pkg.vhd=memac \
+	$(toplevel)/src/common/ethernet/test/$(TB).vhd=work
+SIM_RUN=$(TB)
+
 ################################################################################
 # Vivado
 
 VIVADO_LANGUAGE=VHDL
-VIVADO_VHDL_LRM=2008
-VIVADO_SIM_SRC=\
-	$(toplevel)/src/common/ethernet/memac_pkg.vhd \
-	$(toplevel)/src/common/ethernet/test/memac_sim.vhd \
-	$(toplevel)/src/common/ethernet/test/model_rmii_tx.vhd \
-	$(toplevel)/src/common/ethernet/test/model_rmii_rx.vhd \
-	$(toplevel)/src/common/ethernet/test/$(TB).vhd
-VIVADO_SIM_RUN=$(TB);LOOPS=10
+VIVADO_VHDL_LRM=$(SIM_LRM)
+VIVADO_SIM_SRC=$(SIM_SRC)
+VIVADO_SIM_RUN=$(SIM_RUN)
 
 include $(make_fpga)/vivado.mak
 
@@ -30,7 +36,20 @@ include $(make_fpga)/vivado.mak
 ################################################################################
 # NVC
 
+NVC_VHDL_LRM=$(SIM_LRM)
+NVC_SRC=$(SIM_SRC)
+NVC_RUN=$(SIM_RUN)
+NVC_G_OPTS=-L. -M 128M
+
+include $(toplevel)/submodules/make-fpga/nvc.mak
+
 ################################################################################
 # ModelSim etc
+
+VSIM_VHDL_LRM=$(SIM_LRM)
+VSIM_SRC=$(SIM_SRC)
+VSIM_RUN=$(SIM_RUN)
+
+include $(toplevel)/submodules/make-fpga/vsim.mak
 
 ################################################################################

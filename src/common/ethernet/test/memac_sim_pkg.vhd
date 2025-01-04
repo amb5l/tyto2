@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- memac_sim.vhd                                                              --
+-- memac_sim_pkg.vhd                                                          --
 -- MEMAC simulation support packages: memac_queue_pkg and memac_sim_pkg       --
 --------------------------------------------------------------------------------
 -- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
@@ -16,7 +16,7 @@
 --------------------------------------------------------------------------------
 -- generic package for queue type
 
-package memac_queue_pkg is
+package memac_sim_queue_pkg is
 
   generic (
     type queue_item_t
@@ -24,14 +24,17 @@ package memac_queue_pkg is
 
   type queue_t is protected
     procedure enq(item : in queue_item_t);
+    procedure enq(item : in queue_item_t; n : natural);
     procedure deq;
+    procedure reset;
     impure function front return queue_item_t;
+    impure function back return queue_item_t;
     impure function items return natural;
   end protected queue_t;
 
-end package memac_queue_pkg;
+end package memac_sim_queue_pkg;
 
-package body memac_queue_pkg is
+package body memac_sim_queue_pkg is
 
   type queue_t is protected body
 
@@ -64,6 +67,15 @@ package body memac_queue_pkg is
       count := count + 1;
     end procedure enq;
 
+    procedure enq(item : in queue_item_t; n : natural) is
+    begin
+      if n > 0 then
+        for i in 1 to n loop
+          enq(item);
+        end loop;
+      end if;
+    end procedure enq;
+
     procedure deq is
     begin
       front_ptr := front_ptr.behind_ptr;
@@ -74,11 +86,27 @@ package body memac_queue_pkg is
       count := count - 1;
     end procedure deq;
 
+    procedure reset is
+    begin
+      while front_ptr /= null loop
+        deq;
+      end loop;
+      count := 0;
+    end procedure reset;
+
     impure function front return queue_item_t is
     begin
-      assert front_ptr /= null report "queue is empty" severity failure;
+      assert front_ptr /= null
+        report "queue is empty" severity failure;
       return front_ptr.item;
     end function front;
+
+    impure function back return queue_item_t is
+    begin
+      assert back_ptr /= null
+        report "queue is empty" severity failure;
+      return back_ptr.item;
+    end function back;
 
     impure function items return natural is
     begin
@@ -87,84 +115,66 @@ package body memac_queue_pkg is
 
   end protected body queue_t;
 
-end package body memac_queue_pkg;
+end package body memac_sim_queue_pkg;
 
 --------------------------------------------------------------------------------
--- type package
+-- queue package instance for queue of umii_t
+
+use work.memac_pkg.umii_octet_t;
+
+package memac_sim_queue_umii_pkg is
+  new work.memac_sim_queue_pkg generic map(queue_item_t => umii_octet_t);
+
+--------------------------------------------------------------------------------
+-- main package
+
+use work.memac_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;
-
-package memac_sim_type_pkg is
-
-  subtype octet_t is std_ulogic_vector(7 downto 0); -- little endian
-  type octet_array_t is array (natural range <>) of octet_t;
-  type octet_array_ptr_t is access octet_array_t;
-
-  type pktbuf_t is record
-    length   : natural;
-    data_ptr : octet_array_ptr_t;
-  end record pktbuf_t;
-
-  type mii4_t is record
-    spd : std_ulogic;                    -- speed: 0 = 10Mbps, 1 = 100Mbps
-    crs : std_ulogic;                    -- carrier sense
-    dv  : std_ulogic;                    -- data valid
-    er  : std_ulogic;                    -- error
-    d   : std_ulogic_vector(3 downto 0); -- data
-  end record mii4_t;
-  type mii4_seq_t is array (positive range <>) of mii4_t;
-  type mii4_seq_ptr_t is access mii4_seq_t;
-
-  type mii8_t is record
-    spd : std_ulogic_vector(1 downto 0); -- speed: 00 = 10Mbps, 01 = 100Mbps, 10 = 1000Mbps
-    crs : std_ulogic;                    -- carrier sense
-    dv  : std_ulogic;                    -- data valid
-    er  : std_ulogic;                    -- error
-    d   : std_ulogic_vector(7 downto 0); -- data
-  end record mii8_t;
-  type mii8_seq_t is array (positive range <>) of mii8_t;
-  type mii8_seq_ptr_t is access mii8_seq_t;
-
-end package memac_sim_type_pkg;
-
---------------------------------------------------------------------------------
--- queue package instance for packet queue type
-
-use work.memac_sim_type_pkg.all;
-package memac_packet_queue_pkg is
-  new work.memac_queue_pkg generic map(queue_item_t => pktbuf_t);
-
---------------------------------------------------------------------------------
--- main simulation package
-
-use work.memac_sim_type_pkg.all;
-use work.memac_packet_queue_pkg.all;
-
-library ieee;
-  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
+  use ieee.math_real.all;
 
 package memac_sim_pkg is
 
-  function new_pktbuf(len : natural) return pktbuf_t;
+  type prng_t is protected
+    procedure rand_seed(s1, s2 : in integer);
+    impure function rand_real return real;
+    impure function rand_int(min, max : in integer) return integer;
+    impure function rand_slv(min, max, width : in integer) return std_ulogic_vector;
+  end protected prng_t;
 
 end package memac_sim_pkg;
 
 package body memac_sim_pkg is
 
-  function new_pktbuf(len : natural) return pktbuf_t is
-    variable r : pktbuf_t;
-  begin
-    r.length   := len;
-    r.data_ptr := new octet_array_t(0 to len-1);
-    return r;
-  end function new_pktbuf;
-
-  procedure free_pktbuf(variable pktbuf : in pktbuf_t) is
-  begin
-    deallocate(pktbuf.data_ptr);
-  end procedure free_pktbuf;
-
-  procedure mii4_tx()
+  type prng_t is protected body
+    variable seed1, seed2 : integer := 0;
+    procedure rand_seed(s1, s2 : in integer) is
+    begin
+      seed1 := s1;
+      seed2 := s2;
+    end procedure rand_seed;
+    impure function rand_real return real is
+      variable r : real;
+    begin
+      uniform(seed1, seed2, r);
+      return r;
+    end function rand_real;
+    impure function rand_int(min, max : in integer) return integer is
+      variable r : real;
+    begin
+      uniform(seed1, seed2, r);
+      return integer(r * real(max - min) + real(min));
+    end function rand_int;
+    impure function rand_slv(min, max, width : in integer) return std_ulogic_vector is
+      variable r : real;
+    begin
+      uniform(seed1, seed2, r);
+      return std_ulogic_vector(to_unsigned(integer(r * real(max - min) + real(min)), width));
+    end function rand_slv;
+  end protected body prng_t;
 
 end package body memac_sim_pkg;
+
+--------------------------------------------------------------------------------
