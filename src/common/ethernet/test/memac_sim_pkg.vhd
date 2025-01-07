@@ -2,7 +2,7 @@
 -- memac_sim_pkg.vhd                                                          --
 -- MEMAC simulation support packages: memac_queue_pkg and memac_sim_pkg       --
 --------------------------------------------------------------------------------
--- (C) Copyright 2024 Adam Barnes <ambarnes@gmail.com>                        --
+-- (C) Copyright 2025 Adam Barnes <ambarnes@gmail.com>                        --
 -- This file is part of The Tyto Project. The Tyto Project is free software:  --
 -- you can redistribute it and/or modify it under the terms of the GNU Lesser --
 -- General Public License as published by the Free Software Foundation,       --
@@ -19,7 +19,8 @@
 package memac_sim_queue_pkg is
 
   generic (
-    type queue_item_t
+    type queue_item_t;
+    constant EMPTY : queue_item_t
   );
 
   type queue_t is protected
@@ -74,6 +75,7 @@ package body memac_sim_queue_pkg is
           enq(item);
         end loop;
       end if;
+      report "enq - " & to_string(count) severity note;
     end procedure enq;
 
     procedure deq is
@@ -84,6 +86,7 @@ package body memac_sim_queue_pkg is
         front_ptr.ahead_ptr := null;
       end if;
       count := count - 1;
+      report "deq - " & to_string(count) severity note;
     end procedure deq;
 
     procedure reset is
@@ -96,9 +99,11 @@ package body memac_sim_queue_pkg is
 
     impure function front return queue_item_t is
     begin
-      assert front_ptr /= null
-        report "queue is empty" severity failure;
-      return front_ptr.item;
+      if front_ptr = null then
+        return EMPTY;
+      else
+        return front_ptr.item;
+      end if;
     end function front;
 
     impure function back return queue_item_t is
@@ -118,14 +123,6 @@ package body memac_sim_queue_pkg is
 end package body memac_sim_queue_pkg;
 
 --------------------------------------------------------------------------------
--- queue package instance for queue of umii_t
-
-use work.memac_pkg.umii_octet_t;
-
-package memac_sim_queue_umii_pkg is
-  new work.memac_sim_queue_pkg generic map(queue_item_t => umii_octet_t);
-
---------------------------------------------------------------------------------
 -- main package
 
 use work.memac_pkg.all;
@@ -143,6 +140,9 @@ package memac_sim_pkg is
     impure function rand_int(min, max : in integer) return integer;
     impure function rand_slv(min, max, width : in integer) return std_ulogic_vector;
   end protected prng_t;
+
+  function valid(s : std_ulogic) return boolean;
+  function valid(v : std_ulogic_vector) return boolean;
 
 end package memac_sim_pkg;
 
@@ -174,6 +174,25 @@ package body memac_sim_pkg is
       return std_ulogic_vector(to_unsigned(integer(r * real(max - min) + real(min)), width));
     end function rand_slv;
   end protected body prng_t;
+
+  function valid(s : std_ulogic) return boolean is
+    variable r : boolean;
+  begin
+    r := true when s = '0' or s = '1' else false;
+    return r;
+  end function valid;
+
+  function valid(v : std_ulogic_vector) return boolean is
+    variable r : boolean;
+  begin
+    r := true;
+    for i in v'range loop
+      if v(i) /= '0' and v(i) /= '1' then
+        r := false;
+      end if;
+    end loop;
+    return r;
+  end function valid;
 
 end package body memac_sim_pkg;
 

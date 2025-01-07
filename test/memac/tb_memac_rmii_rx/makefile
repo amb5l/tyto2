@@ -2,69 +2,102 @@
 # makefile for tb_memac_rmii
 #################################################################################
 
-default: nvc
+default: xsim
 
 toplevel:=$(shell git rev-parse --show-toplevel)
 make_fpga=$(toplevel)/submodules/make-fpga
 
-TB=tb_memac_rmii
+################################################################################
+# DUT source
 
-SIM_LRM=2008
-SIM_SRC=\
+DUT=memac_rmii_rx
+
+DUT_SRC=\
 	$(toplevel)/src/common/ethernet/memac_pkg.vhd=memac \
 	$(toplevel)/src/common/ethernet/memac_rmii_pkg.vhd=memac \
-	$(toplevel)/src/common/ethernet/memac_rx_rmii.vhd=memac \
-	$(toplevel)/src/common/ethernet/memac_tx_rmii.vhd=memac \
+	$(toplevel)/src/common/ethernet/memac_rmii_clken.vhd=memac \
+	$(toplevel)/src/common/ethernet/memac_rmii_rx_spd.vhd=memac \
+	$(toplevel)/src/common/ethernet/$(DUT).vhd=memac
+
+################################################################################
+# Vivado post simulation/implementation netlist generation
+
+# list of DUTs
+VIVADO_POST_UNIT=$(DUT)
+
+# source per DUT
+VIVADO_POST_SRC.$(DUT)=$(DUT_SRC)
+
+# heavy lifting
+include $(make_fpga)/vivado_post.mak
+
+################################################################################
+# simulation sources and runs
+# using post-synthesis functional simulation netlist of DUT
+
+TB=tb_memac_rmii
+CFG_BEHAVIOURAL=cfg_$(TB)_behavioural
+CFG_POST_SYN_FUNC=cfg_$(TB)_post_syn_func
+
+SIM_SRC=\
+	$(DUT_SRC) \
+	$(VIVADO_POST_SYN_FUNC.$(DUT).vhd) \
 	$(toplevel)/src/common/ethernet/test/memac_sim_pkg.vhd=memac \
 	$(toplevel)/src/common/ethernet/test/memac_sim_rmii_pkg.vhd=memac \
 	$(toplevel)/src/common/ethernet/test/$(TB).vhd=work
-SIM_RUN=$(TB)
+SIM_RUN=\
+	beh=$(CFG_BEHAVIOURAL) \
+	psf=$(CFG_POST_SYN_FUNC)
 
 ################################################################################
-# Vivado
+# Vivado (GUI) simulation support
 
-VIVADO_LANGUAGE=VHDL
-VIVADO_VHDL_LRM=$(SIM_LRM)
 VIVADO_SIM_SRC=$(SIM_SRC)
 VIVADO_SIM_RUN=$(SIM_RUN)
+VIVADO_LIB_SRC=$(XILINX_VIVADO)/data/vhdl/src/unisims/unisim_retarget_VCOMP.vhd=unisim
 
+# heavy lifting
 include $(make_fpga)/vivado.mak
 
 ################################################################################
-# XSim
+# XSim (batch mode) simulation support
 
-XSIM_VHDL_LRM=$(SIM_LRM)
 XSIM_SRC=$(SIM_SRC)
 XSIM_RUN=$(SIM_RUN)
+XSIM_EDIT=0
 
+# heavy lifting
 include $(make_fpga)/xsim.mak
 
 ################################################################################
-# GHDL
+# GHDL simulation support
 
-GHDL_LRM=$(SIM_LRM)
 GHDL_SRC=$(SIM_SRC)
 GHDL_RUN=$(SIM_RUN)
+GHDL_EDIT=0
 
+# heavy lifting
 include $(toplevel)/submodules/make-fpga/ghdl.mak
 
 ################################################################################
-# NVC
+# NVC simulation support
 
-NVC_VHDL_LRM=$(SIM_LRM)
 NVC_SRC=$(SIM_SRC)
 NVC_RUN=$(SIM_RUN)
 NVC_G_OPTS=-L. -M 128M
+NVC_EDIT=0
 
+# heavy lifting
 include $(toplevel)/submodules/make-fpga/nvc.mak
 
 ################################################################################
-# ModelSim etc
+# ModelSim etc simulation support
 
-VSIM_VHDL_LRM=$(SIM_LRM)
 VSIM_SRC=$(SIM_SRC)
 VSIM_RUN=$(SIM_RUN)
+VSIM_EDIT=0
 
+# heavy lifting
 include $(toplevel)/submodules/make-fpga/vsim.mak
 
 ################################################################################

@@ -33,77 +33,77 @@ package memac_raw_rmii_pkg is
     );
     port (
 
-      sys_rst          : in    std_ulogic;
-      sys_clk          : in    std_ulogic;
+      sys_rst            : in    std_ulogic;
+      sys_clk            : in    std_ulogic;
 
-      sys_md_stb       : in    std_ulogic;
-      sys_md_pre       : in    std_ulogic;
-      sys_md_r_w       : in    std_ulogic;
-      sys_md_pa        : in    std_ulogic_vector(4 downto 0);
-      sys_md_ra        : in    std_ulogic_vector(4 downto 0);
-      sys_md_wd        : in    std_ulogic_vector(15 downto 0);
-      sys_md_rd        : out   std_ulogic_vector(15 downto 0);
-      sys_md_rdy       : out   std_ulogic;
+      sys_md_stb         : in    std_ulogic;
+      sys_md_pre         : in    std_ulogic;
+      sys_md_r_w         : in    std_ulogic;
+      sys_md_pa          : in    std_ulogic_vector(4 downto 0);
+      sys_md_ra          : in    std_ulogic_vector(4 downto 0);
+      sys_md_wd          : in    std_ulogic_vector(15 downto 0);
+      sys_md_rd          : out   std_ulogic_vector(15 downto 0);
+      sys_md_rdy         : out   std_ulogic;
 
-      sys_tx_rst       : in    std_ulogic;
-      sys_tx_spd       : in    std_ulogic_vector(1 downto 0);
-      sys_tx_prq_rdy   : out   std_ulogic;
-      sys_tx_prq_len   : in    std_ulogic_vector;
-      sys_tx_prq_idx   : in    std_ulogic_vector;
-      sys_tx_prq_tag   : in    std_ulogic_vector;
-      sys_tx_prq_opt   : in    tx_opt_t;
-      sys_tx_prq_stb   : in    std_ulogic;
-      sys_tx_pfq_rdy   : out   std_ulogic;
-      sys_tx_pfq_len   : out   std_ulogic_vector;
-      sys_tx_pfq_idx   : out   std_ulogic_vector;
-      sys_tx_pfq_tag   : out   std_ulogic_vector;
-      sys_tx_pfq_stb   : in    std_ulogic;
-      sys_tx_buf_en    : in    std_ulogic;
-      sys_tx_buf_bwe   : in    std_ulogic_vector(3 downto 0);
-      sys_tx_buf_addr  : in    std_ulogic_vector;
-      sys_tx_buf_din   : in    std_ulogic_vector(31 downto 0);
-      sys_tx_buf_dpin  : in    std_ulogic_vector(3 downto 0);
-      sys_tx_buf_dout  : out   std_ulogic_vector(31 downto 0);
-      sys_tx_buf_dpout : out   std_ulogic_vector(3 downto 0);
+      sys_tx_rst         : in    std_ulogic;
+      sys_tx_spd         : in    std_ulogic_vector(1 downto 0);
+      sys_tx_prq_rdy     : out   std_ulogic;
+      sys_tx_prq_len     : in    std_ulogic_vector;
+      sys_tx_prq_idx     : in    std_ulogic_vector;
+      sys_tx_prq_tag     : in    std_ulogic_vector;
+      sys_tx_prq_opt     : in    tx_opt_t;
+      sys_tx_prq_stb     : in    std_ulogic;
+      sys_tx_pfq_rdy     : out   std_ulogic;
+      sys_tx_pfq_len     : out   std_ulogic_vector;
+      sys_tx_pfq_idx     : out   std_ulogic_vector;
+      sys_tx_pfq_tag     : out   std_ulogic_vector;
+      sys_tx_pfq_stb     : in    std_ulogic;
+      sys_tx_buf_en      : in    std_ulogic;
+      sys_tx_buf_bwe     : in    std_ulogic_vector(3 downto 0);
+      sys_tx_buf_addr    : in    std_ulogic_vector;
+      sys_tx_buf_din     : in    std_ulogic_vector(31 downto 0);
+      sys_tx_buf_dpin    : in    std_ulogic_vector(3 downto 0);
+      sys_tx_buf_dout    : out   std_ulogic_vector(31 downto 0);
+      sys_tx_buf_dpout   : out   std_ulogic_vector(3 downto 0);
 
-      sys_rx_rst       : in    std_ulogic;
-      sys_rx_spdi      : in    std_ulogic_vector(1 downto 0);
-      sys_rx_spdo      : out   std_ulogic_vector(1 downto 0);
-      sys_rx_ctrl      : in    rx_ctrl_t;
-      sys_rx_stat      : out   rx_stat_t;
-      sys_rx_prq_rdy   : out   std_ulogic;
-      sys_rx_prq_len   : out   std_ulogic_vector;
-      sys_rx_prq_idx   : out   std_ulogic_vector;
-      sys_rx_prq_flag  : out   rx_flag_t;
-      sys_rx_prq_stb   : in    std_ulogic;
-      sys_rx_pfq_rdy   : out   std_ulogic;
-      sys_rx_pfq_len   : in    std_ulogic_vector;
-      sys_rx_pfq_stb   : in    std_ulogic;
-      sys_rx_buf_en    : in    std_ulogic;
-      sys_rx_buf_bwe   : in    std_ulogic_vector(3 downto 0);
-      sys_rx_buf_addr  : in    std_ulogic_vector;
-      sys_rx_buf_din   : in    std_ulogic_vector(31 downto 0);
-      sys_rx_buf_dpin  : in    std_ulogic_vector(3 downto 0);
-      sys_rx_buf_dout  : out   std_ulogic_vector(31 downto 0);
-      sys_rx_buf_dpout : out   std_ulogic_vector(3 downto 0);
+      sys_rx_rst         : in    std_ulogic;
+      sys_rx_spdi        : in    std_ulogic_vector(1 downto 0);
+      sys_rx_spdo        : out   std_ulogic_vector(1 downto 0);
+      sys_rx_ctrl        : in    rx_ctrl_t;
+      sys_rx_stat        : out   rx_stat_t;
+      sys_rx_prq_rdy     : out   std_ulogic;
+      sys_rx_prq_len     : out   std_ulogic_vector;
+      sys_rx_prq_idx     : out   std_ulogic_vector;
+      sys_rx_prq_flag    : out   rx_flag_t;
+      sys_rx_prq_stb     : in    std_ulogic;
+      sys_rx_pfq_rdy     : out   std_ulogic;
+      sys_rx_pfq_len     : in    std_ulogic_vector;
+      sys_rx_pfq_stb     : in    std_ulogic;
+      sys_rx_buf_en      : in    std_ulogic;
+      sys_rx_buf_bwe     : in    std_ulogic_vector(3 downto 0);
+      sys_rx_buf_addr    : in    std_ulogic_vector;
+      sys_rx_buf_din     : in    std_ulogic_vector(31 downto 0);
+      sys_rx_buf_dpin    : in    std_ulogic_vector(3 downto 0);
+      sys_rx_buf_dout    : out   std_ulogic_vector(31 downto 0);
+      sys_rx_buf_dpout   : out   std_ulogic_vector(3 downto 0);
 
-      sys_spd          : out   std_ulogic;
-      sys_crs          : out   std_ulogic;
-      sys_col          : out   std_ulogic;
+      sys_spd            : out   std_ulogic;
+      sys_crs            : out   std_ulogic;
+      sys_col            : out   std_ulogic;
 
-      ref_rst          : in    std_ulogic;
-      ref_clk          : in    std_ulogic;
+      ref_rst            : in    std_ulogic;
+      ref_clk            : in    std_ulogic;
 
-      phy_mdc          : out   std_ulogic;
-      phy_mdo          : out   std_ulogic;
-      phy_mdoe         : out   std_ulogic;
-      phy_mdi          : in    std_ulogic;
-      phy_rmii_clk     : in    std_ulogic;
-      phy_rmii_tx_en   : out   std_ulogic;
-      phy_rmii_tx_d    : out   std_ulogic_vector(1 downto 0);
-      phy_rmii_rx_dv   : in    std_ulogic;
-      phy_rmii_rx_er   : in    std_ulogic;
-      phy_rmii_rx_d    : in    std_ulogic_vector(1 downto 0)
+      phy_mdc            : out   std_ulogic;
+      phy_mdo            : out   std_ulogic;
+      phy_mdoe           : out   std_ulogic;
+      phy_mdi            : in    std_ulogic;
+      phy_rmii_clk       : in    std_ulogic;
+      phy_rmii_tx_en     : out   std_ulogic;
+      phy_rmii_tx_d      : out   std_ulogic_vector(1 downto 0);
+      phy_rmii_rx_crs_dv : in    std_ulogic;
+      phy_rmii_rx_er     : in    std_ulogic;
+      phy_rmii_rx_d      : in    std_ulogic_vector(1 downto 0)
 
     );
   end component memac_raw_rmii;
@@ -244,7 +244,7 @@ begin
 
   --------------------------------------------------------------------------------
 
-  umii_rst <= 
+  umii_rst <=
   umii_clk <= phy_rmii_clk;
 
   --------------------------------------------------------------------------------

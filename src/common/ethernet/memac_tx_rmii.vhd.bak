@@ -25,9 +25,15 @@ package memac_tx_rmii_pkg is
 
   component memac_tx_rmii is
     port (
-      rst  : in    std_ulogic;
-      umii : inout umii_t;
-      rmii : inout rmii_tx_t
+      rst        : in    std_ulogic;
+      clk        : in    std_ulogic;
+      umii_clken : in    std_ulogic;
+      umii_dv    : in    std_ulogic;
+      umii_er    : in    std_ulogic;
+      umii_d     : in    std_ulogic_vector(7 downto 0);
+      rmii_clken : in    std_ulogic;
+      rmii_en    : out   std_ulogic;
+      rmii_d     : out   std_ulogic_vector(1 downto 0)
     );
   end component memac_tx_rmii;
 
@@ -44,66 +50,43 @@ library ieee;
 
 entity memac_tx_rmii is
   port (
-    rst  : in    std_ulogic;
-    umii : inout umii_t;     -- clk is output
-    rmii : inout rmii_tx_t   -- clk is input
+    rst        : in    std_ulogic;
+    clk        : in    std_ulogic;
+    umii_clken : in    std_ulogic;
+    umii_dv    : in    std_ulogic;
+    umii_er    : in    std_ulogic;
+    umii_d     : in    std_ulogic_vector(7 downto 0);
+    rmii_clken : in    std_ulogic;                    -- from memac_rx_rmii
+    rmii_en    : out   std_ulogic;
+    rmii_d     : out   std_ulogic_vector(1 downto 0)
   );
 end entity memac_tx_rmii;
 
 architecture rtl of memac_tx_rmii is
 
-  signal i_clken : std_ulogic;
-  signal i_phase : integer range 0 to 3;
-  signal i_en    : std_ulogic;
-  signal i_d     : std_ulogic_vector(7 downto 0);
-
-  signal i_count : integer range 0 to 9;
-  signal i_div   : integer range 0 to 9;
+  signal r_dv   : std_ulogic;
+  signal r_er   : std_ulogic;
+  signal r_d    : std_ulogic_vector(7 downto 0);
 
 begin
 
-  --umii.clk <= rmii.clk;
---
-  --P_MAIN: process(rst, rmii.clk)
-  --begin
-  --  if rst then
-  --    rmii.en  <= '0';
-  --    rmii.d   <= (others => '0');
-  --  elsif rising_edge(rmii.clk) then
-  --    i_clken <= '0';
-  --    if umii.clken = '1' then
-  --      i_clken <= '1';
-  --      i_phase <= 0;
-  --      i_en    <= umii.dv;
-  --      i_d     <= umii.d;
-  --      i_div   <= 9 when rmii.spd = '1' else 0;
-  --      i_count <= 0;
-  --    elsif i_count = i_div then
-  --      i_clken <= '1';
-  --      i_count <= 0;
-  --      i_phase <= (i_phase + 1) mod 4;
-  --    else
-  --      i_count <= i_count + 1;
-  --    end if;
-  --    if i_clken = '1' then
-  --      case i_phase is
-  --        when 0 =>
-  --          rmii.en  <= i_en;
-  --          rmii.d   <= i_d(1 downto 0);
-  --        when 1 =>
-  --          rmii.en  <= i_en(0);
-  --          rmii.d   <= i_d(3 downto 2);
-  --        when 2 =>
-  --          rmii.en  <= i_en;
-  --          rmii.d   <= i_d(5 downto 4);
-  --        when 3 =>
-  --          rmii.en  <= i_en;
-  --          rmii.d   <= i_d(7 downto 6);
-  --        when others =>
-  --          i_phase <= 0;
-  --      end case;
-  --    end if;
-  --  end if;
-  --end process P_MAIN;
+  rmii_en <= r_dv;
+  rmii_d  <= "01" when r_er = '1' else r_d(1 downto 0);
+
+  P_MAIN: process(rst, clk)
+  begin
+    if rst then
+      rmii_en  <= '0';
+      rmii_d   <= (others => '0');
+    elsif rising_edge(clk) then
+      if umii_clken then
+        r_dv <= umii_dv;
+        r_er <= umii_er;
+        r_d  <= umii_d;
+      elsif rmii_clken then
+        r_d(5 downto 0) <= r_d(7 downto 2);
+      end if;
+    end if;
+  end process P_MAIN;
 
 end architecture rtl;

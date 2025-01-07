@@ -1,0 +1,91 @@
+--------------------------------------------------------------------------------
+-- memac_tx_rmii.vhd                                                          --
+-- Modular Ethernet MAC (MEMAC): transmit UMI to RMII shim.                   --
+--------------------------------------------------------------------------------
+-- (C) Copyright 2025 Adam Barnes <ambarnes@gmail.com>                        --
+-- This file is part of The Tyto Project. The Tyto Project is free software:  --
+-- you can redistribute it and/or modify it under the terms of the GNU Lesser --
+-- General Public License as published by the Free Software Foundation,       --
+-- either version 3 of the License, or (at your option) any later version.    --
+-- The Tyto Project is distributed in the hope that it will be useful, but    --
+-- WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY --
+-- or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public     --
+-- License for more details. You should have received a copy of the GNU       --
+-- Lesser General Public License along with The Tyto Project. If not, see     --
+-- https://www.gnu.org/licenses/.                                             --
+--------------------------------------------------------------------------------
+
+use work.memac_pkg.all;
+use work.memac_rmii_pkg.all;
+
+library ieee;
+  use ieee.std_logic_1164.all;
+
+package memac_tx_rmii_pkg is
+
+  component memac_tx_rmii is
+    port (
+      rst        : in    std_ulogic;
+      clk        : in    std_ulogic;
+      umii_clken : in    std_ulogic;
+      umii_dv    : in    std_ulogic;
+      umii_er    : in    std_ulogic;
+      umii_d     : in    std_ulogic_vector(7 downto 0);
+      rmii_clken : in    std_ulogic;
+      rmii_en    : out   std_ulogic;
+      rmii_d     : out   std_ulogic_vector(1 downto 0)
+    );
+  end component memac_tx_rmii;
+
+end package memac_tx_rmii_pkg;
+
+--------------------------------------------------------------------------------
+
+use work.memac_pkg.all;
+use work.memac_rmii_pkg.all;
+
+library ieee;
+  use ieee.std_logic_1164.all;
+  use ieee.numeric_std.all;
+
+entity memac_tx_rmii is
+  port (
+    rst        : in    std_ulogic;
+    clk        : in    std_ulogic;
+    umii_clken : in    std_ulogic;
+    umii_dv    : in    std_ulogic;
+    umii_er    : in    std_ulogic;
+    umii_d     : in    std_ulogic_vector(7 downto 0);
+    rmii_clken : in    std_ulogic;                    -- from memac_rx_rmii
+    rmii_en    : out   std_ulogic;
+    rmii_d     : out   std_ulogic_vector(1 downto 0)
+  );
+end entity memac_tx_rmii;
+
+architecture rtl of memac_tx_rmii is
+
+  signal r_dv   : std_ulogic;
+  signal r_er   : std_ulogic;
+  signal r_d    : std_ulogic_vector(7 downto 0);
+
+begin
+
+  rmii_en <= r_dv;
+  rmii_d  <= "01" when r_er = '1' else r_d(1 downto 0);
+
+  P_MAIN: process(rst, clk)
+  begin
+    if rst then
+      null;
+    elsif rising_edge(clk) then
+      if umii_clken then
+        r_dv <= umii_dv;
+        r_er <= umii_er;
+        r_d  <= umii_d;
+      elsif rmii_clken then
+        r_d(5 downto 0) <= r_d(7 downto 2);
+      end if;
+    end if;
+  end process P_MAIN;
+
+end architecture rtl;
