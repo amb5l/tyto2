@@ -12,7 +12,8 @@ make_fpga=$(toplevel)/submodules/make-fpga
 
 DUT=memac_rmii_rx_spd
 
-DUT_SRC=$(toplevel)/src/common/ethernet/$(DUT).vhd
+DUT_SRC=\
+	$(toplevel)/src/common/ethernet/$(DUT).vhd=memac
 
 ################################################################################
 # Vivado post simulation/implementation netlist generation
@@ -36,8 +37,9 @@ CFG_POST_SYN_FUNC=cfg_$(TB)_post_syn_func
 
 SIM_SRC=\
 	$(DUT_SRC) \
-	$(VIVADO_POST_SYN_FUNC.$(DUT).vhd) \
-	$(toplevel)/src/common/ethernet/test/$(TB).vhd
+	$(VIVADO_POST_SYN_FUNC.$(DUT).vhd)=memac_psf \
+	$(toplevel)/src/common/ethernet/test/memac_sim_pkg.vhd=memac \
+	$(toplevel)/src/common/ethernet/test/$(TB).vhd=work
 SIM_RUN=\
 	beh=$(CFG_BEHAVIOURAL) \
 	psf=$(CFG_POST_SYN_FUNC)
@@ -66,6 +68,7 @@ include $(make_fpga)/xsim.mak
 
 GHDL_SRC=$(SIM_SRC)
 GHDL_RUN=$(SIM_RUN)
+GHDL_VENDOR_LIB=xilinx-vivado
 GHDL_EDIT=0
 
 # heavy lifting

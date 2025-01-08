@@ -75,7 +75,6 @@ package body memac_sim_queue_pkg is
           enq(item);
         end loop;
       end if;
-      report "enq - " & to_string(count) severity note;
     end procedure enq;
 
     procedure deq is
@@ -86,7 +85,6 @@ package body memac_sim_queue_pkg is
         front_ptr.ahead_ptr := null;
       end if;
       count := count - 1;
-      report "deq - " & to_string(count) severity note;
     end procedure deq;
 
     procedure reset is
@@ -124,8 +122,6 @@ end package body memac_sim_queue_pkg;
 
 --------------------------------------------------------------------------------
 -- main package
-
-use work.memac_pkg.all;
 
 library ieee;
   use ieee.std_logic_1164.all;

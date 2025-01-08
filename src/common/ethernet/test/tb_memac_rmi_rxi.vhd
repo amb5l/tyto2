@@ -26,7 +26,7 @@
 library ieee;
   use ieee.std_logic_1164.all;
 
-package tb_memac_rmii_types_pkg is
+package tb_memac_rmii_rx_types_pkg is
 
   type rmii8_t is record
     crs_dv : std_logic_vector(3 downto 0);
@@ -36,27 +36,21 @@ package tb_memac_rmii_types_pkg is
 
   constant RMII8_U : rmii8_t := (others => (others => 'U'));
 
-  type rmii_t is record
-    crs_dv : std_logic;
-    er     : std_logic;
-    d      : std_logic_vector(1 downto 0);
-  end record rmii_t;
-
-end package tb_memac_rmii_types_pkg;
+end package tb_memac_rmii_rx_types_pkg;
 
 --------------------------------------------------------------------------------
 -- queue package instance
 
-use work.tb_memac_rmii_types_pkg.all;
+use work.tb_memac_rmii_rx_types_pkg.all;
 library memac;
 
-package memac_sim_queue_rmii8_rx_pkg is
+package tb_memac_rmii_rx_queue_rmii8_pkg is
   new memac.memac_sim_queue_pkg generic map(queue_item_t => rmii8_t, empty => RMII8_U);
 
 --------------------------------------------------------------------------------
 -- testbench
 
-use work.tb_memac_rmii_types_pkg.all;
+use work.tb_memac_rmii_rx_types_pkg.all;
 
 library memac;
   context memac.memac_sim_rmii_rx_ctx;
@@ -80,8 +74,12 @@ end entity tb_memac_rmii_rx;
 
 architecture sim of tb_memac_rmii_rx is
 
-  constant VERBOSE : boolean := false;
-
+  type rmii_t is record
+    crs_dv : std_logic;
+    er     : std_logic;
+    d      : std_logic_vector(1 downto 0);
+  end record rmii_t;
+  
   signal rst         : std_ulogic;
   signal clk         : std_ulogic;
 
@@ -101,7 +99,7 @@ architecture sim of tb_memac_rmii_rx is
   signal dbg_crs_dv  : std_ulogic_vector(3 downto 0);
   signal dbg_er      : std_ulogic_vector(3 downto 0);
 
-  shared variable xq  : work.memac_sim_queue_rmii8_rx_pkg.queue_t; -- expected queue
+  shared variable xq  : work.tb_memac_rmii_rx_queue_rmii8_pkg.queue_t; -- expected queue
 
 begin
 
@@ -127,13 +125,6 @@ begin
     variable rmii8  : rmii8_t;
     variable n      : natural;
     variable d      : std_ulogic_vector(7 downto 0);
-
-    procedure debugmsg(s : string) is
-    begin
-      if VERBOSE then
-        report s severity note;
-      end if;
-    end procedure debugmsg;
 
   procedure stim_rmii_tx_clk is
     variable n : natural;
@@ -399,21 +390,21 @@ end architecture sim;
 --------------------------------------------------------------------------------
 -- configurations
 
-configuration cfg_tb_memac_rmii_behavioural of tb_memac_rmii_rx is
+configuration cfg_tb_memac_rmii_rx_behavioural of tb_memac_rmii_rx is
   for sim
     for DUT: memac_rx_rmii
       use entity memac.memac_rx_rmii(rtl);
     end for;
   end for;
-end configuration cfg_tb_memac_rmii_behavioural;
+end configuration cfg_tb_memac_rmii_rx_behavioural;
 
-configuration cfg_tb_memac_rmii_post_syn_func of tb_memac_rmii_rx is
+configuration cfg_tb_memac_rmii_rx_post_syn_func of tb_memac_rmii_rx is
   for sim
     for DUT: memac_rx_rmii
       use entity work.memac_rx_rmii(STRUCTURE);
     end for;
   end for;
-end configuration cfg_tb_memac_rmii_post_syn_func;
+end configuration cfg_tb_memac_rmii_rx_post_syn_func;
 
 
 --------------------------------------------------------------------------------

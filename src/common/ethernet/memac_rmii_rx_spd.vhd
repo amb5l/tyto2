@@ -30,8 +30,10 @@ package memac_rmii_rx_spd_pkg is
       o_crs_dv : out   std_ulogic;
       o_er     : out   std_ulogic;
       o_d      : out   std_ulogic_vector(1 downto 0);
+      rdy      : out   std_ulogic;
       stb      : out   std_ulogic;
-      spd      : out   std_ulogic
+      spd      : out   std_ulogic;
+      err      : out   std_ulogic
     );
   end component memac_rmii_rx_spd;
 
@@ -53,20 +55,26 @@ entity memac_rmii_rx_spd is
     o_crs_dv : out   std_ulogic;
     o_er     : out   std_ulogic;
     o_d      : out   std_ulogic_vector(1 downto 0);
+    rdy      : out   std_ulogic;                    -- output is ready (useful for simulation)
     stb      : out   std_ulogic;                    -- pulse on detect
-    spd      : out   std_ulogic                     -- 0 = 10Mbps, 1 = 100Mbps
+    spd      : out   std_ulogic;                    -- 0 = 10Mbps, 1 = 100Mbps
+    err      : out   std_ulogic                     -- error
   );
 end entity memac_rmii_rx_spd;
 
 architecture rtl of memac_rmii_rx_spd is
 
-  constant THRESHOLD : integer := 31;
+  constant THRESHOLD : integer := 64;
 
   -- speed detection state machine
-  type state_t is (IDLE, PRE, FIN, ACT);
+  type state_t is (
+    IDLE, -- waiting for start of preamble
+    PRE,  -- in preamble
+    W100, -- waiting for SR delay to signal 100Mbps
+    FIN   -- finishing frame
+  );
   signal state : state_t;
   signal count : unsigned(5 downto 0); -- 0..63
-  signal i_spd : std_ulogic;
 
   -- shift register to delay RMII to align with speed change
   type sr_stage_t is record
@@ -76,6 +84,7 @@ architecture rtl of memac_rmii_rx_spd is
   end record sr_stage_t;
   type sr_t is array(1 to THRESHOLD) of sr_stage_t;
   signal sr : sr_t;
+  signal sr_count : unsigned(5 downto 0); -- 0..63
 
 begin
 
@@ -84,14 +93,18 @@ begin
     if rst then
 
       count    <= (others => '0');
-      i_spd    <= 'X';
-      spd      <= '1';
-      sr.all   <= '0';
-      o_crs_dv <= '0';
-      o_er     <= '0';
-      o_d      <= (others => '0');
+      rdy      <= '0';
+      spd      <= 'H'; -- '1' for synthesis, indicates failed/uninitialised for simulation
+      err      <= '0';
+      sr       <= (others => (d => "XX", others => 'X')); -- SRL primitive does not have a reset port
+      sr_count <= (others => '0');
+      o_crs_dv <= 'L';
+      o_er     <= 'L';
+      o_d      <= (others => 'L');
 
     elsif rising_edge(clk) then
+
+      stb <= '0'; -- momentary
 
       --------------------------------------------------------------------------------
       -- state machine
@@ -100,72 +113,77 @@ begin
       stb <= '0'; -- momentary
       case state is
 
-        when IDLE =>
-          count <= (others => '0');
-          if i_crs_dv = '1' then
+        when IDLE => -- wait for start of preamble
+          err <= '0';
+          if i_crs_dv = '1' and i_er = '0' then
             if i_d = "01" then
+              spd      <= 'H' when spd = '1' else 'L' when spd = '0'; -- indicate uncertainty to simulation
               count(0) <= '1';
               state    <= PRE;
             elsif i_d /= "00" then -- e.g. false carrier
-              state <= ACT;
+              state <= FIN;
             end if;
           end if;
 
-        when PRE =>
-          if i_crs_dv = '0' then -- truncated frame
+        when PRE => -- in preamble
+          if i_crs_dv = '0' then -- end of preamble before SFD
+            err   <= '1';
+            count <= (others => '0');
             state <= IDLE;
-          elsif i_d /= "01" then
-            if i_d = "11" and count(1 downto 0) = "11" then -- correctly aligned SFD
-              if count > THRESHOLD then
-                i_spd <= '0';
-              else
-                i_spd <= '1';
-              end if;
+          elsif i_er = '1' then -- corrupt preamble
+            err   <= '1';
+            count <= (others => '0');
+            state <= FIN;
+          elsif i_d = "01" then -- preamble di-bit
+            if not count = 0 then -- terminal count
+              -- long preamble -> 10Mbps
+              spd   <= '0'; -- 10Mbps with certainty
+              stb   <= '1';
+              count <= (others => '0');
+              state <= FIN;
+            end if;
+          elsif i_d = "11" then -- SFD di-bit
+            count <= (others => '0');
+            state <= FIN;
+            if count(1 downto 0) = "11" then -- octet aligned
               if not count = 0 then -- terminal count
-                -- output speed change now
-                if count > THRESHOLD then
-                  spd <= '0';
-                else
-                  spd <= '1';
-                end if;
+                -- 100Mbps
+                spd   <= '1'; -- 100Mbps with certainty
                 stb   <= '1';
-                state <= ACT;
-              else
-                -- output speed change at end of SR delay
+                count <= (others => '0');
                 state <= FIN;
+              else
+                count <= count + 1;
+                state <= W100;
               end if;
-            else -- false carrier or other error -> abort measurement
-              i_spd <= 'X';
-              count <= 0;
-              state <= ACT;
+            else -- not octet aligned
+              err   <= '1';
+              count <= (others => '0');
+              state <= FIN;
             end if;
-          elsif not count = 0 then -- terminal count, no SFD -> abort measurement
-            i_spd <= 'X';
-            count <= 0;
-            state <= ACT;
+          else -- corrupt preamble
+            err   <= '1';
+            count <= (others => '0');
+            state <= FIN;
           end if;
-          count <= count + 1;
 
-        when FIN => -- wait to output speed change (align with SR output)
-          if not count = 0 then -- terminal count
-            spd <= i_spd;
+        when W100 => -- wait for SR delay to align speed change to 100Mbps
+          if i_crs_dv = '0' then -- truncated frame
+            err   <= '1';
+            count <= (others => '0');
+            state <= IDLE;
+          elsif not count = 0 then -- terminal count
+            spd <= '1';
             stb <= '1';
-            if i_crs_dv = '0' then -- end of frame
-              i_spd <= 'X';
-              count <= 0;
-              state <= IDLE;
-            else
-              count <= 0;
-              state <= ACT;
-            end if;
+            count <= (others => '0');
+            state <= FIN;
           else
             count <= count + 1;
           end if;
 
-        when ACT => -- wait until end of frame
+        when FIN => -- finishing frame
           if i_crs_dv = '0' then
-            i_spd <= 'X';
-            count <= 0;
+            count <= (others => '0');
             state <= IDLE;
           end if;
 
@@ -179,13 +197,17 @@ begin
       sr(sr'left).d      <= i_d;
       sr(sr'left + 1 to sr'right) <= sr(sr'left to sr'right - 1);
 
+      sr_count <= sr_count + 1 when rdy = '0';
+      rdy <= '1' when not sr_count = 0;
+
       --------------------------------------------------------------------------------
       -- output RMII is 1 cycle later than speed change
       -- to allow for 1 cycle latency of clken generation
 
-      o_crs_dv <= sr(sr'right).crs_dv;
-      o_er     <= sr(sr'right).er;
-      o_d      <= sr(sr'right).d;
+      -- 'L' state -> '0' for synthesis, but is useful for simulation
+      o_crs_dv <= 'L'             when not rdy else sr(sr'right).crs_dv;
+      o_er     <= 'L'             when not rdy else sr(sr'right).er;
+      o_d      <= (others => 'L') when not rdy else sr(sr'right).d;
 
       --------------------------------------------------------------------------------
 

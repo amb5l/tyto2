@@ -20,20 +20,6 @@ library ieee;
 
 package memac_pkg is
 
-  type umii_t is record
-    clk   : std_ulogic;
-    clken : std_ulogic;
-    dv    : std_ulogic_vector(1 downto 0);
-    er    : std_ulogic_vector(1 downto 0);
-    d     : std_ulogic_vector(7 downto 0);
-  end record umii_t;
-
-  type umii_octet_t is record
-    dv    : std_ulogic_vector(1 downto 0);
-    er    : std_ulogic_vector(1 downto 0);
-    d     : std_ulogic_vector(7 downto 0);
-  end record umii_octet_t;
-
   subtype tx_opt_t is std_ulogic_vector(5 downto 0);
   subtype TX_OPT_PRE_LEN_RANGE is natural range 3 downto 0;
   constant TX_OPT_PRE_AUTO_BIT : integer := 4;

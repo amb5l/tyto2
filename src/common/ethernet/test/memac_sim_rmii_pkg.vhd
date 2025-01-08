@@ -15,15 +15,9 @@
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
 
-use work.memac_pkg.all;
-use work.memac_rmii_pkg.all;
-
-library ieee;
-  use ieee.std_logic_1164.all;
-  use ieee.numeric_std.all;
-  use ieee.math_real.all;
-
 package memac_sim_rmii_pkg is
+
+  constant RMII_CLK_PERIOD : time := 20 ns;
 
 end package memac_sim_rmii_pkg;
 
