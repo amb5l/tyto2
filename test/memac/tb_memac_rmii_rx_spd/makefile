@@ -2,8 +2,6 @@
 # makefile for tb_memac_rmii_rx_spd
 #################################################################################
 
-default: xsim
-
 toplevel:=$(shell git rev-parse --show-toplevel)
 make_fpga=$(toplevel)/submodules/make-fpga
 
