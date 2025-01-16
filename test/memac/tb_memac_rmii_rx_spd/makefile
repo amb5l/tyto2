@@ -27,16 +27,16 @@ include $(make_fpga)/vivado_post.mak
 
 ################################################################################
 # simulation sources and runs
-# using post-synthesis functional simulation netlist of DUT
 
 TB=tb_$(DUT)
 CFG_BEHAVIOURAL=cfg_$(TB)_behavioural
 CFG_POST_SYN_FUNC=cfg_$(TB)_post_syn_func
 
 SIM_SRC=\
+	$(toplevel)/src/common/ethernet/memac_util_pkg.vhd=memac \
+	$(toplevel)/src/common/ethernet/test/memac_sim_pkg.vhd=memac \
 	$(DUT_SRC) \
 	$(VIVADO_POST_SYN_FUNC.$(DUT).vhd)=memac_psf \
-	$(toplevel)/src/common/ethernet/test/memac_sim_pkg.vhd=memac \
 	$(toplevel)/src/common/ethernet/test/$(TB).vhd=work
 SIM_RUN=\
 	beh=$(CFG_BEHAVIOURAL) \
@@ -77,20 +77,33 @@ include $(toplevel)/submodules/make-fpga/ghdl.mak
 
 NVC_SRC=$(SIM_SRC)
 NVC_RUN=$(SIM_RUN)
-NVC_G_OPTS=-L. -M 128M
+NVC_A_OPTS=--relaxed --psl
+NVC_G_OPTS=-L. -M 128M --messages=compact
+NVC_R_OPTS=--wave=wave.fst --format=fst --gtkw=wave.gtkw
 NVC_EDIT=0
 
 # heavy lifting
 include $(toplevel)/submodules/make-fpga/nvc.mak
 
 ################################################################################
-# ModelSim etc simulation support
+# Questa/ModelSim etc simulation support
 
 VSIM_SRC=$(SIM_SRC)
 VSIM_RUN=$(SIM_RUN)
+VCOM_OPTS?=-explicit -stats=none -nopsl
 VSIM_EDIT=0
 
 # heavy lifting
 include $(toplevel)/submodules/make-fpga/vsim.mak
 
 ################################################################################
+# formal verification with SymbiYosys
+
+SBY_UNIT=$(DUT)
+SBY_SRC.$(DUT)=$(call get_src_file,$(DUT_SRC))
+SBY_MODE.$(DUT)=bmc
+SBY_DEPTH.$(DUT)=133
+SBY_ENGINE.$(DUT)=smtbmc z3
+
+# heavy lifting
+include $(toplevel)/submodules/make-fpga/sby.mak
