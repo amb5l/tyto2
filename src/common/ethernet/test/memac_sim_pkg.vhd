@@ -135,6 +135,7 @@ package memac_sim_pkg is
     impure function rand_real return real;
     impure function rand_int(min, max : in integer) return integer;
     impure function rand_slv(min, max, width : in integer) return std_ulogic_vector;
+    impure function rand_bit return bit;
   end protected prng_t;
 
   function valid(s : std_ulogic) return boolean;
@@ -169,6 +170,14 @@ package body memac_sim_pkg is
       uniform(seed1, seed2, r);
       return std_ulogic_vector(to_unsigned(integer(r * real(max - min) + real(min)), width));
     end function rand_slv;
+    impure function rand_bit return bit is
+      variable r : real;
+      variable b : bit;
+    begin
+      uniform(seed1, seed2, r);
+      b := '1' when r >= 0.5 else '0';
+      return b;
+    end function rand_bit;
   end protected body prng_t;
 
   function valid(s : std_ulogic) return boolean is
