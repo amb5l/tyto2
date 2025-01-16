@@ -14,42 +14,8 @@
 -- Lesser General Public License along with The Tyto Project. If not, see     --
 -- https://www.gnu.org/licenses/.                                             --
 --------------------------------------------------------------------------------
--- type for queue package instance
-
-library ieee;
-  use ieee.std_logic_1164.all;
-
-package tb_memac_rmii_types_pkg is
-
-  type xrmii_t is record
-    crs_dv : std_ulogic;
-    er     : std_ulogic;
-    d      : std_ulogic_vector(1 downto 0);
-  end record xrmii_t;
-
-  constant XRMII_U : xrmii_t := (d => "UU", others => 'U');
-
-end package tb_memac_rmii_types_pkg;
-
---------------------------------------------------------------------------------
--- queue package instances
-
-use work.tb_memac_rmii_types_pkg.all;
 library memac;
-package tb_memac_rmii_rx_spd_queue_xrmii_pkg is
-  new memac.memac_sim_queue_pkg generic map(queue_item_t => xrmii_t, empty => XRMII_U);
-
-library memac;
-library ieee;
-  use ieee.std_logic_1164.all;
-package tb_memac_rmii_rx_spd_queue_xspd_pkg is
-  new memac.memac_sim_queue_pkg generic map(queue_item_t => std_ulogic, empty => 'U');
-
---------------------------------------------------------------------------------
-
-use work.tb_memac_rmii_types_pkg.all;
-
-library memac;
+  use memac.memac_util_pkg.all;
   use memac.memac_sim_pkg.all;
   use memac.memac_rmii_rx_spd_pkg.all;
 
@@ -64,314 +30,237 @@ architecture sim of tb_memac_rmii_rx_spd is
 
   constant CLK_PERIOD : time := 20 ns;
 
-  constant RST_LEN_MIN  : integer := 1;
-  constant RST_LEN_MAX  : integer := 2;
-  constant RST_DLY_MIN  : integer := 0;
-  constant RST_DLY_MAX  : integer := 2;
   constant CRS_LEN_MIN  : integer := 0;
   constant CRS_LEN_MAX  : integer := 2;
-  constant PRE_LEN_LIST : integer_vector := (
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 27, 28, 29, 63, 64, 65 -- 28 = 7 octets * 4 dibits per octet
-  );
-  constant FRM_LEN_LIST: integer_vector := (
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16
-  );
-  constant IPG_LEN_LIST: integer_vector := (
-    2, 3, 4, 5, 8, 16, 47, 48, 49 -- 48 = 12 octets * 4 dibits per octet
-  );
-  constant PRE_LEN_MAX : integer := maximum(PRE_LEN_LIST);
-  constant SFD_LEN     : integer := 1;
-  constant FRM_LEN_MAX : integer := maximum(FRM_LEN_LIST);
-  constant IPG_LEN_MAX : integer := maximum(IPG_LEN_LIST);
-  constant HOLD_MIN    : integer := 0;
-  constant HOLD_MAX    : integer := 2;
-  constant REPS        : integer := 2; -- number of frames to generate per test
+  constant PRE_LEN_MIN  : integer := 7;  -- c.w. single octet of preamble then SFD
+  constant PRE_LEN_MAX  : integer := 63;
+  constant FRM_LEN_MIN  : integer := 0;
+  constant FRM_LEN_MAX  : integer := 80; -- out of spec (too short) but plenty for this test
+  constant CRL_LEN_MIN  : integer := 0;
+  constant IPG_LEN_MIN  : integer := 2;
+  constant IPG_LEN_MAX  : integer := 64;
 
-  constant INTERVAL_FIRST: time := CLK_PERIOD * ( -- crs_dv rising to rising (1st to next frame)
-    FRM_LEN_MAX +
-    IPG_LEN_MAX +
-    CRS_LEN_MAX +
-    PRE_LEN_MAX +
-    SFD_LEN
-  );
-  constant INTERVAL_LAST: time := CLK_PERIOD * ( -- crs_dv rising to rising (last to 1st frame)
-    FRM_LEN_MAX +
-    HOLD_MAX +
-    RST_LEN_MAX +
-    RST_DLY_MAX +
-    CRS_LEN_MAX +
-    PRE_LEN_MAX +
-    SFD_LEN
-  );
+  constant PROB_PRE_LEN_BAD  : real := 0.02; -- probability of preamble + SFD length not being a multiple of 4 di-bits (octets)
+  constant PROB_PRE_ERROR    : real := 0.02; -- probability of error assertion in preamble
+  constant PROB_PRE_DATA_BAD : real := 0.02; -- probability of bad data in preamble
+  constant PROB_PRE_ABORT    : real := 0.02; -- probability of aborting preamble before SFD
+  constant PROB_FRM_ERROR    : real := 0.02; -- probability of error assertion in frame
 
-  -- DUT ports
+  -- DUT ports and related signals
   signal rst      : std_ulogic;
   signal clk      : std_ulogic;
+  signal i_xspd   : std_ulogic;
   signal i_crs_dv : std_ulogic;
   signal i_er     : std_ulogic;
   signal i_d      : std_ulogic_vector(1 downto 0);
-  signal o_crs_dv : std_ulogic;
-  signal o_er     : std_ulogic;
-  signal o_d      : std_ulogic_vector(1 downto 0);
-  signal o_rdy    : std_ulogic;
-  signal o_stb    : std_ulogic;
-  signal o_spd    : std_ulogic;
-  signal o_err    : std_ulogic;
+  signal o_crs_dv : std_ulogic;                     -- v4p ignore w-303 | checked in assert below
+  signal o_er     : std_ulogic;                     -- v4p ignore w-303 | checked in assert below
+  signal o_d      : std_ulogic_vector(1 downto 0);  -- v4p ignore w-303 | checked in assert below
+  signal spd      : std_ulogic;
 
-  -- queues
-  shared variable xrmii : work.tb_memac_rmii_rx_spd_queue_xrmii_pkg.queue_t; -- expected RMII state
-  shared variable xspd  : work.tb_memac_rmii_rx_spd_queue_xspd_pkg.queue_t;  -- expected speed state
+  -- shift register to delay input to align with DUT output
+  type sr_stage_t is record
+    spd    : std_ulogic;
+    crs_dv : std_ulogic;
+    er     : std_ulogic;
+    d      : std_ulogic_vector(1 downto 0);
+  end record sr_stage_t;
+  type sr_t is array(1 to 65) of sr_stage_t;
+  signal sr : sr_t := (others => (spd => '0', crs_dv => '0', er => '0', d => "00"));
 
 begin
 
   clk <= '0' when clk = 'U' else not clk after CLK_PERIOD/2; -- 50 MHz
 
   --------------------------------------------------------------------------------
-  -- stimulate DUT inputs
+  -- stop when done
 
-  P_MAIN: process
+  P_MAIN: process(spd)
+    variable count : integer := 0;
+  begin
+    if spd'event and (spd = '0' or spd = '1') then
+      count := count + 1;
+      if count = 1000 then
+        report "done" severity note;
+        std.env.stop;
+      end if;
+    end if;
+  end process P_MAIN;
+
+  --------------------------------------------------------------------------------
+  -- create stimulus and expected result
+
+  P_STIM: process
 
     variable prng    : prng_t;
-    variable pre_len : positive;
-    variable frm_len : natural;
-    variable crl_len : natural;
-    variable ipg_len : positive;
 
-    procedure do_test(
-      spd     : natural;  -- speed (0 = 10 Mbps, 1 = 100 Mbps)
-      rst_len : positive; -- reset duration
-      rst_dly : natural;  -- delay from reset negation to crs_dv assertion
-      crs_len : natural;  -- duration of crs_dv assertion before preamble
-      pre_len : positive; -- length of preamble
-      frm_len : natural;  -- length of frame
-      crl_len : natural;  -- duration of carrier loss before end of frame
-      pre_tst : natural;  -- 0 = good, 1 = random error assertion, 2 = random corrupt di-bits, 3 = both
-      frm_tst : natural;  -- 0 = good, 1 = random error assertion, 2 = random corrupt di-bits, 3 = both
-      ipg_len : positive; -- inter packet gap (between end of frame and next preamble)
-      hold    : natural;  -- hold time after last frame
-      reps    : positive  -- number of frames to generate
-    ) is
+    variable spd     : bit;        -- speed (0 = 10 Mbps, 1 = 100 Mbps)
+    variable crs_len : natural;    -- duration of crs_dv assertion before preamble
+    variable pre_len : positive;   -- duration of preamble
+    variable pre_er  : boolean;    -- assert error during preamble
+    variable pre_bad : boolean;    -- corrupt data during preamble
+    variable pre_abt : boolean;    -- abort preamble before SFD if
+    variable frm_len : natural;    -- duration of frame
+    variable frm_er  : boolean;    -- assert error during frame
+    variable crl_len : natural;    -- duration of carrier loss before end of frame
+    variable xspd    : std_ulogic; -- expected speed from DUT
+    variable re      : natural;    -- random error position
+    variable rx      : natural;    -- random data corruption position
 
-      procedure wait_clk is
-        variable c : positive;
-      begin
-        c := 10 when spd = 0 else 1;
-        for i in 10 to c loop
-          wait until rising_edge(clk);
-        end loop;
-      end procedure wait_clk;
-
-      procedure wait_clk(n : natural) is
-      begin
-        if n > 0 then
-          for i in 1 to n loop
-            wait_clk;
-          end loop;
-        end if;
-      end procedure wait_clk;
-
-      procedure wait_clk_enq is
-      begin
-        wait_clk;
-        xrmii.enq(xrmii_t'(crs_dv => i_crs_dv, er => i_er, d => i_d)); -- v4p ignore e-202 (TODO remove ignore when V4P issue is resolved)
-      end procedure wait_clk_enq;
-
-      procedure wait_clk_enq(n : natural) is
-      begin
-        if n > 0 then
-          for i in 1 to n loop
-            wait_clk_enq;
-          end loop;
-        end if;
-      end procedure wait_clk_enq;
-
-      variable re : natural;                       -- random error position
-      variable rx : natural;                       -- random data corruption position
-      variable d  : std_ulogic_vector(1 downto 0); -- data
-      variable s  : std_ulogic;                    -- speed
-
+    procedure wait_clk(spd : bit) is
+      variable c : positive;
     begin
+      c := 10 when spd = '0' else 1;
+      for i in 1 to c loop
+        wait until rising_edge(clk);
+      end loop;
+      wait for CLK_PERIOD/4; -- allow for clock buffer propagation delta cycles in PSF netlist
+    end procedure wait_clk;
+
+    procedure wait_clk(spd : bit; n : natural) is
+    begin
+      if n > 0 then
+        for i in 1 to n loop
+          wait_clk(spd);
+        end loop;
+      end if;
+    end procedure wait_clk;
+
+  begin
+
+    prng.rand_seed(123, 456);
+
+    -- reset
+    rst      <= '1';
+    i_xspd   <= '0';
+    i_crs_dv <= '0';
+    i_er     <= '0';
+    i_d      <= "00";
+    wait_clk('1');
+    rst <= '0';
+    wait_clk('1', 64);
+
+    -- generate frames and IPGs until done
+    loop
+
+      -- preamble and frame
+      spd := prng.rand_bit;
+      crs_len := prng.rand_int(CRS_LEN_MIN, CRS_LEN_MAX);
+      pre_len := prng.rand_int(PRE_LEN_MIN, PRE_LEN_MAX);
+      if prng.rand_real < PROB_PRE_LEN_BAD then
+        if pre_len mod 4 = 3 then
+          pre_len := pre_len - 1 when pre_len > PRE_LEN_MIN else pre_len + 1;
+        end if;
+      else
+        pre_len := ((pre_len / 4) * 4) + 3;
+      end if;
+      pre_er  := prng.rand_real < PROB_PRE_ERROR;
+      pre_bad := prng.rand_real < PROB_PRE_DATA_BAD;
+      pre_abt := prng.rand_real < PROB_PRE_ABORT;
+      frm_len := prng.rand_int(FRM_LEN_MIN, FRM_LEN_MAX);
+      frm_er  := prng.rand_real < PROB_FRM_ERROR;
+      crl_len := maximum(0, prng.rand_int(CRL_LEN_MIN, frm_len - 2));
+      xspd := 'X' when
+        ((pre_len + 1) mod 4) /= 0 or -- preamble + SFD not a multiple of 4 di-bits (octets)
+        pre_er or                     -- error in preamble
+        pre_bad or                    -- bad data in preamble
+        pre_abt                       -- preamble abort before SFD
+        else '1' when spd else '0';   -- OK
       report
-            " spd = " & integer'image(spd) &
-        " rst_len = " & integer'image(rst_len) &
-        " rst_dly = " & integer'image(rst_dly) &
+            " spd = " & bit'image(spd) &
         " crs_len = " & integer'image(crs_len) &
         " pre_len = " & integer'image(pre_len) &
+         " pre_er = " & boolean'image(pre_er) &
+        " pre_bad = " & boolean'image(pre_bad) &
+        " pre_abt = " & boolean'image(pre_abt) &
         " frm_len = " & integer'image(frm_len) &
+         " frm_er = " & boolean'image(frm_er) &
         " crl_len = " & integer'image(crl_len) &
-        " pre_tst = " & integer'image(pre_tst) &
-        " frm_tst = " & integer'image(frm_tst) &
-        " ipg_len = " & integer'image(ipg_len) &
-           " hold = " & integer'image(hold) &
-           " reps = " & integer'image(reps)
+          "  xspd = " & std_ulogic'image(xspd)
         severity note;
-      -- reset assertion
-      rst      <= '1';
-      i_crs_dv <= 'X';
-      i_er     <= 'X';
-      i_d      <= "XX";
-      wait_clk(rst_len);
-      -- delay from reset to first crs_dv assertion
-      rst <= '0';
-      i_crs_dv <= '0';
-      i_er     <= '0';
-      i_d      <= "00";
-      wait_clk_enq(rst_dly);
-      for rep in 1 to reps loop
-        -- delay from CRS to preamble
-        i_crs_dv <= '1';
-        wait_clk_enq(crs_len);
-        -- preamble
-        re := prng.rand_int(0, maximum(0, frm_len - 1));
-        rx := prng.rand_int(0, maximum(0, frm_len - 1));
-        for i in 0 to pre_len - 1 loop
-          i_er <= '1'  when i = re and (pre_tst = 1 or pre_tst = 3) else '0';
-          i_d  <= "XX" when i = rx and (pre_tst = 2 or pre_tst = 3) else "01";
-          wait_clk_enq(1);
-        end loop;
+      -- delay from CRS to preamble
+      i_crs_dv <= '1';
+      wait_clk(spd, crs_len);
+      -- preamble
+      i_xspd <= xspd;
+      re := prng.rand_int(0, maximum(0, pre_len - 1));
+      rx := prng.rand_int(0, maximum(0, pre_len - 1));
+      for i in 0 to pre_len - 1 loop
+        i_er <= '1'  when pre_er  and i = re else '0';
+        if pre_bad and i = rx then
+          case prng.rand_int(1, 3) is
+            when 1      => i_d <= "00";
+            when 2      => i_d <= "10";
+            when 3      => i_d <= "11";
+            when others => i_d <= "XX";
+          end case;
+        else
+          i_d <= "01";
+        end if;
+        wait_clk(spd);
+      end loop;
+      if not pre_abt then
         -- SFD
         i_d <= "11";
-        wait_clk_enq(SFD_LEN);
-        -- enqueue speed
-        s :=
-          '0' when pre_tst = 0 and spd = 0 else
-          '1' when pre_tst = 0 and spd = 1 else
-          'L' when o_spd = '0' else
-          'H' when o_spd = '1' else
-          'X';
-        report "enqueue speed: " & std_ulogic'image(s) severity note;
-        xspd.enq(s);
+        wait_clk(spd);
         -- frame
         re := prng.rand_int(0, maximum(0, frm_len - 1));
         rx := prng.rand_int(0, maximum(0, frm_len - 1));
         for i in 0 to frm_len - 1 loop
-          d  := std_ulogic_vector(to_unsigned(i mod 4, 2));                          -- incrementing data
-          i_crs_dv <= '0'  when i >= frm_len - crl_len - 1 and i mod 2 = 0 else '1'; -- toggle crs_dv as required
-          i_er     <= '1'  when i = re and (pre_tst = 1 or pre_tst = 3) else '0';
-          i_d      <= "XX" when i = rx and (pre_tst = 2 or pre_tst = 3) else d;
-          wait_clk_enq(1);
+          i_crs_dv <= '0'  when (i >= frm_len - crl_len - 1) and ((i mod 2) = 0) else '1'; -- toggle crs_dv as required
+          i_er     <= '1'  when frm_er  and i = re else '0';
+          i_d      <= prng.rand_slv(0, 3, 2);
+          wait_clk(spd);
         end loop;
-        -- after frame
-        i_crs_dv <= '0';
-        i_er     <= '0';
-        i_d      <= "00";
-        if rep < reps then -- inter packet gap
-          wait_clk_enq(ipg_len);
-        else -- hold
-          wait_clk_enq(hold);
-        end if;
-      end loop;
-      -- wait for all RMII states to ripple through queue
-      while xrmii.items > 0 loop
-        wait until rising_edge(clk);
-      end loop;
-    end procedure do_test;
-
-  begin
-
-    prng.rand_seed(123, 456); -- seed PRNG
-    xrmii.reset;
-    xspd.reset;
-
-    -- present DUT with permutations of startup (post reset) and
-    -- inter frame conditions, queuing expected results
-    LOOP_RST_LEN: for rst_len in RST_LEN_MIN to RST_LEN_MAX loop                        -- length of rst
-      LOOP_RST_DLY: for rst_dly in RST_DLY_MIN to RST_DLY_MAX loop                      -- delay from rst deassertion to activity
-        LOOP_CRS_LEN: for crs_len in CRS_LEN_MIN to CRS_LEN_MAX loop                    -- delay from crs_dv assertion to preamble
-          LOOP_PRE_LEN: for pre_idx in 0 to PRE_LEN_LIST'length-1 loop   -- length of preamble
-            pre_len := PRE_LEN_LIST(pre_idx);
-            LOOP_FRM_LEN: for frm_idx in 0 to FRM_LEN_LIST'length-1 loop -- length of frame
-              frm_len := FRM_LEN_LIST(frm_idx);
-              LOOP_IPG_LEN: for ipg_idx in 0 to IPG_LEN_LIST'length-1 loop
-                ipg_len := IPG_LEN_LIST(ipg_idx);
-                LOOP_HOLD: for hold in HOLD_MIN to HOLD_MAX loop
-                  crl_len := 0;
-                  LOOP_CRL_LEN: loop
-                    LOOP_PRE_TEST: for pre_test in 0 to 3 loop
-                      LOOP_FRM_TEST: for frm_test in 0 to 3 loop
-                        LOOP_SPD: for spd in 0 to 1 loop
-                          do_test(1-spd, rst_len, rst_dly, crs_len, pre_len, frm_len, crl_len, pre_test, frm_test, ipg_len, hold, REPS);
-                        end loop LOOP_SPD;
-                      end loop LOOP_FRM_TEST;
-                    end loop LOOP_PRE_TEST;
-                    crl_len := crl_len + 1;
-                    if frm_len - crl_len  < 2 then -- 1st 2 dibits must have CRS
-                      exit;
-                    end if;
-                  end loop LOOP_CRL_LEN;
-                end loop LOOP_HOLD;
-              end loop LOOP_IPG_LEN;
-            end loop LOOP_FRM_LEN;
-          end loop LOOP_PRE_LEN;
-        end loop LOOP_CRS_LEN;
-      end loop LOOP_RST_DLY;
-    end loop LOOP_RST_LEN;
-
-    wait;
-
-  end process P_MAIN;
-
---------------------------------------------------------------------------------
-  -- compare DUT output with expected results
-
-  P_CHECK_RMII: process(rst, clk)
-  begin
-    if rst then
-      null;
-    elsif rising_edge(clk) then
-      if o_crs_dv /= 'L' then -- DUT output is valid
-        if o_crs_dv = 'U' and o_er = 'U' and o_d = "UU" then
-          assert xrmii.items = 0 and xspd.items = 0
-            report "expected queues not empty at end of simulation:" &
-            " xrmii.items = " & integer'image(xrmii.items) &
-            " xspd.items = " & integer'image(xspd.items)
-            severity failure;
-          report "END OF SIMUALTION" severity note;
-          std.env.stop;
-        end if;
-        assert xrmii.items > 0
-          report "no expected RMII state to compare with" severity failure;
-        assert o_crs_dv = xrmii.front.crs_dv and
-               o_er     = xrmii.front.er     and
-               o_d      = xrmii.front.d
-          report "unexpected RMII value:" &
-          " got: "      &
-            to_string(o_crs_dv) & " " &
-            to_string(o_er) & " " &
-            to_string(o_d) &
-          " expected: " &
-            to_string(xrmii.front.crs_dv) & " " &
-            to_string(xrmii.front.er) & " " &
-            to_string(xrmii.front.d)
-          severity failure;
-        xrmii.deq;
       end if;
-    end if;
-  end process P_CHECK_RMII;
+      -- IPG
+      i_crs_dv <= '0';
+      i_er     <= '0';
+      i_d      <= "00";
+      wait_clk(spd, prng.rand_int(IPG_LEN_MIN, IPG_LEN_MAX));
 
-  P_CHECK_SPD: process
+    end loop;
+
+  end process P_STIM;
+
+  --------------------------------------------------------------------------------
+  -- shift register to delay stimulus and expected result to align with DUT output
+
+  P_SR: process(clk)
   begin
-    wait on o_crs_dv until
-      rising_edge(o_crs_dv) and (
-        o_crs_dv'last_event = 0 ns or         -- first event
-        o_crs_dv'last_event >= CLK_PERIOD * 2 -- not carrier loss at end of frame
-      ) for maximum(INTERVAL_FIRST, INTERVAL_LAST) + 100 ns;
-    assert o_crs_dv'event
-      report "crs_dv event timeout" severity failure;
-    --wait on o_crs_dv, o_crs_er, o_crs_d for CLK_PERIOD * CRS_LEN_MAX;
+    if rising_edge(clk) then
+      sr(sr'left) <= (
+        spd    => i_xspd,
+        crs_dv => i_crs_dv,
+        er     => i_er,
+        d      => i_d
+      );
+      sr(sr'left + 1 to sr'right) <= sr(sr'left to sr'right - 1);
+    end if;
+  end process P_SR;
 
+  --------------------------------------------------------------------------------
+  -- compare SR and DUT outputs
+  -- note that DUT spd output is valid 1 cycle before other outputs
 
+  P_COMP: process(clk)
+  begin
+    if rising_edge(clk) and rst = '0' then
+      if sr(sr'right - 1).spd /= 'X' then
+        assert sr(sr'right - 1).spd = spd
+          report "spd: expected " & to_string(sr(sr'right - 1).spd) & " got " & to_string(spd) severity failure;
+      end if;
+      assert sr(sr'right).crs_dv = o_crs_dv
+        report "crs_dv: expected " & to_string(sr(sr'right - 0).crs_dv) & " got " & to_string(o_crs_dv) severity failure;
+      assert sr(sr'right).er = o_er
+        report "er: expected " & to_string(sr(sr'right - 0).er) & " got " & to_string(o_er) severity failure;
+      assert sr(sr'right).d = o_d
+        report "d: expected " & to_string(sr(sr'right - 0).d) & " got " & to_string(o_d) severity failure;
+    end if;
+  end process P_COMP;
 
-
-    assert xspd.items > 0
-      report "unexpected spd transaction" severity failure;
-    assert xspd.front = o_spd
-      report "unexpected spd value:" &
-      " got " & std_ulogic'image(o_spd) &
-      " expected " & std_ulogic'image(xspd.front)
-      severity failure;
-  end process P_CHECK_SPD;
-
+  --------------------------------------------------------------------------------
+  -- DUT instance
 
   DUT: component memac_rmii_rx_spd
     port map (
@@ -383,10 +272,7 @@ begin
       o_crs_dv => o_crs_dv,
       o_er     => o_er,
       o_d      => o_d,
-      rdy      => o_rdy,
-      stb      => o_stb,
-      spd      => o_spd,
-      err      => o_err
+      spd      => spd
     );
 
 end architecture sim;
