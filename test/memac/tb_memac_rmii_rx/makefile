@@ -13,7 +13,7 @@ DUT=memac_rmii_rx
 DUT_SRC=\
 	$(toplevel)/src/common/ethernet/$(DUT).vhd=memac
 DUT_PSL=\
-	$(toplevel)/src/common/ethernet/test/$(DUT)_psl.vhd
+	$(toplevel)/src/common/ethernet/test/$(DUT).psl
 
 ################################################################################
 # Vivado post simulation/implementation netlist generation
