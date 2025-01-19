@@ -12,6 +12,8 @@ DUT=memac_rmii_rx_spd
 
 DUT_SRC=\
 	$(toplevel)/src/common/ethernet/$(DUT).vhd=memac
+DUT_PSL=\
+	$(toplevel)/src/common/ethernet/test/$(DUT)_psl.vhd
 
 ################################################################################
 # Vivado post simulation/implementation netlist generation
@@ -87,6 +89,7 @@ include $(toplevel)/submodules/make-fpga/nvc.mak
 
 ################################################################################
 # Questa/ModelSim etc simulation support
+# note PSL disabled, Questa does not support 'restrict'
 
 VSIM_SRC=$(SIM_SRC)
 VSIM_RUN=$(SIM_RUN)
@@ -100,10 +103,14 @@ include $(toplevel)/submodules/make-fpga/vsim.mak
 # formal verification with SymbiYosys
 
 SBY_UNIT=$(DUT)
-SBY_SRC.$(DUT)=$(call get_src_file,$(DUT_SRC))
+SBY_SRC.$(DUT)=\
+	$(call get_src_file,$(DUT_SRC)) \
+	$(DUT_PSL)
 SBY_MODE.$(DUT)=bmc
 SBY_DEPTH.$(DUT)=133
 SBY_ENGINE.$(DUT)=smtbmc z3
 
 # heavy lifting
 include $(toplevel)/submodules/make-fpga/sby.mak
+
+################################################################################
