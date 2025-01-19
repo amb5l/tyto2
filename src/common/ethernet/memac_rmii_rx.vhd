@@ -210,7 +210,7 @@ begin
 
       -- output signals
       if umii_clken then
-        umii_dv <= s7_dv(3) and s7_dv(1);
+        umii_dv <= '1' when s7_dv /= "0000" else '0';
         umii_er <= '1' when s7_er /= "0000" else '0';
         umii_d  <= s7_d;
       end if;

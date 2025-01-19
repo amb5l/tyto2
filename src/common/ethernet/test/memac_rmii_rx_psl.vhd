@@ -35,11 +35,44 @@ vunit memac_rmii_rx_psl(memac_rmii_rx(rtl)) {
   assert always rst = '1' -> umii_er   = '0';
   assert always rst = '1' -> umii_d    = x"00";
 
-  -- sequences
+  -- full speed sequences
+  sequence seq_null_full_speed is
+    {
+      rmii_clken = '1'
+    };
+  sequence seq_ipg_full_speed is
+    {
+      rmii_clken = '1' and rmii_crs_dv = '0'
+    };
+  sequence seq_crs_full_speed is
+    {
+      rmii_clken = '1' and rmii_crs_dv = '1' and rmii_d = "00"
+    };
+  sequence seq_pre_full_speed is
+    {
+      rmii_clken = '1' and rmii_crs_dv = '1' and rmii_d = "01"
+    };
+  sequence seq_dv_full_speed is
+    {
+      rmii_clken = '1' and rmii_crs_dv = '1'
+    };
+  sequence seq_octet1_full_speed is {
+      seq_pre_full_speed;
+      seq_dv_full_speed;
+      seq_null_full_speed;
+      seq_dv_full_speed
+    };
+
+  -- half speed sequences
   sequence seq_null_half_speed is
     {
       rmii_clken = '0';
       rmii_clken = '1'
+    };
+  sequence seq_ipg_half_speed is
+    {
+      rmii_clken = '0';
+      rmii_clken = '1' and rmii_crs_dv = '0'
     };
   sequence seq_crs_half_speed is
     {
@@ -51,6 +84,17 @@ vunit memac_rmii_rx_psl(memac_rmii_rx(rtl)) {
       rmii_clken = '0';
       rmii_clken = '1' and rmii_crs_dv = '1' and rmii_d = "01"
     };
+  sequence seq_dv_half_speed is
+    {
+      rmii_clken = '0';
+      rmii_clken = '1' and rmii_crs_dv = '1'
+    };
+  sequence seq_octet1_half_speed is {
+      seq_pre_half_speed;
+      seq_dv_half_speed;
+      seq_null_half_speed;
+      seq_dv_half_speed
+    };
 
   -- restrict reset behaviour
   restrict {
@@ -58,10 +102,35 @@ vunit memac_rmii_rx_psl(memac_rmii_rx(rtl)) {
     rst = '0'  [*]
   };
 
-  -- assume umii_clken behaviour
-  -- assume {
-  --   rmii_clken = '1' [*4]} |-> umii_clken = '1';
-  -- assume {seq_null_half_speed [*4]} |-> umii_clken = '1';
+  -- clken negated
+  assert always (
+  {
+    rmii_clken = '0';
+    true
+  } |->
+    s1_crs_dv = prev( s1_crs_dv ) and
+    s1_er     = prev( s1_er     ) and
+    s1_d      = prev( s1_d      ) and
+    s2_crs_dv = prev( s2_crs_dv ) and
+    s2_er     = prev( s2_er     ) and
+    s2_d      = prev( s2_d      ) and
+    s3_crs_dv = prev( s3_crs_dv ) and
+    s3_er     = prev( s3_er     ) and
+    s3_d      = prev( s3_d      ) and
+    s4_crs_dv = prev( s4_crs_dv ) and
+    s4_er     = prev( s4_er     ) and
+    s4_d      = prev( s4_d      ) and
+    s5_act    = prev( s5_act    ) and
+    s5_crs    = prev( s5_crs    ) and
+    s5_dv     = prev( s5_dv     ) and
+    s5_er     = prev( s5_er     ) and
+    s5_d      = prev( s5_d      ) and
+    s5_dibit  = prev( s5_dibit  ) and
+    s6_crs    = prev( s6_crs    ) and
+    s6_dv     = prev( s6_dv     ) and
+    s6_er     = prev( s6_er     ) and
+    s6_d      = prev( s6_d      )
+    ) abort rst = '1';
 
   -- pipeline stages 0..4
   assert always (
@@ -69,19 +138,20 @@ vunit memac_rmii_rx_psl(memac_rmii_rx(rtl)) {
     rmii_clken = '1';
     true
   } |->
-    s1_crs_dv = prev(rmii_crs_dv) and
-    s1_er     = prev(rmii_er)     and
-    s1_d      = prev(rmii_d)      and
-    s2_crs_dv = prev(s1_crs_dv) and
-    s2_er     = prev(s1_er)     and
-    s2_d      = prev(s1_d)      and
-    s3_crs_dv = prev(s2_crs_dv) and
-    s3_er     = prev(s2_er)     and
-    s3_d      = prev(s2_d)      and
-    s4_crs_dv = prev(s3_crs_dv) and
-    s4_er     = prev(s3_er)     and
-    s4_d      = prev(s3_d)
+    s1_crs_dv = prev( rmii_crs_dv ) and
+    s1_er     = prev( rmii_er     ) and
+    s1_d      = prev( rmii_d      ) and
+    s2_crs_dv = prev( s1_crs_dv   ) and
+    s2_er     = prev( s1_er       ) and
+    s2_d      = prev( s1_d        ) and
+    s3_crs_dv = prev( s2_crs_dv   ) and
+    s3_er     = prev( s2_er       ) and
+    s3_d      = prev( s2_d        ) and
+    s4_crs_dv = prev( s3_crs_dv   ) and
+    s4_er     = prev( s3_er       ) and
+    s4_d      = prev( s3_d        )
     ) abort rst = '1';
+
 
   -- s5_act
   assert always (
@@ -90,7 +160,6 @@ vunit memac_rmii_rx_psl(memac_rmii_rx(rtl)) {
       true
     } |-> s5_act = '1'
   ) abort rst = '1';
-
   assert always (
     {
       rmii_clken = '1' and s5_act = '1' and s3_crs_dv = '0' and s4_crs_dv = '0';
@@ -125,13 +194,11 @@ vunit memac_rmii_rx_psl(memac_rmii_rx(rtl)) {
        true
      } |-> s5_dv = '0'
    ) abort rst = '1';
-   assert never
-     s5_dv = '1' and prev(s5_dv) = '0' and prev(s5_dv,2) = '1';
 
   -- s5_er
   assert always (
     {
-      true and rmii_clken = '1';
+      rmii_clken = '1';
       true
     } |-> s5_er = prev(s4_er)
   ) abort rst = '1';
@@ -139,7 +206,7 @@ vunit memac_rmii_rx_psl(memac_rmii_rx(rtl)) {
   -- s5_d
   assert always (
     {
-      true and rmii_clken = '1';
+      rmii_clken = '1';
       true
     } |-> s5_d = prev(s4_d)
   ) abort rst = '1';
@@ -161,79 +228,179 @@ vunit memac_rmii_rx_psl(memac_rmii_rx(rtl)) {
   -- s6_dv, s6_er and s6_d
   assert always (
     {
-      true and rmii_clken = '1';
+      rmii_clken = '1';
       true
     } |->
-          s6_dv(to_integer(unsigned(prev(s5_dibit))))    = prev(s5_dv)
-      and s6_er(to_integer(unsigned(prev(s5_dibit))))    = prev(s5_er)
-      and s6_d(to_integer(unsigned(prev(s5_dibit)))*2)   = prev(s5_d(0))
-      and s6_d(to_integer(unsigned(prev(s5_dibit)))*2+1) = prev(s5_d(1))
+          s6_dv ( to_integer(unsigned(prev(s5_dibit)))     ) = prev( s5_dv   )
+      and s6_er ( to_integer(unsigned(prev(s5_dibit)))     ) = prev( s5_er   )
+      and s6_d  ( to_integer(unsigned(prev(s5_dibit)))*2   ) = prev( s5_d(0) )
+      and s6_d  ( to_integer(unsigned(prev(s5_dibit)))*2+1 ) = prev( s5_d(1) )
   ) abort rst = '1';
 
   -- s6_stb
   assert always (
     {
-      true and rmii_clken = '1';
+      rmii_clken = '1' and s5_dibit = "11";
       true
-    } |-> s6_stb = (prev(s5_dibit(0)) and prev(s5_dibit(1)))
+    } |-> s6_stb = '1'
+  ) abort rst = '1';
+  assert always (
+    {
+      rmii_clken = '0' or s5_dibit /= "11";
+      true
+    } |-> s6_stb = '0'
   ) abort rst = '1';
 
---  -- first preamble octet to s6 (full speed)
---
---    --  assert always (
---    --    {
---    --      rmii_clken = '1' and rmii_crs_dv = '0';
---    --      rmii_clken = '1' and rmii_crs_dv = '0';
---    --      rmii_clken = '1' and rmii_crs_dv = '1' and rmii_d = "00" [*0 to 3];
---    --      rmii_clken = '1' and rmii_crs_dv = '1' and rmii_d = "01" [*4];
---    --      rmii_clken = '1' [*6]
---    --    } |->
---    --          s6_dv    = x"F"
---    --      and s6_er(0) = prev(rmii_er,9)
---    --      and s6_er(1) = prev(rmii_er,8)
---    --      and s6_er(2) = prev(rmii_er,7)
---    --      and s6_er(3) = prev(rmii_er,6)
---    --      and s6_d     = x"55"
---    --      and s6_stb   = '1'
---    --  ) abort rst = '1';
---
---  -- first preamble octet to s6 (half speed)
---
---    --  assert always (
---    --    {
---    --      rmii_clken = '0';
---    --      rmii_clken = '1' and rmii_crs_dv = '0';
---    --      rmii_clken = '0';
---    --      rmii_clken = '1' and rmii_crs_dv = '0';
---    --      seq_crs_half_speed [*0 to 3];
---    --      seq_pre_half_speed [*4];
---    --      seq_null_half_speed [*6]
---    --    } |->
---    --          s6_dv    = x"F"
---    --      and s6_er(0) = prev(rmii_er,9)
---    --      and s6_er(1) = prev(rmii_er,8)
---    --      and s6_er(2) = prev(rmii_er,7)
---    --      and s6_er(3) = prev(rmii_er,6)
---    --      and s6_d     = x"55"
---    --      and s6_stb   = '1'
---    --  ) abort rst = '1';
+  -- s7_crs, s7_dv, s7_er and s7_d
+  assert always (
+    {
+      s6_stb = '1';
+      true
+    } |->
+          s7_crs = prev( s6_crs )
+      and s7_dv  = prev( s6_dv  )
+      and s7_er  = prev( s6_er  )
+      and s7_d   = prev( s6_d   )
+  ) abort rst = '1';
+  assert always (
+    {
+      s6_stb = '0' and umii_clken = '0';
+      true
+    } |->
+          s7_crs = prev( s7_crs )
+      and s7_dv  = prev( s7_dv  )
+      and s7_er  = prev( s7_er  )
+      and s7_d   = prev( s7_d   )
+  ) abort rst = '1';
+  assert always (
+    {
+      s6_stb = '0' and umii_clken = '1';
+      true
+    } |->
+          s7_crs = x"0"
+      and s7_dv  = x"0"
+      and s7_er  = x"0"
+      and s7_d   = x"00"
+  ) abort rst = '1';
 
---  -- packing first 4 di-bits of preamble into octet
+  -- umii_dv, umii_er and umii_d
+  assert always (
+    {
+      umii_clken = '1';
+      true
+    } |->
+          umii_dv = (prev(s7_dv(0)) or prev(s7_dv(1)) or prev(s7_dv(2)) or prev(s7_dv(3)))
+      and umii_er = (prev(s7_er(0)) or prev(s7_er(1)) or prev(s7_er(2)) or prev(s7_er(3)))
+      and umii_d  = prev(s7_d)
+  ) abort rst = '1';
+  assert always (
+    {
+      umii_clken = '0';
+      true
+    } |->
+          umii_dv = prev( umii_dv )
+      and umii_er = prev( umii_er )
+      and umii_d  = prev( umii_d  )
+  ) abort rst = '1';
+
+  -- first octet to s6,s7 (full speed)
+  assert always (
+    {
+      seq_ipg_full_speed [*2];
+      seq_crs_full_speed [*0 to 3];
+      seq_octet1_full_speed;
+      seq_null_full_speed [*6]
+    } |->
+    {
+          s6_dv  = prev(s5_dv,1) & prev(s5_dv,2) & prev(s5_dv,3) & prev(s5_dv,4)
+      and s6_er  = prev(rmii_er,6) & prev(rmii_er,7) & prev(rmii_er,8) & prev(rmii_er,9)
+      and s6_d   = prev(rmii_d,6) & prev(rmii_d,7) & prev(rmii_d,8) & prev(rmii_d,9)
+      and s6_stb = '1';
+          s7_dv  = prev(s6_dv)
+      and s7_er  = prev(s6_er)
+      and s7_d   = prev(s6_d)
+    }
+  ) abort rst = '1';
+
+  -- first octet to s6 (half speed)
+  assert always (
+    {
+      seq_ipg_half_speed [*2];
+      seq_crs_half_speed [*0 to 3];
+      seq_octet1_half_speed;
+      seq_null_half_speed [*5];
+      rmii_clken = '0'
+    } |->
+    {
+          s6_dv  = prev(s5_dv,2) & prev(s5_dv,4) & prev(s5_dv,6) & prev(s5_dv,8)
+      and s6_er  = prev(rmii_er,11) & prev(rmii_er,13) & prev(rmii_er,15) & prev(rmii_er,17)
+      and s6_d   = prev(rmii_d,11) & prev(rmii_d,13) & prev(rmii_d,15) & prev(rmii_d,17)
+      and s6_stb = '1';
+          s7_dv  = prev(s6_dv)
+      and s7_er  = prev(s6_er)
+      and s7_d   = prev(s6_d)
+    }
+  ) abort rst = '1';
+
+--  -- first octet to s7 (full speed)
+--  assert always (
+--    {
+--      seq_ipg_full_speed [*2];
+--      seq_crs_full_speed [*0 to 3];
+--      seq_octet1_full_speed;
+--      seq_null_full_speed [*7]
+--    } |->
+--          s7_dv  = prev(s5_dv,2) & prev(s5_dv,3) & prev(s5_dv,4) & prev(s5_dv,5)
+--      and s7_er  = prev(rmii_er,7) & prev(rmii_er,8) & prev(rmii_er,9) & prev(rmii_er,10)
+--      and s7_d   = prev(rmii_d,7) & prev(rmii_d,8) & prev(rmii_d,9) & prev(rmii_d,10)
+--  ) abort rst = '1';
 --
---    --  sequence seq_crs is  {
---    --    rmii_clken = '1' and rmii_crs_dv = '1' and rmii_d = "00";
---    --    rst = '0' and rmii_clken = '0' [*0 to 9]
---    --  };
---    --  assert always (
---    --    {
---    --      rmii_clken = '1' and rmii_crs_dv = '0';
---    --      true and rmii_clken = '0' [*0 to 9];
---    --      rmii_clken = '1' and rmii_crs_dv = '1' and rmii_d = "00" [*0 to 1];
---    --      true and rmii_clken = '0' [*0 to 9];
---    --      rmii_clken = '1' and rmii_crs_dv = '1' and rmii_d = "01";
---    --      true and rmii_clken = '0' [*0 to 9];
---    --      true [*];
---    --    } -> eventually!(s6_stb = '1'
---    --  ) abort rst = '1';
+--  -- first octet to s7 (half speed)
+--  assert always (
+--    {
+--      seq_ipg_half_speed [*2];
+--      seq_crs_half_speed [*0 to 3];
+--      seq_octet1_half_speed;
+--      seq_null_half_speed [*6];
+--      rmii_clken = '0'
+--    } |->
+--          s7_dv  = prev(s5_dv,2) & prev(s5_dv,4) & prev(s5_dv,6) & prev(s5_dv,8)
+--      --and s7_er  = prev(rmii_er,7) & prev(rmii_er,8) & prev(rmii_er,9) & prev(rmii_er,10)
+--      --and s7_d   = prev(rmii_d,7) & prev(rmii_d,8) & prev(rmii_d,9) & prev(rmii_d,10)
+--  ) abort rst = '1';
+
+  -- first octet to s7 (half speed)
+--  assert always (
+--    {
+--      seq_ipg_half_speed [*2];
+--      seq_crs_half_speed [*0 to 3];
+--      seq_octet1_half_speed;
+--      seq_null_half_speed [*6];
+--      true
+--    } |->
+--          s7_dv  = prev(s5_dv,6) & prev(s5_dv,6) & prev(s5_dv,8) & prev(s5_dv,10)
+--      --and s7_er  = prev(rmii_er,13) & prev(rmii_er,15) & prev(rmii_er,17) & prev(rmii_er,19)
+--      --and s7_d   = prev(rmii_d,13) & prev(rmii_d,15) & prev(rmii_d,17) & prev(rmii_d,19)
+--  ) abort rst = '1';
+
+  -- first octet to umii (full speed)
+  assert always (
+    {
+      rmii_clken = '1' and rmii_crs_dv = '0' [*2];
+      rmii_clken = '1' and rmii_crs_dv = '1' and rmii_d = "00" [*0 to 3];
+      rmii_clken = '1' and rmii_crs_dv = '1' and rmii_d = "01";
+      rmii_clken = '1' and rmii_crs_dv = '1';
+      rmii_clken = '1';
+      rmii_clken = '1' and rmii_crs_dv = '1';
+      rmii_clken = '1' [*6];
+      rmii_clken = '1' and umii_clken = '0';
+      umii_clken = '1';
+      true
+    } |->
+          umii_dv = (prev(s5_dv,4) or prev(s5_dv,5) or prev(s5_dv,6) or prev(s5_dv,7))
+      and umii_er = (prev(rmii_er,9) or prev(rmii_er,10) or prev(rmii_er,11) or prev(rmii_er,12))
+      and umii_d  = prev(rmii_d,9) & prev(rmii_d,10) & prev(rmii_d,11) & prev(rmii_d,12)
+  ) abort rst = '1';
+
 
 }
